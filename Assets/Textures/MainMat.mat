@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: MainMat
+  m_Shader: {fileID: 4800000, guid: 44b0896d3fa14b4b98177ee93befe79e, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _ALPHATEST_ON
+  - _AOON_ON
+  - _DITHERON_ON
+  - _FACESHADEON_ON
+  - _LIGHTINGON_ON
+  - _SPECULARHIGHLIGHTS_OFF
+  - _TEXTUREON_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses:
+  - MOTIONVECTORS
+  - DistortionVectors
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _LightTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: f76afd14bda319547ae9e835495f8ae9, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AOIntensity: 1
+    - _AOOn: 1
+    - _Debug: 0
+    - _FaceShadeOn: 1
+    - _LT_BlockMul: 1
+    - _LT_Exposure: 1
+    - _LT_Gamma: 0.1
+    - _LT_NeutralLift: 0.02
+    - _LT_SkyMul: 1
+    - _LightingOn: 1
+    - _ShadeDown: 0.5
+    - _ShadeSideEW: 0.6
+    - _ShadeSideNS: 0.8
+    - _ShadeUp: 1.5
+    - _TextureOn: 1
+    m_Colors: []
+  m_BuildTextureStacks: []
+--- !u!114 &455214230418682805
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da692e001514ec24dbc4cca1949ff7e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 12
+  hdPluginSubTargetMaterialVersions:
+    m_Keys: []
+    m_Values: 
