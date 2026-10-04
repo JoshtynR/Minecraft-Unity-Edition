@@ -25,7 +25,7 @@ public class BiomeGenerator : MonoBehaviour
     
     public int extraTerrainHeightPercentage = 0;
 
-    public ChunkData ProcessBetaDensityColumn(ChunkData data, int x, int z, Vector3Int mapSeedOffset)
+    public ChunkData ProcessBetaDensityColumn(ChunkData data, int x, int z, Vector3Int mapSeedOffset, bool[,,] solidMask)
     {
         int topSolidY = -1;
         var localPos = new Vector3Int(x, 0, z);
@@ -37,13 +37,16 @@ public class BiomeGenerator : MonoBehaviour
         for (int y = 0; y < data.worldRef.worldHeight; y++)
         {
             localPos.y = y;
-            float density = BetaTerrainDensity.Sample(
-                worldX, y, worldZ, data.worldRef.worldHeight, mapSeedOffset);
+            bool solid = y < Beta173Terrain.TerrainHeight && solidMask[x, y, z];
 
-            if (density > 0f)
+            if (solid)
             {
                 data.SetBlock(localPos, BlockType.Stone);
                 topSolidY = y;
+            }
+            else if (y < Beta173Terrain.SeaLevel)
+            {
+                data.SetBlock(localPos, BlockType.Water);
             }
             else
             {
