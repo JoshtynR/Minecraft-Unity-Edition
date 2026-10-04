@@ -31,16 +31,12 @@ public sealed class Beta173Caves
         }
     }
 
-    private static long MakeOdd(long value)
-    {
-        return unchecked(value / 2L * 2L + 1L);
-    }
+    private static long MakeOdd(long value) => unchecked(value / 2L * 2L + 1L);
 
     private void GenerateFromSource(ChunkData chunk, int sourceChunkX, int sourceChunkZ, int targetChunkX, int targetChunkZ)
     {
         int caveCount = random.NextInt(random.NextInt(random.NextInt(40) + 1) + 1);
-        if (random.NextInt(15) != 0)
-            caveCount = 0;
+        if (random.NextInt(15) != 0) caveCount = 0;
 
         for (int i = 0; i < caveCount; i++)
         {
@@ -125,30 +121,24 @@ public sealed class Beta173Caves
                 return;
             }
 
-            if (!room && localRandom.NextInt(4) == 0)
-                continue;
+            if (!room && localRandom.NextInt(4) == 0) continue;
 
             double dx = x - centerX;
             double dz = z - centerZ;
             double remaining = maxSteps - step;
             double maxReach = width + 2.0f + 16.0f;
-            if (dx * dx + dz * dz - remaining * remaining > maxReach * maxReach)
-                return;
+            if (dx * dx + dz * dz - remaining * remaining > maxReach * maxReach) return;
 
             if (x < centerX - 16.0 - radiusXZ * 2.0 || z < centerZ - 16.0 - radiusXZ * 2.0 ||
                 x > centerX + 16.0 + radiusXZ * 2.0 || z > centerZ + 16.0 + radiusXZ * 2.0)
                 continue;
 
-            int minX = Mathf.FloorToInt((float)(x - radiusXZ)) - chunkX * 16 - 1;
-            int maxX = Mathf.FloorToInt((float)(x + radiusXZ)) - chunkX * 16 + 1;
-            int minY = Mathf.FloorToInt((float)(y - radiusY)) - 1;
-            int maxY = Mathf.FloorToInt((float)(y + radiusY)) + 1;
-            int minZ = Mathf.FloorToInt((float)(z - radiusXZ)) - chunkZ * 16 - 1;
-            int maxZ = Mathf.FloorToInt((float)(z + radiusXZ)) - chunkZ * 16 + 1;
-
-            minX = Mathf.Max(minX, 0); maxX = Mathf.Min(maxX, 16);
-            minY = Mathf.Max(minY, 1); maxY = Mathf.Min(maxY, 120);
-            minZ = Mathf.Max(minZ, 0); maxZ = Mathf.Min(maxZ, 16);
+            int minX = Mathf.Max(Mathf.FloorToInt((float)(x - radiusXZ)) - chunkX * 16 - 1, 0);
+            int maxX = Mathf.Min(Mathf.FloorToInt((float)(x + radiusXZ)) - chunkX * 16 + 1, 16);
+            int minY = Mathf.Max(Mathf.FloorToInt((float)(y - radiusY)) - 1, 1);
+            int maxY = Mathf.Min(Mathf.FloorToInt((float)(y + radiusY)) + 1, 120);
+            int minZ = Mathf.Max(Mathf.FloorToInt((float)(z - radiusXZ)) - chunkZ * 16 - 1, 0);
+            int maxZ = Mathf.Min(Mathf.FloorToInt((float)(z + radiusXZ)) - chunkZ * 16 + 1, 16);
 
             bool hitsWater = false;
             for (int lx = minX; !hitsWater && lx < maxX; lx++)
@@ -163,8 +153,7 @@ public sealed class Beta173Caves
                     ly = minY;
             }
 
-            if (hitsWater)
-                continue;
+            if (hitsWater) continue;
 
             for (int lx = minX; lx < maxX; lx++)
             {
@@ -173,29 +162,21 @@ public sealed class Beta173Caves
                 {
                     double nz = ((lz + chunkZ * 16) + 0.5 - z) / radiusXZ;
                     bool foundGrass = false;
-                    if (nx * nx + nz * nz >= 1.0)
-                        continue;
+                    if (nx * nx + nz * nz >= 1.0) continue;
 
                     for (int ly = maxY - 1; ly >= minY; ly--)
                     {
                         double ny = (ly + 0.5 - y) / radiusY;
-                        if (ny <= -0.7 || nx * nx + ny * ny + nz * nz >= 1.0)
-                            continue;
+                        if (ny <= -0.7 || nx * nx + ny * ny + nz * nz >= 1.0) continue;
 
                         var pos = new Vector3Int(lx, ly, lz);
                         BlockType block = chunk.GetBlock(pos).type;
-                        if (block == BlockType.Grass)
-                            foundGrass = true;
+                        if (block == BlockType.Grass) foundGrass = true;
 
                         if (block == BlockType.Stone || block == BlockType.Dirt || block == BlockType.Grass)
                         {
-                            // Beta uses lava below Y=10. Until Lava has a registered
-                            // BlockTypeData/texture in this project, leave solid stone
-                            // there rather than indexing past BlockDataManager's array.
-                            if (ly >= 10)
-                                chunk.SetBlock(pos, BlockType.Air);
-
-                            if (ly >= 10 && foundGrass && ly > 0)
+                            chunk.SetBlock(pos, ly < 10 ? BlockType.Lava : BlockType.Air);
+                            if (foundGrass && ly > 0)
                             {
                                 var below = new Vector3Int(lx, ly - 1, lz);
                                 if (chunk.GetBlock(below).type == BlockType.Dirt)
@@ -206,8 +187,7 @@ public sealed class Beta173Caves
                 }
             }
 
-            if (room)
-                break;
+            if (room) break;
         }
     }
 }
