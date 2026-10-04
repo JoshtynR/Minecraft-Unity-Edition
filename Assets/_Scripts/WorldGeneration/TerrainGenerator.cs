@@ -16,9 +16,6 @@ public class TerrainGenerator : MonoBehaviour
     public DomainWarping domainWarping;
     [Tooltip("Inverse Distance Weighting")]
     public bool useIDW = true;
-    [Header("Terrain Generation")]
-    [Tooltip("Generate terrain from a 3D Beta-style density field instead of the legacy heightmap.")]
-    public bool useBetaDensityTerrain = true;
     private Beta173Terrain betaTerrain;
     private long betaTerrainSeed = long.MinValue;
 
@@ -31,32 +28,20 @@ public class TerrainGenerator : MonoBehaviour
         BiomeGeneratorSelection biomeSelection = SelectBiomeGeneratorWeight(data.worldPos, data,false);
         data.treeData = biomeSelection.biomeGenerator.GenerateTreeData(data, mapSeedOffset);
 
-        bool[,,] betaSolidMask = null;
-        if (useBetaDensityTerrain)
+        long betaSeed = data.worldRef.betaWorldSeed;
+        if (betaTerrain == null || betaTerrainSeed != betaSeed)
         {
-            long betaSeed = data.worldRef.betaWorldSeed;
-            if (betaTerrain == null || betaTerrainSeed != betaSeed)
-            {
-                betaTerrain = new Beta173Terrain(betaSeed);
-                betaTerrainSeed = betaSeed;
-            }
-            betaSolidMask = betaTerrain.GenerateSolidMask(data.worldPos.x, data.worldPos.z);
+            betaTerrain = new Beta173Terrain(betaSeed);
+            betaTerrainSeed = betaSeed;
         }
+        bool[,,] betaSolidMask = betaTerrain.GenerateSolidMask(data.worldPos.x, data.worldPos.z);
 
         for (var x = 0; x < data.chunkSize; x++)
         {
             for (var z = 0; z < data.chunkSize; z++)
             {
                 biomeSelection = SelectBiomeGeneratorWeight(new Vector3Int(data.worldPos.x + x, 0, data.worldPos.z + z), data);
-                //TODO: processChunkColumn is very slow, need to optimize it
-                if (useBetaDensityTerrain)
-                {
-                    data = biomeSelection.biomeGenerator.ProcessBetaDensityColumn(data, x, z, mapSeedOffset, betaSolidMask);
-                }
-                else
-                {
-                    data = biomeSelection.biomeGenerator.ProcessChunkColumn(data, x, z, mapSeedOffset, biomeSelection.terrainSurfaceNoise);
-                }
+                data = biomeSelection.biomeGenerator.ProcessBetaDensityColumn(data, x, z, mapSeedOffset, betaSolidMask);
             }
         }
 
