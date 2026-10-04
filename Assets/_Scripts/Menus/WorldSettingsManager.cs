@@ -7,6 +7,7 @@ public class WorldSettingsManager : MonoBehaviour
     public static WorldSettingsManager Instance;
     
     public Vector3Int seedOffset;
+    public long betaWorldSeed;
     public string worldName;
     
     private void Awake()
@@ -28,6 +29,7 @@ public class WorldSettingsManager : MonoBehaviour
             if (World.Instance != null)
             {
                 World.Instance.mapSeedOffset = seedOffset;
+                World.Instance.betaWorldSeed = betaWorldSeed;
                 World.Instance.worldName = worldName;
             }
         };
