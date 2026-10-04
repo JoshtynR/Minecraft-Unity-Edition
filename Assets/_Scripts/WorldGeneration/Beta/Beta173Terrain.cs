@@ -48,7 +48,7 @@ public sealed class Beta173Terrain
                 double worldX = chunkWorldX + gx * 4;
                 double worldZ = chunkWorldZ + gz * 4;
 
-                double surfaceValue = scale.Sample(worldX, 10, worldZ, 1.121, 1.0, 1.121);
+                double surfaceValue = scale.Sample2D(worldX, worldZ, 1.121, 1.121);
                 climate.Sample(worldX, worldZ, out double temperature, out double humidity);
                 double aridity = 1.0 - humidity * temperature;
                 aridity *= aridity;
@@ -57,7 +57,7 @@ public sealed class Beta173Terrain
                 double surface = (surfaceValue / 512.0 + 0.5) * climateFactor;
                 if (surface > 1.0) surface = 1.0;
 
-                double depthValue = depth.Sample(worldX, 10, worldZ, 200.0, 1.0, 200.0);
+                double depthValue = depth.Sample2D(worldX, worldZ, 200.0, 200.0);
                 depthValue /= 8000.0;
                 if (depthValue < 0) depthValue = -depthValue * 0.3;
                 depthValue = depthValue * 3.0 - 2.0;
