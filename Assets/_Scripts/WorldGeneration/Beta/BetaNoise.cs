@@ -25,7 +25,7 @@ public sealed class BetaImprovedNoise
     public double Sample(double x, double y, double z)
     {
         x += offsetX; y += offsetY; z += offsetZ;
-        int xi0 = FastFloor(x), yi0 = FastFloor(y), zi0 = FastFloor(z);
+        int xi0 = BetaFloor(x), yi0 = BetaFloor(y), zi0 = BetaFloor(z);
         int xi = xi0 & 255, yi = yi0 & 255, zi = zi0 & 255;
         x -= xi0; y -= yi0; z -= zi0;
 
@@ -50,7 +50,7 @@ public sealed class BetaImprovedNoise
     {
         x += offsetX;
         z += offsetZ;
-        int xi0 = FastFloor(x), zi0 = FastFloor(z);
+        int xi0 = BetaFloor(x), zi0 = BetaFloor(z);
         int xi = xi0 & 255, zi = zi0 & 255;
         x -= xi0; z -= zi0;
 
@@ -67,7 +67,15 @@ public sealed class BetaImprovedNoise
         return Lerp(w, n0, n1);
     }
 
-    private static int FastFloor(double v) => v >= 0 ? (int)v : (int)v - 1;
+    // NoiseGeneratorPerlin casts to int and decrements only when the source
+    // value is strictly less than that truncation. This preserves exact
+    // negative integers (unlike the common v < 0 ? (int)v - 1 shortcut).
+    private static int BetaFloor(double v)
+    {
+        int i = (int)v;
+        return v < i ? i - 1 : i;
+    }
+
     private static double Fade(double t) => t * t * t * (t * (t * 6 - 15) + 10);
     private static double Lerp(double t, double a, double b) => a + t * (b - a);
     private static double Grad(int hash, double x, double y, double z)
@@ -93,7 +101,7 @@ public sealed class BetaImprovedNoise
             for (int xIndex = 0; xIndex < sizeX; xIndex++)
             {
                 double x = (startX + xIndex) * scaleX + offsetX;
-                int xi0 = FastFloor(x);
+                int xi0 = BetaFloor(x);
                 int xi = xi0 & 255;
                 x -= xi0;
                 double u = Fade(x);
@@ -101,7 +109,7 @@ public sealed class BetaImprovedNoise
                 for (int zIndex = 0; zIndex < sizeZ; zIndex++)
                 {
                     double z = (startZ + zIndex) * scaleZ + offsetZ;
-                    int zi0 = FastFloor(z);
+                    int zi0 = BetaFloor(z);
                     int zi = zi0 & 255;
                     z -= zi0;
                     double w = Fade(z);
@@ -130,7 +138,7 @@ public sealed class BetaImprovedNoise
         for (int xIndex = 0; xIndex < sizeX; xIndex++)
         {
             double x = (startX + xIndex) * scaleX + offsetX;
-            int xi0 = FastFloor(x);
+            int xi0 = BetaFloor(x);
             int xi = xi0 & 255;
             x -= xi0;
             double u = Fade(x);
@@ -138,7 +146,7 @@ public sealed class BetaImprovedNoise
             for (int zIndex = 0; zIndex < sizeZ; zIndex++)
             {
                 double z = (startZ + zIndex) * scaleZ + offsetZ;
-                int zi0 = FastFloor(z);
+                int zi0 = BetaFloor(z);
                 int zi = zi0 & 255;
                 z -= zi0;
                 double w = Fade(z);
@@ -146,7 +154,7 @@ public sealed class BetaImprovedNoise
                 for (int yIndex = 0; yIndex < sizeY; yIndex++)
                 {
                     double y = (startY + yIndex) * scaleY + offsetY;
-                    int yi0 = FastFloor(y);
+                    int yi0 = BetaFloor(y);
                     int yi = yi0 & 255;
                     y -= yi0;
                     double v = Fade(y);
@@ -260,8 +268,6 @@ public sealed class BetaOctaveNoise
         return result;
     }
 
-    // Beta's scale/depth generators use the old fixed 2D path, whose gradient
-    // is evaluated with Y=0 rather than by sampling an arbitrary 3D slice.
     public double Sample2D(double x, double z, double scaleX, double scaleZ)
     {
         double result = 0.0;
