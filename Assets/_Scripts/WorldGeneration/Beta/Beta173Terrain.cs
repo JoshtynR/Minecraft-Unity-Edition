@@ -1,9 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// Beta 1.7.3 terrain density/noise state. Generator construction order is
-/// intentionally kept identical to ChunkProviderGenerate because every octave
-/// consumes the same Java RNG stream.
+/// Clean-room Beta 1.7.3 terrain implementation based on the historical
+/// generator behaviour. Keeps the original 128-block terrain volume and
+/// 64-block sea level inside this project's taller world.
 /// </summary>
 public sealed class Beta173Terrain
 {
@@ -54,14 +54,31 @@ public sealed class Beta173Terrain
             16, 16, 1, scaleValue * 2.0, scaleValue * 2.0, scaleValue * 2.0);
     }
 
-    public bool[,,] GenerateSolidMask(int chunkWorldX, int chunkWorldZ)
+    /// <summary>
+    /// Generates the raw Beta terrain stage: stone, water/ice and air.
+    /// Surface blocks and caves are applied later, matching Beta's pipeline.
+    /// </summary>
+    public BlockType[,,] GenerateRawTerrain(int chunkWorldX, int chunkWorldZ)
     {
         const int gridX = 5;
         const int gridZ = 5;
         const int gridY = 17;
 
-        int coarseX = chunkWorldX / 4;
-        int coarseZ = chunkWorldZ / 4;
+        // Beta asks WorldChunkManager for the complete 16x16 climate arrays
+        // before the coarse density pass. Preserve that sampling/index layout.
+        var temperatures = new double[256];
+        var humidities = new double[256];
+        for (int x = 0; x < 16; x++)
+        for (int z = 0; z < 16; z++)
+        {
+            climate.Sample(chunkWorldX + x, chunkWorldZ + z,
+                out double temperature, out double humidity);
+            temperatures[x * 16 + z] = temperature;
+            humidities[x * 16 + z] = humidity;
+        }
+
+        int coarseX = FloorDiv(chunkWorldX, 4);
+        int coarseZ = FloorDiv(chunkWorldZ, 4);
 
         double[] scaleNoise = scale.Generate2D(null, coarseX, coarseZ, gridX, gridZ, 1.121, 1.121);
         double[] depthNoise = depth.Generate2D(null, coarseX, coarseZ, gridX, gridZ, 200.0, 200.0);
@@ -83,8 +100,8 @@ public sealed class Beta173Terrain
             for (int gz = 0; gz < gridZ; gz++)
             {
                 int climateZ = gz * sampleStride + sampleStride / 2;
-                climate.Sample(chunkWorldX + climateX, chunkWorldZ + climateZ,
-                    out double temperature, out double humidity);
+                double temperature = temperatures[climateX * 16 + climateZ];
+                double humidity = humidities[climateX * 16 + climateZ];
 
                 double humidTemp = humidity * temperature;
                 double aridity = 1.0 - humidTemp;
@@ -139,7 +156,7 @@ public sealed class Beta173Terrain
             }
         }
 
-        var solid = new bool[16, TerrainHeight, 16];
+        var blocks = new BlockType[16, TerrainHeight, 16];
         for (int cellX = 0; cellX < 4; cellX++)
         for (int cellZ = 0; cellZ < 4; cellZ++)
         for (int cellY = 0; cellY < 16; cellY++)
@@ -167,7 +184,17 @@ public sealed class Beta173Terrain
                         int x = cellX * 4 + subX;
                         int y = cellY * 8 + subY;
                         int z = cellZ * 4 + subZ;
-                        solid[x, y, z] = current > 0.0;
+
+                        BlockType block = BlockType.Air;
+                        if (y < SeaLevel)
+                        {
+                            double temperature = temperatures[x * 16 + z];
+                            block = temperature < 0.5 && y >= SeaLevel - 1
+                                ? BlockType.Ice
+                                : BlockType.Water;
+                        }
+                        if (current > 0.0) block = BlockType.Stone;
+                        blocks[x, y, z] = block;
                         current += dz;
                     }
                     x0z0 += dxz0;
@@ -176,6 +203,15 @@ public sealed class Beta173Terrain
                 d000 += dy000; d001 += dy001; d100 += dy100; d101 += dy101;
             }
         }
-        return solid;
+
+        return blocks;
+    }
+
+    private static int FloorDiv(int value, int divisor)
+    {
+        int result = value / divisor;
+        int remainder = value % divisor;
+        if (remainder != 0 && ((remainder < 0) != (divisor < 0))) result--;
+        return result;
     }
 }
