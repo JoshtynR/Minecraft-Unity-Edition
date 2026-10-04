@@ -1,9 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Beta 1.7.3 replaceBlocksForBiome surface pass. All noise/RNG work happens
-/// in canonical Beta coordinates; block writes cross the coordinate boundary
-/// only when addressing the Unity chunk.
+/// Beta 1.7.3 replaceBlocksForBiome surface pass.
 /// </summary>
 public static class BetaSurfaceDecorator
 {
@@ -16,21 +14,17 @@ public static class BetaSurfaceDecorator
 
         terrain.GenerateSurfaceNoise(betaWorldX, betaWorldZ,
             out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise);
+        BetaBiomeType[] biomes = terrain.GenerateBiomeRegion(betaWorldX, betaWorldZ, 16, 16);
 
-        // Beta's replaceBlocksForBiome iterates X outer, Z inner, while the
-        // generated 16x16 arrays are addressed as X + Z * 16.
         for (int betaX = 0; betaX < 16; betaX++)
         for (int betaZ = 0; betaZ < 16; betaZ++)
         {
-            int noiseIndex = betaX + betaZ * 16;
-            bool sandPatch = sandNoise[noiseIndex] + random.NextDouble() * 0.2 > 0.0;
-            bool gravelPatch = gravelNoise[noiseIndex] + random.NextDouble() * 0.2 > 3.0;
-            int thickness = (int)(stoneNoise[noiseIndex] / 3.0 + 3.0 + random.NextDouble() * 0.25);
+            int index = betaX + betaZ * 16;
+            BetaBiomeType biome = biomes[index];
+            bool sandPatch = sandNoise[index] + random.NextDouble() * 0.2 > 0.0;
+            bool gravelPatch = gravelNoise[index] + random.NextDouble() * 0.2 > 3.0;
+            int thickness = (int)(stoneNoise[index] / 3.0 + 3.0 + random.NextDouble() * 0.25);
             int remaining = -1;
-
-            // The biome array used by Beta at this same index corresponds to
-            // the actual X/Z column. Do not transpose the biome coordinates.
-            BetaBiomeType biome = terrain.GetBiome(betaWorldX + betaX, betaWorldZ + betaZ);
             BlockType biomeTop = BetaBiome.TopBlock(biome);
             BlockType biomeFiller = BetaBiome.FillerBlock(biome);
             BlockType top = biomeTop;
@@ -51,53 +45,44 @@ public static class BetaSurfaceDecorator
                 if (block == BlockType.Air)
                 {
                     remaining = -1;
-                    continue;
                 }
-                if (block != BlockType.Stone) continue;
-
-                if (remaining == -1)
+                else if (block == BlockType.Stone)
                 {
-                    if (thickness <= 0)
+                    if (remaining == -1)
                     {
-                        top = BlockType.Air;
-                        filler = BlockType.Stone;
-                    }
-                    else if (y >= SeaBandMin && y <= SeaBandMax)
-                    {
-                        top = biomeTop;
-                        filler = biomeFiller;
-                        if (gravelPatch)
+                        if (thickness <= 0)
                         {
                             top = BlockType.Air;
-                            filler = BlockType.Gravel;
+                            filler = BlockType.Stone;
                         }
-                        if (sandPatch)
+                        else if (y >= Beta173Terrain.SeaLevel - 4 && y <= Beta173Terrain.SeaLevel + 1)
                         {
-                            top = BlockType.Sand;
-                            filler = BlockType.Sand;
+                            top = biomeTop;
+                            filler = biomeFiller;
+                            if (gravelPatch) top = BlockType.Air;
+                            if (gravelPatch) filler = BlockType.Gravel;
+                            if (sandPatch) top = BlockType.Sand;
+                            if (sandPatch) filler = BlockType.Sand;
                         }
+
+                        if (y < Beta173Terrain.SeaLevel && top == BlockType.Air)
+                            top = BlockType.Water;
+
+                        remaining = thickness;
+                        data.SetBlock(pos, y >= Beta173Terrain.SeaLevel - 1 ? top : filler);
                     }
-
-                    if (y < Beta173Terrain.SeaLevel && top == BlockType.Air)
-                        top = BlockType.Water;
-
-                    remaining = thickness;
-                    data.SetBlock(pos, y >= Beta173Terrain.SeaLevel - 1 ? top : filler);
-                }
-                else if (remaining > 0)
-                {
-                    remaining--;
-                    data.SetBlock(pos, filler);
-                    if (remaining == 0 && filler == BlockType.Sand)
+                    else if (remaining > 0)
                     {
-                        remaining = random.NextInt(4);
-                        filler = BlockType.Sandstone;
+                        --remaining;
+                        data.SetBlock(pos, filler);
+                        if (remaining == 0 && filler == BlockType.Sand)
+                        {
+                            remaining = random.NextInt(4);
+                            filler = BlockType.Sandstone;
+                        }
                     }
                 }
             }
         }
     }
-
-    private const int SeaBandMin = Beta173Terrain.SeaLevel - 4;
-    private const int SeaBandMax = Beta173Terrain.SeaLevel + 1;
 }
