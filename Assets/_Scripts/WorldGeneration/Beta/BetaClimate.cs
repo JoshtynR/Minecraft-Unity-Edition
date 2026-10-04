@@ -13,16 +13,16 @@ public sealed class BetaClimate
 
     public BetaClimate(long seed)
     {
-        temperature = new SimplexOctaves(unchecked(seed * 9871L), 4, 0.25);
-        humidity = new SimplexOctaves(unchecked(seed * 39811L), 4, 1.0 / 3.0);
-        precipitation = new SimplexOctaves(unchecked(seed * 0x84A59L), 2, 1.0 / 1.7);
+        temperature = new SimplexOctaves(unchecked(seed * 9871L), 4, 0.25, 0.5);
+        humidity = new SimplexOctaves(unchecked(seed * 39811L), 4, 1.0 / 3.0, 0.5);
+        precipitation = new SimplexOctaves(unchecked(seed * 543321L), 2, 0.5882352941176471, 0.5);
     }
 
     public void Sample(double x, double z, out double temp, out double humid)
     {
-        double t = temperature.Sample(x, z, 0.02500000037252903 / 1.5);
-        double h = humidity.Sample(x, z, 0.05000000074505806 / 1.5);
-        double p = precipitation.Sample(x, z, 0.25 / 1.5);
+        double t = temperature.Sample(x, z, 0.02500000037252903, 0.02500000037252903);
+        double h = humidity.Sample(x, z, 0.05000000074505806, 0.05000000074505806);
+        double p = precipitation.Sample(x, z, 0.25, 0.25);
 
         double precipitationValue = p * 1.1 + 0.5;
         temp = (t * 0.15 + 0.7) * 0.99 + precipitationValue * 0.01;
@@ -39,27 +39,35 @@ public sealed class BetaClimate
     {
         private readonly Simplex2D[] octaves;
         private readonly double frequencyMultiplier;
+        private readonly double amplitudeMultiplier;
 
-        public SimplexOctaves(long seed, int count, double frequencyMultiplier)
+        public SimplexOctaves(long seed, int count, double frequencyMultiplier, double amplitudeMultiplier)
         {
             this.frequencyMultiplier = frequencyMultiplier;
+            this.amplitudeMultiplier = amplitudeMultiplier;
             var random = new JavaRandom(seed);
             octaves = new Simplex2D[count];
             for (int i = 0; i < count; i++) octaves[i] = new Simplex2D(random);
         }
 
-        public double Sample(double x, double z, double scale)
+        public double Sample(double x, double z, double scaleX, double scaleZ)
         {
+            // NoiseGeneratorOctaves2 divides both coordinate scales by 1.5
+            // before feeding its simplex octaves.
+            scaleX /= 1.5;
+            scaleZ /= 1.5;
+
             double sum = 0.0;
             double frequency = 1.0;
             double amplitudeDenominator = 1.0;
 
             for (int i = 0; i < octaves.Length; i++)
             {
-                sum += octaves[i].Sample(x * scale * frequency, z * scale * frequency)
-                       * (0.55 / amplitudeDenominator);
+                sum += octaves[i].Sample(
+                    x * scaleX * frequency,
+                    z * scaleZ * frequency) * (0.55 / amplitudeDenominator);
                 frequency *= frequencyMultiplier;
-                amplitudeDenominator *= 0.5;
+                amplitudeDenominator *= amplitudeMultiplier;
             }
             return sum;
         }
