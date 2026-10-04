@@ -9,7 +9,7 @@ using UnityEngine;
 public sealed class Beta173Terrain
 {
     public const int TerrainHeight = 128;
-    public const int SeaLevel = 63;
+    public const int SeaLevel = 64;
 
     private readonly BetaOctaveNoise minLimit;
     private readonly BetaOctaveNoise maxLimit;
@@ -26,7 +26,8 @@ public sealed class Beta173Terrain
         selector = new BetaOctaveNoise(random, 8);
 
         // Advance/create the classic auxiliary generators in their historical order.
-        _ = new BetaOctaveNoise(random, 4);
+        _ = new BetaOctaveNoise(random, 4); // field_702_n: sand/gravel surface noise
+        _ = new BetaOctaveNoise(random, 4); // field_701_o: stone-depth surface noise
         scale = new BetaOctaveNoise(random, 10);
         depth = new BetaOctaveNoise(random, 16);
         _ = new BetaOctaveNoise(random, 8);
