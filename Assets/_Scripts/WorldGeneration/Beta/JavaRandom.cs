@@ -46,8 +46,14 @@ public sealed class JavaRandom
 
     public long NextLong()
     {
-        // java.util.Random.nextLong(): ((long)next(32) << 32) + next(32)
-        return unchecked(((long)NextInt() << 32) + (uint)NextInt());
+        // java.util.Random.nextLong() is exactly:
+        // ((long)next(32) << 32) + next(32)
+        // Both next(32) results are Java signed ints. In particular the low
+        // word is sign-extended during the long addition; treating it as uint
+        // changes the resulting stream consumers such as MapGenCaves.
+        int high = NextInt();
+        int low = NextInt();
+        return unchecked(((long)high << 32) + low);
     }
 
     public bool NextBoolean()
