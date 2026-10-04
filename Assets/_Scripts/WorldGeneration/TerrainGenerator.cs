@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class TerrainGenerator : MonoBehaviour
 {
@@ -19,16 +17,16 @@ public class TerrainGenerator : MonoBehaviour
             betaTerrainSeed = betaSeed;
         }
 
-        bool[,,] betaSolidMask = betaTerrain.GenerateSolidMask(data.worldPos.x, data.worldPos.z);
+        BlockType[,,] rawTerrain = betaTerrain.GenerateRawTerrain(data.worldPos.x, data.worldPos.z);
         for (int x = 0; x < data.chunkSize; x++)
         for (int z = 0; z < data.chunkSize; z++)
-            data = biomeGenerator.ProcessBetaDensityColumn(data, x, z, betaSolidMask);
+            data = biomeGenerator.ProcessBetaTerrainColumn(data, x, z, rawTerrain);
 
-        // Beta replaceBlocksForBiome runs before MapGenCaves.
+        // Historical order: raw terrain -> biome surface replacement -> caves.
         BetaSurfaceDecorator.DecorateChunk(data, betaTerrain);
 
-        int chunkX = data.worldPos.x / data.chunkSize;
-        int chunkZ = data.worldPos.z / data.chunkSize;
+        int chunkX = FloorDiv(data.worldPos.x, data.chunkSize);
+        int chunkZ = FloorDiv(data.worldPos.z, data.chunkSize);
         betaCaves.Generate(data, chunkX, chunkZ);
 
         // Temporary legacy tree data until the Beta population pass replaces it.
@@ -42,9 +40,17 @@ public class TerrainGenerator : MonoBehaviour
         // This will become the Beta population/decorator pass next.
     }
 
-    // Retained as a no-op because World currently calls this while streaming.
-    // Beta climate/biome generation no longer needs the old Voronoi center cache.
+    // World currently calls this while streaming. Beta climate generation does
+    // not need the old Voronoi biome-center cache.
     public void GenerateBiomePoints(Vector3 playerPos, int renderDistance, int chunkSize, Vector3Int mapSeedOffset)
     {
+    }
+
+    private static int FloorDiv(int value, int divisor)
+    {
+        int result = value / divisor;
+        int remainder = value % divisor;
+        if (remainder != 0 && ((remainder < 0) != (divisor < 0))) result--;
+        return result;
     }
 }
