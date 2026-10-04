@@ -43,6 +43,10 @@ public sealed class Beta173Terrain
         out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise)
     {
         const double scaleValue = 0.03125;
+
+        // replaceBlocksForBiome uses generateNoiseOctaves(x, z, 0, 16,16,1)
+        // for sand/stone. In NoiseGeneratorPerlin's storage order that means
+        // the second source coordinate is the Y input and the third is Z.
         sandNoise = sandGravel.GenerateNoiseOctaves(null,
             chunkWorldX, chunkWorldZ, 0.0,
             16, 16, 1, scaleValue, scaleValue, 1.0);
@@ -54,18 +58,12 @@ public sealed class Beta173Terrain
             16, 16, 1, scaleValue * 2.0, scaleValue * 2.0, scaleValue * 2.0);
     }
 
-    /// <summary>
-    /// Generates the raw Beta terrain stage: stone, water/ice and air.
-    /// Surface blocks and caves are applied later, matching Beta's pipeline.
-    /// </summary>
     public BlockType[,,] GenerateRawTerrain(int chunkWorldX, int chunkWorldZ)
     {
         const int gridX = 5;
         const int gridZ = 5;
         const int gridY = 17;
 
-        // Beta asks WorldChunkManager for the complete 16x16 climate arrays
-        // before the coarse density pass. Preserve that sampling/index layout.
         var temperatures = new double[256];
         var humidities = new double[256];
         for (int x = 0; x < 16; x++)
@@ -147,7 +145,9 @@ public sealed class Beta173Terrain
                     value -= vertical;
                     if (gy > gridY - 4)
                     {
-                        double fade = (gy - (gridY - 4)) / 3.0;
+                        // The original performs this part through a float before
+                        // widening back to double. Keep that rounding quirk.
+                        double fade = (double)((float)(gy - (gridY - 4)) / 3.0f);
                         value = value * (1.0 - fade) + -10.0 * fade;
                     }
                     density[gx, gy, gz] = value;
