@@ -7,8 +7,6 @@ using UnityEngine.Serialization;
 public class BiomeGenerator : MonoBehaviour
 {
     public NoiseSettings settings;
-    public TerrainNoiseSettings terrainSettings;
-
     public DomainWarping domainWarping;
 
     public bool useWarping = true;
@@ -129,103 +127,6 @@ public class BiomeGenerator : MonoBehaviour
                 layer.Handle(data, worldPos,localPos, groundPos, mapSeedOffset);
             }
         }
-    }
-
-    public int GetSurfaceHeightNoise(int x, int z, int worldHeight)
-    {
-        if (terrainSettings == null || !terrainSettings.useLayeredTerrain)
-        {
-            float terrainHeight;
-            if (useWarping)
-            {
-                terrainHeight = domainWarping.GenerateDomainNoise(x, z, settings);
-            }
-            else
-            {
-                terrainHeight = MyNoise.OctavePerlin(x, z, settings);
-            }
-
-            terrainHeight = MyNoise.Redistribution(terrainHeight, settings);
-            return (int)Mathf.Lerp(
-                worldHeight * (extraTerrainHeightPercentage / 100f),
-                worldHeight - 1,
-                terrainHeight);
-        }
-
-        float seedX = settings.worldSeedOffset.x + settings.offset.x;
-        float seedZ = settings.worldSeedOffset.z + settings.offset.z;
-
-        float continental = Mathf.PerlinNoise(
-            (x + seedX) * terrainSettings.continentalScale,
-            (z + seedZ) * terrainSettings.continentalScale);
-        continental = (continental - 0.5f) * 2f;
-
-        float hills = FractalPerlin(
-            x + seedX,
-            z + seedZ,
-            terrainSettings.hillScale,
-            terrainSettings.hillOctaves,
-            terrainSettings.hillPersistence);
-        hills = (hills - 0.5f) * 2f;
-
-        float mountainMask = Mathf.PerlinNoise(
-            (x + seedX + 1731f) * terrainSettings.mountainMaskScale,
-            (z + seedZ - 947f) * terrainSettings.mountainMaskScale);
-        mountainMask = Mathf.InverseLerp(
-            terrainSettings.mountainStart,
-            1f,
-            mountainMask);
-        mountainMask = mountainMask * mountainMask;
-
-        float mountainShape = FractalPerlin(
-            x + seedX + 3917f,
-            z + seedZ + 2179f,
-            terrainSettings.mountainScale,
-            4,
-            0.5f);
-        mountainShape = Mathf.Abs(mountainShape - 0.5f) * 2f;
-        mountainShape = 1f - mountainShape;
-        mountainShape *= mountainShape;
-
-        float detail = Mathf.PerlinNoise(
-            (x + seedX - 811f) * terrainSettings.detailScale,
-            (z + seedZ + 1297f) * terrainSettings.detailScale);
-        detail = (detail - 0.5f) * 2f;
-
-        float height =
-            worldHeight * terrainSettings.baseHeightPercent +
-            continental * terrainSettings.continentalHeight +
-            hills * terrainSettings.hillHeight +
-            mountainMask * mountainShape * terrainSettings.mountainHeight +
-            detail * terrainSettings.detailHeight;
-
-        return Mathf.Clamp(Mathf.RoundToInt(height), 1, worldHeight - 1);
-    }
-
-    private static float FractalPerlin(
-        float x,
-        float z,
-        float scale,
-        int octaves,
-        float persistence)
-    {
-        float total = 0f;
-        float amplitude = 1f;
-        float frequency = 1f;
-        float maxAmplitude = 0f;
-
-        for (int i = 0; i < Mathf.Max(1, octaves); i++)
-        {
-            total += Mathf.PerlinNoise(
-                x * scale * frequency,
-                z * scale * frequency) * amplitude;
-
-            maxAmplitude += amplitude;
-            amplitude *= persistence;
-            frequency *= 2f;
-        }
-
-        return maxAmplitude > 0f ? total / maxAmplitude : 0.5f;
     }
 
     public TreeData GenerateTreeData(ChunkData data, Vector3Int mapSeedOffset)
