@@ -1,81 +1,107 @@
 using UnityEngine;
 
 /// <summary>
-/// Replaces exposed stone with classic-style top/filler blocks without flattening
-/// 3D density terrain. Gravel is intentionally omitted until BlockType supports it.
+/// Beta 1.7.3 replaceBlocksForBiome-style surface pass. Runs once per chunk so
+/// JavaRandom consumption follows the historical x/z/y traversal order.
+/// Gravel and sandstone substitutions are deferred until those BlockTypes exist.
 /// </summary>
 public static class BetaSurfaceDecorator
 {
-    public static void DecorateColumn(ChunkData data, int x, int z, Vector3Int seedOffset)
+    public static void DecorateChunk(ChunkData data, Beta173Terrain terrain)
     {
-        int worldX = data.worldPos.x + x;
-        int worldZ = data.worldPos.z + z;
+        int chunkX = FloorDiv(data.worldPos.x, 16);
+        int chunkZ = FloorDiv(data.worldPos.z, 16);
+        long chunkSeed = unchecked((long)chunkX * 341873128712L + (long)chunkZ * 132897987541L);
+        var random = new JavaRandom(chunkSeed);
 
-        // Deterministic column random for the irregular Beta bedrock floor.
-        long columnSeed = unchecked(
-            ((long)worldX * 341873128712L) ^
-            ((long)worldZ * 132897987541L) ^
-            ((long)seedOffset.x << 32) ^
-            (uint)seedOffset.z);
-        var random = new JavaRandom(columnSeed);
+        terrain.GenerateSurfaceNoise(data.worldPos.x, data.worldPos.z,
+            out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise);
 
-        // Beta's bottom bedrock is uneven rather than a perfectly flat layer.
-        for (int y = 0; y < 5 && y < data.worldRef.worldHeight; y++)
+        // Reference order is local Z outer, local X inner. Noise index is X + Z*16.
+        for (int z = 0; z < 16; z++)
+        for (int x = 0; x < 16; x++)
         {
-            if (y <= random.NextInt(5))
-                data.SetBlock(new Vector3Int(x, y, z), BlockType.Bedrock);
-        }
+            int noiseIndex = x + z * 16;
+            bool sandPatch = sandNoise[noiseIndex] + random.NextDouble() * 0.2 > 0.0;
+            bool gravelPatch = gravelNoise[noiseIndex] + random.NextDouble() * 0.2 > 3.0;
+            int thickness = (int)(stoneNoise[noiseIndex] / 3.0 + 3.0 + random.NextDouble() * 0.25);
+            int remaining = -1;
+            BlockType top = BlockType.Grass;
+            BlockType filler = BlockType.Dirt;
 
-        int depthRemaining = -1;
-        BlockType filler = BlockType.Dirt;
-
-        // Walk downward so every stone surface exposed to air/water gets a proper
-        // top and filler layer while overhangs and internal voids remain intact.
-        for (int y = Beta173Terrain.TerrainHeight - 1; y >= 0; y--)
-        {
-            var pos = new Vector3Int(x, y, z);
-            BlockType current = data.GetBlock(pos).type;
-
-            if (current == BlockType.Air || current == BlockType.Water)
+            for (int y = 127; y >= 0; y--)
             {
-                depthRemaining = -1;
-                continue;
-            }
+                var pos = new Vector3Int(x, y, z);
 
-            if (current != BlockType.Stone)
-                continue;
-
-            if (depthRemaining == -1)
-            {
-                bool underwater = y < Beta173Terrain.SeaLevel;
-                bool beachBand = y >= Beta173Terrain.SeaLevel - 2 &&
-                                 y <= Beta173Terrain.SeaLevel + 1;
-
-                BlockType top;
-                int fillerDepth;
-
-                if (underwater || beachBand)
+                if (y <= random.NextInt(5))
                 {
-                    top = BlockType.Sand;
-                    filler = BlockType.Sand;
-                    fillerDepth = 3;
-                }
-                else
-                {
-                    top = BlockType.Grass;
-                    filler = BlockType.Dirt;
-                    // Classic surface thickness wanders around a few blocks.
-                    fillerDepth = 3 + random.NextInt(2);
+                    data.SetBlock(pos, BlockType.Bedrock);
+                    continue;
                 }
 
-                data.SetBlock(pos, top);
-                depthRemaining = fillerDepth;
-            }
-            else if (depthRemaining > 0)
-            {
-                data.SetBlock(pos, filler);
-                depthRemaining--;
+                BlockType block = data.GetBlock(pos).type;
+                if (block == BlockType.Air)
+                {
+                    remaining = -1;
+                    continue;
+                }
+                if (block != BlockType.Stone)
+                    continue;
+
+                if (remaining == -1)
+                {
+                    if (thickness <= 0)
+                    {
+                        top = BlockType.Air;
+                        filler = BlockType.Stone;
+                    }
+                    else if (y >= SeaBandMin && y <= SeaBandMax)
+                    {
+                        top = BlockType.Grass;
+                        filler = BlockType.Dirt;
+
+                        // Beta gives gravel priority first, then sand. This project
+                        // has no Gravel BlockType yet, so preserve the RNG/noise
+                        // decision but leave the biome material in its place.
+                        if (gravelPatch)
+                            top = BlockType.Air;
+
+                        if (sandPatch)
+                        {
+                            top = BlockType.Sand;
+                            filler = BlockType.Sand;
+                        }
+                    }
+
+                    if (y < Beta173Terrain.SeaLevel && top == BlockType.Air)
+                        top = BlockType.Water;
+
+                    remaining = thickness;
+                    data.SetBlock(pos, y >= Beta173Terrain.SeaLevel - 1 ? top : filler);
+                }
+                else if (remaining > 0)
+                {
+                    remaining--;
+                    data.SetBlock(pos, filler);
+                    // Exact Beta changes exhausted sand filler to sandstone here.
+                    // Keep sand until Sandstone exists in BlockType.
+                    if (remaining == 0 && filler == BlockType.Sand)
+                    {
+                        _ = random.NextInt(4); // preserve RNG state exactly
+                    }
+                }
             }
         }
+    }
+
+    private const int SeaBandMin = Beta173Terrain.SeaLevel - 4;
+    private const int SeaBandMax = Beta173Terrain.SeaLevel + 1;
+
+    private static int FloorDiv(int value, int divisor)
+    {
+        int result = value / divisor;
+        int remainder = value % divisor;
+        if (remainder != 0 && ((remainder < 0) != (divisor < 0))) result--;
+        return result;
     }
 }
