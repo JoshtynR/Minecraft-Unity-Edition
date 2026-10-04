@@ -33,7 +33,6 @@ public sealed class Beta173Caves
 
     private static long MakeOdd(long value)
     {
-        // Java integer division truncates toward zero, as does C#.
         return unchecked(value / 2L * 2L + 1L);
     }
 
@@ -190,8 +189,13 @@ public sealed class Beta173Caves
 
                         if (block == BlockType.Stone || block == BlockType.Dirt || block == BlockType.Grass)
                         {
-                            chunk.SetBlock(pos, ly < 10 ? BlockType.Lava : BlockType.Air);
-                            if (foundGrass && ly > 0)
+                            // Beta uses lava below Y=10. Until Lava has a registered
+                            // BlockTypeData/texture in this project, leave solid stone
+                            // there rather than indexing past BlockDataManager's array.
+                            if (ly >= 10)
+                                chunk.SetBlock(pos, BlockType.Air);
+
+                            if (ly >= 10 && foundGrass && ly > 0)
                             {
                                 var below = new Vector3Int(lx, ly - 1, lz);
                                 if (chunk.GetBlock(below).type == BlockType.Dirt)
