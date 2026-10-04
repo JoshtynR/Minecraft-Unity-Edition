@@ -16,4 +16,7 @@ public enum BlockType
     GlowStone,
     WoodenSlab,
     Bedrock,
+    Gravel,
+    Sandstone,
+    Lava,
 }
