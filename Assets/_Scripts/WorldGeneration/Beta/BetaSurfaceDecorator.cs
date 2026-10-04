@@ -16,16 +16,23 @@ public static class BetaSurfaceDecorator
         terrain.GenerateSurfaceNoise(data.worldPos.x, data.worldPos.z,
             out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise);
 
-        for (int z = 0; z < 16; z++)
+        // Historical replaceBlocksForBiome traversal is X outer, Z inner.
+        // This order matters because every column consumes JavaRandom values.
         for (int x = 0; x < 16; x++)
+        for (int z = 0; z < 16; z++)
         {
-            int noiseIndex = x + z * 16;
+            // The surface-noise buffers are produced in the same sequential
+            // X-major order as NoiseGeneratorPerlin's generation loops.
+            int noiseIndex = x * 16 + z;
             bool sandPatch = sandNoise[noiseIndex] + random.NextDouble() * 0.2 > 0.0;
             bool gravelPatch = gravelNoise[noiseIndex] + random.NextDouble() * 0.2 > 3.0;
             int thickness = (int)(stoneNoise[noiseIndex] / 3.0 + 3.0 + random.NextDouble() * 0.25);
             int remaining = -1;
 
-            BetaBiomeType biome = terrain.GetBiome(data.worldPos.x + x, data.worldPos.z + z);
+            // WorldChunkManager stores its 16x16 biome array X-major, while
+            // replaceBlocksForBiome indexes it as x + z * 16. Reproduce that
+            // historical transpose rather than resampling the visible column.
+            BetaBiomeType biome = terrain.GetBiome(data.worldPos.x + z, data.worldPos.z + x);
             BlockType biomeTop = BetaBiome.TopBlock(biome);
             BlockType biomeFiller = BetaBiome.FillerBlock(biome);
             BlockType top = biomeTop;
