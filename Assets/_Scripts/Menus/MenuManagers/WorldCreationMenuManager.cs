@@ -31,6 +31,7 @@ public class WorldCreationMenuManager : MonoBehaviour
         
         WorldSettingsManager.Instance.worldName = worldNameInputField.text;
         WorldSettingsManager.Instance.seedOffset = GenerateSeed(worldSeedInputField.text);
+        WorldSettingsManager.Instance.betaWorldSeed = MinecraftSeed.Parse(worldSeedInputField.text);
         
         if (!multiplayerMode)
         {
