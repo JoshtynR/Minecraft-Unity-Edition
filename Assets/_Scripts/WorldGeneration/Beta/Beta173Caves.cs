@@ -1,31 +1,24 @@
 using System;
 using UnityEngine;
 
-/// <summary>
-/// Clean C# behavioral port of Beta 1.7.3 MapGenBase + MapGenCaves.
-/// Cave math remains in canonical Beta coordinates. Local X is reflected only
-/// when reading/writing the Unity chunk.
-/// </summary>
 public sealed class Beta173Caves
 {
     private const int Range = 8;
+    private const float Pi = 3.1415927f;
+    private const float HalfPi = 1.5707964f;
     private readonly long worldSeed;
 
     public Beta173Caves(long worldSeed) { this.worldSeed = worldSeed; }
 
     public void Generate(ChunkData chunk, int targetChunkX, int targetChunkZ, bool reflectLocalX = false)
     {
-        // Local RNG is intentional: Unity generates chunks in parallel, so a
-        // shared mutable JavaRandom would make cave output scheduling-dependent.
         var random = new JavaRandom(worldSeed);
         long seedX = MakeOdd(random.NextLong());
         long seedZ = MakeOdd(random.NextLong());
-
         for (int sourceChunkX = targetChunkX - Range; sourceChunkX <= targetChunkX + Range; sourceChunkX++)
         for (int sourceChunkZ = targetChunkZ - Range; sourceChunkZ <= targetChunkZ + Range; sourceChunkZ++)
         {
-            long seed = unchecked((long)sourceChunkX * seedX + (long)sourceChunkZ * seedZ) ^ worldSeed;
-            random.SetSeed(seed);
+            random.SetSeed(unchecked((long)sourceChunkX * seedX + (long)sourceChunkZ * seedZ) ^ worldSeed);
             GenerateFromSource(chunk, random, sourceChunkX, sourceChunkZ, targetChunkX, targetChunkZ, reflectLocalX);
         }
     }
@@ -38,7 +31,6 @@ public sealed class Beta173Caves
     {
         int caveCount = random.NextInt(random.NextInt(random.NextInt(40) + 1) + 1);
         if (random.NextInt(15) != 0) caveCount = 0;
-
         for (int i = 0; i < caveCount; i++)
         {
             double x = sourceChunkX * 16 + random.NextInt(16);
@@ -53,7 +45,7 @@ public sealed class Beta173Caves
             }
             for (int tunnel = 0; tunnel < tunnels; tunnel++)
             {
-                float yaw = random.NextFloat() * Mathf.PI * 2.0f;
+                float yaw = random.NextFloat() * Pi * 2.0f;
                 float pitch = (random.NextFloat() - 0.5f) * 2.0f / 8.0f;
                 float width = random.NextFloat() * 2.0f + random.NextFloat();
                 CarveTunnel(chunk, random, targetChunkX, targetChunkZ, x, y, z,
@@ -68,15 +60,13 @@ public sealed class Beta173Caves
     {
         double centerX = chunkX * 16 + 8;
         double centerZ = chunkZ * 16 + 8;
-        float yawVelocity = 0.0f;
-        float pitchVelocity = 0.0f;
+        float yawVelocity = 0.0f, pitchVelocity = 0.0f;
         var localRandom = new JavaRandom(parentRandom.NextLong());
         if (maxSteps <= 0)
         {
             int distance = Range * 16 - 16;
             maxSteps = distance - localRandom.NextInt(distance / 4);
         }
-
         bool room = false;
         if (step == -1) { step = maxSteps / 2; room = true; }
         int branchStep = localRandom.NextInt(maxSteps / 2) + maxSteps / 4;
@@ -84,12 +74,14 @@ public sealed class Beta173Caves
 
         for (; step < maxSteps; step++)
         {
-            double radiusXZ = 1.5 + Math.Sin(step * Math.PI / maxSteps) * width;
+            float angle = (float)step * Pi / (float)maxSteps;
+            double radiusXZ = 1.5 + BetaMathHelper.Sin(angle) * width;
             double radiusY = radiusXZ * verticalScale;
-            float cosPitch = Mathf.Cos(pitch);
-            x += Mathf.Cos(yaw) * cosPitch;
-            y += Mathf.Sin(pitch);
-            z += Mathf.Sin(yaw) * cosPitch;
+            float cosPitch = BetaMathHelper.Cos(pitch);
+            float sinPitch = BetaMathHelper.Sin(pitch);
+            x += BetaMathHelper.Cos(yaw) * cosPitch;
+            y += sinPitch;
+            z += BetaMathHelper.Sin(yaw) * cosPitch;
             pitch *= gentlePitch ? 0.92f : 0.7f;
             pitch += pitchVelocity * 0.1f;
             yaw += yawVelocity * 0.1f;
@@ -101,10 +93,10 @@ public sealed class Beta173Caves
             if (!room && step == branchStep && width > 1.0f)
             {
                 CarveTunnel(chunk, localRandom, chunkX, chunkZ, x, y, z,
-                    localRandom.NextFloat() * 0.5f + 0.5f, yaw - Mathf.PI / 2.0f,
+                    localRandom.NextFloat() * 0.5f + 0.5f, yaw - HalfPi,
                     pitch / 3.0f, step, maxSteps, 1.0, reflectLocalX);
                 CarveTunnel(chunk, localRandom, chunkX, chunkZ, x, y, z,
-                    localRandom.NextFloat() * 0.5f + 0.5f, yaw + Mathf.PI / 2.0f,
+                    localRandom.NextFloat() * 0.5f + 0.5f, yaw + HalfPi,
                     pitch / 3.0f, step, maxSteps, 1.0, reflectLocalX);
                 return;
             }
@@ -117,12 +109,12 @@ public sealed class Beta173Caves
             if (x < centerX - 16.0 - radiusXZ * 2.0 || z < centerZ - 16.0 - radiusXZ * 2.0 ||
                 x > centerX + 16.0 + radiusXZ * 2.0 || z > centerZ + 16.0 + radiusXZ * 2.0) continue;
 
-            int minX = Mathf.Max(Mathf.FloorToInt((float)(x - radiusXZ)) - chunkX * 16 - 1, 0);
-            int maxX = Mathf.Min(Mathf.FloorToInt((float)(x + radiusXZ)) - chunkX * 16 + 1, 16);
-            int minY = Mathf.Max(Mathf.FloorToInt((float)(y - radiusY)) - 1, 1);
-            int maxY = Mathf.Min(Mathf.FloorToInt((float)(y + radiusY)) + 1, 120);
-            int minZ = Mathf.Max(Mathf.FloorToInt((float)(z - radiusXZ)) - chunkZ * 16 - 1, 0);
-            int maxZ = Mathf.Min(Mathf.FloorToInt((float)(z + radiusXZ)) - chunkZ * 16 + 1, 16);
+            int minX = Math.Max(BetaMathHelper.Floor(x - radiusXZ) - chunkX * 16 - 1, 0);
+            int maxX = Math.Min(BetaMathHelper.Floor(x + radiusXZ) - chunkX * 16 + 1, 16);
+            int minY = Math.Max(BetaMathHelper.Floor(y - radiusY) - 1, 1);
+            int maxY = Math.Min(BetaMathHelper.Floor(y + radiusY) + 1, 120);
+            int minZ = Math.Max(BetaMathHelper.Floor(z - radiusXZ) - chunkZ * 16 - 1, 0);
+            int maxZ = Math.Min(BetaMathHelper.Floor(z + radiusXZ) - chunkZ * 16 + 1, 16);
 
             bool hitsWater = false;
             for (int bx = minX; !hitsWater && bx < maxX; bx++)
@@ -130,9 +122,10 @@ public sealed class Beta173Caves
             for (int by = maxY + 1; !hitsWater && by >= minY - 1; by--)
             {
                 int ux = UnityX(bx, reflectLocalX);
-                if (by >= 0 && by < Beta173Terrain.TerrainHeight &&
-                    chunk.GetBlock(new Vector3Int(ux, by, bz)).type == BlockType.Water) hitsWater = true;
-                if (by != minY - 1 && bx != minX && bx != maxX - 1 && bz != minZ && bz != maxZ - 1) by = minY;
+                if (by >= 0 && by < 128 && chunk.GetBlock(new Vector3Int(ux, by, bz)).type == BlockType.Water)
+                    hitsWater = true;
+                if (by != minY - 1 && bx != minX && bx != maxX - 1 && bz != minZ && bz != maxZ - 1)
+                    by = minY;
             }
             if (hitsWater) continue;
 
@@ -154,11 +147,19 @@ public sealed class Beta173Caves
                         if (block == BlockType.Grass) foundGrass = true;
                         if (block == BlockType.Stone || block == BlockType.Dirt || block == BlockType.Grass)
                         {
-                            chunk.SetBlock(pos, by < 10 ? BlockType.Lava : BlockType.Air);
-                            if (foundGrass && by > 0)
+                            if (by < 10)
                             {
-                                var below = new Vector3Int(ux, by - 1, bz);
-                                if (chunk.GetBlock(below).type == BlockType.Dirt) chunk.SetBlock(below, BlockType.Grass);
+                                chunk.SetBlock(pos, BlockType.Lava);
+                            }
+                            else
+                            {
+                                chunk.SetBlock(pos, BlockType.Air);
+                                if (foundGrass && by > 0)
+                                {
+                                    var below = new Vector3Int(ux, by - 1, bz);
+                                    if (chunk.GetBlock(below).type == BlockType.Dirt)
+                                        chunk.SetBlock(below, BlockType.Grass);
+                                }
                             }
                         }
                     }
