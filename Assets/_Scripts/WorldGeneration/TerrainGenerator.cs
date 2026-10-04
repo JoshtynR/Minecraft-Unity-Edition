@@ -20,6 +20,7 @@ public class TerrainGenerator : MonoBehaviour
     [Tooltip("Generate terrain from a 3D Beta-style density field instead of the legacy heightmap.")]
     public bool useBetaDensityTerrain = true;
     private Beta173Terrain betaTerrain;
+    private long betaTerrainSeed = long.MinValue;
 
     [SerializeField]  private List<BiomeData> biomeGeneratorsData = new List<BiomeData>();
 
@@ -33,8 +34,12 @@ public class TerrainGenerator : MonoBehaviour
         bool[,,] betaSolidMask = null;
         if (useBetaDensityTerrain)
         {
-            long betaSeed = ((long)mapSeedOffset.x << 32) ^ (uint)mapSeedOffset.z;
-            betaTerrain ??= new Beta173Terrain(betaSeed);
+            long betaSeed = data.worldRef.betaWorldSeed;
+            if (betaTerrain == null || betaTerrainSeed != betaSeed)
+            {
+                betaTerrain = new Beta173Terrain(betaSeed);
+                betaTerrainSeed = betaSeed;
+            }
             betaSolidMask = betaTerrain.GenerateSolidMask(data.worldPos.x, data.worldPos.z);
         }
 
