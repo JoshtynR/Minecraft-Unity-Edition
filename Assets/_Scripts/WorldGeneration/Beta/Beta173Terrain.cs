@@ -33,6 +33,12 @@ public sealed class Beta173Terrain
         climate = new BetaClimate(seed);
     }
 
+    public BetaBiomeType GetBiome(int worldX, int worldZ)
+    {
+        climate.Sample(worldX, worldZ, out double temperature, out double humidity);
+        return BetaBiome.FromClimate(temperature, humidity);
+    }
+
     public void GenerateSurfaceNoise(int chunkWorldX, int chunkWorldZ,
         out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise)
     {
