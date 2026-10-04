@@ -1,47 +1,42 @@
 using UnityEngine;
 
 /// <summary>
-/// Beta 1.7.3 replaceBlocksForBiome surface pass. Runs once per chunk so
-/// JavaRandom consumption follows the historical traversal order.
+/// Beta 1.7.3 replaceBlocksForBiome surface pass. All noise/RNG work happens
+/// in canonical Beta coordinates; block writes cross the coordinate boundary
+/// only when addressing the Unity chunk.
 /// </summary>
 public static class BetaSurfaceDecorator
 {
-    public static void DecorateChunk(ChunkData data, Beta173Terrain terrain)
+    public static void DecorateChunk(ChunkData data, Beta173Terrain terrain, int betaChunkX, int betaChunkZ)
     {
-        int chunkX = FloorDiv(data.worldPos.x, 16);
-        int chunkZ = FloorDiv(data.worldPos.z, 16);
-        long chunkSeed = unchecked((long)chunkX * 341873128712L + (long)chunkZ * 132897987541L);
+        long chunkSeed = unchecked((long)betaChunkX * 341873128712L + (long)betaChunkZ * 132897987541L);
         var random = new JavaRandom(chunkSeed);
+        int betaWorldX = betaChunkX * 16;
+        int betaWorldZ = betaChunkZ * 16;
 
-        terrain.GenerateSurfaceNoise(data.worldPos.x, data.worldPos.z,
+        terrain.GenerateSurfaceNoise(betaWorldX, betaWorldZ,
             out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise);
 
-        // Historical replaceBlocksForBiome traversal is X outer, Z inner.
-        // This order matters because every column consumes JavaRandom values.
-        for (int x = 0; x < 16; x++)
-        for (int z = 0; z < 16; z++)
+        for (int betaX = 0; betaX < 16; betaX++)
+        for (int betaZ = 0; betaZ < 16; betaZ++)
         {
-            // The surface-noise buffers are produced in the same sequential
-            // X-major order as NoiseGeneratorPerlin's generation loops.
-            int noiseIndex = x * 16 + z;
+            int noiseIndex = betaX * 16 + betaZ;
             bool sandPatch = sandNoise[noiseIndex] + random.NextDouble() * 0.2 > 0.0;
             bool gravelPatch = gravelNoise[noiseIndex] + random.NextDouble() * 0.2 > 3.0;
             int thickness = (int)(stoneNoise[noiseIndex] / 3.0 + 3.0 + random.NextDouble() * 0.25);
             int remaining = -1;
 
-            // WorldChunkManager stores its 16x16 biome array X-major, while
-            // replaceBlocksForBiome indexes it as x + z * 16. Reproduce that
-            // historical transpose rather than resampling the visible column.
-            BetaBiomeType biome = terrain.GetBiome(data.worldPos.x + z, data.worldPos.z + x);
+            BetaBiomeType biome = terrain.GetBiome(betaWorldX + betaZ, betaWorldZ + betaX);
             BlockType biomeTop = BetaBiome.TopBlock(biome);
             BlockType biomeFiller = BetaBiome.FillerBlock(biome);
             BlockType top = biomeTop;
             BlockType filler = biomeFiller;
+            int unityX = BetaCoordinateSpace.BetaLocalToUnityLocalX(betaX);
+            int unityZ = BetaCoordinateSpace.BetaLocalToUnityLocalZ(betaZ);
 
             for (int y = 127; y >= 0; y--)
             {
-                var pos = new Vector3Int(x, y, z);
-
+                var pos = new Vector3Int(unityX, y, unityZ);
                 if (y <= random.NextInt(5))
                 {
                     data.SetBlock(pos, BlockType.Bedrock);
@@ -54,8 +49,7 @@ public static class BetaSurfaceDecorator
                     remaining = -1;
                     continue;
                 }
-                if (block != BlockType.Stone)
-                    continue;
+                if (block != BlockType.Stone) continue;
 
                 if (remaining == -1)
                 {
@@ -68,13 +62,11 @@ public static class BetaSurfaceDecorator
                     {
                         top = biomeTop;
                         filler = biomeFiller;
-
                         if (gravelPatch)
                         {
                             top = BlockType.Air;
                             filler = BlockType.Gravel;
                         }
-
                         if (sandPatch)
                         {
                             top = BlockType.Sand;
@@ -104,12 +96,4 @@ public static class BetaSurfaceDecorator
 
     private const int SeaBandMin = Beta173Terrain.SeaLevel - 4;
     private const int SeaBandMax = Beta173Terrain.SeaLevel + 1;
-
-    private static int FloorDiv(int value, int divisor)
-    {
-        int result = value / divisor;
-        int remainder = value % divisor;
-        if (remainder != 0 && ((remainder < 0) != (divisor < 0))) result--;
-        return result;
-    }
 }
