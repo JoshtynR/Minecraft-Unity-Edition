@@ -30,6 +30,8 @@ public partial class World : MonoBehaviour
     
     public TerrainGenerator terrainGenerator;
     public Vector3Int mapSeedOffset;
+    [Tooltip("Exact signed 64-bit Minecraft world seed used by Beta terrain generation.")]
+    public long betaWorldSeed;
     
     public bool GenerateMoreChunks = true;
     [Space]
