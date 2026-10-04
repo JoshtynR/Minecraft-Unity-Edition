@@ -42,9 +42,18 @@ public sealed class Beta173Terrain
         out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise)
     {
         const double s = 0.03125;
-        sandNoise = sandGravel.GenerateNoiseOctaves(null, chunkWorldX, chunkWorldZ, 0.0, 16, 16, 1, s, s, 1.0);
-        gravelNoise = sandGravel.GenerateNoiseOctaves(null, chunkWorldX, 109.0134, chunkWorldZ, 16, 1, 16, s, 1.0, s);
-        stoneNoise = stoneDepth.GenerateNoiseOctaves(null, chunkWorldX, chunkWorldZ, 0.0, 16, 16, 1, s * 2.0, s * 2.0, s * 2.0);
+        // Exact replaceBlocksForBiome argument layout. For the two sizeY == 1
+        // calls the reference passes Z as the third (startZ) coordinate; the
+        // middle startY value is irrelevant to NoiseGeneratorPerlin's 2D path.
+        sandNoise = sandGravel.GenerateNoiseOctaves(null,
+            chunkWorldX, chunkWorldZ, 0.0,
+            16, 16, 1, s, s, 1.0);
+        gravelNoise = sandGravel.GenerateNoiseOctaves(null,
+            chunkWorldZ, 109.0134, chunkWorldX,
+            16, 1, 16, s, 1.0, s);
+        stoneNoise = stoneDepth.GenerateNoiseOctaves(null,
+            chunkWorldX, chunkWorldZ, 0.0,
+            16, 16, 1, s * 2.0, s * 2.0, s * 2.0);
     }
 
     public BlockType[,,] GenerateRawTerrain(int chunkWorldX, int chunkWorldZ)
