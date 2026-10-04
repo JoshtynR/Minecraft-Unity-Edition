@@ -14,6 +14,7 @@ public sealed class Beta173Terrain
     private readonly BetaOctaveNoise minLimit;
     private readonly BetaOctaveNoise maxLimit;
     private readonly BetaOctaveNoise selector;
+    private readonly BetaOctaveNoise scale;
     private readonly BetaOctaveNoise depth;
 
     public Beta173Terrain(long seed)
@@ -25,7 +26,7 @@ public sealed class Beta173Terrain
 
         // Advance/create the classic auxiliary generators in their historical order.
         _ = new BetaOctaveNoise(random, 4);
-        _ = new BetaOctaveNoise(random, 10);
+        scale = new BetaOctaveNoise(random, 10);
         depth = new BetaOctaveNoise(random, 16);
         _ = new BetaOctaveNoise(random, 8);
     }
@@ -45,7 +46,14 @@ public sealed class Beta173Terrain
                 double worldX = chunkWorldX + gx * 4;
                 double worldZ = chunkWorldZ + gz * 4;
 
-                double depthValue = depth.Sample(worldX, 0, worldZ, 1.0 / 200.0, 1.0, 1.0 / 200.0);
+                double surfaceValue = scale.Sample(worldX, 10, worldZ, 1.121, 1.0, 1.121);
+                // Temperature/humidity modulation will replace this neutral climate
+                // factor when the Beta climate sampler is wired in.
+                const double climateFactor = 0.75;
+                double surface = (surfaceValue / 512.0 + 0.5) * climateFactor;
+                if (surface > 1.0) surface = 1.0;
+
+                double depthValue = depth.Sample(worldX, 10, worldZ, 200.0, 1.0, 200.0);
                 depthValue /= 8000.0;
                 if (depthValue < 0) depthValue = -depthValue * 0.3;
                 depthValue = depthValue * 3.0 - 2.0;
@@ -54,35 +62,32 @@ public sealed class Beta173Terrain
                     depthValue *= 0.5;
                     depthValue = System.Math.Max(depthValue, -1.0);
                     depthValue /= 2.8;
+                    surface = 0.0;
                 }
                 else
                 {
                     depthValue = System.Math.Min(depthValue, 1.0) / 8.0;
                 }
 
-                // Beta biome root-height/variation normally feeds this section.
-                // Until the project's biomes expose equivalent values, use the
-                // classic neutral plains-like baseline while retaining Beta noise.
-                double variation = 0.1 * 0.9 + 0.1;
-                double rootHeight = (0.1 * 4.0 - 1.0) / 8.0;
-                rootHeight += depthValue * 0.2;
-                rootHeight = rootHeight * 8.5 / 8.0;
-                double center = 8.5 + rootHeight * 4.0;
+                if (surface < 0.0) surface = 0.0;
+                surface += 0.5;
+                depthValue = depthValue * 17.0 / 16.0;
+                double center = 17.0 / 2.0 + depthValue * 4.0;
 
                 for (int gy = 0; gy < gridY; gy++)
                 {
                     // The classic algorithm used 33 samples over 256-height-era
                     // storage; for Beta's 128 terrain band we sample every 8 blocks.
-                    double vertical = (gy - center) * 12.0 / variation;
+                    double vertical = (gy - center) * 12.0 / surface;
                     if (vertical < 0) vertical *= 4.0;
 
                     double y = gy * 8.0;
                     double low = minLimit.Sample(worldX, y, worldZ,
-                        1.0 / 684.412, 1.0 / 684.412, 1.0 / 684.412) / 512.0;
+                        684.412, 684.412, 684.412) / 512.0;
                     double high = maxLimit.Sample(worldX, y, worldZ,
-                        1.0 / 684.412, 1.0 / 684.412, 1.0 / 684.412) / 512.0;
+                        684.412, 684.412, 684.412) / 512.0;
                     double blend = (selector.Sample(worldX, y, worldZ,
-                        1.0 / 8.55515, 1.0 / 4.277575, 1.0 / 8.55515) / 10.0 + 1.0) * 0.5;
+                        8.55515, 4.277575, 8.55515) / 10.0 + 1.0) * 0.5;
                     blend = System.Math.Max(0.0, System.Math.Min(1.0, blend));
 
                     double value = low + (high - low) * blend - vertical;
