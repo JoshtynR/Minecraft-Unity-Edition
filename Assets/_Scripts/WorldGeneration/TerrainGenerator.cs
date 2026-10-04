@@ -16,6 +16,9 @@ public class TerrainGenerator : MonoBehaviour
     public DomainWarping domainWarping;
     [Tooltip("Inverse Distance Weighting")]
     public bool useIDW = true;
+    [Header("Terrain Generation")]
+    [Tooltip("Generate terrain from a 3D Beta-style density field instead of the legacy heightmap.")]
+    public bool useBetaDensityTerrain = true;
 
     [SerializeField]  private List<BiomeData> biomeGeneratorsData = new List<BiomeData>();
 
@@ -30,9 +33,16 @@ public class TerrainGenerator : MonoBehaviour
         {
             for (var z = 0; z < data.chunkSize; z++)
             {
-                biomeSelection = SelectBiomeGeneratorWeight( new Vector3Int(data.worldPos.x + x, 0, data.worldPos.z + z), data);
+                biomeSelection = SelectBiomeGeneratorWeight(new Vector3Int(data.worldPos.x + x, 0, data.worldPos.z + z), data);
                 //TODO: processChunkColumn is very slow, need to optimize it
-                data = biomeSelection.biomeGenerator.ProcessChunkColumn(data, x, z, mapSeedOffset, biomeSelection.terrainSurfaceNoise);
+                if (useBetaDensityTerrain)
+                {
+                    data = biomeSelection.biomeGenerator.ProcessBetaDensityColumn(data, x, z, mapSeedOffset);
+                }
+                else
+                {
+                    data = biomeSelection.biomeGenerator.ProcessChunkColumn(data, x, z, mapSeedOffset, biomeSelection.terrainSurfaceNoise);
+                }
             }
         }
 
