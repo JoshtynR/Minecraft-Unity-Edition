@@ -24,6 +24,11 @@ public sealed class JavaRandom
         return (int)((ulong)seed >> (48 - bits));
     }
 
+    public int NextInt()
+    {
+        return NextBits(32);
+    }
+
     public int NextInt(int bound)
     {
         if (bound <= 0) throw new ArgumentOutOfRangeException(nameof(bound));
@@ -37,6 +42,22 @@ public sealed class JavaRandom
             value = bits % bound;
         } while (bits - value + (bound - 1) < 0);
         return value;
+    }
+
+    public long NextLong()
+    {
+        // java.util.Random.nextLong(): ((long)next(32) << 32) + next(32)
+        return unchecked(((long)NextInt() << 32) + (uint)NextInt());
+    }
+
+    public bool NextBoolean()
+    {
+        return NextBits(1) != 0;
+    }
+
+    public float NextFloat()
+    {
+        return NextBits(24) / ((float)(1 << 24));
     }
 
     public double NextDouble()
