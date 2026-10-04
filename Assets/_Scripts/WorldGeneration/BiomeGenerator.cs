@@ -27,42 +27,26 @@ public class BiomeGenerator : MonoBehaviour
 
     public ChunkData ProcessBetaDensityColumn(ChunkData data, int x, int z, Vector3Int mapSeedOffset, bool[,,] solidMask)
     {
-        int topSolidY = -1;
         var localPos = new Vector3Int(x, 0, z);
-        int worldX = data.worldPos.x + x;
-        int worldZ = data.worldPos.z + z;
 
-        // First pass: true 3D density. This establishes stone/air without
-        // allowing the legacy heightmap handlers to fill overhangs back in.
+        // First pass: write the authentic 3D density mask. Do not call the
+        // legacy heightmap layer chain here; it would fill overhangs back in.
         for (int y = 0; y < data.worldRef.worldHeight; y++)
         {
             localPos.y = y;
             bool solid = y < Beta173Terrain.TerrainHeight && solidMask[x, y, z];
 
             if (solid)
-            {
                 data.SetBlock(localPos, BlockType.Stone);
-                topSolidY = y;
-            }
             else if (y < Beta173Terrain.SeaLevel)
-            {
                 data.SetBlock(localPos, BlockType.Water);
-            }
             else
-            {
                 data.SetBlock(localPos, BlockType.Air);
-            }
         }
 
-        // Surface decoration is deliberately conservative for the first pass:
-        // only the highest exposed solid block gets the biome's existing
-        // surface/subsurface treatment. Internal overhang geometry remains intact.
-        if (topSolidY >= 0)
-        {
-            var worldPos = new Vector3Int(worldX, topSolidY, worldZ);
-            localPos.y = topSolidY;
-            startLayerHandler.Handle(data, worldPos, localPos, topSolidY, mapSeedOffset);
-        }
+        // Second pass: replace exposed stone with grass/dirt/sand and bedrock
+        // without reducing the terrain back to one height value per column.
+        BetaSurfaceDecorator.DecorateColumn(data, x, z, mapSeedOffset);
 
         return data;
     }
