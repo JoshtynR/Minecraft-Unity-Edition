@@ -26,8 +26,12 @@ public static class BetaSurfaceDecorator
             bool gravelPatch = gravelNoise[noiseIndex] + random.NextDouble() * 0.2 > 3.0;
             int thickness = (int)(stoneNoise[noiseIndex] / 3.0 + 3.0 + random.NextDouble() * 0.25);
             int remaining = -1;
-            BlockType top = BlockType.Grass;
-            BlockType filler = BlockType.Dirt;
+
+            BetaBiomeType biome = terrain.GetBiome(data.worldPos.x + x, data.worldPos.z + z);
+            BlockType biomeTop = BetaBiome.TopBlock(biome);
+            BlockType biomeFiller = BetaBiome.FillerBlock(biome);
+            BlockType top = biomeTop;
+            BlockType filler = biomeFiller;
 
             for (int y = 127; y >= 0; y--)
             {
@@ -57,12 +61,11 @@ public static class BetaSurfaceDecorator
                     }
                     else if (y >= SeaBandMin && y <= SeaBandMax)
                     {
-                        top = BlockType.Grass;
-                        filler = BlockType.Dirt;
+                        top = biomeTop;
+                        filler = biomeFiller;
 
-                        // Beta gives gravel priority first, then sand. This project
-                        // has no Gravel BlockType yet, so preserve the RNG/noise
-                        // decision but leave the biome material in its place.
+                        // Beta gives gravel priority first, then sand. Gravel is
+                        // not represented by this project's BlockType yet.
                         if (gravelPatch)
                             top = BlockType.Air;
 
@@ -84,11 +87,9 @@ public static class BetaSurfaceDecorator
                     remaining--;
                     data.SetBlock(pos, filler);
                     // Exact Beta changes exhausted sand filler to sandstone here.
-                    // Keep sand until Sandstone exists in BlockType.
+                    // Preserve its random call until Sandstone exists in BlockType.
                     if (remaining == 0 && filler == BlockType.Sand)
-                    {
-                        _ = random.NextInt(4); // preserve RNG state exactly
-                    }
+                        _ = random.NextInt(4);
                 }
             }
         }
