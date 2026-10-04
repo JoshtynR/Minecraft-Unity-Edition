@@ -20,8 +20,13 @@ public class BiomeGenerator : MonoBehaviour
         for (int y = 0; y < data.worldRef.worldHeight; y++)
         {
             localPos.y = y;
+
+            // Minecraft's historical chunk byte layout and this Unity project's
+            // local X/Z mesh layout are transposed relative to one another.
+            // Keep the Beta generator in native Minecraft coordinates and do
+            // the conversion only when copying blocks into the Unity chunk.
             BlockType block = y < Beta173Terrain.TerrainHeight
-                ? rawTerrain[x, y, z]
+                ? rawTerrain[z, y, x]
                 : BlockType.Air;
             data.SetBlock(localPos, block);
         }
