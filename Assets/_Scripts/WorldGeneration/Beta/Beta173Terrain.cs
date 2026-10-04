@@ -1,22 +1,11 @@
 using UnityEngine;
 
-/// <summary>
-/// Clean-room Beta 1.7.3 terrain implementation based on the historical
-/// generator behaviour. Keeps the original 128-block terrain volume and
-/// 64-block sea level inside this project's taller world.
-/// </summary>
+/// <summary>Clean-room Beta 1.7.3 terrain generator.</summary>
 public sealed class Beta173Terrain
 {
     public const int TerrainHeight = 128;
     public const int SeaLevel = 64;
-
-    private readonly BetaOctaveNoise minLimit;
-    private readonly BetaOctaveNoise maxLimit;
-    private readonly BetaOctaveNoise selector;
-    private readonly BetaOctaveNoise sandGravel;
-    private readonly BetaOctaveNoise stoneDepth;
-    private readonly BetaOctaveNoise scale;
-    private readonly BetaOctaveNoise depth;
+    private readonly BetaOctaveNoise minLimit, maxLimit, selector, sandGravel, stoneDepth, scale, depth;
     private readonly BetaClimate climate;
 
     public Beta173Terrain(long seed)
@@ -29,7 +18,7 @@ public sealed class Beta173Terrain
         stoneDepth = new BetaOctaveNoise(random, 4);
         scale = new BetaOctaveNoise(random, 10);
         depth = new BetaOctaveNoise(random, 16);
-        _ = new BetaOctaveNoise(random, 8); // mobSpawnerNoise
+        _ = new BetaOctaveNoise(random, 8);
         climate = new BetaClimate(seed);
     }
 
@@ -42,56 +31,27 @@ public sealed class Beta173Terrain
     public void GenerateSurfaceNoise(int chunkWorldX, int chunkWorldZ,
         out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise)
     {
-        const double scaleValue = 0.03125;
-
-        // replaceBlocksForBiome uses generateNoiseOctaves(x, z, 0, 16,16,1)
-        // for sand/stone. In NoiseGeneratorPerlin's storage order that means
-        // the second source coordinate is the Y input and the third is Z.
-        sandNoise = sandGravel.GenerateNoiseOctaves(null,
-            chunkWorldX, chunkWorldZ, 0.0,
-            16, 16, 1, scaleValue, scaleValue, 1.0);
-        gravelNoise = sandGravel.GenerateNoiseOctaves(null,
-            chunkWorldX, 109.0134, chunkWorldZ,
-            16, 1, 16, scaleValue, 1.0, scaleValue);
-        stoneNoise = stoneDepth.GenerateNoiseOctaves(null,
-            chunkWorldX, chunkWorldZ, 0.0,
-            16, 16, 1, scaleValue * 2.0, scaleValue * 2.0, scaleValue * 2.0);
+        const double s = 0.03125;
+        sandNoise = sandGravel.GenerateNoiseOctaves(null, chunkWorldX, chunkWorldZ, 0.0, 16, 16, 1, s, s, 1.0);
+        gravelNoise = sandGravel.GenerateNoiseOctaves(null, chunkWorldX, 109.0134, chunkWorldZ, 16, 1, 16, s, 1.0, s);
+        stoneNoise = stoneDepth.GenerateNoiseOctaves(null, chunkWorldX, chunkWorldZ, 0.0, 16, 16, 1, s * 2.0, s * 2.0, s * 2.0);
     }
 
     public BlockType[,,] GenerateRawTerrain(int chunkWorldX, int chunkWorldZ)
     {
-        const int gridX = 5;
-        const int gridZ = 5;
-        const int gridY = 17;
+        const int gridX = 5, gridZ = 5, gridY = 17;
+        climate.SampleRegion(chunkWorldX, chunkWorldZ, 16, 16,
+            out double[] temperatures, out double[] humidities);
 
-        var temperatures = new double[256];
-        var humidities = new double[256];
-        for (int x = 0; x < 16; x++)
-        for (int z = 0; z < 16; z++)
-        {
-            climate.Sample(chunkWorldX + x, chunkWorldZ + z,
-                out double temperature, out double humidity);
-            temperatures[x * 16 + z] = temperature;
-            humidities[x * 16 + z] = humidity;
-        }
-
-        int coarseX = FloorDiv(chunkWorldX, 4);
-        int coarseZ = FloorDiv(chunkWorldZ, 4);
-
+        int coarseX = FloorDiv(chunkWorldX, 4), coarseZ = FloorDiv(chunkWorldZ, 4);
         double[] scaleNoise = scale.Generate2D(null, coarseX, coarseZ, gridX, gridZ, 1.121, 1.121);
         double[] depthNoise = depth.Generate2D(null, coarseX, coarseZ, gridX, gridZ, 200.0, 200.0);
-        double[] selectorNoise = selector.GenerateNoiseOctaves(null, coarseX, 0.0, coarseZ,
-            gridX, gridY, gridZ, 684.412 / 80.0, 684.412 / 160.0, 684.412 / 80.0);
-        double[] minNoise = minLimit.GenerateNoiseOctaves(null, coarseX, 0.0, coarseZ,
-            gridX, gridY, gridZ, 684.412, 684.412, 684.412);
-        double[] maxNoise = maxLimit.GenerateNoiseOctaves(null, coarseX, 0.0, coarseZ,
-            gridX, gridY, gridZ, 684.412, 684.412, 684.412);
+        double[] selectorNoise = selector.GenerateNoiseOctaves(null, coarseX, 0.0, coarseZ, gridX, gridY, gridZ, 684.412 / 80.0, 684.412 / 160.0, 684.412 / 80.0);
+        double[] minNoise = minLimit.GenerateNoiseOctaves(null, coarseX, 0.0, coarseZ, gridX, gridY, gridZ, 684.412, 684.412, 684.412);
+        double[] maxNoise = maxLimit.GenerateNoiseOctaves(null, coarseX, 0.0, coarseZ, gridX, gridY, gridZ, 684.412, 684.412, 684.412);
 
         var density = new double[gridX, gridY, gridZ];
-        int densityIndex = 0;
-        int columnIndex = 0;
-        int sampleStride = 16 / gridX;
-
+        int densityIndex = 0, columnIndex = 0, sampleStride = 16 / gridX;
         for (int gx = 0; gx < gridX; gx++)
         {
             int climateX = gx * sampleStride + sampleStride / 2;
@@ -100,40 +60,25 @@ public sealed class Beta173Terrain
                 int climateZ = gz * sampleStride + sampleStride / 2;
                 double temperature = temperatures[climateX * 16 + climateZ];
                 double humidity = humidities[climateX * 16 + climateZ];
-
                 double humidTemp = humidity * temperature;
-                double aridity = 1.0 - humidTemp;
-                aridity *= aridity;
-                aridity *= aridity;
+                double aridity = 1.0 - humidTemp; aridity *= aridity; aridity *= aridity;
                 double climateFactor = 1.0 - aridity;
-
                 double surface = (scaleNoise[columnIndex] + 256.0) / 512.0;
-                surface *= climateFactor;
-                if (surface > 1.0) surface = 1.0;
-
+                surface *= climateFactor; if (surface > 1.0) surface = 1.0;
                 double depthValue = depthNoise[columnIndex] / 8000.0;
                 if (depthValue < 0.0) depthValue = -depthValue * 0.3;
                 depthValue = depthValue * 3.0 - 2.0;
                 if (depthValue < 0.0)
                 {
-                    depthValue /= 2.0;
-                    if (depthValue < -1.0) depthValue = -1.0;
-                    depthValue /= 1.4;
-                    depthValue /= 2.0;
-                    surface = 0.0;
+                    depthValue /= 2.0; if (depthValue < -1.0) depthValue = -1.0;
+                    depthValue /= 1.4; depthValue /= 2.0; surface = 0.0;
                 }
-                else
-                {
-                    if (depthValue > 1.0) depthValue = 1.0;
-                    depthValue /= 8.0;
-                }
-
+                else { if (depthValue > 1.0) depthValue = 1.0; depthValue /= 8.0; }
                 if (surface < 0.0) surface = 0.0;
                 surface += 0.5;
                 depthValue = depthValue * gridY / 16.0;
                 double center = gridY / 2.0 + depthValue * 4.0;
                 columnIndex++;
-
                 for (int gy = 0; gy < gridY; gy++)
                 {
                     double vertical = (gy - center) * 12.0 / surface;
@@ -145,13 +90,10 @@ public sealed class Beta173Terrain
                     value -= vertical;
                     if (gy > gridY - 4)
                     {
-                        // The original performs this part through a float before
-                        // widening back to double. Keep that rounding quirk.
                         double fade = (double)((float)(gy - (gridY - 4)) / 3.0f);
                         value = value * (1.0 - fade) + -10.0 * fade;
                     }
-                    density[gx, gy, gz] = value;
-                    densityIndex++;
+                    density[gx, gy, gz] = value; densityIndex++;
                 }
             }
         }
@@ -161,56 +103,39 @@ public sealed class Beta173Terrain
         for (int cellZ = 0; cellZ < 4; cellZ++)
         for (int cellY = 0; cellY < 16; cellY++)
         {
-            double d000 = density[cellX, cellY, cellZ];
-            double d001 = density[cellX, cellY, cellZ + 1];
-            double d100 = density[cellX + 1, cellY, cellZ];
-            double d101 = density[cellX + 1, cellY, cellZ + 1];
+            double d000 = density[cellX, cellY, cellZ], d001 = density[cellX, cellY, cellZ + 1];
+            double d100 = density[cellX + 1, cellY, cellZ], d101 = density[cellX + 1, cellY, cellZ + 1];
             double dy000 = (density[cellX, cellY + 1, cellZ] - d000) * 0.125;
             double dy001 = (density[cellX, cellY + 1, cellZ + 1] - d001) * 0.125;
             double dy100 = (density[cellX + 1, cellY + 1, cellZ] - d100) * 0.125;
             double dy101 = (density[cellX + 1, cellY + 1, cellZ + 1] - d101) * 0.125;
-
             for (int subY = 0; subY < 8; subY++)
             {
                 double x0z0 = d000, x0z1 = d001;
-                double dxz0 = (d100 - d000) * 0.25;
-                double dxz1 = (d101 - d001) * 0.25;
+                double dxz0 = (d100 - d000) * 0.25, dxz1 = (d101 - d001) * 0.25;
                 for (int subX = 0; subX < 4; subX++)
                 {
-                    double current = x0z0;
-                    double dz = (x0z1 - x0z0) * 0.25;
+                    double current = x0z0, dz = (x0z1 - x0z0) * 0.25;
                     for (int subZ = 0; subZ < 4; subZ++)
                     {
-                        int x = cellX * 4 + subX;
-                        int y = cellY * 8 + subY;
-                        int z = cellZ * 4 + subZ;
-
+                        int x = cellX * 4 + subX, y = cellY * 8 + subY, z = cellZ * 4 + subZ;
                         BlockType block = BlockType.Air;
                         if (y < SeaLevel)
-                        {
-                            double temperature = temperatures[x * 16 + z];
-                            block = temperature < 0.5 && y >= SeaLevel - 1
-                                ? BlockType.Ice
-                                : BlockType.Water;
-                        }
+                            block = temperatures[x * 16 + z] < 0.5 && y >= SeaLevel - 1 ? BlockType.Ice : BlockType.Water;
                         if (current > 0.0) block = BlockType.Stone;
-                        blocks[x, y, z] = block;
-                        current += dz;
+                        blocks[x, y, z] = block; current += dz;
                     }
-                    x0z0 += dxz0;
-                    x0z1 += dxz1;
+                    x0z0 += dxz0; x0z1 += dxz1;
                 }
                 d000 += dy000; d001 += dy001; d100 += dy100; d101 += dy101;
             }
         }
-
         return blocks;
     }
 
     private static int FloorDiv(int value, int divisor)
     {
-        int result = value / divisor;
-        int remainder = value % divisor;
+        int result = value / divisor, remainder = value % divisor;
         if (remainder != 0 && ((remainder < 0) != (divisor < 0))) result--;
         return result;
     }
