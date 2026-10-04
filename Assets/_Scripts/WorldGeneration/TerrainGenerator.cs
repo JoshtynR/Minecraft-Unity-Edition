@@ -5,17 +5,13 @@ public class TerrainGenerator : MonoBehaviour
     public BiomeGenerator biomeGenerator;
     private Beta173Terrain betaTerrain;
     private Beta173Caves betaCaves;
+    private Beta173Population betaPopulation;
     private long betaTerrainSeed = long.MinValue;
 
     public ChunkData GenerateChunkData(ChunkData data, Vector3Int mapSeedOffset)
     {
         long betaSeed = data.worldRef.betaWorldSeed;
-        if (betaTerrain == null || betaTerrainSeed != betaSeed)
-        {
-            betaTerrain = new Beta173Terrain(betaSeed);
-            betaCaves = new Beta173Caves(betaSeed);
-            betaTerrainSeed = betaSeed;
-        }
+        EnsureBetaGenerators(betaSeed);
 
         int unityChunkX = FloorDiv(data.worldPos.x, data.chunkSize);
         int unityChunkZ = FloorDiv(data.worldPos.z, data.chunkSize);
@@ -24,12 +20,8 @@ public class TerrainGenerator : MonoBehaviour
         int betaWorldX = BetaCoordinateSpace.BetaChunkToWorldX(betaChunkX);
         int betaWorldZ = BetaCoordinateSpace.BetaChunkToWorldZ(betaChunkZ);
 
-        // Every Beta subsystem receives the same canonical Beta coordinates.
         BlockType[,,] rawTerrain = betaTerrain.GenerateRawTerrain(betaWorldX, betaWorldZ);
 
-        // Reflect X once at the Beta -> Unity boundary. Unlike the previous
-        // per-chunk transpose attempt, the chunk index is reflected as well,
-        // so neighboring blocks remain neighboring blocks across chunk seams.
         for (int betaLocalX = 0; betaLocalX < data.chunkSize; betaLocalX++)
         for (int betaLocalZ = 0; betaLocalZ < data.chunkSize; betaLocalZ++)
         {
@@ -42,18 +34,33 @@ public class TerrainGenerator : MonoBehaviour
         BetaSurfaceDecorator.DecorateChunk(data, betaTerrain, betaChunkX, betaChunkZ);
         betaCaves.Generate(data, betaChunkX, betaChunkZ, reflectLocalX: true);
 
-        // Temporary legacy tree data until the Beta population pass replaces it.
-        data.treeData = biomeGenerator.GenerateTreeData(data, mapSeedOffset);
+        data.treeData = new TreeData();
         return data;
     }
 
     public void GenerateFeatures(ChunkData data, Vector3Int mapSeedOffset)
     {
-        // Beta population/decorator pass will replace the old feature pipeline.
+        long betaSeed = data.worldRef.betaWorldSeed;
+        EnsureBetaGenerators(betaSeed);
+
+        int unityChunkX = FloorDiv(data.worldPos.x, data.chunkSize);
+        int unityChunkZ = FloorDiv(data.worldPos.z, data.chunkSize);
+        int betaChunkX = BetaCoordinateSpace.UnityChunkToBetaChunkX(unityChunkX);
+        int betaChunkZ = BetaCoordinateSpace.UnityChunkToBetaChunkZ(unityChunkZ);
+        betaPopulation.Populate(data, betaChunkX, betaChunkZ);
     }
 
     public void GenerateBiomePoints(Vector3 playerPos, int renderDistance, int chunkSize, Vector3Int mapSeedOffset)
     {
+    }
+
+    private void EnsureBetaGenerators(long seed)
+    {
+        if (betaTerrain != null && betaTerrainSeed == seed) return;
+        betaTerrain = new Beta173Terrain(seed);
+        betaCaves = new Beta173Caves(seed);
+        betaPopulation = new Beta173Population(seed);
+        betaTerrainSeed = seed;
     }
 
     private static int FloorDiv(int value, int divisor)
