@@ -1,9 +1,7 @@
 using System;
 
 /// <summary>
-/// Beta-era climate sampler. Temperature, humidity and precipitation use
-/// independently seeded 2D simplex octave stacks, matching the old climate
-/// pipeline without replacing this project's biome objects.
+/// Beta 1.7.3 climate sampler using the historical 2D simplex octave path.
 /// </summary>
 public sealed class BetaClimate
 {
@@ -52,15 +50,12 @@ public sealed class BetaClimate
 
         public double Sample(double x, double z, double scaleX, double scaleZ)
         {
-            // NoiseGeneratorOctaves2 divides both coordinate scales by 1.5
-            // before feeding its simplex octaves.
             scaleX /= 1.5;
             scaleZ /= 1.5;
 
             double sum = 0.0;
             double frequency = 1.0;
             double amplitudeDenominator = 1.0;
-
             for (int i = 0; i < octaves.Length; i++)
             {
                 sum += octaves[i].Sample(
@@ -88,9 +83,12 @@ public sealed class BetaClimate
 
         public Simplex2D(JavaRandom random)
         {
+            // NoiseGenerator2 consumes three offsets, but its 2D path uses the
+            // first two (field_4313_a and field_4312_b), not X and Z from the
+            // 3D Perlin convention.
             xo = random.NextDouble() * 256.0;
-            _ = random.NextDouble(); // preserve classic x/y/z offset RNG order
             zo = random.NextDouble() * 256.0;
+            _ = random.NextDouble();
 
             for (int i = 0; i < 256; i++) perm[i] = i;
             for (int i = 0; i < 256; i++)
@@ -103,10 +101,11 @@ public sealed class BetaClimate
 
         public double Sample(double xin, double yin)
         {
-            xin += xo; yin += zo;
+            xin += xo;
+            yin += zo;
             double skew = (xin + yin) * F2;
-            int i = FastFloor(xin + skew);
-            int j = FastFloor(yin + skew);
+            int i = BetaWrap(xin + skew);
+            int j = BetaWrap(yin + skew);
             double unskew = (i + j) * G2;
             double x0 = xin - (i - unskew);
             double y0 = yin - (j - unskew);
@@ -136,6 +135,8 @@ public sealed class BetaClimate
             return t * t * (Grad[gi, 0] * x + Grad[gi, 1] * y);
         }
 
-        private static int FastFloor(double v) => v >= 0 ? (int)v : (int)v - 1;
+        // Preserve NoiseGenerator2.wrap exactly, including its unusual handling
+        // of zero and exact negative integers.
+        private static int BetaWrap(double v) => v > 0.0 ? (int)v : (int)v - 1;
     }
 }
