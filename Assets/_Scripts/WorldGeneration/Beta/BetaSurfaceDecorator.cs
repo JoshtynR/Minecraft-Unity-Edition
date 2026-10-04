@@ -17,16 +17,20 @@ public static class BetaSurfaceDecorator
         terrain.GenerateSurfaceNoise(betaWorldX, betaWorldZ,
             out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise);
 
+        // Beta's replaceBlocksForBiome iterates X outer, Z inner, while the
+        // generated 16x16 arrays are addressed as X + Z * 16.
         for (int betaX = 0; betaX < 16; betaX++)
         for (int betaZ = 0; betaZ < 16; betaZ++)
         {
-            int noiseIndex = betaX * 16 + betaZ;
+            int noiseIndex = betaX + betaZ * 16;
             bool sandPatch = sandNoise[noiseIndex] + random.NextDouble() * 0.2 > 0.0;
             bool gravelPatch = gravelNoise[noiseIndex] + random.NextDouble() * 0.2 > 3.0;
             int thickness = (int)(stoneNoise[noiseIndex] / 3.0 + 3.0 + random.NextDouble() * 0.25);
             int remaining = -1;
 
-            BetaBiomeType biome = terrain.GetBiome(betaWorldX + betaZ, betaWorldZ + betaX);
+            // The biome array used by Beta at this same index corresponds to
+            // the actual X/Z column. Do not transpose the biome coordinates.
+            BetaBiomeType biome = terrain.GetBiome(betaWorldX + betaX, betaWorldZ + betaZ);
             BlockType biomeTop = BetaBiome.TopBlock(biome);
             BlockType biomeFiller = BetaBiome.FillerBlock(biome);
             BlockType top = biomeTop;
