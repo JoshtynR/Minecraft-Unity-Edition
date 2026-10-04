@@ -1,9 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Beta 1.7.3 replaceBlocksForBiome-style surface pass. Runs once per chunk so
-/// JavaRandom consumption follows the historical x/z/y traversal order.
-/// Gravel and sandstone substitutions are deferred until those BlockTypes exist.
+/// Beta 1.7.3 replaceBlocksForBiome surface pass. Runs once per chunk so
+/// JavaRandom consumption follows the historical traversal order.
 /// </summary>
 public static class BetaSurfaceDecorator
 {
@@ -17,7 +16,6 @@ public static class BetaSurfaceDecorator
         terrain.GenerateSurfaceNoise(data.worldPos.x, data.worldPos.z,
             out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise);
 
-        // Reference order is local Z outer, local X inner. Noise index is X + Z*16.
         for (int z = 0; z < 16; z++)
         for (int x = 0; x < 16; x++)
         {
@@ -64,10 +62,11 @@ public static class BetaSurfaceDecorator
                         top = biomeTop;
                         filler = biomeFiller;
 
-                        // Beta gives gravel priority first, then sand. Gravel is
-                        // not represented by this project's BlockType yet.
                         if (gravelPatch)
+                        {
                             top = BlockType.Air;
+                            filler = BlockType.Gravel;
+                        }
 
                         if (sandPatch)
                         {
@@ -86,10 +85,11 @@ public static class BetaSurfaceDecorator
                 {
                     remaining--;
                     data.SetBlock(pos, filler);
-                    // Exact Beta changes exhausted sand filler to sandstone here.
-                    // Preserve its random call until Sandstone exists in BlockType.
                     if (remaining == 0 && filler == BlockType.Sand)
-                        _ = random.NextInt(4);
+                    {
+                        remaining = random.NextInt(4);
+                        filler = BlockType.Sandstone;
+                    }
                 }
             }
         }
