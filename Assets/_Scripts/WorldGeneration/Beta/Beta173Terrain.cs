@@ -28,6 +28,16 @@ public sealed class Beta173Terrain
         return BetaBiome.FromClimate(temperature, humidity);
     }
 
+    public BetaBiomeType[] GenerateBiomeRegion(int worldX, int worldZ, int width, int depthSize)
+    {
+        climate.SampleRegion(worldX, worldZ, width, depthSize,
+            out double[] temperatures, out double[] humidities);
+        var biomes = new BetaBiomeType[width * depthSize];
+        for (int i = 0; i < biomes.Length; i++)
+            biomes[i] = BetaBiome.FromClimate(temperatures[i], humidities[i]);
+        return biomes;
+    }
+
     public void GenerateSurfaceNoise(int chunkWorldX, int chunkWorldZ,
         out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise)
     {
