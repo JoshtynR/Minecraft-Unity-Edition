@@ -14,16 +14,16 @@ public class BiomeGenerator : MonoBehaviour
     public List<Lode> lodes;
     public int extraTerrainHeightPercentage = 0;
 
-    public ChunkData ProcessBetaDensityColumn(ChunkData data, int x, int z, bool[,,] solidMask)
+    public ChunkData ProcessBetaTerrainColumn(ChunkData data, int x, int z, BlockType[,,] rawTerrain)
     {
         var localPos = new Vector3Int(x, 0, z);
         for (int y = 0; y < data.worldRef.worldHeight; y++)
         {
             localPos.y = y;
-            bool solid = y < Beta173Terrain.TerrainHeight && solidMask[x, y, z];
-            if (solid) data.SetBlock(localPos, BlockType.Stone);
-            else if (y < Beta173Terrain.SeaLevel) data.SetBlock(localPos, BlockType.Water);
-            else data.SetBlock(localPos, BlockType.Air);
+            BlockType block = y < Beta173Terrain.TerrainHeight
+                ? rawTerrain[x, y, z]
+                : BlockType.Air;
+            data.SetBlock(localPos, block);
         }
         return data;
     }
