@@ -16,6 +16,7 @@ public sealed class Beta173Terrain
     private readonly BetaOctaveNoise selector;
     private readonly BetaOctaveNoise scale;
     private readonly BetaOctaveNoise depth;
+    private readonly BetaClimate climate;
 
     public Beta173Terrain(long seed)
     {
@@ -29,6 +30,7 @@ public sealed class Beta173Terrain
         scale = new BetaOctaveNoise(random, 10);
         depth = new BetaOctaveNoise(random, 16);
         _ = new BetaOctaveNoise(random, 8);
+        climate = new BetaClimate(seed);
     }
 
     public bool[,,] GenerateSolidMask(int chunkWorldX, int chunkWorldZ)
@@ -47,9 +49,11 @@ public sealed class Beta173Terrain
                 double worldZ = chunkWorldZ + gz * 4;
 
                 double surfaceValue = scale.Sample(worldX, 10, worldZ, 1.121, 1.0, 1.121);
-                // Temperature/humidity modulation will replace this neutral climate
-                // factor when the Beta climate sampler is wired in.
-                const double climateFactor = 0.75;
+                climate.Sample(worldX, worldZ, out double temperature, out double humidity);
+                double aridity = 1.0 - humidity * temperature;
+                aridity *= aridity;
+                aridity *= aridity;
+                double climateFactor = 1.0 - aridity;
                 double surface = (surfaceValue / 512.0 + 0.5) * climateFactor;
                 if (surface > 1.0) surface = 1.0;
 
