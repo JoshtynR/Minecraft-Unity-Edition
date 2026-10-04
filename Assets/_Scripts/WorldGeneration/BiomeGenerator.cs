@@ -25,6 +25,45 @@ public class BiomeGenerator : MonoBehaviour
     
     public int extraTerrainHeightPercentage = 0;
 
+    public ChunkData ProcessBetaDensityColumn(ChunkData data, int x, int z, Vector3Int mapSeedOffset)
+    {
+        int topSolidY = -1;
+        var localPos = new Vector3Int(x, 0, z);
+        int worldX = data.worldPos.x + x;
+        int worldZ = data.worldPos.z + z;
+
+        // First pass: true 3D density. This establishes stone/air without
+        // allowing the legacy heightmap handlers to fill overhangs back in.
+        for (int y = 0; y < data.worldRef.worldHeight; y++)
+        {
+            localPos.y = y;
+            float density = BetaTerrainDensity.Sample(
+                worldX, y, worldZ, data.worldRef.worldHeight, mapSeedOffset);
+
+            if (density > 0f)
+            {
+                data.SetBlock(localPos, BlockType.Stone);
+                topSolidY = y;
+            }
+            else
+            {
+                data.SetBlock(localPos, BlockType.Air);
+            }
+        }
+
+        // Surface decoration is deliberately conservative for the first pass:
+        // only the highest exposed solid block gets the biome's existing
+        // surface/subsurface treatment. Internal overhang geometry remains intact.
+        if (topSolidY >= 0)
+        {
+            var worldPos = new Vector3Int(worldX, topSolidY, worldZ);
+            localPos.y = topSolidY;
+            startLayerHandler.Handle(data, worldPos, localPos, topSolidY, mapSeedOffset);
+        }
+
+        return data;
+    }
+
     public ChunkData ProcessChunkColumn(ChunkData data, int x, int z, Vector3Int mapSeedOffset, int? terrainHeightNoise)
     {
         settings.worldSeedOffset = mapSeedOffset;
