@@ -104,7 +104,6 @@ public sealed class Beta173Caves
 
             double dx = x - centerX, dz = z - centerZ;
             double remaining = maxSteps - step;
-            // Beta performs these additions as floats before widening to double.
             double maxReach = (double)(width + 2.0f + 16.0f);
             if (dx * dx + dz * dz - remaining * remaining > maxReach * maxReach) return;
             if (x < centerX - 16.0 - radiusXZ * 2.0 || z < centerZ - 16.0 - radiusXZ * 2.0 ||
@@ -139,33 +138,36 @@ public sealed class Beta173Caves
                     bool foundGrass = false;
                     if (nx * nx + nz * nz >= 1.0) continue;
 
-                    // Beta's cave routine initializes its linear block-array cursor at maxY,
-                    // while the geometric Y loop starts at maxY - 1. Preserve that one-block
-                    // cursor offset instead of "correcting" it; it affects exact cave blocks.
+                    // Exact Beta array behavior: cursor starts at maxY while geometric
+                    // test starts at maxY-1, so the block read/write is one Y above the
+                    // geometric sample. This is intentional and comes straight from
+                    // MapGenCaves' linear byte-array cursor semantics.
                     for (int by = maxY - 1; by >= minY; by--)
                     {
                         double ny = (by + 0.5 - y) / radiusY;
-                        if (ny <= -0.7 || nx * nx + ny * ny + nz * nz >= 1.0) continue;
-
-                        int ux = UnityX(bx, reflectLocalX);
                         int blockY = by + 1;
-                        var pos = new Vector3Int(ux, blockY, bz);
-                        BlockType block = chunk.GetBlock(pos).type;
-                        if (block == BlockType.Grass) foundGrass = true;
-                        if (block == BlockType.Stone || block == BlockType.Dirt || block == BlockType.Grass)
+
+                        if (ny > -0.7 && nx * nx + ny * ny + nz * nz < 1.0)
                         {
-                            if (by < 10)
+                            int ux = UnityX(bx, reflectLocalX);
+                            var pos = new Vector3Int(ux, blockY, bz);
+                            BlockType block = chunk.GetBlock(pos).type;
+                            if (block == BlockType.Grass) foundGrass = true;
+                            if (block == BlockType.Stone || block == BlockType.Dirt || block == BlockType.Grass)
                             {
-                                chunk.SetBlock(pos, BlockType.Lava);
-                            }
-                            else
-                            {
-                                chunk.SetBlock(pos, BlockType.Air);
-                                if (foundGrass)
+                                if (by < 10)
                                 {
-                                    var below = new Vector3Int(ux, blockY - 1, bz);
-                                    if (chunk.GetBlock(below).type == BlockType.Dirt)
-                                        chunk.SetBlock(below, BlockType.Grass);
+                                    chunk.SetBlock(pos, BlockType.Lava);
+                                }
+                                else
+                                {
+                                    chunk.SetBlock(pos, BlockType.Air);
+                                    if (foundGrass)
+                                    {
+                                        var below = new Vector3Int(ux, blockY - 1, bz);
+                                        if (chunk.GetBlock(below).type == BlockType.Dirt)
+                                            chunk.SetBlock(below, BlockType.Grass);
+                                    }
                                 }
                             }
                         }
