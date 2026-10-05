@@ -5,7 +5,21 @@ using UnityEngine;
 /// <summary>Temporary Beta 1.7.3 parity instrumentation for chunk (0,0).</summary>
 public static class BetaParityDump
 {
-    public static void DumpRawChunk00(BlockType[,,] raw, long seed, int betaChunkX, int betaChunkZ)
+    public static void DumpNoiseChunk00(string stage, double[] values, long seed)
+    {
+        var bytes = new byte[values.Length * 8];
+        for (int i = 0; i < values.Length; i++)
+        {
+            byte[] element = BitConverter.GetBytes(values[i]);
+            if (!BitConverter.IsLittleEndian) Array.Reverse(element);
+            Array.Copy(element, 0, bytes, i * 8, 8);
+        }
+        string path = Path.Combine(Application.dataPath, "../beta-parity-noise-" + stage + "-0-0.txt");
+        File.WriteAllText(path, "seed=" + seed + "\nbetaChunk=0,0\nstage=" + stage +
+            "\nformat=little-endian-f64\ncount=" + values.Length + "\n" + Convert.ToBase64String(bytes) + "\n");
+    }
+
+    public static void DumpRawChunk00(BlockType[,,] raw, long seed, int betaChunkX, int betaChunkZ, string stage = "raw")
     {
         if (betaChunkX != 0 || betaChunkZ != 0) return;
         byte[] blocks = new byte[16 * 16 * 128];
@@ -18,7 +32,7 @@ public static class BetaParityDump
             if (id == 255) unknown++;
             blocks[(x * 16 + z) * 128 + y] = id;
         }
-        Write("raw", blocks, seed, unknown);
+        Write(stage, blocks, seed, unknown);
     }
 
     public static void DumpDataChunk00(ChunkData data, int betaChunkX, int betaChunkZ, string stage)

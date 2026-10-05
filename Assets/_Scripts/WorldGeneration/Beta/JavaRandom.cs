@@ -20,8 +20,8 @@ public sealed class JavaRandom
 
     private int NextBits(int bits)
     {
-        seed = (seed * Multiplier + Addend) & Mask;
-        return (int)((ulong)seed >> (48 - bits));
+        seed = unchecked(seed * Multiplier + Addend) & Mask;
+        return unchecked((int)((ulong)seed >> (48 - bits)));
     }
 
     public int NextInt()
@@ -40,7 +40,7 @@ public sealed class JavaRandom
         {
             bits = NextBits(31);
             value = bits % bound;
-        } while (bits - value + (bound - 1) < 0);
+        } while (unchecked(bits - value + (bound - 1)) < 0);
         return value;
     }
 

@@ -1,11 +1,10 @@
-using UnityEngine;
-
 /// <summary>
 /// Beta 1.7.3 replaceBlocksForBiome surface pass.
 /// </summary>
 public static class BetaSurfaceDecorator
 {
-    public static void DecorateChunk(ChunkData data, Beta173Terrain terrain, int betaChunkX, int betaChunkZ)
+    public static void DecorateChunk(BlockType[,,] blocks, Beta173Terrain terrain, int betaChunkX, int betaChunkZ,
+        System.Action<string, double[]> observe = null)
     {
         long chunkSeed = unchecked((long)betaChunkX * 341873128712L + (long)betaChunkZ * 132897987541L);
         var random = new JavaRandom(chunkSeed);
@@ -14,6 +13,9 @@ public static class BetaSurfaceDecorator
 
         terrain.GenerateSurfaceNoise(betaWorldX, betaWorldZ,
             out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise);
+        observe?.Invoke("sand", sandNoise);
+        observe?.Invoke("gravel", gravelNoise);
+        observe?.Invoke("stoneDepth", stoneNoise);
         BetaBiomeType[] biomes = terrain.GenerateBiomeRegion(betaWorldX, betaWorldZ, 16, 16);
 
         for (int betaX = 0; betaX < 16; betaX++)
@@ -29,19 +31,20 @@ public static class BetaSurfaceDecorator
             BlockType biomeFiller = BetaBiome.FillerBlock(biome);
             BlockType top = biomeTop;
             BlockType filler = biomeFiller;
-            int unityX = BetaCoordinateSpace.BetaLocalToUnityLocalX(betaX);
-            int unityZ = BetaCoordinateSpace.BetaLocalToUnityLocalZ(betaZ);
+            // Beta's surface loop reads noise/biomes at k + l*16, but
+            // writes the byte array at (l*16+k)*128+y: X=l, Z=k.
+            // Coordinates stay canonical until TerrainGenerator copies the result.
+            int x = betaZ, z = betaX;
 
             for (int y = 127; y >= 0; y--)
             {
-                var pos = new Vector3Int(unityX, y, unityZ);
                 if (y <= random.NextInt(5))
                 {
-                    data.SetBlock(pos, BlockType.Bedrock);
+                    blocks[x, y, z] = BlockType.Bedrock;
                     continue;
                 }
 
-                BlockType block = data.GetBlock(pos).type;
+                BlockType block = blocks[x, y, z];
                 if (block == BlockType.Air)
                 {
                     remaining = -1;
@@ -69,12 +72,12 @@ public static class BetaSurfaceDecorator
                             top = BlockType.Water;
 
                         remaining = thickness;
-                        data.SetBlock(pos, y >= Beta173Terrain.SeaLevel - 1 ? top : filler);
+                        blocks[x, y, z] = y >= Beta173Terrain.SeaLevel - 1 ? top : filler;
                     }
                     else if (remaining > 0)
                     {
                         --remaining;
-                        data.SetBlock(pos, filler);
+                        blocks[x, y, z] = filler;
                         if (remaining == 0 && filler == BlockType.Sand)
                         {
                             remaining = random.NextInt(4);

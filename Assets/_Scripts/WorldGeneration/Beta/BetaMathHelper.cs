@@ -18,7 +18,17 @@ public static class BetaMathHelper
 
     public static int Floor(double value)
     {
-        int i = (int)value;
-        return value < i ? i - 1 : i;
+        int i = JavaInt(value);
+        return value < i ? unchecked(i - 1) : i;
+    }
+
+    // Java's narrowing conversion saturates outside the int range and maps
+    // NaN to zero. CLR casts need not do that; this matters at the Far Lands.
+    public static int JavaInt(double value)
+    {
+        if (double.IsNaN(value)) return 0;
+        if (value >= int.MaxValue) return int.MaxValue;
+        if (value <= int.MinValue) return int.MinValue;
+        return (int)value;
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 /// <summary>
 /// Classic Minecraft seed parsing: numeric text is used directly as a signed
@@ -11,7 +12,10 @@ public static class MinecraftSeed
         if (string.IsNullOrEmpty(text))
             return DateTime.UtcNow.Ticks;
 
-        if (long.TryParse(text, out long numericSeed))
+        // Long.parseLong accepts a sign and decimal digits, not surrounding
+        // whitespace or culture-specific separators.
+        if (long.TryParse(text, NumberStyles.AllowLeadingSign,
+            CultureInfo.InvariantCulture, out long numericSeed))
             return numericSeed;
 
         int hash = 0;

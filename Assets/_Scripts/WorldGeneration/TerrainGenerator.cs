@@ -8,6 +8,8 @@ public class TerrainGenerator : MonoBehaviour
     public bool enableBetaPopulation = false;
     [Tooltip("Non-parity visual preview only. Keep disabled for exact Beta 1.7.3 generation.")]
     public bool enableBetaTreePreview = false;
+    [Tooltip("Write raw/surface/cave blocks and intermediate noise arrays for Beta chunk (0,0).")]
+    public bool dumpBetaParity = true;
 
     private Beta173Terrain betaTerrain;
     private Beta173Caves betaCaves;
@@ -16,6 +18,8 @@ public class TerrainGenerator : MonoBehaviour
 
     public ChunkData GenerateChunkData(ChunkData data, Vector3Int mapSeedOffset)
     {
+        if (data.chunkSize != 16 || data.worldRef.worldHeight < Beta173Terrain.TerrainHeight)
+            throw new System.InvalidOperationException("Beta terrain requires 16-block chunks and a world height of at least 128.");
         long betaSeed = data.worldRef.betaWorldSeed;
         EnsureBetaGenerators(betaSeed);
 
@@ -26,8 +30,18 @@ public class TerrainGenerator : MonoBehaviour
         int betaWorldX = BetaCoordinateSpace.BetaChunkToWorldX(betaChunkX);
         int betaWorldZ = BetaCoordinateSpace.BetaChunkToWorldZ(betaChunkZ);
 
-        BlockType[,,] rawTerrain = betaTerrain.GenerateRawTerrain(betaWorldX, betaWorldZ);
-        BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ);
+        System.Action<string, double[]> observe = null;
+        if (dumpBetaParity && betaChunkX == 0 && betaChunkZ == 0)
+            observe = (stage, values) => BetaParityDump.DumpNoiseChunk00(stage, values, betaSeed);
+        BlockType[,,] rawTerrain = betaTerrain.GenerateRawTerrain(betaWorldX, betaWorldZ, observe);
+        if (dumpBetaParity) BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ);
+
+        // Complete all chunk-local passes in canonical Beta coordinates, then
+        // reflect X exactly once at the boundary to the Unity chunk storage.
+        BetaSurfaceDecorator.DecorateChunk(rawTerrain, betaTerrain, betaChunkX, betaChunkZ, observe);
+        if (dumpBetaParity) BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ, "surface");
+        betaCaves.Generate(rawTerrain, betaChunkX, betaChunkZ);
+        if (dumpBetaParity) BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ, "caves");
 
         for (int betaLocalX = 0; betaLocalX < data.chunkSize; betaLocalX++)
         for (int betaLocalZ = 0; betaLocalZ < data.chunkSize; betaLocalZ++)
@@ -37,12 +51,6 @@ public class TerrainGenerator : MonoBehaviour
             data = biomeGenerator.ProcessBetaTerrainColumn(
                 data, unityLocalX, unityLocalZ, rawTerrain, betaLocalX, betaLocalZ);
         }
-
-        BetaSurfaceDecorator.DecorateChunk(data, betaTerrain, betaChunkX, betaChunkZ);
-        BetaParityDump.DumpDataChunk00(data, betaChunkX, betaChunkZ, "surface");
-
-        betaCaves.Generate(data, betaChunkX, betaChunkZ, reflectLocalX: true);
-        BetaParityDump.DumpDataChunk00(data, betaChunkX, betaChunkZ, "caves");
 
         data.treeData = new TreeData();
         return data;

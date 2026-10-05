@@ -142,6 +142,7 @@ public sealed class BetaClimate
             t *= t;
             return t * t * (Grad[gi, 0] * x + Grad[gi, 1] * y);
         }
-        private static int BetaWrap(double v) => v > 0.0 ? (int)v : (int)v - 1;
+        private static int BetaWrap(double v) => v > 0.0
+            ? BetaMathHelper.JavaInt(v) : unchecked(BetaMathHelper.JavaInt(v) - 1);
     }
 }
