@@ -3,6 +3,10 @@
 public class TerrainGenerator : MonoBehaviour
 {
     public BiomeGenerator biomeGenerator;
+    [Header("Beta 1.7.3")]
+    [Tooltip("Keep population disabled while raw terrain/surface parity is being verified. Population changes visible terrain after replaceBlocksForBiome.")]
+    public bool enableBetaPopulation = false;
+
     private Beta173Terrain betaTerrain;
     private Beta173Caves betaCaves;
     private Beta173Population betaPopulation;
@@ -40,6 +44,9 @@ public class TerrainGenerator : MonoBehaviour
 
     public void GenerateFeatures(ChunkData data, Vector3Int mapSeedOffset)
     {
+        if (!enableBetaPopulation)
+            return;
+
         long betaSeed = data.worldRef.betaWorldSeed;
         EnsureBetaGenerators(betaSeed);
 
