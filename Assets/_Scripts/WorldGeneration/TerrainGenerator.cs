@@ -4,8 +4,10 @@ public class TerrainGenerator : MonoBehaviour
 {
     public BiomeGenerator biomeGenerator;
     [Header("Beta 1.7.3")]
-    [Tooltip("Keep population disabled while raw terrain/surface parity is being verified. Population changes visible terrain after replaceBlocksForBiome.")]
+    [Tooltip("Keep full population disabled while exact population parity is being implemented.")]
     public bool enableBetaPopulation = false;
+    [Tooltip("Generate deterministic Beta-style trees without enabling the unfinished full population pass.")]
+    public bool enableBetaTreePreview = true;
 
     private Beta173Terrain betaTerrain;
     private Beta173Caves betaCaves;
@@ -48,7 +50,7 @@ public class TerrainGenerator : MonoBehaviour
 
     public void GenerateFeatures(ChunkData data, Vector3Int mapSeedOffset)
     {
-        if (!enableBetaPopulation)
+        if (!enableBetaPopulation && !enableBetaTreePreview)
             return;
 
         long betaSeed = data.worldRef.betaWorldSeed;
@@ -58,7 +60,11 @@ public class TerrainGenerator : MonoBehaviour
         int unityChunkZ = FloorDiv(data.worldPos.z, data.chunkSize);
         int betaChunkX = BetaCoordinateSpace.UnityChunkToBetaChunkX(unityChunkX);
         int betaChunkZ = BetaCoordinateSpace.UnityChunkToBetaChunkZ(unityChunkZ);
-        betaPopulation.Populate(data, betaChunkX, betaChunkZ);
+
+        if (enableBetaPopulation)
+            betaPopulation.Populate(data, betaChunkX, betaChunkZ);
+        if (enableBetaTreePreview)
+            betaPopulation.PopulateTreePreview(data, betaTerrain, betaChunkX, betaChunkZ);
     }
 
     public void GenerateBiomePoints(Vector3 playerPos, int renderDistance, int chunkSize, Vector3Int mapSeedOffset)
