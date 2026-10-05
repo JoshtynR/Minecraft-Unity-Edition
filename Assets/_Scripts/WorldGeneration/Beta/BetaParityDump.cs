@@ -2,48 +2,56 @@ using System;
 using System.IO;
 using UnityEngine;
 
-/// <summary>
-/// Temporary parity instrumentation. Dumps the generated Beta chunk (0,0)
-/// in the original 16x16x128 Blocks ordering so it can be compared byte-for-byte
-/// with the user's real Beta 1.7.3 MCRegion save.
-/// </summary>
+/// <summary>Temporary Beta 1.7.3 parity instrumentation for chunk (0,0).</summary>
 public static class BetaParityDump
 {
-    private static bool dumped;
-
-    public static void DumpChunk00(ChunkData data, int betaChunkX, int betaChunkZ)
+    public static void DumpRawChunk00(BlockType[,,] raw, long seed, int betaChunkX, int betaChunkZ)
     {
-        if (dumped || betaChunkX != 0 || betaChunkZ != 0) return;
-        dumped = true;
-
+        if (betaChunkX != 0 || betaChunkZ != 0) return;
         byte[] blocks = new byte[16 * 16 * 128];
         int unknown = 0;
+        for (int x = 0; x < 16; x++)
+        for (int z = 0; z < 16; z++)
+        for (int y = 0; y < 128; y++)
+        {
+            byte id = ToBetaBlockId(raw[x, y, z]);
+            if (id == 255) unknown++;
+            blocks[(x * 16 + z) * 128 + y] = id;
+        }
+        Write("raw", blocks, seed, unknown);
+    }
 
+    public static void DumpDataChunk00(ChunkData data, int betaChunkX, int betaChunkZ, string stage)
+    {
+        if (betaChunkX != 0 || betaChunkZ != 0) return;
+        byte[] blocks = new byte[16 * 16 * 128];
+        int unknown = 0;
         for (int betaX = 0; betaX < 16; betaX++)
         for (int betaZ = 0; betaZ < 16; betaZ++)
         {
             int unityX = BetaCoordinateSpace.BetaLocalToUnityLocalX(betaX);
             int unityZ = BetaCoordinateSpace.BetaLocalToUnityLocalZ(betaZ);
-
             for (int y = 0; y < 128; y++)
             {
-                BlockType type = data.GetBlock(new Vector3Int(unityX, y, unityZ)).type;
-                byte id = ToBetaBlockId(type);
+                byte id = ToBetaBlockId(data.GetBlock(new Vector3Int(unityX, y, unityZ)).type);
                 if (id == 255) unknown++;
                 blocks[(betaX * 16 + betaZ) * 128 + y] = id;
             }
         }
+        Write(stage, blocks, data.worldRef.betaWorldSeed, unknown);
+    }
 
-        string path = Path.Combine(Application.dataPath, "../beta-parity-chunk-0-0.txt");
-        string payload = Convert.ToBase64String(blocks);
+    private static void Write(string stage, byte[] blocks, long seed, int unknown)
+    {
+        string path = Path.Combine(Application.dataPath, "../beta-parity-" + stage + "-0-0.txt");
         File.WriteAllText(path,
-            "seed=" + data.worldRef.betaWorldSeed + "\n" +
+            "seed=" + seed + "\n" +
             "betaChunk=0,0\n" +
+            "stage=" + stage + "\n" +
             "layout=(x*16+z)*128+y\n" +
             "unknownBlocks=" + unknown + "\n" +
-            payload + "\n");
-
-        Debug.Log($"[BetaParity] Wrote chunk (0,0) dump to {path}. Unknown blocks: {unknown}");
+            Convert.ToBase64String(blocks) + "\n");
+        Debug.Log("[BetaParity] Wrote " + stage + " chunk (0,0): " + path + ". Unknown blocks: " + unknown);
     }
 
     private static byte ToBetaBlockId(BlockType type)
