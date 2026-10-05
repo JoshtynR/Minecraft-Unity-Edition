@@ -71,6 +71,7 @@ public static class BetaParityDump
             case BlockType.Log: return 17;
             case BlockType.Leaves: return 18;
             case BlockType.Sandstone: return 24;
+            case BlockType.Ice: return 79;
             default: return 255;
         }
     }
