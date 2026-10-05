@@ -25,6 +25,7 @@ public class TerrainGenerator : MonoBehaviour
         int betaWorldZ = BetaCoordinateSpace.BetaChunkToWorldZ(betaChunkZ);
 
         BlockType[,,] rawTerrain = betaTerrain.GenerateRawTerrain(betaWorldX, betaWorldZ);
+        BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ);
 
         for (int betaLocalX = 0; betaLocalX < data.chunkSize; betaLocalX++)
         for (int betaLocalZ = 0; betaLocalZ < data.chunkSize; betaLocalZ++)
@@ -36,11 +37,10 @@ public class TerrainGenerator : MonoBehaviour
         }
 
         BetaSurfaceDecorator.DecorateChunk(data, betaTerrain, betaChunkX, betaChunkZ);
-        betaCaves.Generate(data, betaChunkX, betaChunkZ, reflectLocalX: true);
+        BetaParityDump.DumpDataChunk00(data, betaChunkX, betaChunkZ, "surface");
 
-        // Temporary exact-parity instrumentation. For Beta chunk (0,0), write
-        // the generated 16x16x128 block array in the same ordering as MCRegion.
-        BetaParityDump.DumpChunk00(data, betaChunkX, betaChunkZ);
+        betaCaves.Generate(data, betaChunkX, betaChunkZ, reflectLocalX: true);
+        BetaParityDump.DumpDataChunk00(data, betaChunkX, betaChunkZ, "caves");
 
         data.treeData = new TreeData();
         return data;
