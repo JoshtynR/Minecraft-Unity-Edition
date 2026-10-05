@@ -41,7 +41,6 @@ public class WorldSettingsManager : MonoBehaviour
         {
             worldName = worldSaveData.worldName;
             seedOffset = worldSaveData.seedOffset;
-            betaWorldSeed = worldSaveData.betaWorldSeed;
         });
     }
 }

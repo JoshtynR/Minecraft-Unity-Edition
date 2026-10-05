@@ -141,11 +141,11 @@ public class WorldServer : NetworkBehaviour
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 ".minecraftUnity/saves/" + World.Instance.worldName + $"/playerdata/{message.steamId}.json")));
             
-            conn.Send(new StartWorldMessage(Vector3Int.RoundToInt(playerData.position), World.Instance.betaWorldSeed));
+            conn.Send(new StartWorldMessage(Vector3Int.RoundToInt(playerData.position)));
         }
         else
         {
-            conn.Send(new StartWorldMessage(Vector3Int.zero, World.Instance.betaWorldSeed));
+            conn.Send(new StartWorldMessage(Vector3Int.zero));
         }
     }
     

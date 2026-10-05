@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 public sealed class Beta173Caves
 {
@@ -9,7 +10,7 @@ public sealed class Beta173Caves
 
     public Beta173Caves(long worldSeed) { this.worldSeed = worldSeed; }
 
-    public void Generate(BlockType[,,] chunk, int targetChunkX, int targetChunkZ)
+    public void Generate(ChunkData chunk, int targetChunkX, int targetChunkZ, bool reflectLocalX = false)
     {
         var random = new JavaRandom(worldSeed);
         long seedX = MakeOdd(random.NextLong());
@@ -18,14 +19,15 @@ public sealed class Beta173Caves
         for (int sourceChunkZ = targetChunkZ - Range; sourceChunkZ <= targetChunkZ + Range; sourceChunkZ++)
         {
             random.SetSeed(unchecked((long)sourceChunkX * seedX + (long)sourceChunkZ * seedZ) ^ worldSeed);
-            GenerateFromSource(chunk, random, sourceChunkX, sourceChunkZ, targetChunkX, targetChunkZ);
+            GenerateFromSource(chunk, random, sourceChunkX, sourceChunkZ, targetChunkX, targetChunkZ, reflectLocalX);
         }
     }
 
     private static long MakeOdd(long value) => unchecked(value / 2L * 2L + 1L);
+    private static int UnityX(int betaX, bool reflect) => reflect ? 15 - betaX : betaX;
 
-    private void GenerateFromSource(BlockType[,,] chunk, JavaRandom random, int sourceChunkX, int sourceChunkZ,
-        int targetChunkX, int targetChunkZ)
+    private void GenerateFromSource(ChunkData chunk, JavaRandom random, int sourceChunkX, int sourceChunkZ,
+        int targetChunkX, int targetChunkZ, bool reflectLocalX)
     {
         int caveCount = random.NextInt(random.NextInt(random.NextInt(40) + 1) + 1);
         if (random.NextInt(15) != 0) caveCount = 0;
@@ -38,7 +40,7 @@ public sealed class Beta173Caves
             if (random.NextInt(4) == 0)
             {
                 CarveTunnel(chunk, random, targetChunkX, targetChunkZ, x, y, z,
-                    1.0f + random.NextFloat() * 6.0f, 0.0f, 0.0f, -1, -1, 0.5);
+                    1.0f + random.NextFloat() * 6.0f, 0.0f, 0.0f, -1, -1, 0.5, reflectLocalX);
                 tunnels += random.NextInt(4);
             }
             for (int tunnel = 0; tunnel < tunnels; tunnel++)
@@ -47,14 +49,14 @@ public sealed class Beta173Caves
                 float pitch = (random.NextFloat() - 0.5f) * 2.0f / 8.0f;
                 float width = random.NextFloat() * 2.0f + random.NextFloat();
                 CarveTunnel(chunk, random, targetChunkX, targetChunkZ, x, y, z,
-                    width, yaw, pitch, 0, 0, 1.0);
+                    width, yaw, pitch, 0, 0, 1.0, reflectLocalX);
             }
         }
     }
 
-    private void CarveTunnel(BlockType[,,] chunk, JavaRandom parentRandom, int chunkX, int chunkZ,
+    private void CarveTunnel(ChunkData chunk, JavaRandom parentRandom, int chunkX, int chunkZ,
         double x, double y, double z, float width, float yaw, float pitch,
-        int step, int maxSteps, double verticalScale)
+        int step, int maxSteps, double verticalScale, bool reflectLocalX)
     {
         double centerX = chunkX * 16 + 8;
         double centerZ = chunkZ * 16 + 8;
@@ -90,14 +92,12 @@ public sealed class Beta173Caves
 
             if (!room && step == branchStep && width > 1.0f)
             {
-                // Width comes from the tunnel RNG, but the recursive tunnel's
-                // seed comes from MapGenBase's source RNG, not that tunnel RNG.
-                CarveTunnel(chunk, parentRandom, chunkX, chunkZ, x, y, z,
+                CarveTunnel(chunk, localRandom, chunkX, chunkZ, x, y, z,
                     localRandom.NextFloat() * 0.5f + 0.5f, yaw - HalfPi,
-                    pitch / 3.0f, step, maxSteps, 1.0);
-                CarveTunnel(chunk, parentRandom, chunkX, chunkZ, x, y, z,
+                    pitch / 3.0f, step, maxSteps, 1.0, reflectLocalX);
+                CarveTunnel(chunk, localRandom, chunkX, chunkZ, x, y, z,
                     localRandom.NextFloat() * 0.5f + 0.5f, yaw + HalfPi,
-                    pitch / 3.0f, step, maxSteps, 1.0);
+                    pitch / 3.0f, step, maxSteps, 1.0, reflectLocalX);
                 return;
             }
             if (!room && localRandom.NextInt(4) == 0) continue;
@@ -121,7 +121,8 @@ public sealed class Beta173Caves
             for (int bz = minZ; !hitsWater && bz < maxZ; bz++)
             for (int by = maxY + 1; !hitsWater && by >= minY - 1; by--)
             {
-                if (by >= 0 && by < 128 && chunk[bx, by, bz] == BlockType.Water)
+                int ux = UnityX(bx, reflectLocalX);
+                if (by >= 0 && by < 128 && chunk.GetBlock(new Vector3Int(ux, by, bz)).type == BlockType.Water)
                     hitsWater = true;
                 if (by != minY - 1 && bx != minX && bx != maxX - 1 && bz != minZ && bz != maxZ - 1)
                     by = minY;
@@ -148,21 +149,24 @@ public sealed class Beta173Caves
 
                         if (ny > -0.7 && nx * nx + ny * ny + nz * nz < 1.0)
                         {
-                            BlockType block = chunk[bx, blockY, bz];
+                            int ux = UnityX(bx, reflectLocalX);
+                            var pos = new Vector3Int(ux, blockY, bz);
+                            BlockType block = chunk.GetBlock(pos).type;
                             if (block == BlockType.Grass) foundGrass = true;
                             if (block == BlockType.Stone || block == BlockType.Dirt || block == BlockType.Grass)
                             {
                                 if (by < 10)
                                 {
-                                    chunk[bx, blockY, bz] = BlockType.Lava;
+                                    chunk.SetBlock(pos, BlockType.Lava);
                                 }
                                 else
                                 {
-                                    chunk[bx, blockY, bz] = BlockType.Air;
+                                    chunk.SetBlock(pos, BlockType.Air);
                                     if (foundGrass)
                                     {
-                                        if (chunk[bx, blockY - 1, bz] == BlockType.Dirt)
-                                            chunk[bx, blockY - 1, bz] = BlockType.Grass;
+                                        var below = new Vector3Int(ux, blockY - 1, bz);
+                                        if (chunk.GetBlock(below).type == BlockType.Dirt)
+                                            chunk.SetBlock(below, BlockType.Grass);
                                     }
                                 }
                             }

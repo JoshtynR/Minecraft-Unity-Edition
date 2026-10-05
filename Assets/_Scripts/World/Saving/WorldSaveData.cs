@@ -9,7 +9,6 @@ public class WorldSaveData
     public string worldName;
     
     public Vector3Int seedOffset;
-    public long betaWorldSeed;
     
     [NonSerialized]
     public ChunkSaveData[] chunks;
