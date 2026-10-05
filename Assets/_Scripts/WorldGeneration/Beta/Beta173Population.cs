@@ -24,8 +24,6 @@ public sealed class Beta173Population
         int originX = betaChunkX * 16;
         int originZ = betaChunkZ * 16;
 
-        // Beta population starts with water and lava lakes. Keeping this in the
-        // original order is important because every later feature shares this RNG.
         if (random.NextInt(4) == 0)
         {
             int x = originX + random.NextInt(16) + 8;
@@ -42,6 +40,93 @@ public sealed class Beta173Population
             if (y < 64 || random.NextInt(10) == 0)
                 GenerateLake(owner, random, x, y, z, BlockType.Lava, true);
         }
+    }
+
+    // Tree-only preview while the earlier Beta population stages (dungeons/ores/etc.)
+    // are still being ported. It deliberately uses a separate deterministic stream so
+    // it cannot disturb the exact population RNG sequence later.
+    public void PopulateTreePreview(ChunkData owner, Beta173Terrain terrain, int betaChunkX, int betaChunkZ)
+    {
+        BetaBiomeType biome = terrain.GetBiome(betaChunkX * 16 + 16, betaChunkZ * 16 + 16);
+        int attempts;
+        switch (biome)
+        {
+            case BetaBiomeType.Forest:
+            case BetaBiomeType.Rainforest: attempts = 7; break;
+            case BetaBiomeType.SeasonalForest: attempts = 4; break;
+            case BetaBiomeType.Taiga: attempts = 7; break;
+            case BetaBiomeType.Shrubland:
+            case BetaBiomeType.Swampland: attempts = 2; break;
+            default: attempts = 0; break;
+        }
+        if (attempts == 0) return;
+
+        long seed = unchecked(worldSeed ^ ((long)betaChunkX * 341873128712L) ^ ((long)betaChunkZ * 132897987541L) ^ 0x54A32D192ED03L);
+        var random = new JavaRandom(seed);
+        int originX = betaChunkX * 16;
+        int originZ = betaChunkZ * 16;
+
+        for (int i = 0; i < attempts; i++)
+        {
+            int x = originX + random.NextInt(16) + 8;
+            int z = originZ + random.NextInt(16) + 8;
+            int y = GetHeight(owner, x, z);
+            GenerateClassicTree(owner, random, x, y, z);
+        }
+    }
+
+    private static bool GenerateClassicTree(ChunkData owner, JavaRandom random, int x, int y, int z)
+    {
+        int height = random.NextInt(3) + 4;
+        if (y < 1 || y + height + 1 > 128) return false;
+
+        for (int yy = y; yy <= y + height + 1; yy++)
+        {
+            int radius = yy == y ? 0 : (yy >= y + height - 1 ? 2 : 1);
+            for (int xx = x - radius; xx <= x + radius; xx++)
+            for (int zz = z - radius; zz <= z + radius; zz++)
+            {
+                BlockType block = Get(owner, xx, yy, zz);
+                if (block != BlockType.Air && block != BlockType.Leaves) return false;
+            }
+        }
+
+        BlockType ground = Get(owner, x, y - 1, z);
+        if ((ground != BlockType.Grass && ground != BlockType.Dirt) || y >= 127 - height) return false;
+        Set(owner, x, y - 1, z, BlockType.Dirt);
+
+        for (int yy = y - 3 + height; yy <= y + height; yy++)
+        {
+            int layer = yy - (y + height);
+            int radius = 1 - layer / 2;
+            for (int xx = x - radius; xx <= x + radius; xx++)
+            for (int zz = z - radius; zz <= z + radius; zz++)
+            {
+                int dx = xx - x, dz = zz - z;
+                if ((System.Math.Abs(dx) != radius || System.Math.Abs(dz) != radius || random.NextInt(2) != 0 || layer == 0) &&
+                    !IsSolid(Get(owner, xx, yy, zz)))
+                    Set(owner, xx, yy, zz, BlockType.Leaves);
+            }
+        }
+
+        for (int yy = 0; yy < height; yy++)
+        {
+            BlockType block = Get(owner, x, y + yy, z);
+            if (block == BlockType.Air || block == BlockType.Leaves)
+                Set(owner, x, y + yy, z, BlockType.Log);
+        }
+        return true;
+    }
+
+    private static int GetHeight(ChunkData owner, int betaX, int betaZ)
+    {
+        for (int y = 127; y >= 0; y--)
+        {
+            BlockType b = Get(owner, betaX, y, betaZ);
+            if (b != BlockType.Air && b != BlockType.Nothing && b != BlockType.Leaves && b != BlockType.Log)
+                return y + 1;
+        }
+        return 0;
     }
 
     private static long MakeOdd(long value) => unchecked(value / 2L * 2L + 1L);
@@ -93,9 +178,6 @@ public sealed class Beta173Population
             if (carve[(x * 16 + z) * 8 + yy])
                 Set(owner, betaX + x, y + yy, betaZ + z, yy >= 4 ? BlockType.Air : liquid);
 
-        // Beta restores exposed dirt above the cavity to grass. At population
-        // time these cells are sky exposed, so this reproduces the visible result
-        // without coupling generation to Unity's later lighting pass.
         for (int x = 0; x < 16; x++)
         for (int z = 0; z < 16; z++)
         for (int yy = 4; yy < 8; yy++)
@@ -113,7 +195,6 @@ public sealed class Beta173Population
                     if (IsSolid(Get(owner, wx, wy, wz))) Set(owner, wx, wy, wz, BlockType.Stone);
                 }
         }
-
         return true;
     }
 
@@ -136,14 +217,12 @@ public sealed class Beta173Population
     private static BlockType Get(ChunkData owner, int betaWorldX, int y, int betaWorldZ)
     {
         int unityWorldX = -betaWorldX - 1;
-        int unityWorldZ = betaWorldZ;
-        return owner.worldRef.GetBlock(new Vector3Int(unityWorldX, y, unityWorldZ)).type;
+        return owner.worldRef.GetBlock(new Vector3Int(unityWorldX, y, betaWorldZ)).type;
     }
 
     private static void Set(ChunkData owner, int betaWorldX, int y, int betaWorldZ, BlockType block)
     {
         int unityWorldX = -betaWorldX - 1;
-        int unityWorldZ = betaWorldZ;
-        WorldDataHelper.SetBlock(owner.worldRef, new Vector3Int(unityWorldX, y, unityWorldZ), block);
+        WorldDataHelper.SetBlock(owner.worldRef, new Vector3Int(unityWorldX, y, betaWorldZ), block);
     }
 }
