@@ -104,7 +104,8 @@ public sealed class Beta173Caves
 
             double dx = x - centerX, dz = z - centerZ;
             double remaining = maxSteps - step;
-            double maxReach = width + 18.0;
+            // Beta performs these additions as floats before widening to double.
+            double maxReach = (double)(width + 2.0f + 16.0f);
             if (dx * dx + dz * dz - remaining * remaining > maxReach * maxReach) return;
             if (x < centerX - 16.0 - radiusXZ * 2.0 || z < centerZ - 16.0 - radiusXZ * 2.0 ||
                 x > centerX + 16.0 + radiusXZ * 2.0 || z > centerZ + 16.0 + radiusXZ * 2.0) continue;
