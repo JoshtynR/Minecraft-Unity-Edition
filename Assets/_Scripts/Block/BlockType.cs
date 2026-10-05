@@ -19,4 +19,5 @@ public enum BlockType
     Gravel,
     Sandstone,
     Lava,
+    Ice,
 }
