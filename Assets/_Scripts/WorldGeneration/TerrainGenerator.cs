@@ -6,8 +6,8 @@ public class TerrainGenerator : MonoBehaviour
     [Header("Beta 1.7.3")]
     [Tooltip("Keep full population disabled while exact population parity is being implemented.")]
     public bool enableBetaPopulation = false;
-    [Tooltip("Generate deterministic Beta-style trees without enabling the unfinished full population pass.")]
-    public bool enableBetaTreePreview = true;
+    [Tooltip("Non-parity visual preview only. Keep disabled for exact Beta 1.7.3 generation.")]
+    public bool enableBetaTreePreview = false;
 
     private Beta173Terrain betaTerrain;
     private Beta173Caves betaCaves;
