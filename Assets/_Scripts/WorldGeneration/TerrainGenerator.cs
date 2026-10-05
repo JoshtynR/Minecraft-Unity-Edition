@@ -38,6 +38,10 @@ public class TerrainGenerator : MonoBehaviour
         BetaSurfaceDecorator.DecorateChunk(data, betaTerrain, betaChunkX, betaChunkZ);
         betaCaves.Generate(data, betaChunkX, betaChunkZ, reflectLocalX: true);
 
+        // Temporary exact-parity instrumentation. For Beta chunk (0,0), write
+        // the generated 16x16x128 block array in the same ordering as MCRegion.
+        BetaParityDump.DumpChunk00(data, betaChunkX, betaChunkZ);
+
         data.treeData = new TreeData();
         return data;
     }
