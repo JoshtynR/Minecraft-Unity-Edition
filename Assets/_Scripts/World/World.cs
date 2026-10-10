@@ -156,14 +156,14 @@ public partial class World : MonoBehaviour
         return data;
     }
     
-    private Task<ConcurrentDictionary<ChunkRenderer, MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> dataToRender)
+    private Task<ConcurrentDictionary<ChunkRenderer, MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> dataToRender, bool markModifiedByPlayer = true)
     {
         return Task.Run(() =>
         {
             var dict = new ConcurrentDictionary<ChunkRenderer, MeshData>();
             Parallel.ForEach(dataToRender, chunkRenderer =>
             {
-                chunkRenderer.ModifiedByPlayer = true;
+                if (markModifiedByPlayer) chunkRenderer.ModifiedByPlayer = true;
                 var data = chunkRenderer.ChunkData.GetMeshData();
                 dict.TryAdd(chunkRenderer, data);
             });
@@ -320,6 +320,7 @@ public partial class World : MonoBehaviour
     
     private void Clear()
     {
+        ResetWater();
         worldData = new WorldData
         {
             chunkDataDict = new Dictionary<Vector3Int, ChunkData>(),

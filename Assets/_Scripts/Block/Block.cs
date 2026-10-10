@@ -16,6 +16,8 @@ public class Block
     /// Note: never set this directly, use <see cref="SetType(BlockType)"/> instead
     /// </summary>
     public BlockType type;
+    // 0: source, 1..7: horizontal flow, 8..15: falling water.
+    public byte waterLevel;
     public BlockTypeData BlockData => BlockDataManager.blockTypeDataDictionary[(int)type];
     
     [NonSerialized] public ChunkSection section;
@@ -34,6 +36,7 @@ public class Block
     public Block(Block block)
     {
         this.type = block.type;
+        this.waterLevel = block.waterLevel;
         this.position = block.position;
         this.section = block.section;
         blockShape = BlockShapes.FullBlock;
@@ -42,6 +45,7 @@ public class Block
     public Block Reset(Block block)
     {
         this.type = block.type;
+        this.waterLevel = block.waterLevel;
         this.position = block.position;
         this.section = block.section;
         blockShape = BlockShapes.FullBlock;
@@ -103,6 +107,7 @@ public class Block
         var oldType = this.type;
 
         this.type = type;
+        waterLevel = 0;
 
         if (brokeBlock)
         {
@@ -114,6 +119,8 @@ public class Block
         }
 
         section.blocks[x, y, z] = BlockMapping.MapTypeToBlock(type, this);
+        if (chunkData.isGenerated && chunkData.worldRef.IsWorldCreated)
+            chunkData.worldRef.NotifyWaterBlockChanged(globalWorldPosition);
     }
 
     public void PlacedBlock()

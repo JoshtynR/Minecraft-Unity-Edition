@@ -20,20 +20,24 @@ public class ChunkSectionSaveData
         // Here we iterate through all the blocks in the chunk section
         // and save them with run length encoding
         
-        for (var i = 0; i < section.blocks.Length; i++)
+        int size = section.dataRef.chunkSize;
+        int height = section.dataRef.chunkHeight;
+        for (int i = 0; i < section.blocks.Length;)
         {
-            var count = 1;
-            while (i + count < section.blocks.Length &&
-                   section.blocks[i % section.dataRef.chunkSize, (i/section.dataRef.chunkSize) % section.dataRef.chunkHeight, i/ (section.dataRef.chunkSize * section.dataRef.chunkHeight)].type == 
-                   section.blocks[(i+count) % section.dataRef.chunkSize, ((i+count)/section.dataRef.chunkSize) % section.dataRef.chunkHeight, (i+count)/ (section.dataRef.chunkSize * section.dataRef.chunkHeight)].type)
+            Block first = section.blocks[i % size, (i / size) % height, i / (size * height)];
+            byte level = first.type == BlockType.Water ? first.waterLevel : (byte)0;
+            int count = 1;
+            while (i + count < section.blocks.Length)
             {
+                int next = i + count;
+                Block block = section.blocks[next % size, (next / size) % height, next / (size * height)];
+                if (block.type != first.type || (block.type == BlockType.Water && block.waterLevel != level)) break;
                 count++;
             }
-            
-            blocksL.Add(new BlockSaveData(section.blocks[i % section.dataRef.chunkSize, (i/section.dataRef.chunkSize) % section.dataRef.chunkHeight, i/ (section.dataRef.chunkSize * section.dataRef.chunkHeight)].type, count));
-            i += count - 1;
+            blocksL.Add(new BlockSaveData(first.type, count, level));
+            i += count;
         }
-        
+
         blocks = blocksL.ToArray();
         yOffset = section.yOffset;
     }
