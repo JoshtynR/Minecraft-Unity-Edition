@@ -46,34 +46,16 @@ public sealed class BetaImprovedNoise
                 Lerp(u, Grad(permutations[ab + 1], x, y - 1, z - 1), Grad(permutations[bb + 1], x - 1, y - 1, z - 1))));
     }
 
-    public double Sample2D(double x, double z)
-    {
-        x += offsetX;
-        z += offsetZ;
-        int xi0 = BetaFloor(x), zi0 = BetaFloor(z);
-        int xi = xi0 & 255, zi = zi0 & 255;
-        x -= xi0; z -= zi0;
-
-        double u = Fade(x), w = Fade(z);
-        int a = permutations[permutations[xi] & 255] + zi;
-        int b = permutations[permutations[(xi + 1) & 255] & 255] + zi;
-
-        double n0 = Lerp(u,
-            Grad(permutations[a & 255], x, 0.0, z),
-            Grad(permutations[b & 255], x - 1.0, 0.0, z));
-        double n1 = Lerp(u,
-            Grad(permutations[(a + 1) & 255], x, 0.0, z - 1.0),
-            Grad(permutations[(b + 1) & 255], x - 1.0, 0.0, z - 1.0));
-        return Lerp(w, n0, n1);
-    }
+    // Beta's scalar two-argument overload samples (x, second, 0) with
+    // all three permutation offsets. It is not the sizeY==1 bulk shortcut.
+    public double Sample2D(double x, double z) => Sample(x, z, 0.0);
 
     // NoiseGeneratorPerlin casts to int and decrements only when the source
     // value is strictly less than that truncation. This preserves exact
     // negative integers (unlike the common v < 0 ? (int)v - 1 shortcut).
     private static int BetaFloor(double v)
     {
-        int i = (int)v;
-        return v < i ? i - 1 : i;
+        return BetaMathHelper.Floor(v);
     }
 
     private static double Fade(double t) => t * t * t * (t * (t * 6 - 15) + 10);

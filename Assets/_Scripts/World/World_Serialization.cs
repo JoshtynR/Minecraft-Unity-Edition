@@ -40,7 +40,8 @@ public partial class World
         {
             chunks = worldData.chunkDataDict.Values.Where(data => data.modifiedAfterSave).Select(ChunkSaveData.Serialize).ToArray(),
             worldName = worldName,
-            seedOffset = mapSeedOffset
+            seedOffset = mapSeedOffset,
+            betaWorldSeed = betaWorldSeed
         };
         saveWatch.Stop();
         Debug.Log($"Creating local save object took {saveWatch.ElapsedMilliseconds}ms");
@@ -178,4 +179,3 @@ public partial class World
         }
     }
 }
-

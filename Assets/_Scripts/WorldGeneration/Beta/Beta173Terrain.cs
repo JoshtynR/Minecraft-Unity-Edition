@@ -1,11 +1,9 @@
-using UnityEngine;
-
 /// <summary>Clean-room Beta 1.7.3 terrain generator.</summary>
 public sealed class Beta173Terrain
 {
     public const int TerrainHeight = 128;
     public const int SeaLevel = 64;
-    private readonly BetaOctaveNoise minLimit, maxLimit, selector, sandGravel, stoneDepth, scale, depth;
+    private readonly BetaOctaveNoise minLimit, maxLimit, selector, sandGravel, stoneDepth, scale, depth, treeCount;
     private readonly BetaClimate climate;
 
     public Beta173Terrain(long seed)
@@ -18,8 +16,13 @@ public sealed class Beta173Terrain
         stoneDepth = new BetaOctaveNoise(random, 4);
         scale = new BetaOctaveNoise(random, 10);
         depth = new BetaOctaveNoise(random, 16);
-        _ = new BetaOctaveNoise(random, 8);
+        treeCount = new BetaOctaveNoise(random, 8);
         climate = new BetaClimate(seed);
+    }
+
+    public double GetTreeCountNoise(int worldX, int worldZ)
+    {
+        return treeCount.Sample2D(worldX, worldZ, 0.5, 0.5);
     }
 
     public BetaBiomeType GetBiome(int worldX, int worldZ)
@@ -53,7 +56,8 @@ public sealed class Beta173Terrain
             16, 16, 1, s * 2.0, s * 2.0, s * 2.0);
     }
 
-    public BlockType[,,] GenerateRawTerrain(int chunkWorldX, int chunkWorldZ)
+    public BlockType[,,] GenerateRawTerrain(int chunkWorldX, int chunkWorldZ,
+        System.Action<string, double[]> observe = null)
     {
         const int gridX = 5, gridZ = 5, gridY = 17;
         climate.SampleRegion(chunkWorldX, chunkWorldZ, 16, 16,
@@ -66,7 +70,16 @@ public sealed class Beta173Terrain
         double[] minNoise = minLimit.GenerateNoiseOctaves(null, coarseX, 0.0, coarseZ, gridX, gridY, gridZ, 684.412, 684.412, 684.412);
         double[] maxNoise = maxLimit.GenerateNoiseOctaves(null, coarseX, 0.0, coarseZ, gridX, gridY, gridZ, 684.412, 684.412, 684.412);
 
+        observe?.Invoke("temperature", temperatures);
+        observe?.Invoke("humidity", humidities);
+        observe?.Invoke("scale", scaleNoise);
+        observe?.Invoke("depth", depthNoise);
+        observe?.Invoke("selector", selectorNoise);
+        observe?.Invoke("min", minNoise);
+        observe?.Invoke("max", maxNoise);
+
         var density = new double[gridX, gridY, gridZ];
+        // Beta intentionally uses 16/5 == 3, not the interpolation cell width.
         int densityIndex = 0, columnIndex = 0, sampleStride = 16 / gridX;
         for (int gx = 0; gx < gridX; gx++)
         {
@@ -112,6 +125,16 @@ public sealed class Beta173Terrain
                     density[gx, gy, gz] = value; densityIndex++;
                 }
             }
+        }
+
+        if (observe != null)
+        {
+            var values = new double[gridX * gridZ * gridY];
+            for (int gx = 0; gx < gridX; gx++)
+            for (int gz = 0; gz < gridZ; gz++)
+            for (int gy = 0; gy < gridY; gy++)
+                values[(gx * gridZ + gz) * gridY + gy] = density[gx, gy, gz];
+            observe("density", values);
         }
 
         var blocks = new BlockType[16, TerrainHeight, 16];
