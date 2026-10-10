@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
-FILES = ['JavaRandom', 'BetaNoise', 'BetaMathHelper', 'BetaClimate', 'BetaBiome', 'Beta173Terrain', 'Beta173Caves', 'BetaSurfaceDecorator', 'MinecraftSeed', 'BetaCoordinateSpace']
+FILES = ['JavaRandom', 'BetaNoise', 'BetaMathHelper', 'BetaClimate', 'BetaBiome', 'Beta173Terrain', 'Beta173Caves', 'BetaSurfaceDecorator', 'MinecraftSeed', 'BetaCoordinateSpace', 'Beta173Trees']
 
 def main():
     ap = argparse.ArgumentParser()

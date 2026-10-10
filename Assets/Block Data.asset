@@ -108,12 +108,13 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 5
     textureData:
-      up: {x: 7, y: 21}
-      down: {x: 7, y: 21}
-      side: {x: 7, y: 20}
+      up: {x: 23, y: 46}
+      down: {x: 23, y: 46}
+      side: {x: 22, y: 46}
       upExtends: {x: 1, y: 1}
       downExtends: {x: 1, y: 1}
       sideExtends: {x: 1, y: 1}
+    textureSizeOverride: {x: 0.015625, y: 0.015625}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -121,15 +122,16 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 6
     textureData:
-      up: {x: 7, y: 19}
-      down: {x: 7, y: 19}
-      side: {x: 7, y: 19}
+      up: {x: 21, y: 46}
+      down: {x: 21, y: 46}
+      side: {x: 21, y: 46}
       upExtends: {x: 1, y: 1}
       downExtends: {x: 1, y: 1}
       sideExtends: {x: 1, y: 1}
+    textureSizeOverride: {x: 0.015625, y: 0.015625}
     isTransparent: 1
     generateCollider: 1
-    opacity: 15
+    opacity: 1
     lightEmission: 0
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 10
@@ -223,16 +225,59 @@ MonoBehaviour:
     opacity: 15
     lightEmission: 15
     albedoTint: {r: 1, g: 0.32, b: 0.08, a: 1}
-  - blockType: 9
+  - blockType: 17
     textureData:
-      up: {x: 10, y: 6}
-      down: {x: 10, y: 6}
-      side: {x: 10, y: 6}
+      up: {x: 27, y: 40}
+      down: {x: 27, y: 40}
+      side: {x: 26, y: 40}
       upExtends: {x: 1, y: 1}
       downExtends: {x: 1, y: 1}
       sideExtends: {x: 1, y: 1}
+    textureSizeOverride: {x: 0.015625, y: 0.015625}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
     lightEmission: 0
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 18
+    textureData:
+      up: {x: 25, y: 40}
+      down: {x: 25, y: 40}
+      side: {x: 25, y: 40}
+      upExtends: {x: 1, y: 1}
+      downExtends: {x: 1, y: 1}
+      sideExtends: {x: 1, y: 1}
+    textureSizeOverride: {x: 0.015625, y: 0.015625}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 1
+    lightEmission: 0
+    albedoTint: {r: 0.3803921568627451, g: 0.6, b: 0.3803921568627451, a: 1}
+  - blockType: 19
+    textureData:
+      up: {x: 16, y: 59}
+      down: {x: 16, y: 59}
+      side: {x: 16, y: 60}
+      upExtends: {x: 1, y: 1}
+      downExtends: {x: 1, y: 1}
+      sideExtends: {x: 1, y: 1}
+    textureSizeOverride: {x: 0.015625, y: 0.015625}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 20
+    textureData:
+      up: {x: 16, y: 61}
+      down: {x: 16, y: 61}
+      side: {x: 16, y: 61}
+      upExtends: {x: 1, y: 1}
+      downExtends: {x: 1, y: 1}
+      sideExtends: {x: 1, y: 1}
+    textureSizeOverride: {x: 0.015625, y: 0.015625}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 1
+    lightEmission: 0
+    albedoTint: {r: 0.5019607843137255, g: 0.6549019607843137, b: 0.3333333333333333, a: 1}

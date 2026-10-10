@@ -210,8 +210,8 @@ public static class BlockHelper
         blockTypeData ??= BlockDataManager.blockTypeDataDictionary[(int)type];
         var tilePos = TexturePosition(dir, blockTypeData);
         var tileExtends = TextureExtends(dir, blockTypeData);
-        var tileSizeX = BlockDataManager.tileSizeX;
-        var tileSizeY = BlockDataManager.tileSizeY;
+        var tileSizeX = blockTypeData.textureSizeOverride.x > 0 ? blockTypeData.textureSizeOverride.x : BlockDataManager.tileSizeX;
+        var tileSizeY = blockTypeData.textureSizeOverride.y > 0 ? blockTypeData.textureSizeOverride.y : BlockDataManager.tileSizeY;
 
         UVs[0] = new Vector2(tilePos.x * tileSizeX, tilePos.y * tileSizeY);
         UVs[1] = new Vector2(tilePos.x * tileSizeX, (tilePos.y + tileExtends.y) * tileSizeY);

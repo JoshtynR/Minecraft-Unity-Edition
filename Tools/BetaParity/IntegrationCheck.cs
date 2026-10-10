@@ -3,6 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 namespace UnityEngine {
  public class MonoBehaviour {}
+ public class HideInInspectorAttribute:Attribute {}
  public class HeaderAttribute:Attribute { public HeaderAttribute(string s){} }
  public class TooltipAttribute:Attribute { public TooltipAttribute(string s){} }
  public struct Vector3Int { public int x,y,z; public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;} }
@@ -11,10 +12,10 @@ namespace UnityEngine {
  public static class Debug { public static void Log(string s){} }
 }
 public class Block { public BlockType type; public Block(BlockType t){type=t;} }
-public class World {public long betaWorldSeed;public int worldHeight=240;public Block GetBlock(UnityEngine.Vector3Int p){return new Block(BlockType.Air);} }
+public class World {public long betaWorldSeed;public int worldHeight=240;public void NotifyTreeChunkChanged(UnityEngine.Vector3Int p){}public Block GetBlock(UnityEngine.Vector3Int p){return new Block(BlockType.Air);} }
 public class TreeData {}
 public class ChunkData {
- public int chunkSize=16,chunkHeight=16;public World worldRef;public UnityEngine.Vector3Int worldPos;public TreeData treeData;
+ public bool betaTreePopulationDone,modifiedAfterSave;public int chunkSize=16,chunkHeight=16;public World worldRef;public UnityEngine.Vector3Int worldPos;public TreeData treeData;
  public BlockType[,,] blocks=new BlockType[16,240,16];
  public void SetBlock(UnityEngine.Vector3Int p,BlockType b){blocks[p.x,p.y,p.z]=b;}
  public Block GetBlock(UnityEngine.Vector3Int p){return new Block(blocks[p.x,p.y,p.z]);}

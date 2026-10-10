@@ -14,6 +14,7 @@ public class ChunkData
     
     public bool modifiedByPlayer = false;
     public bool isGenerated = false;
+    public bool betaTreePopulationDone;
     public bool modifiedAfterSave = true;
     
     public TreeData treeData = new TreeData();
@@ -52,6 +53,8 @@ public class ChunkData
         chunkData.sections = sections;
         chunkData.modifiedAfterSave = false;
         chunkData.isGenerated = true;
+        // Preserve legacy saved terrain; newly saved deferred edge chunks resume.
+        chunkData.betaTreePopulationDone = saveData.betaTreePopulationVersion == 0 || saveData.betaTreePopulationDone;
         
         return chunkData;
     } 

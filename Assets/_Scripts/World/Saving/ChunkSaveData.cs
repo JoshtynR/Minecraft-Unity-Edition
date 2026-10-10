@@ -5,6 +5,8 @@ using UnityEngine;
 public class ChunkSaveData
 {
     public Vector3Int position;
+    public int betaTreePopulationVersion;
+    public bool betaTreePopulationDone;
     
     public ChunkSectionSaveData[] sections;
 
@@ -27,6 +29,8 @@ public class ChunkSaveData
             chunkSaveData.sections[i] = new ChunkSectionSaveData(chunk.sections[i]);
         }
         
+        chunkSaveData.betaTreePopulationVersion = 1;
+        chunkSaveData.betaTreePopulationDone = chunk.betaTreePopulationDone;
         chunk.modifiedAfterSave = false;
         
         return chunkSaveData;

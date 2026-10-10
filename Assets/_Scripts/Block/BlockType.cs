@@ -20,4 +20,8 @@ public enum BlockType
     Sandstone,
     Lava,
     Ice,
+    SpruceLog,
+    SpruceLeaves,
+    BirchLog,
+    BirchLeaves,
 }

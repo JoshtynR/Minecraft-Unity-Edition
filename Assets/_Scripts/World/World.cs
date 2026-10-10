@@ -321,6 +321,7 @@ public partial class World : MonoBehaviour
     private void Clear()
     {
         ResetWater();
+        ResetTreeMeshChanges();
         worldData = new WorldData
         {
             chunkDataDict = new Dictionary<Vector3Int, ChunkData>(),

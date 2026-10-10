@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
 /// Clean-room implementation of the Beta 1.7.3 chunk population pass.
@@ -45,88 +46,76 @@ public sealed class Beta173Population
     // Tree-only preview while the earlier Beta population stages (dungeons/ores/etc.)
     // are still being ported. It deliberately uses a separate deterministic stream so
     // it cannot disturb the exact population RNG sequence later.
+    public static bool HasTreeNeighborhood(ChunkData owner, int betaChunkX, int betaChunkZ)
+    {
+        // The +8 population window and large-oak canopy fit within this 2x2 area.
+        for (int dx = 0; dx <= 1; dx++)
+        for (int dz = 0; dz <= 1; dz++)
+            if (Get(owner, betaChunkX * 16 + dx * 31, 0, betaChunkZ * 16 + dz * 31) == BlockType.Nothing)
+                return false;
+        return true;
+    }
+
     public void PopulateTreePreview(ChunkData owner, Beta173Terrain terrain, int betaChunkX, int betaChunkZ)
     {
         BetaBiomeType biome = terrain.GetBiome(betaChunkX * 16 + 16, betaChunkZ * 16 + 16);
-        int attempts;
-        switch (biome)
-        {
-            case BetaBiomeType.Forest:
-            case BetaBiomeType.Rainforest: attempts = 7; break;
-            case BetaBiomeType.SeasonalForest: attempts = 4; break;
-            case BetaBiomeType.Taiga: attempts = 7; break;
-            case BetaBiomeType.Shrubland:
-            case BetaBiomeType.Swampland: attempts = 2; break;
-            default: attempts = 0; break;
-        }
-        if (attempts == 0) return;
-
+        // This is explicitly a tree-only stage. Its RNG is isolated until all
+        // preceding population generators are ported; shapes/selection use Beta rules.
         long seed = unchecked(worldSeed ^ ((long)betaChunkX * 341873128712L) ^ ((long)betaChunkZ * 132897987541L) ^ 0x54A32D192ED03L);
         var random = new JavaRandom(seed);
-        int originX = betaChunkX * 16;
-        int originZ = betaChunkZ * 16;
-
+        int originX = betaChunkX * 16, originZ = betaChunkZ * 16;
+        int attempts = Beta173Trees.AttemptCount(biome, terrain.GetTreeCountNoise(originX, originZ), random);
+        var world = new TreeWorld(owner);
         for (int i = 0; i < attempts; i++)
         {
             int x = originX + random.NextInt(16) + 8;
             int z = originZ + random.NextInt(16) + 8;
-            int y = GetHeight(owner, x, z);
-            GenerateClassicTree(owner, random, x, y, z);
+            var kind = Beta173Trees.Select(biome, random);
+            int y = world.Height(x, z);
+            Beta173Trees.Generate(world, random, kind, x, y, z);
         }
+        world.MarkDirtyChunks();
     }
 
-    private static bool GenerateClassicTree(ChunkData owner, JavaRandom random, int x, int y, int z)
+    private sealed class TreeWorld : IBetaTreeWorld
     {
-        int height = random.NextInt(3) + 4;
-        if (y < 1 || y + height + 1 > 128) return false;
-
-        for (int yy = y; yy <= y + height + 1; yy++)
+        private readonly ChunkData owner;
+        private readonly HashSet<Vector3Int> changedChunks = new HashSet<Vector3Int>();
+        public TreeWorld(ChunkData owner) { this.owner = owner; }
+        public BlockType Get(int x, int y, int z)
         {
-            int radius = yy == y ? 0 : (yy >= y + height - 1 ? 2 : 1);
-            for (int xx = x - radius; xx <= x + radius; xx++)
-            for (int zz = z - radius; zz <= z + radius; zz++)
+            return y < 0 || y >= 128 ? BlockType.Air : Beta173Population.Get(owner, x, y, z);
+        }
+        public void Set(int x, int y, int z, BlockType block)
+        {
+            if (y < 0 || y >= 128) return;
+            if (Get(x, y, z) == block) return;
+            Beta173Population.Set(owner, x, y, z, block);
+            int ux = -x - 1;
+            changedChunks.Add(new Vector3Int(BetaMathHelper.Floor(ux / 16.0) * 16, 0, BetaMathHelper.Floor(z / 16.0) * 16));
+        }
+        public void MarkDirtyChunks()
+        {
+            foreach (var chunk in changedChunks) owner.worldRef.NotifyTreeChunkChanged(chunk);
+        }
+        public bool IsOpaque(BlockType block)
+        {
+            // Generation uses Beta's opaque-cube property, not this project's
+            // render transparency or leaf opacity settings.
+            return block != BlockType.Air && block != BlockType.Water && block != BlockType.Lava &&
+                block != BlockType.Glass && !Beta173Trees.IsLeaves(block);
+        }
+        public int Height(int x, int z)
+        {
+            for (int y = 127; y >= 0; y--)
             {
-                BlockType block = Get(owner, xx, yy, zz);
-                if (block != BlockType.Air && block != BlockType.Leaves) return false;
+                var block = Get(x, y, z);
+                if (block == BlockType.Nothing) return 0;
+                // Beta's height map includes leaves, logs, and liquids.
+                if (block != BlockType.Air) return y + 1;
             }
+            return 0;
         }
-
-        BlockType ground = Get(owner, x, y - 1, z);
-        if ((ground != BlockType.Grass && ground != BlockType.Dirt) || y >= 127 - height) return false;
-        Set(owner, x, y - 1, z, BlockType.Dirt);
-
-        for (int yy = y - 3 + height; yy <= y + height; yy++)
-        {
-            int layer = yy - (y + height);
-            int radius = 1 - layer / 2;
-            for (int xx = x - radius; xx <= x + radius; xx++)
-            for (int zz = z - radius; zz <= z + radius; zz++)
-            {
-                int dx = xx - x, dz = zz - z;
-                if ((System.Math.Abs(dx) != radius || System.Math.Abs(dz) != radius || random.NextInt(2) != 0 || layer == 0) &&
-                    !IsSolid(Get(owner, xx, yy, zz)))
-                    Set(owner, xx, yy, zz, BlockType.Leaves);
-            }
-        }
-
-        for (int yy = 0; yy < height; yy++)
-        {
-            BlockType block = Get(owner, x, y + yy, z);
-            if (block == BlockType.Air || block == BlockType.Leaves)
-                Set(owner, x, y + yy, z, BlockType.Log);
-        }
-        return true;
-    }
-
-    private static int GetHeight(ChunkData owner, int betaX, int betaZ)
-    {
-        for (int y = 127; y >= 0; y--)
-        {
-            BlockType b = Get(owner, betaX, y, betaZ);
-            if (b != BlockType.Air && b != BlockType.Nothing && b != BlockType.Leaves && b != BlockType.Log)
-                return y + 1;
-        }
-        return 0;
     }
 
     private static long MakeOdd(long value) => unchecked(value / 2L * 2L + 1L);

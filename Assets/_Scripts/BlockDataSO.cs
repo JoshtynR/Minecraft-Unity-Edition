@@ -17,6 +17,8 @@ public class BlockTypeData
 {
     public BlockType blockType;
     public TextureData textureData;
+    // Zero uses the existing atlas grid. Species tiles use the atlas's 16px grid.
+    public Vector2 textureSizeOverride;
     public bool isTransparent = false;
     public bool generateCollider = true;
     [Range(0, 15)]

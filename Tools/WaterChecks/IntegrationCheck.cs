@@ -113,7 +113,8 @@ public partial class World
         return System.Threading.Tasks.Task.FromResult(result);
     }
     public void TestUpdate() { UpdateWater(); }
-    public void TestReset() { ResetWater(); }
+    public void TestReset() { ResetWater(); ResetTreeMeshChanges(); }
+    public void TestRefreshTrees() { RefreshTreeMeshes().GetAwaiter().GetResult(); }
     public void TestActivate(ChunkData c) { QueueWaterChunk(c); }
 }
 public partial class WorldServer
@@ -176,6 +177,10 @@ public static class IntegrationCheck
         c.SetBlock(V(0,2,0),BlockType.Water); c.SetBlock(V(0,1,0),BlockType.Air);
         for(int i=0;i<10;i++) w.TestUpdate();
         WaterCheck.Assert(c.GetBlock(V(0,1,0)).type==BlockType.Air,"network client simulated authoritative water");
+        int beforeMeshes=w.meshRequests;
+        w.NotifyTreeChunkChanged(c.worldPos);w.NotifyTreeChunkChanged(c.worldPos);
+        w.TestRefreshTrees();
+        WaterCheck.Assert(w.meshRequests==beforeMeshes+1,"cross-border tree mesh notification was not deduplicated/refreshed");
         Mirror.NetworkServer.active=true;
         var server=new WorldServer();
         int edits=w.playerEdits;

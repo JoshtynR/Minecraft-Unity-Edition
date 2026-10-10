@@ -114,6 +114,7 @@ public partial class World
         
         // Generate features like trees
         await CalculateFeatures(worldGenerationData.chunkPositionsToCreate);
+        await RefreshTreeMeshes();
         
 
         await Task.Run(() =>
@@ -236,6 +237,7 @@ public partial class World
         
         // Generate features like trees
         await CalculateFeatures(worldGenerationData.chunkPositionsToCreate);
+        await RefreshTreeMeshes();
         
 
         await Task.Run(() =>
@@ -424,17 +426,22 @@ public partial class World
     {
         return UniTask.RunOnThreadPool(() =>
         {
-            Parallel.ForEach(chunkDataPositionsToCreate, pos =>
+            foreach (var pos in chunkDataPositionsToCreate.OrderBy(p => -p.x).ThenBy(p => p.z))
             {
-                if(taskTokenSource.IsCancellationRequested)
-                {
+                if (taskTokenSource.IsCancellationRequested)
                     taskTokenSource.Token.ThrowIfCancellationRequested();
-                }
-                
                 var data = worldData.chunkDataDict[pos];
                 terrainGenerator.GenerateFeatures(data, mapSeedOffset);
                 data.isGenerated = true;
-            });
+            }
+            // Newly available neighbors can complete a previously deferred tree
+            // pass. Loaded legacy chunks are marked done and are never repopulated.
+            foreach (var data in worldData.chunkDataDict.Values.Where(d => d.isGenerated && !d.betaTreePopulationDone)
+                .OrderBy(d => -d.worldPos.x).ThenBy(d => d.worldPos.z))
+            {
+                taskTokenSource.Token.ThrowIfCancellationRequested();
+                terrainGenerator.GenerateBetaTrees(data);
+            }
         },true, taskTokenSource.Token);
     }
     
