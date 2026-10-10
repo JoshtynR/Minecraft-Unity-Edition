@@ -83,6 +83,8 @@ public static class BlockHelper
         {
             GetFaceLightingAndAO(dir, pos, meshData, chunk);
         }
+        if (block.type == BlockType.Water && chunk != null)
+            SetWaterFaceHeight(pos, meshData, chunk);
         meshData.AddQuadTriangles();
         var uvs = FaceUVs(dir, block.type, blockTypeData);
         meshData.uv.AddRange(uvs);
@@ -92,6 +94,26 @@ public static class BlockHelper
 
 
         return meshData;
+    }
+
+    private static void SetWaterFaceHeight(Vector3Int pos, MeshData meshData, ChunkData chunk)
+    {
+        for (int i = meshData.vertices.Count - 4; i < meshData.vertices.Count; i++)
+        {
+            var vertex = meshData.vertices[i];
+            if (vertex.y < pos.y + 0.5f) continue;
+            int cornerX = pos.x + (vertex.x > pos.x + 0.5f ? 1 : 0);
+            int cornerZ = pos.z + (vertex.z > pos.z + 0.5f ? 1 : 0);
+            float height = WaterSurface.CornerHeight(p =>
+            {
+                var sample = chunk.GetBlock(new Vector3Int(p.x, p.y, p.z));
+                if (sample.type == BlockType.Water) return sample.waterLevel;
+                if (sample.type == BlockType.Air) return WaterSimulation.Air;
+                return WaterSimulation.Solid;
+            }, new WaterPosition(cornerX, pos.y, cornerZ));
+            vertex.y = pos.y + height + 0.0005f;
+            meshData.vertices[i] = vertex;
+        }
     }
     
     public static Vector2Int TexturePosition(Direction dir, BlockTypeData blockTypeData)

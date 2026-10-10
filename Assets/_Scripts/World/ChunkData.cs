@@ -51,6 +51,7 @@ public class ChunkData
         }
         chunkData.sections = sections;
         chunkData.modifiedAfterSave = false;
+        chunkData.isGenerated = true;
         
         return chunkData;
     } 

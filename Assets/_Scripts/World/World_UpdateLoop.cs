@@ -55,6 +55,7 @@ public partial class World
 
     private void Update()
     {
+        UpdateWater();
         //TODO: remove this because it is slow
         Camera.main.backgroundColor = Color.Lerp(nightColor,dayColor , skyLightMultiplier*(1+1/9f));
         

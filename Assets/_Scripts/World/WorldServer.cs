@@ -29,14 +29,29 @@ public class WorldServer : NetworkBehaviour
 
     public void SetBlockMessageHandler(NetworkConnectionToClient conn, SetBlockMessage message)
     {
+        World.Instance.SetBlock(message.position, message.blockType);
         RpcSetBlock(message.position, message.blockType);
     }
 
     [ClientRpc]
     public void RpcSetBlock(Vector3Int position, BlockType blockType)
     {
-        World.Instance.SetBlock(position, blockType);
+        if (!NetworkServer.active) World.Instance.SetBlock(position, blockType);
     }
+    [Server]
+    public void BroadcastWaterUpdates(Vector3Int[] positions, byte[] levels)
+    {
+        RpcWaterUpdates(positions, levels);
+    }
+
+    [ClientRpc]
+    private void RpcWaterUpdates(Vector3Int[] positions, byte[] levels)
+    {
+        if (NetworkServer.active || World.Instance == null) return;
+        for (int i = 0; i < positions.Length; i++)
+            World.Instance.ReceiveWaterState(positions[i], levels[i]);
+    }
+
     public struct SetBlockMessage : NetworkMessage
     {
         public Vector3Int position;

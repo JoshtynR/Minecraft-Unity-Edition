@@ -472,5 +472,6 @@ public partial class World
     {
         var chunkRenderer = worldRenderer.RenderChunk(worldData, pos, meshData);
         worldData.chunkDict.TryAdd(pos, chunkRenderer);
+        QueueWaterChunk(worldData.chunkDataDict[pos]);
     }
 }
