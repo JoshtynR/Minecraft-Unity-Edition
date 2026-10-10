@@ -858,7 +858,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 488590538}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.43267882
+  m_Size: 0.43962264
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -2352,6 +2352,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 2e4245e7fee494144b904caa0e863f7d, type: 3}
   - {fileID: 8300000, guid: f4e759895781b8d40819d13bcfb6b6c0, type: 3}
   - {fileID: 8300000, guid: 1ba8f1da11b71104da5ae7afab6218e8, type: 3}
+  - {fileID: 8300000, guid: 2761f75891621b04e85b9109235b2665, type: 3}
   playOnStart: 1
   shuffle: 1
   loopPlaylist: 1
@@ -3817,7 +3818,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -152.49994, y: 2917836.5}
+  m_AnchoredPosition: {x: -152.49994, y: 3046223.5}
   m_SizeDelta: {x: 305, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &845042230
@@ -6635,6 +6636,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   seedOffset: {x: 0, y: 0, z: 0}
+  betaWorldSeed: 0
   worldName: 
 --- !u!1 &1324978155 stripped
 GameObject:
@@ -7877,7 +7879,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 236816974}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.43267882
+  m_Size: 0.43962264
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -9216,7 +9218,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -152.49997, y: 2757229.8}
+  m_AnchoredPosition: {x: -152.49997, y: 2885616.8}
   m_SizeDelta: {x: 305, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1737316053

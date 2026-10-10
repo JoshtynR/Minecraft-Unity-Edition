@@ -173,9 +173,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 13
     textureData:
-      up: {x: 3, y: 17}
-      down: {x: 3, y: 17}
-      side: {x: 3, y: 17}
+      up: {x: 11, y: 2}
+      down: {x: 11, y: 2}
+      side: {x: 11, y: 2}
       upExtends: {x: 1, y: 1}
       downExtends: {x: 1, y: 1}
       sideExtends: {x: 1, y: 1}
@@ -186,9 +186,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 14
     textureData:
-      up: {x: 0, y: 17}
-      down: {x: 0, y: 17}
-      side: {x: 0, y: 17}
+      up: {x: 11, y: 2}
+      down: {x: 11, y: 2}
+      side: {x: 11, y: 2}
       upExtends: {x: 1, y: 1}
       downExtends: {x: 1, y: 1}
       sideExtends: {x: 1, y: 1}
@@ -198,6 +198,19 @@ MonoBehaviour:
     lightEmission: 0
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 15
+    textureData:
+      up: {x: 2, y: 6}
+      down: {x: 2, y: 5}
+      side: {x: 2, y: 4}
+      upExtends: {x: 1, y: 1}
+      downExtends: {x: 1, y: 1}
+      sideExtends: {x: 1, y: 1}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 16
     textureData:
       up: {x: 31, y: 31}
       down: {x: 31, y: 31}
@@ -210,3 +223,16 @@ MonoBehaviour:
     opacity: 15
     lightEmission: 15
     albedoTint: {r: 1, g: 0.32, b: 0.08, a: 1}
+  - blockType: 9
+    textureData:
+      up: {x: 10, y: 6}
+      down: {x: 10, y: 6}
+      side: {x: 10, y: 6}
+      upExtends: {x: 1, y: 1}
+      downExtends: {x: 1, y: 1}
+      sideExtends: {x: 1, y: 1}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}

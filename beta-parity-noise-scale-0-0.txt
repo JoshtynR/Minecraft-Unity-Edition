@@ -1,0 +1,6 @@
+seed=-1446162294
+betaChunk=0,0
+stage=scale
+format=little-endian-f64
+count=25
+4Om5ncntZcDGDzaryfRlwPoD6U0D2WXAuXyun+GQZcCmTZEFSmJlwIx+66JT9GXAQFAya1ryZcCede7hSc1lwAp6VREfn2XANTruQy6OZcCPx1UUCBNmwIm3+aM6E2bAJicb4/QXZsBgqOEoO/FlwJgsYI4F3GXAek8CyBU/ZsD0OtnsnEpmwHIErmz8VGbAlChcVMgaZsDo9icSY+1lwFw+FKaodGbAzpSgeGh1ZsBPhpA4e1hmwMrhV7pDJWbATCEt14UQZsA=

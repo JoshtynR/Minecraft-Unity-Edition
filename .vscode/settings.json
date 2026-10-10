@@ -51,5 +51,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Minecraft-Unity.sln"
+    "dotnet.defaultSolution": "Minecraft-Unity-Edition.sln"
 }

@@ -80,6 +80,10 @@ public partial class World : MonoBehaviour
         
         NetworkClient.RegisterHandler<StartWorldMessage>(message =>
         {
+            // Clients must use the server's seed before generating any chunks.
+            betaWorldSeed = message.betaWorldSeed;
+            if (WorldSettingsManager.Instance != null)
+                WorldSettingsManager.Instance.betaWorldSeed = message.betaWorldSeed;
             StartWorld();
             GenerateWorld(message.position);
         });
@@ -391,10 +395,12 @@ public partial class World : MonoBehaviour
 public struct StartWorldMessage : NetworkMessage
 {
     public Vector3Int position;
+    public long betaWorldSeed;
     
-    public StartWorldMessage(Vector3Int position)
+    public StartWorldMessage(Vector3Int position, long betaWorldSeed)
     {
         this.position = position;
+        this.betaWorldSeed = betaWorldSeed;
     }
 }
 
