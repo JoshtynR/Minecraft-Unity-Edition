@@ -56,7 +56,7 @@ public static class BlockHelper
                     {
                         if (neighbourBlockType != BlockType.Water && neighbourBlockTypeData.isTransparent)
                         {
-                            meshData.transparentMesh = GetFaceDataIn(dir, pos, meshData.transparentMesh, block,blockTypeData, chunk);
+                            meshData.waterMesh = GetFaceDataIn(dir, pos, meshData.waterMesh, block,blockTypeData, chunk);
                         }
                     }
                     else if (neighbourBlockTypeData.isTransparent)

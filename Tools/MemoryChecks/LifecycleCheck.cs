@@ -58,7 +58,7 @@ public static class LifecycleCheck
  static MeshData Quad(ChunkData owner)
  {
   var data=new MeshData(true){sourceChunk=owner};
-  foreach(var part in new[]{data,data.transparentMesh})
+  foreach(var part in new[]{data,data.transparentMesh,data.waterMesh})
   {
    for(int i=0;i<4;i++){part.AddVertex(new Vector3(i,0,0));part.skyLight.Add(15);part.blockLight.Add(3);part.sides.Add(new Vector3());}
    for(int i=0;i<4;i++)part.smoothLightCorners.Add(new Vector4(0.1f,0.2f,0.3f,0.4f));
@@ -72,11 +72,15 @@ public static class LifecycleCheck
   var data=new ChunkData();var renderer=new ChunkRenderer();renderer.Initialize(data);var mesh=renderer.filter.sharedMesh;
   renderer.Initialize(new ChunkData());Check(renderer.filter.sharedMesh==mesh&&Mesh.created==1,"pool reuse retains owned mesh");
   var staging=Quad(renderer.ChunkData);renderer.RenderMesh(staging);renderer.RenderMesh(staging);
-  Check(mesh.vertices.Count==8&&staging.vertices.Count==8,"repeat uploads don't duplicate transparent vertices");
+  Check(mesh.vertices.Count==12&&staging.vertices.Count==12,"repeat uploads don't duplicate transparent vertices");
   Check(mesh.indices[1][0]==4&&mesh.indices[1][2]==6,"transparent indices offset exactly once");
-  Check(staging.lightingUVs.Count==8&&staging.lightingUVs[4].x==15,"lighting channel merged");
-  Check(staging.uv.Count==8&&staging.uv[4].z==7,"face texture layers retained");
-  Check(staging.smoothLightCorners.Count==8&&mesh.cornerUVs.Count==8&&mesh.cornerUVs[7].z==0.3f,"smooth corner channel survives transparent merge and repeated upload");
+  Check(staging.lightingUVs.Count==12&&staging.lightingUVs[4].x==15,"lighting channel merged");
+  Check(staging.uv.Count==12&&staging.uv[4].z==7,"face texture layers retained");
+  Check(staging.smoothLightCorners.Count==12&&mesh.cornerUVs.Count==12&&mesh.cornerUVs[7].z==0.3f,"smooth corner channel survives transparent merge and repeated upload");
+  Check(mesh.subMeshCount==3&&mesh.indices[2][0]==8&&mesh.indices[2][2]==10,"water indices offset after opaque and cutout geometry exactly once");
+  Check(mesh.lightUVs.Count==12&&mesh.cornerUVs[11].w==0.4f,"water retains brightness and corner channels");
+  renderer.RenderMesh(new MeshData(true){sourceChunk=renderer.ChunkData});
+  Check(mesh.indices[2].Count==0,"dry rebuild clears previous water triangles");
   int uploads=mesh.uploads;renderer.Initialize(new ChunkData());renderer.RenderMesh(staging);
   Check(mesh.uploads==uploads,"stale chunk data rejected after pool reuse");
   Check(typeof(ChunkRenderer).GetField("MeshData")==null,"renderer doesn't retain staging lists");

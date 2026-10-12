@@ -21,10 +21,11 @@ namespace UnityEngine
  public static class Mathf {public static int Max(int a,int b)=>Math.Max(a,b);public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));}
 }
 public enum Direction {down,up,backwards,forwards,left,right}
-public static class DirectionExt {public static Vector3Int GetVector(this Direction d){return new[]{Vector3Int.down,Vector3Int.up,Vector3Int.back,Vector3Int.forward,Vector3Int.left,Vector3Int.right}[(int)d];}}
+public static class DirectionExt {public static Direction GetOpposite(this Direction d)=>new[]{Direction.up,Direction.down,Direction.forwards,Direction.backwards,Direction.right,Direction.left}[(int)d];public static Vector3Int GetVector(this Direction d){return new[]{Vector3Int.down,Vector3Int.up,Vector3Int.back,Vector3Int.forward,Vector3Int.left,Vector3Int.right}[(int)d];}}
 public class ShapeSlot {public BlockShape shape=new BlockShape(0,0,0,16,16,16);public BlockShape GetShape()=>shape;}
 public class TextureData {public int FaceIndex(Direction d)=>0;}
-public class BlockTypeData {public byte opacity,lightEmission;public TextureData textureData=new TextureData();public Color albedoTint;}
+public static class BlockDataManager {public static BlockTypeData[] blockTypeDataDictionary=new BlockTypeData[32];}
+public class BlockTypeData {public bool isTransparent;public byte opacity,lightEmission;public TextureData textureData=new TextureData();public Color albedoTint;}
 public class Block
 {
  public byte waterLevel;public BlockType type;public BlockTypeData BlockData=new BlockTypeData();public int sky,light;public ChunkData chunkData;public Vector3Int localChunkPosition;public Vector3Int globalWorldPosition=>chunkData.worldPos+localChunkPosition;public ShapeSlot blockShape=new ShapeSlot();
@@ -90,6 +91,25 @@ public static class LightingCheck
     float[] cornerValues={q.x,q.y,q.z,q.w};Check(Math.Abs(cornerValues[vertex]-lastFaceMesh.sides[vertex].x)<0.000001f,"UV winding maps to same light corner");
     orderedVertices++;
    }
+  }
+  // Production face routing: only water enters the blended draw; its neighbors
+  // still emit the terrain seen through it. Leaves/glass keep cutout geometry.
+  for(int i=0;i<32;i++)BlockDataManager.blockTypeDataDictionary[i]=new BlockTypeData{isTransparent=true};
+  BlockDataManager.blockTypeDataDictionary[(int)BlockType.Stone].isTransparent=false;
+  var renderChunk=new ChunkData();var renderPos=new Vector3Int(0,65,0);Add(renderChunk,renderPos,BlockType.Water);
+  var renderMesh=BlockHelper.GetMeshData(renderChunk,renderPos,new MeshData(true),BlockType.Water);
+  Check(renderMesh.waterMesh.vertices.Count==24&&renderMesh.transparentMesh.vertices.Count==0&&renderMesh.vertices.Count==0,"water has dedicated blended submesh");
+  Add(renderChunk,renderPos+Vector3Int.right,BlockType.Water);
+  renderMesh=BlockHelper.GetMeshData(renderChunk,renderPos,new MeshData(true),BlockType.Water);
+  Check(renderMesh.waterMesh.vertices.Count==20,"adjacent water suppresses internal faces");
+  var stonePos=renderPos+Vector3Int.down;Add(renderChunk,stonePos,BlockType.Stone);
+  renderMesh=BlockHelper.GetMeshData(renderChunk,stonePos,new MeshData(true),BlockType.Stone);
+  Check(renderMesh.vertices.Count==24&&renderMesh.waterMesh.vertices.Count==0,"terrain beneath water remains rendered");
+  foreach(var cutout in new[]{BlockType.Leaves,BlockType.Glass})
+  {
+   Add(renderChunk,renderPos,cutout);
+   renderMesh=BlockHelper.GetMeshData(renderChunk,renderPos,new MeshData(true),cutout);
+   Check(renderMesh.transparentMesh.vertices.Count>0&&renderMesh.waterMesh.vertices.Count==0,"cutout blocks stay out of blended water pass");
   }
   // Actual propagation adapter: a mixed-opacity corridor crossing chunk ownership.
   var corridor=new ChunkData();corridor.worldRef.worldHeight=8;

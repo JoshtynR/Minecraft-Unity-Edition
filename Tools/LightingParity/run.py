@@ -6,9 +6,9 @@ def main():
  ap=argparse.ArgumentParser();ap.add_argument('--mcs',default='mcs');ap.add_argument('--mono',default='mono');a=ap.parse_args()
  with tempfile.TemporaryDirectory() as t:
   t=Path(t);helper=(ROOT/'Assets/_Scripts/World/Rendering/BlockHelper.cs').read_text()
-  pipeline=helper[helper.index('    public static MeshData GetFaceDataIn'):helper.index('    public static void GetFaceLightingAndAO')]
+  pipeline=helper[helper.index('    public static MeshData GetMeshData'):helper.index('    public static void GetFaceLightingAndAO')]
   method=pipeline+helper[helper.index('    public static void GetFaceLightingAndAO'):helper.index('    public static int GetLightIndex')]
-  (t/'BlockHelper.cs').write_text('using System;using UnityEngine;public static class BlockHelper{'+method+'}')
+  (t/'BlockHelper.cs').write_text('using System;using UnityEngine;public static class BlockHelper{public static readonly Direction[] directions=(Direction[])Enum.GetValues(typeof(Direction));'+method+'}')
   section=(ROOT/'Assets/_Scripts/World/ChunkSection.cs').read_text();axes=section[section.index('    public static void ChooseFaceAxes'):]
   (t/'ChunkSection.cs').write_text('using UnityEngine;public class ChunkSection{'+axes)
   sources=['Assets/_Scripts/WorldGeneration/Beta/Beta173Lighting.cs','Assets/_Scripts/Block/BlockType.cs','Assets/_Scripts/Block/BlockShape.cs','Assets/_Scripts/World/Rendering/MeshData.cs','Assets/_Scripts/World/Lighting.cs','Assets/_Scripts/World/WaterSurface.cs','Assets/_Scripts/World/WaterSimulation.cs','Tools/LightingParity/LightingCheck.cs']

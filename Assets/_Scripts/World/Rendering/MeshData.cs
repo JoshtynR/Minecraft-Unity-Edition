@@ -15,12 +15,16 @@ public class MeshData
     public int subMeshCount;
     public ChunkData sourceChunk;
 
+    public MeshData waterMesh;         // alpha-blended water only
     public MeshData transparentMesh;   // secondary container for transparent faces (if you use it)
 
     public MeshData(bool isMainMesh)
     {
         if (isMainMesh)
+        {
             transparentMesh = new MeshData(false);
+            waterMesh = new MeshData(false);
+        }
     }
 
     private bool prepared;
@@ -31,22 +35,25 @@ public class MeshData
     public void PrepareForRendering()
     {
         if (prepared) return;
-        if (transparentMesh != null)
-        {
-            int offset = vertices.Count;
-            for (int i = 0; i < transparentMesh.triangles.Count; i++)
-                transparentMesh.triangles[i] += offset;
-            vertices.AddRange(transparentMesh.vertices);
-            uv.AddRange(transparentMesh.uv);
-            colors.AddRange(transparentMesh.colors);
-            skyLight.AddRange(transparentMesh.skyLight);
-            blockLight.AddRange(transparentMesh.blockLight);
-            sides.AddRange(transparentMesh.sides);
-            smoothLightCorners.AddRange(transparentMesh.smoothLightCorners);
-        }
+        AppendGeometry(transparentMesh);
+        AppendGeometry(waterMesh);
         for (int i = 0; i < skyLight.Count; i++)
             lightingUVs.Add(new Vector2(skyLight[i], blockLight[i]));
         prepared = true;
+    }
+
+    private void AppendGeometry(MeshData part)
+    {
+        if (part == null) return;
+        int offset = vertices.Count;
+        for (int i = 0; i < part.triangles.Count; i++) part.triangles[i] += offset;
+        vertices.AddRange(part.vertices);
+        uv.AddRange(part.uv);
+        colors.AddRange(part.colors);
+        skyLight.AddRange(part.skyLight);
+        blockLight.AddRange(part.blockLight);
+        sides.AddRange(part.sides);
+        smoothLightCorners.AddRange(part.smoothLightCorners);
     }
 
     public void AddFaceUVs(int layer)

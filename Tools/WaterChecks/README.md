@@ -34,3 +34,22 @@ rendering, and multiplayer transport still need a play-mode check.
 This change covers water block flow and its surface mesh. Swimming, entity
 currents, flowing texture animation, and water/lava reactions are separate systems
 and are not added here. All existing non-air blocks block water displacement.
+
+
+## Transparent water rendering
+
+Chunk submeshes are now solid (0), cutout leaves/glass (1), and blended water (2).
+The Chunk prefab binds Water_Material to slot 2. Its Voxel/Water shader samples
+the same face texture array and shares Beta lighting code with Voxel, but draws
+in the Transparent queue with SrcAlpha/OneMinusSrcAlpha blending, no depth writes,
+and both face orientations visible. Water Opacity defaults to 0.6 and multiplies
+image alpha and block tint alpha. It does not change water's lighting opacity (3).
+Terrain under water remains in the solid pass; internal water faces are culled.
+
+LightingParity checks production routing (water, cutout blocks, adjacent water,
+and submerged terrain). MemoryChecks verifies three-way vertex/light merging,
+water index offsets, repeat uploads, and removing water on a dry mesh rebuild.
+Shader compilation and above/below-water views need verification in Unity. The
+rendering uses Unity's normal transparent renderer sorting; intersecting or
+layered waterfalls can still require finer face sorting. Underwater fog,
+refraction, and water texture animation are not included in this change.

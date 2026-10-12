@@ -35,7 +35,7 @@ public class ChunkRenderer : MonoBehaviour
         meshData.PrepareForRendering();
         mesh.Clear();
         mesh.MarkDynamic();
-        mesh.subMeshCount = 2;
+        mesh.subMeshCount = 3;
         mesh.SetVertices(meshData.vertices);
         mesh.SetUVs(0, meshData.uv);
         mesh.SetUVs(1, meshData.lightingUVs);
@@ -45,6 +45,8 @@ public class ChunkRenderer : MonoBehaviour
         mesh.SetTriangles(meshData.triangles, 0);
         if (meshData.transparentMesh != null)
             mesh.SetTriangles(meshData.transparentMesh.triangles, 1);
+        if (meshData.waterMesh != null)
+            mesh.SetTriangles(meshData.waterMesh.triangles, 2);
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
         // MeshData is staging data; retaining it here doubles chunk geometry memory.
