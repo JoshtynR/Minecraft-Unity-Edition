@@ -129,7 +129,10 @@ public abstract class BaseEntity : NetworkBehaviour
         isGrounded = false;
         jumpRequest = false;
         StartCoroutine(WaitOnJumpDelay());
+        OnJumpPerformed();
     }
+
+    protected virtual void OnJumpPerformed() { }
     
     public IEnumerator WaitOnJumpDelay()
     {

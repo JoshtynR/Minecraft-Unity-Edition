@@ -8,7 +8,7 @@ using UnityEngine.Events;
 using UnityEngine.Serialization;
 using Gizmos = Popcron.Gizmos;
 
-public class Player : BaseEntity
+public partial class Player : BaseEntity
 {
     [Header("Survival HUD")]
     [SyncVar, Range(0, 20)] public int health = 20;
@@ -20,7 +20,11 @@ public class Player : BaseEntity
     [Server]
     public void SetHealth(int points) { health = SurvivalHudValues.ClampPoints(points); }
     [Server]
-    public void SetHunger(int points) { hunger = SurvivalHudValues.ClampPoints(points); }
+    public void SetHunger(int points)
+    {
+        hunger = SurvivalHudValues.ClampPoints(points);
+        saturation = Mathf.Min(saturation, hunger);
+    }
     [Server]
     public void SetExperience(int level, float progress)
     {
@@ -217,7 +221,26 @@ public class Player : BaseEntity
 
     public override void FixedUpdate()
     {
-        base.FixedUpdate();
+        if (!Application.isPlaying) return;
+        if (!networkStarted || isLocalPlayer)
+        {
+            if (hunger <= 6 && !isFlying) isSprinting = false;
+            var before = transform.position;
+            bool wasGrounded = isGrounded;
+            bool wasSprinting = isSprinting;
+            if (health > 0) base.FixedUpdate();
+            if ((isServer || !networkStarted) && wasGrounded && isGrounded && !isFlying)
+            {
+                var moved = transform.position - before;
+                float distance = new Vector2(moved.x, moved.z).magnitude;
+                if (wasSprinting) localSprintDistance += distance;
+                else localWalkDistance += distance;
+            }
+            PublishSurvivalMovement();
+        }
+        // Host and dedicated server each tick a player once; clients only read
+        // replicated food/health. Offline preview also works without a server.
+        if (isServer || !networkStarted) AdvanceSurvival(Time.fixedDeltaTime);
     }
 
     public bool BreakBlock()
@@ -573,7 +596,7 @@ public class Player : BaseEntity
             }
         }
 
-        if (inventory.isOpen || escapeMenuOpen)
+        if (inventory.isOpen || escapeMenuOpen || health <= 0)
         {
             horizontal = 0;
             vertical = 0;
@@ -596,7 +619,7 @@ public class Player : BaseEntity
         // ===== Double-tap W sprint logic =====
         if (Input.GetKeyDown(KeyCode.W))
         {
-            if (Time.time - lastForwardTapTime <= doubleTapThreshold)
+            if (Time.time - lastForwardTapTime <= doubleTapThreshold && health > 0 && (hunger > 6 || isFlying))
             {
                 isSprinting = true;
             }
