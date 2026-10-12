@@ -9,6 +9,7 @@ namespace UnityEngine
  public class MonoBehaviour:Object { public MeshFilter filter=new MeshFilter(); public T GetComponent<T>() where T:new(){if(typeof(T)==typeof(MeshFilter))return (T)(object)filter;return new T();} }
  public class RequireComponent:Attribute { public RequireComponent(Type a,Type b){} }
  public class HideInInspector:Attribute { }
+ public struct Vector4 { public float x,y,z,w; public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
  public struct Vector2 { public float x,y; public Vector2(float x,float y){this.x=x;this.y=y;} }
  public struct Vector3 { public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;} }
  public struct Vector3Int { public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;} }
@@ -26,9 +27,9 @@ namespace UnityEngine
  public class Mesh:Object
  {
   public int vertexCount=4;public static int created;public int uploads;public int subMeshCount;public Rendering.IndexFormat indexFormat;
-  public List<Vector3> vertices;public List<Vector2> lightUVs;public Dictionary<int,List<int>> indices=new Dictionary<int,List<int>>();
+  public List<Vector3> vertices;public List<Vector2> lightUVs;public List<Vector4> cornerUVs;public Dictionary<int,List<int>> indices=new Dictionary<int,List<int>>();
   public Mesh(){created++;}public void Clear(){}public void MarkDynamic(){}public void SetVertices(List<Vector3> list){vertices=new List<Vector3>(list);uploads++;}
-  public void SetUVs<T>(int channel,List<T> data){if(channel==1)lightUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);}public void SetColors(List<Color> data){}
+  public void SetUVs<T>(int channel,List<T> data){if(channel==1)lightUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==3)cornerUVs=new List<Vector4>((IEnumerable<Vector4>)(object)data);}public void SetColors(List<Color> data){}
   public void SetTriangles(List<int> data,int submesh){indices[submesh]=new List<int>(data);}public void RecalculateNormals(){}public void RecalculateBounds(){}
  }
  namespace Rendering { public enum IndexFormat{UInt32} }
@@ -60,6 +61,7 @@ public static class LifecycleCheck
   foreach(var part in new[]{data,data.transparentMesh})
   {
    for(int i=0;i<4;i++){part.AddVertex(new Vector3(i,0,0));part.skyLight.Add(15);part.blockLight.Add(3);part.sides.Add(new Vector3());}
+   for(int i=0;i<4;i++)part.smoothLightCorners.Add(new Vector4(0.1f,0.2f,0.3f,0.4f));
    part.AddFaceUVs(7);part.AddQuadColor(new Color());part.AddQuadTriangles();
   }
   return data;
@@ -74,6 +76,7 @@ public static class LifecycleCheck
   Check(mesh.indices[1][0]==4&&mesh.indices[1][2]==6,"transparent indices offset exactly once");
   Check(staging.lightingUVs.Count==8&&staging.lightingUVs[4].x==15,"lighting channel merged");
   Check(staging.uv.Count==8&&staging.uv[4].z==7,"face texture layers retained");
+  Check(staging.smoothLightCorners.Count==8&&mesh.cornerUVs.Count==8&&mesh.cornerUVs[7].z==0.3f,"smooth corner channel survives transparent merge and repeated upload");
   int uploads=mesh.uploads;renderer.Initialize(new ChunkData());renderer.RenderMesh(staging);
   Check(mesh.uploads==uploads,"stale chunk data rejected after pool reuse");
   Check(typeof(ChunkRenderer).GetField("MeshData")==null,"renderer doesn't retain staging lists");

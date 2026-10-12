@@ -13,8 +13,20 @@ outside plane, with Beta's material-based diagonal fallback. It replaces the
 front/back weighted level sampling and separate multiplicative voxel AO. UV2
 now stores smooth brightness, flat brightness and a Beta sample marker. Raw
 sky/block values in UV1 remain available to debug views and inventory/player
-meshes. Half-slab sampling borrows brightness from above and four sides. Liquids
-and partial shapes use flat sampling in this implementation.
+meshes. Half-slab sampling borrows brightness from above and four sides. World's **Full Smooth Lighting** is enabled by default. It extends the Beta
+renderer to partial shapes and liquids, using actual vertex heights, inset face
+planes, and per-fragment bilinear interpolation across all four face corners.
+This avoids assigning a full-height sample to a slab/water vertex and removes
+the brightness crease caused by interpolating separately inside two triangles.
+Disable this world option to retain the previous Beta-style vertex interpolation
+and flat liquid/partial-shape mode. MainMat's Smooth Lighting checkbox still
+switches all faces to flat brightness when disabled.
+
+UV3 stores a repeated float4 of corner brightness values, ordered to match the
+face's full-image UV winding. It adds 16 bytes per vertex to mesh attributes;
+there are no extra texture reads or materials. The staging list is released
+alongside the rest of MeshData. Inventory/player meshes use the existing light
+path when the smooth sampling marker is absent.
 
 World's `Beta Skylight Subtracted` is manual (0 daytime, 11 clear night).
 Changing it queues chunk remeshes; this does not implement the celestial clock,
@@ -38,13 +50,17 @@ The harness compiles production brightness math, face sampling, block geometry
 and propagation against Unity storage doubles. The fixture generator extracts
 unchanged reference Java brightness-table and full-cube AO methods into a
 scratch runner. It checks 16 brightness values and 1,536 face cases over 256
-random neighborhoods, darkness values and emissive minima. Per-face corner
-color sets are compared sorted: this is not proof of matching vertex order or
-quad triangulation. Additional tests cover mixed-opacity/cross-chunk transport,
-source removal, initial/dynamic sky columns and daytime/night brightness.
+random neighborhoods, darkness values and emissive minima. Both per-face corner sets and 6,144 positioned vertex colors from the actual
+reference render-face methods are compared. This verifies corner placement as
+well as brightness. The full-smooth bilinear interior is an intentional extension
+of Beta's triangle interpolation. Additional tests cover mixed-opacity/cross-chunk transport,
+source removal, initial/dynamic sky columns, daytime/night brightness, slab
+heights, inset slab faces, deformed water surfaces, and smooth-mode fallback.
 
 Regenerate using `python Tools/LightingParity/generate_fixtures.py <reference-checkout>`.
 Fixtures are compressed with deterministic gzip metadata; reference Java source
-is never added to the Unity repo. Shader compilation, six-direction screenshot
-comparisons, edits at loaded/unloaded chunk borders, translucent water rendering,
-partial-shape AO, and a Unity play test are still required for full visual parity.
+is never added to the Unity repo. Shader compilation, six-direction screenshot comparisons, edits at loaded/unloaded
+chunk borders, translucent water rendering and a Unity play test remain needed.
+The option finishes smooth sampling for current cube/slab/liquid geometry; it
+does not implement weather, the celestial clock, new block models or a different
+light propagation scheduler.

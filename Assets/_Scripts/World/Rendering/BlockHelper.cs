@@ -79,12 +79,10 @@ public static class BlockHelper
     public static MeshData GetFaceDataIn(Direction dir, Vector3Int pos, MeshData meshData, Block block, BlockTypeData blockTypeData, ChunkData chunk)
     {
         block.blockShape.GetShape().SetFaceVertices(dir,pos,meshData);
-        if (chunk != null)
-        {
-            GetFaceLightingAndAO(dir, pos, meshData, chunk);
-        }
         if (block.type == BlockType.Water && chunk != null)
             SetWaterFaceHeight(pos, meshData, chunk);
+        if (chunk != null)
+            GetFaceLightingAndAO(dir, pos, meshData, chunk);
         meshData.AddQuadTriangles();
         meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(dir));
 
@@ -119,32 +117,77 @@ public static class BlockHelper
     {
         Vector3Int normal = direction.GetVector();
         ChunkSection.ChooseFaceAxes(normal, out var axisA, out var axisB);
-        var front = pos + normal;
         var faceBlock = chunk.GetBlock(pos);
+        var shape = faceBlock.blockShape.GetShape();
+        bool fullSmooth = chunk.worldRef.fullSmoothLighting;
+        var front = pos + normal;
+        // A slab's inset face is inside its block cell, whose brightness already
+        // borrows from above/four sides. External cube and liquid faces use the
+        // adjacent cell as before.
+        if (fullSmooth && faceBlock.type != BlockType.Water && faceBlock.type != BlockType.Lava &&
+            IsInsetFace(normal, shape)) front = pos;
         int emission = faceBlock.BlockData.lightEmission;
         int darkness = chunk.worldRef.betaSkylightSubtracted;
         float flat = SampleBrightness(chunk, front, darkness, emission);
-        bool smooth = faceBlock.type != BlockType.Water && faceBlock.type != BlockType.Lava &&
-            faceBlock.blockShape.GetShape().isFullBlock();
+        bool smooth = fullSmooth || (faceBlock.type != BlockType.Water && faceBlock.type != BlockType.Lava && shape.isFullBlock());
+        float c00 = smooth ? SampleCorner(chunk, front, axisA, axisB, -1, -1, darkness, emission, flat) : flat;
+        float c01 = smooth ? SampleCorner(chunk, front, axisA, axisB, -1, 1, darkness, emission, flat) : flat;
+        float c11 = smooth ? SampleCorner(chunk, front, axisA, axisB, 1, 1, darkness, emission, flat) : flat;
+        float c10 = smooth ? SampleCorner(chunk, front, axisA, axisB, 1, -1, darkness, emission, flat) : flat;
         int firstVertex = meshData.vertices.Count - 4;
+        var sample = chunk.GetBlock(front);
+        float q0 = 0, q1 = 0, q2 = 0, q3 = 0;
         for (int i = 0; i < 4; i++)
         {
             var vertex = meshData.vertices[firstVertex + i];
-            int signA = Vector3.Dot(vertex - (Vector3)pos, (Vector3)axisA) >= 0.5f ? 1 : -1;
-            int signB = Vector3.Dot(vertex - (Vector3)pos, (Vector3)axisB) >= 0.5f ? 1 : -1;
-            var a = front + axisA * signA;
-            var b = front + axisB * signB;
-            float corner = smooth ? Beta173Lighting.CornerBrightness(flat,
-                SampleBrightness(chunk, a, darkness, emission),
-                SampleBrightness(chunk, b, darkness, emission),
-                SampleBrightness(chunk, a + axisB * signB, darkness, emission),
-                PassesCornerSample(chunk.GetBlock(a)), PassesCornerSample(chunk.GetBlock(b))) : flat;
-            var sample = chunk.GetBlock(front);
+            float alongA = Vector3.Dot(vertex - (Vector3)pos, (Vector3)axisA);
+            float alongB = Vector3.Dot(vertex - (Vector3)pos, (Vector3)axisB);
+            float a = fullSmooth ? FaceCoordinate(alongA) : (alongA >= 0.5f ? 1 : 0);
+            float b = fullSmooth ? FaceCoordinate(alongB) : (alongB >= 0.5f ? 1 : 0);
+            float corner = Beta173Lighting.InterpolateCorners(c00, c01, c11, c10, a, b);
+            if (i == 0) q0 = corner;
+            else if (i == 1) q1 = corner;
+            else if (i == 2) q2 = corner;
+            else q3 = corner;
             meshData.skyLight.Add(front.y >= chunk.worldRef.worldHeight ? 15 : sample.GetSkyLight());
             meshData.blockLight.Add(sample.GetBlockLight());
-            // UV2: smooth brightness, flat brightness, Beta sample marker.
-            meshData.sides.Add(new Vector3(corner, flat, 1));
+            // Marker 1 retains Beta vertex interpolation; 2 enables fragment
+            // bilinear interpolation. Both retain flat brightness for AO-off.
+            meshData.sides.Add(new Vector3(corner, flat, fullSmooth ? 2 : 1));
         }
+        // Face UVs are always (0,0),(0,1),(1,1),(1,0). Store the light values in
+        // that same order, independently of face orientation or triangle order.
+        var corners = new Vector4(q0, q1, q2, q3);
+        for (int i = 0; i < 4; i++) meshData.smoothLightCorners.Add(corners);
+    }
+
+    private static bool IsInsetFace(Vector3Int normal, BlockShape shape)
+    {
+        return (normal.x < 0 && shape.xMin > 0) || (normal.x > 0 && shape.xMax < 16) ||
+            (normal.y < 0 && shape.yMin > 0) || (normal.y > 0 && shape.yMax < 16) ||
+            (normal.z < 0 && shape.zMin > 0) || (normal.z > 0 && shape.zMax < 16);
+    }
+
+    private static float FaceCoordinate(float coordinate)
+    {
+        // BlockShape/water vertices include a small z-fighting offset. Snap cell
+        // boundaries so full-cube reference corner values stay exact.
+        coordinate -= 0.0005f;
+        if (coordinate < 0.001f) return 0;
+        if (coordinate > 0.999f) return 1;
+        return coordinate;
+    }
+
+    private static float SampleCorner(ChunkData chunk, Vector3Int front, Vector3Int axisA,
+        Vector3Int axisB, int signA, int signB, int darkness, int emission, float flat)
+    {
+        var a = front + axisA * signA;
+        var b = front + axisB * signB;
+        return Beta173Lighting.CornerBrightness(flat,
+            SampleBrightness(chunk, a, darkness, emission),
+            SampleBrightness(chunk, b, darkness, emission),
+            SampleBrightness(chunk, a + axisB * signB, darkness, emission),
+            PassesCornerSample(chunk.GetBlock(a)), PassesCornerSample(chunk.GetBlock(b)));
     }
 
     private static readonly Vector3Int[] SlabLightNeighbors =

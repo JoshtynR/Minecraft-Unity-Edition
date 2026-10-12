@@ -9,6 +9,7 @@ public class MeshData
     public List<Color>   colors     = new List<Color>();   // ← keep only this ONE
     public List<float>   skyLight   = new List<float>();
     public List<float>   blockLight = new List<float>();
+    public List<Vector4> smoothLightCorners = new List<Vector4>();
     public List<Vector3> sides      = new List<Vector3>();
 
     public int subMeshCount;
@@ -41,6 +42,7 @@ public class MeshData
             skyLight.AddRange(transparentMesh.skyLight);
             blockLight.AddRange(transparentMesh.blockLight);
             sides.AddRange(transparentMesh.sides);
+            smoothLightCorners.AddRange(transparentMesh.smoothLightCorners);
         }
         for (int i = 0; i < skyLight.Count; i++)
             lightingUVs.Add(new Vector2(skyLight[i], blockLight[i]));

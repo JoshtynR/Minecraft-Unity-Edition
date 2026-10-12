@@ -4,7 +4,7 @@ Shader "Voxel"
     {
         [MaterialToggle] _TextureOn ("Texture On", Float) = 1
         [MaterialToggle] _LightingOn ("Lighting On", Float) = 1
-        [MaterialToggle] _AOOn ("Beta Smooth Lighting", Float) = 1
+        [MaterialToggle] _AOOn ("Smooth Lighting", Float) = 1
         [MaterialToggle] _FaceShadeOn ("Face Shade On", Float) = 1
         _ShadeUp ("Up Brightness", Range(0,1.5)) = 1
         _ShadeSideNS ("North/South Brightness", Range(0,1.5)) = 0.8
@@ -35,7 +35,8 @@ Shader "Voxel"
                 float3 normal : NORMAL;
                 float3 uv : TEXCOORD0;
                 float2 light : TEXCOORD1;
-                float3 sides : TEXCOORD2; // smooth, flat, Beta sample marker
+                float3 sides : TEXCOORD2; // smooth, flat, sampling mode
+                float4 corners : TEXCOORD3; // face corners in UV winding order
                 float4 color : COLOR;
             };
             struct v2f
@@ -46,6 +47,8 @@ Shader "Voxel"
                 float brightness : TEXCOORD2;
                 float faceShade : TEXCOORD3;
                 float4 color : COLOR;
+                float4 corners : TEXCOORD4;
+                float samplingMode : TEXCOORD5;
             };
             float BetaBrightness(float sky, float block)
             {
@@ -60,6 +63,8 @@ Shader "Voxel"
                 o.uv = v.uv;
                 o.skyBlock = v.light;
                 o.color = v.color;
+                o.corners = v.corners;
+                o.samplingMode = v.sides.z;
                 float brightness = v.sides.z > 0.5
                     ? (_AOOn > 0.5 ? v.sides.x : v.sides.y)
                     : BetaBrightness(v.light.x, v.light.y);
@@ -81,10 +86,18 @@ Shader "Voxel"
                     col.rgb = LinearToGammaSpace(col.rgb);
                 #endif
                 col.rgb *= i.color.rgb;
-                if (_LightingOn > 0.5) col.rgb *= i.brightness * i.faceShade;
+                float brightness = i.brightness;
+                if (_AOOn > 0.5 && i.samplingMode > 1.5)
+                {
+                    float bottom = lerp(i.corners.x, i.corners.w, i.uv.x);
+                    float top = lerp(i.corners.y, i.corners.z, i.uv.x);
+                    brightness = lerp(bottom, top, i.uv.y);
+                    brightness = lerp(brightness, 1, saturate(_BetaBrightnessBoost));
+                }
+                if (_LightingOn > 0.5) col.rgb *= brightness * i.faceShade;
                 if (_Debug > 0.5 && _Debug < 1.5) col.rgb = (i.skyBlock.x / 15).xxx;
                 if (_Debug > 1.5 && _Debug < 2.5) col.rgb = (i.skyBlock.y / 15).xxx;
-                if (_Debug > 2.5) col.rgb = i.brightness.xxx;
+                if (_Debug > 2.5) col.rgb = brightness.xxx;
                 #ifndef UNITY_COLORSPACE_GAMMA
                     col.rgb = GammaToLinearSpace(col.rgb);
                 #endif

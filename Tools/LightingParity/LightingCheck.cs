@@ -15,6 +15,7 @@ namespace UnityEngine
   public static explicit operator Vector3(Vector3Int a)=>new Vector3(a.x,a.y,a.z);
  }
  public struct Vector3 {public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}public static Vector3 operator -(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static float Dot(Vector3 a,Vector3 b)=>a.x*b.x+a.y*b.y+a.z*b.z;}
+ public struct Vector4 { public float x,y,z,w; public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public struct Color {}
  public static class Mathf {public static int Max(int a,int b)=>Math.Max(a,b);public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));}
@@ -22,16 +23,17 @@ namespace UnityEngine
 public enum Direction {down,up,backwards,forwards,left,right}
 public static class DirectionExt {public static Vector3Int GetVector(this Direction d){return new[]{Vector3Int.down,Vector3Int.up,Vector3Int.back,Vector3Int.forward,Vector3Int.left,Vector3Int.right}[(int)d];}}
 public class ShapeSlot {public BlockShape shape=new BlockShape(0,0,0,16,16,16);public BlockShape GetShape()=>shape;}
-public class BlockTypeData {public byte opacity,lightEmission;}
+public class TextureData {public int FaceIndex(Direction d)=>0;}
+public class BlockTypeData {public byte opacity,lightEmission;public TextureData textureData=new TextureData();public Color albedoTint;}
 public class Block
 {
- public BlockType type;public BlockTypeData BlockData=new BlockTypeData();public int sky,light;public ChunkData chunkData;public Vector3Int localChunkPosition;public Vector3Int globalWorldPosition=>localChunkPosition;public ShapeSlot blockShape=new ShapeSlot();
+ public byte waterLevel;public BlockType type;public BlockTypeData BlockData=new BlockTypeData();public int sky,light;public ChunkData chunkData;public Vector3Int localChunkPosition;public Vector3Int globalWorldPosition=>localChunkPosition;public ShapeSlot blockShape=new ShapeSlot();
  public int GetSkyLight()=>sky;public int GetBlockLight()=>light;public void SetSkyLight(int v){sky=v;}public void SetBlockLight(int v){light=v;}
  public Block[] GetNeighbors(){return new[]{Direction.up,Direction.down,Direction.left,Direction.right,Direction.forwards,Direction.backwards}.Select(d=>chunkData.GetBlock(localChunkPosition+d.GetVector())).ToArray();}
 }
 public class BlockLightNode {public Block block;public byte lightLevel;public BlockLightNode(Block b,byte l){block=b;lightLevel=l;}}
 public class ChunkRenderer {}
-public class World {public int worldHeight=128,betaSkylightSubtracted,updates;public void AddChunkToUpdate(ChunkRenderer c,bool first){updates++;}}
+public class World {public int worldHeight=128,betaSkylightSubtracted,updates;public bool fullSmoothLighting=true;public void AddChunkToUpdate(ChunkRenderer c,bool first){updates++;}}
 public class ChunkData
 {
  public int chunkSize=1;public World worldRef=new World();public ChunkRenderer renderer;
@@ -49,7 +51,7 @@ public static class LightingCheck
  static Block Add(ChunkData c,Vector3Int pos,BlockType type=BlockType.Air,int opacity=0,int emission=0){var b=new Block{chunkData=c,localChunkPosition=pos,type=type,BlockData=new BlockTypeData{opacity=(byte)opacity,lightEmission=(byte)emission}};c.blocks[pos]=b;return b;}
  public static void Main(string[] args)
  {
-  ChunkData chunk=null;Vector3Int center=new Vector3Int(-1,65,17);
+  ChunkData chunk=null;MeshData lastFaceMesh=null;int orderedVertices=0;Vector3Int center=new Vector3Int(-1,65,17);
   foreach(var line in File.ReadLines(args[0]))
   {
    if(line.StartsWith("#"))continue;var fields=line.Split('\t');
@@ -69,7 +71,20 @@ public static class LightingCheck
     float shade=face==0?0.5f:face==1?1f:face<4?0.8f:0.6f;
     var values=mesh.sides.Select(v=>v.x*shade).OrderBy(v=>v).ToArray();
     for(int i=0;i<4;i++)Check(Math.Abs(values[i]-F(fields[3+i]))<0.000002f,"Java RenderBlocks corner set case "+fields[1]+" face "+face);
-    Check(mesh.skyLight.Count==4&&mesh.blockLight.Count==4&&mesh.sides.All(v=>v.z==1),"production vertex channel alignment");aoCases++;
+    Check(mesh.skyLight.Count==4&&mesh.blockLight.Count==4&&mesh.sides.All(v=>v.z==2),"production vertex channel alignment");aoCases++;lastFaceMesh=mesh;
+   }
+   if(fields[0]=="O")
+   {
+    int face=int.Parse(fields[2]),x=int.Parse(fields[3]),y=int.Parse(fields[4]),z=int.Parse(fields[5]);
+    int vertex=-1;
+    for(int i=0;i<4;i++)
+    {var v=lastFaceMesh.vertices[i];if((int)Math.Round(v.x-center.x-0.0005f)==x&&(int)Math.Round(v.y-center.y-0.0005f)==y&&(int)Math.Round(v.z-center.z-0.0005f)==z)vertex=i;}
+    Check(vertex>=0,"reference position exists in Unity quad");
+    float shade=face==0?0.5f:face==1?1f:face<4?0.8f:0.6f;
+    Check(Math.Abs(lastFaceMesh.sides[vertex].x*shade-F(fields[6]))<0.000002f,"positioned Java vertex color");
+    var q=lastFaceMesh.smoothLightCorners[vertex];
+    float[] cornerValues={q.x,q.y,q.z,q.w};Check(Math.Abs(cornerValues[vertex]-lastFaceMesh.sides[vertex].x)<0.000001f,"UV winding maps to same light corner");
+    orderedVertices++;
    }
   }
   // Actual propagation adapter: a mixed-opacity corridor crossing chunk ownership.
@@ -93,6 +108,33 @@ public static class LightingCheck
   Check(Beta173Lighting.Brightness(15,0,11)==Beta173Lighting.Brightness(4,0),"night sky subtraction");
   Check(Beta173Lighting.Brightness(0,15,11)==1f,"block light remains bright at night");
   Check(Beta173Lighting.Brightness(0,0)==0.05f,"Beta ambient floor");
-  Console.WriteLine(aoCases+" Java six-face AO cases; "+checks+" brightness/adapter/transport checks passed (Unity storage mocked).");
+  // Partial side faces interpolate at actual heights, rather than snapping every
+  // top vertex to a full-height corner. Use an independently known vertical ramp.
+  var smoothChunk=new ChunkData();var position=new Vector3Int(0,65,0);
+  for(int x=-2;x<=2;x++)for(int y=-2;y<=2;y++)for(int z=-2;z<=2;z++)
+  {var block=Add(smoothChunk,position+new Vector3Int(x,y,z));block.light=y<0?2:y==0?6:14;}
+  var partial=smoothChunk.GetBlock(position);partial.type=BlockType.WoodenSlab;
+  partial.blockShape.shape=new BlockShape(0,0,0,16,8,16);
+  var slabMesh=new MeshData(false);BlockHelper.GetFaceDataIn(Direction.right,position,slabMesh,partial,partial.BlockData,smoothChunk);
+  float low=(Beta173Lighting.Brightness(0,6)+Beta173Lighting.Brightness(0,2))*0.5f;
+  float high=(Beta173Lighting.Brightness(0,6)+Beta173Lighting.Brightness(0,14))*0.5f;
+  for(int i=0;i<4;i++)
+  {float height=slabMesh.vertices[i].y-position.y-0.0005f;float expectedLight=low+(high-low)*height;Check(Math.Abs(slabMesh.sides[i].x-expectedLight)<0.00001f,"slab height interpolation");}
+  var topMesh=new MeshData(false);BlockHelper.GetFaceDataIn(Direction.up,position,topMesh,partial,partial.BlockData,smoothChunk);
+  Check(Math.Abs(topMesh.sides[0].y-Beta173Lighting.Brightness(0,14))<0.00001f,"inset slab top borrows above/sides brightness");
+  partial.type=BlockType.Water;partial.blockShape.shape=new BlockShape(0,0,0,16,16,16);
+  var waterMesh=new MeshData(false);BlockHelper.GetFaceDataIn(Direction.right,position,waterMesh,partial,partial.BlockData,smoothChunk);
+  for(int i=0;i<4;i++)
+  {float height=waterMesh.vertices[i].y-position.y-0.0005f;Check(Math.Abs(waterMesh.sides[i].x-(low+(high-low)*height))<0.00001f,"water samples after final surface height");}
+  Check(waterMesh.vertices[1].y-position.y<0.9f,"fluid vertex actually deformed");
+  smoothChunk.worldRef.fullSmoothLighting=false;
+  var flatWater=new MeshData(false);BlockHelper.GetFaceDataIn(Direction.right,position,flatWater,partial,partial.BlockData,smoothChunk);
+  Check(flatWater.sides.All(v=>v.z==1&&Math.Abs(v.x-v.y)<0.000001f),"previous flat liquid mode retained");
+  // Bilinear face interpolation uses all four UV-wound corners, not a triangle's
+  // three values. The same UV returns the same brightness across the diagonal.
+  Check(Beta173Lighting.InterpolateCorners(0,1,0,0,0.5f,0.5f)==0.25f,"quad center uses all four corners");
+  Check(Beta173Lighting.InterpolateCorners(0,1,0,0,0,1)==1,"UV corner winding");
+  Check(Beta173Lighting.InterpolateCorners(0,1,0,0,-1,2)==1,"partial coordinate clamping");
+  Console.WriteLine(aoCases+" Java six-face AO cases, "+orderedVertices+" positioned vertices; "+checks+" brightness/adapter/transport checks passed (Unity storage mocked).");
  }
 }

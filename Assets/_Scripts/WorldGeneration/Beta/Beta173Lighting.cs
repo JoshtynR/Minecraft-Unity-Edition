@@ -11,6 +11,16 @@ public static class Beta173Lighting
         return (1.0f - darkness) / (darkness * 3.0f + 1.0f) * 0.95f + 0.05f;
     }
 
+    public static float InterpolateCorners(float negativeAnegativeB, float negativeApositiveB,
+        float positiveApositiveB, float positiveAnegativeB, float a, float b)
+    {
+        a = Math.Max(0f, Math.Min(1f, a));
+        b = Math.Max(0f, Math.Min(1f, b));
+        float bottom = negativeAnegativeB + (positiveAnegativeB - negativeAnegativeB) * a;
+        float top = negativeApositiveB + (positiveApositiveB - negativeApositiveB) * a;
+        return bottom + (top - bottom) * b;
+    }
+
     public static int Attenuate(int light, int opacity)
     {
         return Math.Max(0, light - Math.Max(1, opacity));
