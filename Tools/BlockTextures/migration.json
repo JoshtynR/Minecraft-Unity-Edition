@@ -251,5 +251,16 @@
       24
     ],
     "guid": "20fccf3477054cd385d65dded88cf156"
+  },
+  {
+    "path": "Assets/Textures/Blocks/glass.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      160,
+      400,
+      176,
+      416
+    ],
+    "guid": "27d11948ea124617b70aead7234c9a34"
   }
 ]

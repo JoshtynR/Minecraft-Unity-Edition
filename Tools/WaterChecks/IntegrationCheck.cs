@@ -188,3 +188,5 @@ public static class IntegrationCheck
         WaterCheck.Assert(w.playerEdits==edits+1,"host player edit applied twice or server omitted edit");
     }
 }
+
+public static class Lighting { public static void RecastSunLight(ChunkData c, UnityEngine.Vector3Int p, bool changedColumn = false) {} }

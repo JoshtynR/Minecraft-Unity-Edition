@@ -51,7 +51,7 @@ Material:
     - _ShadeDown: 0.5
     - _ShadeSideEW: 0.6
     - _ShadeSideNS: 0.8
-    - _ShadeUp: 1.5
+    - _ShadeUp: 1
     - _TextureOn: 1
     m_Colors: []
   m_BuildTextureStacks: []

@@ -124,6 +124,7 @@ public partial class World : MonoBehaviour
 
     public void UpadteLightTexture()
     {
+        UpdateBetaLightingSettings();
         LightTextureCreator.gamma = gamma;
         LightTextureCreator.skyLightMultiplier = skyLightMultiplier;
         LightTextureCreator.blockLightMultiplier = blockLightMultiplier;

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using UnityEditor;
 using UnityEngine;
 
 public static class LightTextureCreator
@@ -10,6 +9,7 @@ public static class LightTextureCreator
     // Legacy alias kept for compatibility with existing code (expects Vector4 with A≈255)
     public static readonly Vector4[] lightColors = new Vector4[16 * 16];
 
+    public static int skyDarkness;
     private static float[] lightBrightnessTable = new float[16];
 
     [Range(0f, 1f)] public static float gamma = 0f;     // 0 = none, 1 = full shaping
@@ -46,41 +46,14 @@ public static class LightTextureCreator
 
     public static void GenerateLightMapColors()
     {
-        // Slightly bluish skylight tint, then blended toward neutral
-        Vector3 skyTint = new Vector3(skyLightMultiplier, skyLightMultiplier, 1f);
-        skyTint = WeirdLerp(skyTint, Vector3.one, 0.35f);
-
-        for (int k = 0; k < 16; ++k)        // sky component
-        for (int l = 0; l < 16; ++l)        // block/torch component
+        for (int sky = 0; sky < 16; sky++)
+        for (int block = 0; block < 16; block++)
         {
-            float m = lightBrightnessTable[k] * skyLightMultiplier;
-            float n = lightBrightnessTable[l] * blockLightMultiplier;
-
-            // Warm torch ramp
-            float r = n;
-            float g = n * ((n * 0.6f + 0.4f) * 0.6f + 0.4f);
-            float b = n * (n * n * 0.6f + 0.4f);
-
-            Vector3 col = new Vector3(r, g, b) + skyTint * m;
-
-            // tiny neutral lift (matches your original)
-            col = Vector3.Lerp(col, new Vector3(0.75f, 0.75f, 0.75f), 0.04f);
-
-            // gamma-ish shaping
-            col.x = ApplyCurve(Mathf.Clamp01(col.x), gamma);
-            col.y = ApplyCurve(Mathf.Clamp01(col.y), gamma);
-            col.z = ApplyCurve(Mathf.Clamp01(col.z), gamma);
-
-            // second small neutral pull
-            col = Vector3.Lerp(col, new Vector3(0.75f, 0.75f, 0.75f), 0.04f);
-
-            int idx = (k * 16) + l;
-
-            // New API (0..1)
-            LightColors[idx] = new Color(col.x, col.y, col.z, 1f);
-
-            // Legacy array (kept so existing code compiles): A kept at 255 like your old code
-            lightColors[idx] = new Vector4(col.x, col.y, col.z, 255f);
+            float brightness = Beta173Lighting.Brightness(sky, block, skyDarkness);
+            brightness = Mathf.Lerp(brightness, 1f, Mathf.Clamp01(gamma));
+            int index = sky * 16 + block;
+            LightColors[index] = new Color(brightness, brightness, brightness, 1f);
+            lightColors[index] = new Vector4(brightness, brightness, brightness, 255f);
         }
     }
 
@@ -100,7 +73,7 @@ public static class LightTextureCreator
 
     public static void GenerateLightBrightnessTable()
     {
-        float ambient = 0f; // expose later if you add dimensions
+        float ambient = 0.05f; // expose later if you add dimensions
         var fs = new float[16];
         for (int i = 0; i <= 15; ++i)
         {

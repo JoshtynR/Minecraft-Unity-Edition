@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -44,12 +44,14 @@ public partial class F3MenuManger : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.KeypadPlus))
             {
-                World.Instance.skyLightMultiplier = Mathf.Clamp(World.Instance.skyLightMultiplier+0.1f,0.15F,1f);
+                World.Instance.betaSkylightSubtracted = Mathf.Clamp(World.Instance.betaSkylightSubtracted - 1, 0, 11);
+                World.Instance.skyLightMultiplier = Mathf.Lerp(1f, 0.15f, World.Instance.betaSkylightSubtracted / 11f);
                 World.Instance.UpadteLightTexture();
             }
             if (Input.GetKeyDown(KeyCode.KeypadMinus))
             {
-                World.Instance.skyLightMultiplier = Mathf.Clamp(World.Instance.skyLightMultiplier-0.1f,0.15F,1f);;
+                World.Instance.betaSkylightSubtracted = Mathf.Clamp(World.Instance.betaSkylightSubtracted + 1, 0, 11);
+                World.Instance.skyLightMultiplier = Mathf.Lerp(1f, 0.15f, World.Instance.betaSkylightSubtracted / 11f);
                 World.Instance.UpadteLightTexture();
             }
 

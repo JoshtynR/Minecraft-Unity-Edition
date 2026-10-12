@@ -115,68 +115,68 @@ public static class BlockHelper
         }
     }
     
-        public static void GetFaceLightingAndAO(Direction direction, Vector3Int pos, MeshData meshData, ChunkData chunk)
+    public static void GetFaceLightingAndAO(Direction direction, Vector3Int pos, MeshData meshData, ChunkData chunk)
     {
-        // assumes SetFaceVertices already appended 4 verts (bottom-left clockwise)
-        var section = chunk.GetBlock(pos).section;
-        if (section == null)
-        {
-            // keep arrays aligned
-            for (int i = 0; i < 4; i++)
-            {
-                meshData.skyLight.Add(0);
-                meshData.blockLight.Add(0);
-                meshData.sides.Add(Vector3.zero);
-            }
-            return;
-        }
-
-        // face normal and in-plane axes
-        Vector3Int n = direction.GetVector();
-        ChunkSection.ChooseFaceAxes(n, out var uAxis, out var vAxis);
-
-        // base index of the 4 verts we just wrote
-        int baseIdx = meshData.vertices.Count - 4;
-
+        Vector3Int normal = direction.GetVector();
+        ChunkSection.ChooseFaceAxes(normal, out var axisA, out var axisB);
+        var front = pos + normal;
+        var faceBlock = chunk.GetBlock(pos);
+        int emission = faceBlock.BlockData.lightEmission;
+        int darkness = chunk.worldRef.betaSkylightSubtracted;
+        float flat = SampleBrightness(chunk, front, darkness, emission);
+        bool smooth = faceBlock.type != BlockType.Water && faceBlock.type != BlockType.Lava &&
+            faceBlock.blockShape.GetShape().isFullBlock();
+        int firstVertex = meshData.vertices.Count - 4;
         for (int i = 0; i < 4; i++)
         {
-            Vector3 v = meshData.vertices[baseIdx + i];
-
-            // derive corner signs from actual vertex position (relative to cell)
-            float alongU = Vector3.Dot(v - (Vector3)pos, (Vector3)uAxis); // ~0 or ~1
-            float alongV = Vector3.Dot(v - (Vector3)pos, (Vector3)vAxis); // ~0 or ~1
-            int sU = (alongU >= 0.5f) ? +1 : -1;
-            int sV = (alongV >= 0.5f) ? +1 : -1;
-
-            // ---- smooth lighting (avg 4 samples just outside the face) ----
-            // tweak the bias (last arg) to taste: ~0.6..0.7 feels MC-like
-            section.SampleVertexSkyBlockSmoothGlobal(
-                pos, n, uAxis, vAxis, sU, sV,
-                out float sky, out float blk, 0.65f
-            );
-
-            meshData.skyLight.Add(sky);     // floats 0..15
-            meshData.blockLight.Add(blk);   // floats 0..15
-
-            // ---- MC-style AO flags (sideU, sideV, corner) at the corner ----
-            // sample just one cell outside the face:
-            var pCenter = pos + n;
-            var pU      = pCenter + uAxis * sU;
-            var pV      = pCenter + vAxis * sV;
-            var pDiag   = pCenter + uAxis * sU + vAxis * sV;
-
-            bool sideU  = Occludes(chunk.GetBlock(pU));
-            bool sideV  = Occludes(chunk.GetBlock(pV));
-            bool diag   = Occludes(chunk.GetBlock(pDiag));
-
-            meshData.sides.Add(new Vector3(sideU ? 1f : 0f, sideV ? 1f : 0f, diag ? 1f : 0f));
+            var vertex = meshData.vertices[firstVertex + i];
+            int signA = Vector3.Dot(vertex - (Vector3)pos, (Vector3)axisA) >= 0.5f ? 1 : -1;
+            int signB = Vector3.Dot(vertex - (Vector3)pos, (Vector3)axisB) >= 0.5f ? 1 : -1;
+            var a = front + axisA * signA;
+            var b = front + axisB * signB;
+            float corner = smooth ? Beta173Lighting.CornerBrightness(flat,
+                SampleBrightness(chunk, a, darkness, emission),
+                SampleBrightness(chunk, b, darkness, emission),
+                SampleBrightness(chunk, a + axisB * signB, darkness, emission),
+                PassesCornerSample(chunk.GetBlock(a)), PassesCornerSample(chunk.GetBlock(b))) : flat;
+            var sample = chunk.GetBlock(front);
+            meshData.skyLight.Add(front.y >= chunk.worldRef.worldHeight ? 15 : sample.GetSkyLight());
+            meshData.blockLight.Add(sample.GetBlockLight());
+            // UV2: smooth brightness, flat brightness, Beta sample marker.
+            meshData.sides.Add(new Vector3(corner, flat, 1));
         }
-
-        // local helper
-        bool Occludes(Block b) =>
-            b != null && b.type != BlockType.Nothing && b.BlockData.opacity >= 15;
     }
 
+    private static readonly Vector3Int[] SlabLightNeighbors =
+        { Vector3Int.up, Vector3Int.left, Vector3Int.right, Vector3Int.forward, Vector3Int.back };
+
+    private static bool PassesCornerSample(Block block)
+    {
+        // All currently implemented solid/liquid materials use Beta's false
+        // canBlockGrass entry; air (including outside bounds) uses true.
+        return block == null || block.type == BlockType.Air || block.type == BlockType.Nothing;
+    }
+
+    private static float SampleBrightness(ChunkData chunk, Vector3Int position, int darkness, int emission)
+    {
+        if (position.y >= chunk.worldRef.worldHeight)
+            return Beta173Lighting.Brightness(15, 0, darkness, emission);
+        if (position.y < 0) return Beta173Lighting.Brightness(0, 0, darkness, emission);
+        var block = chunk.GetBlock(position);
+        if (block.type == BlockType.WoodenSlab)
+        {
+            // Beta half slabs sample above and four sides, never below.
+            int sky = 0, light = 0;
+            foreach (var dir in SlabLightNeighbors)
+            {
+                var neighbor = chunk.GetBlock(position + dir);
+                sky = Math.Max(sky, neighbor.GetSkyLight());
+                light = Math.Max(light, neighbor.GetBlockLight());
+            }
+            return Beta173Lighting.Brightness(sky, light, darkness, emission);
+        }
+        return Beta173Lighting.Brightness(block.GetSkyLight(), block.GetBlockLight(), darkness, emission);
+    }
 
     public static int GetLightIndex(Vector3Int pos, ChunkData chunk)
     {

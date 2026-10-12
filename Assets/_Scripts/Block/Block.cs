@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -102,7 +102,6 @@ public class Block
         var z = position.z;
         
         var oldOpacity = BlockData.opacity;
-        var oldEmission = BlockData.lightEmission;
         var brokeBlock = this.type != BlockType.Nothing && type == BlockType.Air;
         var oldType = this.type;
 
@@ -119,6 +118,19 @@ public class Block
         }
 
         section.blocks[x, y, z] = BlockMapping.MapTypeToBlock(type, this);
+        if (oldOpacity != BlockData.opacity && chunkData.isGenerated && chunkData.worldRef.IsWorldCreated)
+        {
+            Lighting.RecastSunLight(chunkData, localChunkPosition, true);
+            int previousLight = GetBlockLight();
+            if (previousLight > 0)
+                chunkData.blockLightRemoveQueue.Enqueue(new BlockLightNode(this, (byte)previousLight));
+            SetBlockLight(BlockData.lightEmission);
+            if (BlockData.lightEmission > 0)
+                chunkData.blockLightUpdateQueue.Enqueue(new BlockLightNode(this, BlockData.lightEmission));
+            foreach (var neighbor in GetNeighbors())
+                if (neighbor.type != BlockType.Nothing && neighbor.GetBlockLight() > 0)
+                    chunkData.blockLightUpdateQueue.Enqueue(new BlockLightNode(neighbor, (byte)neighbor.GetBlockLight()));
+        }
         if (chunkData.isGenerated && chunkData.worldRef.IsWorldCreated)
             chunkData.worldRef.NotifyWaterBlockChanged(globalWorldPosition);
     }

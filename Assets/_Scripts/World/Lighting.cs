@@ -65,32 +65,7 @@ public static class Lighting
 
     public static void ExtendSunRay(ChunkData data, Block block)
     {
-        if (block == null) return;
-
-        var pos = block.localChunkPosition;
-        // Start BELOW this block
-        pos.y--;
-
-        while (pos.y >= 0)
-        {
-            var blockBelow = data.GetBlock(pos);
-            if (blockBelow == null || blockBelow.type == BlockType.Nothing) return;
-
-            // Only extend through non-opaque
-            if (blockBelow.BlockData.opacity < 15)
-            {
-                if (blockBelow.GetSkyLight() != 15)
-                {
-                    data.skyLightUpdateQueue.Enqueue(new BlockLightNode(blockBelow, 15));
-                }
-            }
-            else
-            {
-                return;
-            }
-
-            pos.y--;
-        }
+        if (block != null) RecastSunLight(data, block.localChunkPosition, true);
     }
 
     public static void CalculateSkyLightRemove(ChunkData data)
@@ -111,28 +86,7 @@ public static class Lighting
 
     public static void BlockSunRay(ChunkData data, Block block)
     {
-        if (block == null) return;
-
-        var pos = block.localChunkPosition;
-        pos.y--; // start just below
-
-        while (pos.y >= 0)
-        {
-            var blockBelow = data.GetBlock(pos);
-            if (blockBelow == null || blockBelow.type == BlockType.Nothing) return;
-
-            if (blockBelow.GetSkyLight() == 15)
-            {
-                blockBelow.SetSkyLight(0);
-                RemoveSkyLight(data, blockBelow, 15);
-            }
-            else
-            {
-                return;
-            }
-
-            pos.y--;
-        }
+        if (block != null) RecastSunLight(data, block.localChunkPosition, true);
     }
 
     public static void RemoveSkyLight(ChunkData data, Block block, int oldLightValue)
@@ -166,21 +120,17 @@ public static class Lighting
     {
         if (block == null || block.type == BlockType.Nothing) return;
 
-        // Raise this block's skylight if incoming is stronger
-        if (lightLevel > block.GetSkyLight())
-            block.SetSkyLight(lightLevel);
-        else
-            lightLevel = block.GetSkyLight();
-
+        // Queued values may predate a removal; never resurrect stale light.
+        lightLevel = block.GetSkyLight();
         if (lightLevel <= 1) return;
 
-        int next = lightLevel - 1;
 
         foreach (var neighbor in block.GetNeighbors())
         {
             if (neighbor == null || neighbor.type == BlockType.Nothing) continue;
             if (neighbor.BlockData.opacity == 15) continue;
 
+            int next = Beta173Lighting.Attenuate(lightLevel, neighbor.BlockData.opacity);
             if (neighbor.GetSkyLight() < next)
             {
                 neighbor.SetSkyLight(next);
@@ -206,6 +156,8 @@ public static class Lighting
                 neighbor.SetBlockLight(0);
                 CheckForEdgeUpdate(neighbor, data);
                 data.blockLightRemoveQueue.Enqueue(new BlockLightNode(neighbor, (byte)nLight));
+                if (neighbor.BlockData.lightEmission > 0)
+                    data.blockLightUpdateQueue.Enqueue(new BlockLightNode(neighbor, neighbor.BlockData.lightEmission));
             }
             else // nLight >= oldLightValue
             {
@@ -219,20 +171,17 @@ public static class Lighting
     {
         if (block == null || block.type == BlockType.Nothing) return;
 
-        // Ensure the source has at least lightValue
-        if (lightValue > block.GetBlockLight())
-            block.SetBlockLight(lightValue);
-
-        int current = block.GetBlockLight();
+        int current = Mathf.Max(block.GetBlockLight(), block.BlockData.lightEmission);
+        if (current > block.GetBlockLight()) block.SetBlockLight(current);
         if (current <= 1) return;
 
-        int next = current - 1;
 
         foreach (var neighbor in block.GetNeighbors())
         {
             if (neighbor == null || neighbor.type == BlockType.Nothing) continue;
             if (neighbor.BlockData.opacity == 15) continue;
 
+            int next = Beta173Lighting.Attenuate(current, neighbor.BlockData.opacity);
             if (neighbor.GetBlockLight() < next)
             {
                 neighbor.SetBlockLight(next);
@@ -286,41 +235,35 @@ public static class Lighting
                     var block = chunkData.GetBlock(new Vector3Int(x, y, z));
                     if (block == null || block.type == BlockType.Nothing) continue;
 
-                    int sky = block.GetSkyLight();
-                    if (sky > 0)
-                        chunkData.skyLightUpdateQueue.Enqueue(new BlockLightNode(block, (byte)sky));
+                    int emitted = block.BlockData.lightEmission;
+                    if (emitted > 0)
+                    {
+                        block.SetBlockLight(emitted);
+                        chunkData.blockLightUpdateQueue.Enqueue(new BlockLightNode(block, (byte)emitted));
+                    }
                 }
             }
         }
     }
 
-    public static void RecastSunLight(ChunkData chunkData, Vector3Int startPos)
+    public static void RecastSunLight(ChunkData chunkData, Vector3Int startPos, bool changedColumn = false)
     {
         int worldH = chunkData.worldRef.worldHeight;
-        int yStart = Mathf.Clamp(startPos.y, 0, worldH - 1);
 
-        bool obstructed = false;
-
-        // Loop from top to bottom of column.
-        for (int y = yStart; y >= 0; y--)
+        int level = 15;
+        for (int y = worldH - 1; y >= 0; y--)
         {
             var block = chunkData.GetBlock(new Vector3Int(startPos.x, y, startPos.z));
-            if (block == null || block.type == BlockType.Nothing)
-                continue;
-
-            if (obstructed)
-            {
-                block.SetSkyLight(0);
-            }
-            else if (block.BlockData.opacity > 0)
-            {
-                block.SetSkyLight(0);
-                obstructed = true;
-            }
-            else
-            {
-                block.SetSkyLight(15);
-            }
+            if (block == null || block.type == BlockType.Nothing) continue;
+            int previous = block.GetSkyLight();
+            int opacity = block.BlockData.opacity;
+            if (changedColumn && level < 15) opacity = Mathf.Max(1, opacity);
+            level = Mathf.Max(0, level - opacity);
+            block.SetSkyLight(level);
+            if (previous > level)
+                chunkData.skyLightRemoveQueue.Enqueue(new BlockLightNode(block, (byte)previous));
+            if (level > 0 && (!changedColumn || previous != level))
+                chunkData.skyLightUpdateQueue.Enqueue(new BlockLightNode(block, (byte)level));
         }
     }
 }
