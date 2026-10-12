@@ -91,13 +91,13 @@ public class BlockDataEditor : EditorWindow
             }
             
             
-            var uvs = new List<Vector2>();
+            var uvs = new List<Vector3>();
             foreach (Direction direction in BlockHelper.directions)
             {
-                uvs.AddRange(BlockHelper.FaceUVs(direction, selectedBlockTypeData.blockType));
+                uvs.AddRange(BlockHelper.FaceUVs(direction, selectedBlockTypeData.blockType, selectedBlockTypeData));
             }
             
-            cubeMesh.uv = uvs.ToArray();
+            cubeMesh.SetUVs(0, uvs);
             
             previewRenderer.BeginPreview(new Rect(150, 100, 300, 300), "box");
             
