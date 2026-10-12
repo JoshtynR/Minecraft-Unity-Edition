@@ -26,6 +26,7 @@ public class BaseEntity
 public partial class Player:BaseEntity
 {
  public bool networkStarted,isLocalPlayer=true,isServer=true;public int health=20,hunger=20;public World world=new World();
+ private void AdvanceMining(float dt){}
  public void JumpForTest(){OnJumpPerformed();}
  public void RemoteModes(bool sprint,bool fly,bool ground){CmdSurvivalMovement(sprint,fly,ground);}
  public void RemoteJump(bool sprint){CmdSurvivalJump(sprint);}

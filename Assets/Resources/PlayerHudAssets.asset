@@ -14,3 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   icons: {fileID: 0}
   levelFont: {fileID: 11400000, guid: 236def6fe4895f84a99e370b4b5e59b5, type: 2}
+  blockBreak: {fileID: 0}
+  blockBreakMaterial: {fileID: 2100000, guid: 3bea119353c541b7a49c108038f6f4fb, type: 2}
+  breakColumns: 0
+  breakRows: 0

@@ -29,6 +29,8 @@ public class WorldServer : NetworkBehaviour
 
     public void SetBlockMessageHandler(NetworkConnectionToClient conn, SetBlockMessage message)
     {
+        // Survival removal is authorized by Player's timed mining commands.
+        if (message.blockType == BlockType.Air || message.blockType == BlockType.Nothing) return;
         World.Instance.SetBlock(message.position, message.blockType);
         RpcSetBlock(message.position, message.blockType);
     }

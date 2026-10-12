@@ -10,6 +10,8 @@ namespace UnityEngine
  public class Component:Object {public GameObject gameObject;public Transform transform=>gameObject.transform;}
  public class MonoBehaviour:Component {}
  public class SerializeField:Attribute {}
+ public class Tooltip:Attribute {public Tooltip(string value){}}
+ public class Material:Object {}
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}public static Vector2 zero=>new Vector2();}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;this.width=w;this.height=h;} }
  public struct Color {public static Color black=>new Color();public static implicit operator Color(Color32 c)=>new Color();}

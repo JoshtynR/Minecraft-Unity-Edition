@@ -46,9 +46,7 @@ public partial class Player : BaseEntity
     
     private bool leftMouseDown;
     private bool rightMouseDown;
-    private const float breakDelay = 0.3f;
     private const float placeDelay = 0.21f;
-    private IEnumerator breakCoroutine;
     private IEnumerator placeCoroutine;
     [HideInInspector]
     public bool f3KeyComboUsed;
@@ -216,6 +214,8 @@ public partial class Player : BaseEntity
 
     private void OnDisable()
     {
+        serverMining = localMining = false;
+        DisposeMining();
         Gizmos.CameraFilter -= FilterGizmoCamera;
     }
 
@@ -240,45 +240,13 @@ public partial class Player : BaseEntity
         }
         // Host and dedicated server each tick a player once; clients only read
         // replicated food/health. Offline preview also works without a server.
-        if (isServer || !networkStarted) AdvanceSurvival(Time.fixedDeltaTime);
+        if (isServer || !networkStarted)
+        {
+            AdvanceSurvival(Time.fixedDeltaTime);
+            AdvanceMining(Time.fixedDeltaTime);
+        }
     }
 
-    public bool BreakBlock()
-    {
-        var targetedBlock = TargetedBlock(reach, out _);
-        if (targetedBlock != null)
-        {
-            var blockPos = targetedBlock.section.dataRef.GetGlobalBlockCoords(targetedBlock.position);
-            blockPos.y += targetedBlock.section.yOffset;
-            inventory.AddItem(targetedBlock.type);
-            if (networkStarted)
-            {
-                NetworkClient.Send(new WorldServer.SetBlockMessage(blockPos,BlockType.Air));
-            }
-            else
-            {
-                world.SetBlock(blockPos, BlockType.Air);
-            }
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-        
-        // if (hit.distance > reach) return;
-        // if (block.breakSound != null)
-        // {
-        //     AudioSource.PlayClipAtPoint(block.breakSound, objects.transform.position);
-        // }
-        // targetedBlock.section.dataRef.SetBlock(blockPos, null);
-        // if (block.breakParticles != null)
-        // {
-        //     var particles = Instantiate(block.breakParticles, blockPos, Quaternion.identity);
-        //     Destroy(particles, particles.main.duration);
-        // }
-    }
-    
     public bool PlaceBlock()
     {
         var type = inventory.slots[inventory.selectedSlotIndex].type;
@@ -337,9 +305,14 @@ public partial class Player : BaseEntity
             var pos = cam.position + cam.forward * step;
             var block = world.GetBlock(pos);
             if (block == null) return null;
-            if (BlockDataManager.blockTypeDataDictionary[(int)block.type].generateCollider)
+            if (HandMining.IsTarget(block.type))
             {
-                return block;
+                var shape = block.blockShape.GetShape();
+                var local = pos - (Vector3)block.globalWorldPosition;
+                if (local.x >= shape.xMin / 16f && local.x <= shape.xMax / 16f &&
+                    local.y >= shape.yMin / 16f && local.y <= shape.yMax / 16f &&
+                    local.z >= shape.zMin / 16f && local.z <= shape.zMax / 16f)
+                { targetHitPoint = pos; return block; }
             }
 
             // lastGlobalPos = Vector3Int.FloorToInt(pos + FindNormal(pos, lastGlobalPos));
@@ -472,6 +445,7 @@ public partial class Player : BaseEntity
         
         if (!Application.isPlaying || !isLocalPlayer && networkStarted) return;
         GetPlayerInput();
+        UpdateMining();
         var vel = new Vector3(velocity.x, 0, velocity.z);
         animator.SetFloat(Speed, (vel.magnitude/Time.fixedDeltaTime)/walkSpeed);
         if (!isFlying)
@@ -505,25 +479,6 @@ public partial class Player : BaseEntity
         var headRotation = objects.head.localRotation.eulerAngles;
         headRotation += new Vector3(0, -bodyYawRotation, 0);
         objects.head.localRotation = Quaternion.Euler(headRotation);
-    }
-    
-    public IEnumerator BreakLoop()
-    {
-        while (true)
-        {
-            if (!Input.GetMouseButton(0))
-            {
-                break;
-            }
-            if (BreakBlock())
-            {
-                yield return new WaitForSeconds(breakDelay);
-            }
-            else
-            {
-                yield return new WaitForSeconds(0.05f);
-            }
-        }
     }
     
     public IEnumerator PlaceLoop()
@@ -645,25 +600,13 @@ public partial class Player : BaseEntity
             verticalMomentum = 0;
         }
 
-        if (Input.GetMouseButtonUp(0))
-        {
-            if (breakCoroutine != null)
-            {
-                StopCoroutine(breakCoroutine);
-                breakCoroutine = null;
-            }
-        }
         if (Input.GetMouseButtonDown(0))
         {
             RaycastHit ray;
             if (Physics.Raycast(objects.cam.position, objects.cam.forward, out ray, reach, LayerMask.GetMask("Default")))
             {
-                ray.transform.GetComponentInParent<Player>().CmdAddForce(ray.transform.position - transform.position + Vector3.up, 12);
-            }
-            else if (breakCoroutine == null)
-            {
-                breakCoroutine = BreakLoop();
-                StartCoroutine(breakCoroutine);
+                var other = ray.transform.GetComponentInParent<Player>();
+                if (other != null) other.CmdAddForce(ray.transform.position - transform.position + Vector3.up, 12);
             }
         }
 
@@ -753,6 +696,7 @@ public partial class Player : BaseEntity
 
     private void OnDestroy()
     {
+        DisposeMining();
         foreach (var mesh in ownedLightingMeshes.Values)
             if (mesh != null) Destroy(mesh);
         ownedLightingMeshes.Clear();
