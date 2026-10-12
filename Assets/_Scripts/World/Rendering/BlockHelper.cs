@@ -86,8 +86,7 @@ public static class BlockHelper
         if (block.type == BlockType.Water && chunk != null)
             SetWaterFaceHeight(pos, meshData, chunk);
         meshData.AddQuadTriangles();
-        var uvs = FaceUVs(dir, block.type, blockTypeData);
-        meshData.uv.AddRange(uvs);
+        meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(dir));
 
         // Add tint from block data
         meshData.AddQuadColor(blockTypeData.albedoTint);

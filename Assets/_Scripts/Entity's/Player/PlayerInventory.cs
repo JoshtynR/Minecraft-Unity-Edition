@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
@@ -6,6 +6,15 @@ using UnityEngine.UI;
 
 public class PlayerInventory : MonoBehaviour
 {
+    private readonly Dictionary<BlockType, Mesh> iconMeshes = new Dictionary<BlockType, Mesh>();
+
+    private void OnDestroy()
+    {
+        foreach (var mesh in iconMeshes.Values)
+            if (mesh != null) Destroy(mesh);
+        iconMeshes.Clear();
+    }
+
 
     
     public GameObject UIBlockPrefab;
@@ -386,6 +395,11 @@ public class PlayerInventory : MonoBehaviour
         GameObject blockItem = Instantiate(UIBlockPrefab, parent);
         blockItem.transform.localScale = Vector3.one*10;
         blockItem.GetComponent<RectTransform>().anchoredPosition = new Vector3(-7, -5, 0);
+        if (iconMeshes.TryGetValue(type, out var cachedMesh))
+        {
+            blockItem.GetComponent<MeshFilter>().sharedMesh = cachedMesh;
+            return;
+        }
         var meshData = new MeshData(true);
         var block = new Block(type, Vector3Int.zero, null);
         block = BlockMapping.MapTypeToBlock(type, block);
@@ -440,7 +454,8 @@ public class PlayerInventory : MonoBehaviour
 
         mesh.SetUVs(1, lighArray);
         mesh.SetUVs(2, meshData.sides);
-        blockItem.GetComponent<MeshFilter>().mesh = mesh;
+        iconMeshes.Add(type, mesh);
+        blockItem.GetComponent<MeshFilter>().sharedMesh = mesh;
     }
     
     [Serializable]

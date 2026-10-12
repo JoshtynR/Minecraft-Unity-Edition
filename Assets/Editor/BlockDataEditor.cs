@@ -33,7 +33,7 @@ public class BlockDataEditor : EditorWindow
         previewRenderer.camera.farClipPlane = 100;
         previewRenderer.camera.transform.position = new Vector3(0, 3, -5);
 
-        cubeMesh = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
+        cubeMesh = Instantiate(Resources.GetBuiltinResource<Mesh>("Cube.fbx"));
     }
 
     private void OnEnable()
@@ -43,7 +43,10 @@ public class BlockDataEditor : EditorWindow
 
     private void OnDisable()
     {
-        previewRenderer.Cleanup();
+        previewRenderer?.Cleanup();
+        previewRenderer = null;
+        if (cubeMesh != null) DestroyImmediate(cubeMesh);
+        cubeMesh = null;
     }
 
     private void OnGUI()

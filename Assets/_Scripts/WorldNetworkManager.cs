@@ -22,12 +22,16 @@ public class WorldNetworkManager : MonoBehaviour
         }
         GetComponent<NetworkManager>().StartHost();
 
-        SceneManager.sceneUnloaded += scene =>
-        {
-            if (scene.name.Contains("World"))
-            {
-                Destroy(gameObject);
-            }
-        };
+        SceneManager.sceneUnloaded += OnSceneUnloaded;
+    }
+
+    private void OnSceneUnloaded(Scene scene)
+    {
+        if (scene.name.Contains("World")) Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        SceneManager.sceneUnloaded -= OnSceneUnloaded;
     }
 }

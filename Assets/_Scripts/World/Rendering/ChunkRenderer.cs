@@ -1,19 +1,18 @@
 using System.Collections.Generic;
-using System.Linq;
-using Cysharp.Threading.Tasks;
+
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class ChunkRenderer : MonoBehaviour
 {
     private MeshFilter meshFilter;
-    private MeshRenderer meshRenderer;
     private Mesh mesh;
     public bool showGizmo = false;
 
     public ChunkData ChunkData { get; private set; }
-    public MeshData MeshData;
 
     public bool ModifiedByPlayer
     {
@@ -24,84 +23,41 @@ public class ChunkRenderer : MonoBehaviour
     public void Initialize(ChunkData data)
     {
         meshFilter = GetComponent<MeshFilter>();
-        meshRenderer = GetComponent<MeshRenderer>();
-        meshFilter.sharedMesh = new Mesh();
-        mesh = meshFilter.sharedMesh;
+        if (mesh == null) mesh = new Mesh();
+        meshFilter.sharedMesh = mesh;
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         this.ChunkData = data;
     }
 
     public void RenderMesh(MeshData meshData)
     {
-        // NOTE: using AddRange instead of concat and then ToArray is a lot faster.
-        this.MeshData = meshData;
-
+        if (meshData.sourceChunk != null && !ReferenceEquals(meshData.sourceChunk, ChunkData)) return;
+        meshData.PrepareForRendering();
         mesh.Clear();
         mesh.MarkDynamic();
         mesh.subMeshCount = 2;
-
-        // --- Vertices (opaque first, then transparent) ---
-        meshData.vertices.AddRange(meshData.transparentMesh.vertices);
         mesh.SetVertices(meshData.vertices);
-
-        // --- Build UV2 from per-vertex sky/block floats (0..15) ---
-        meshData.skyLight.AddRange(meshData.transparentMesh.skyLight);
-        meshData.blockLight.AddRange(meshData.transparentMesh.blockLight);
-
-        int vCount = meshData.vertices.Count;
-        if (meshData.skyLight.Count != vCount || meshData.blockLight.Count != vCount)
-        {
-            Debug.LogError($"[ChunkRenderer] UV2 counts don't match vertices. " +
-                           $"verts={vCount}, sky={meshData.skyLight.Count}, block={meshData.blockLight.Count}");
-        }
-
-            if (meshData.skyLight.Count >= 4) {
-        Debug.Log($"First quad sky: {meshData.skyLight[0]}, {meshData.skyLight[1]}, {meshData.skyLight[2]}, {meshData.skyLight[3]}");
-        Debug.Log($"First quad blk: {meshData.blockLight[0]}, {meshData.blockLight[1]}, {meshData.blockLight[2]}, {meshData.blockLight[3]}");
-    }
-
-        // Pack (sky, block) into Vector2 for TEXCOORD1; keep as floats (do NOT round)
-        var uv2Array = new Vector2[meshData.skyLight.Count];
-        for (int i = 0; i < uv2Array.Length; i++)
-            uv2Array[i] = new Vector2(meshData.skyLight[i], meshData.blockLight[i]);
-
-        // Assign UV2 (TEXCOORD1). Using property accepts Vector2[] directly.
-        mesh.uv2 = uv2Array;
-
-        // --- AO / sides data into UV3 (TEXCOORD2) as before ---
-        MeshData.sides.AddRange(MeshData.transparentMesh.sides);
-        mesh.SetUVs(2, MeshData.sides);
-
-        // --- Triangles (submesh 0 = opaque, submesh 1 = transparent with offset) ---
-        mesh.SetTriangles(meshData.triangles, 0);
-        int transparentOffset = meshData.vertices.Count - meshData.transparentMesh.vertices.Count;
-        mesh.SetTriangles(
-            meshData.transparentMesh.triangles.Select(val => val + transparentOffset).ToList(),
-            1
-        );
-
-        // --- UV0 for albedo ---
-        meshData.uv.AddRange(meshData.transparentMesh.uv);
-        meshData.colors.AddRange(meshData.transparentMesh.colors);
         mesh.SetUVs(0, meshData.uv);
-        if (meshData.colors.Count == meshData.vertices.Count)
-            mesh.SetColors(meshData.colors);
-
-
-        // --- Finalize ---
+        mesh.SetUVs(1, meshData.lightingUVs);
+        mesh.SetUVs(2, meshData.sides);
+        mesh.SetColors(meshData.colors);
+        mesh.SetTriangles(meshData.triangles, 0);
+        if (meshData.transparentMesh != null)
+            mesh.SetTriangles(meshData.transparentMesh.triangles, 1);
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
-        #if UNITY_2020_2_OR_NEWER
-                // mesh.Optimize() is deprecated in recent Unity; skip or use MeshUtility.Optimize in editor if desired.
-        #else
-                mesh.Optimize();
-        #endif
+        // MeshData is staging data; retaining it here doubles chunk geometry memory.
     }
 
-    public async void UpdateChunkAsync()
+    public void UpdateChunkAsync()
     {
-        var data = await World.Instance.CreateMeshDataAsync(new List<ChunkData> { ChunkData });
-        RenderMesh(data.Values.First());
+        World.Instance.AddChunkToUpdate(this);
+    }
+
+    private void OnDestroy()
+    {
+        if (mesh != null) Destroy(mesh);
+        mesh = null;
     }
 
     public void UpdateChunk(MeshData meshData)

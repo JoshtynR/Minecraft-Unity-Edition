@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+import argparse,subprocess,tempfile
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[2]
+def main():
+ ap=argparse.ArgumentParser();ap.add_argument('--mcs',default='mcs');ap.add_argument('--mono',default='mono');args=ap.parse_args()
+ files=['Tools/MemoryChecks/LifecycleCheck.cs','Assets/_Scripts/World/Rendering/MeshData.cs','Assets/_Scripts/World/Rendering/ChunkRenderer.cs','Assets/_Scripts/World/World_UpdateLoop.cs']
+ with tempfile.TemporaryDirectory() as tmp:
+  player=(ROOT/"Assets/_Scripts/Entity's/Player/Player.cs").read_text()
+  method=player[player.index('    public void SetMeshLight'):player.index('    // Name plate name')]
+  cleanup=player[player.index('    private void OnDestroy()'):].replace('private void OnDestroy()', 'public void DestroyForTest()')
+  stub=Path(tmp)/'Player.cs'
+  stub.write_text('using System.Collections.Generic;using UnityEngine; public class Player : MonoBehaviour { public MeshFilter[] meshFilters; private readonly Dictionary<MeshFilter,Mesh> ownedLightingMeshes=new Dictionary<MeshFilter,Mesh>();private readonly List<Vector2> meshLightingUVs=new List<Vector2>();'+method+cleanup+' public class GameManager {public static GameManager Instance;public List<Player> players=new List<Player>();}')
+  chunk=(ROOT/'Assets/_Scripts/World/ChunkData.cs').read_text()
+  prop=chunk[chunk.index('    public bool HasPendingLighting'):chunk.index('    public void UpdateLight()')]
+  dirty=Path(tmp)/'ChunkDirty.cs'
+  dirty.write_text('using System.Collections.Generic;public partial class ChunkData { public List<int> skyRemoveList=new List<int>(),skyExtendList=new List<int>(),skyLightUpdateQueue=new List<int>(),skyLightRemoveQueue=new List<int>(),blockLightUpdateQueue=new List<int>(),blockLightRemoveQueue=new List<int>(),chunkToUpdateAfterLighting=new List<int>();'+prop+'}')
+  binary=Path(tmp)/'memory.exe'
+  subprocess.run([args.mcs,'-langversion:latest','-out:'+str(binary),*[str(ROOT/p) for p in files],str(stub),str(dirty)],check=True)
+  subprocess.run([args.mono,str(binary)],check=True)
+if __name__=='__main__':main()

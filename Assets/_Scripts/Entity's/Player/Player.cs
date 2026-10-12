@@ -1,9 +1,8 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using Mirror;
 using Popcron;
 using Steamworks;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
@@ -44,6 +43,8 @@ public class Player : BaseEntity
 
 
     private MeshFilter[] meshFilters;
+    private readonly Dictionary<MeshFilter, Mesh> ownedLightingMeshes = new Dictionary<MeshFilter, Mesh>();
+    private readonly List<Vector2> meshLightingUVs = new List<Vector2>();
     private int blockLightLastFrame;
     private int skyLightLastFrame;
     
@@ -131,22 +132,17 @@ public class Player : BaseEntity
     {
         foreach (var meshFilter in meshFilters)
         {
-            var orgMesh = meshFilter.mesh;
-            var vertexCount = orgMesh.vertexCount;
-            var lightArray = new Vector2[vertexCount];
-            for (var i = 0; i < vertexCount; i++)
+            if (meshFilter == null) continue;
+            if (!ownedLightingMeshes.TryGetValue(meshFilter, out var mesh))
             {
-                lightArray[i] = new Vector2(skyLight,blockLight);
+                mesh = meshFilter.mesh; // Unity creates one owned copy of the asset.
+                ownedLightingMeshes.Add(meshFilter, mesh);
             }
-
-            var mesh = new Mesh
-            {
-                vertices = orgMesh.vertices,
-                uv = orgMesh.uv,
-                triangles = orgMesh.triangles
-            };
-            mesh.SetUVs(1,lightArray);
-            meshFilter.mesh = mesh;
+            if (mesh == null) continue;
+            meshLightingUVs.Clear();
+            for (int i = 0; i < mesh.vertexCount; i++)
+                meshLightingUVs.Add(new Vector2(skyLight, blockLight));
+            mesh.SetUVs(1, meshLightingUVs);
         }
     }
 
@@ -191,7 +187,14 @@ public class Player : BaseEntity
 
     private void OnEnable()
     {
-        Gizmos.CameraFilter += cam => cam.transform == this.cam;
+        Gizmos.CameraFilter += FilterGizmoCamera;
+    }
+
+    private bool FilterGizmoCamera(Camera camera) => camera != null && camera.transform == cam;
+
+    private void OnDisable()
+    {
+        Gizmos.CameraFilter -= FilterGizmoCamera;
     }
 
     public override void FixedUpdate()
@@ -709,6 +712,9 @@ public class Player : BaseEntity
 
     private void OnDestroy()
     {
-        GameManager.Instance.players.Remove(this);
+        foreach (var mesh in ownedLightingMeshes.Values)
+            if (mesh != null) Destroy(mesh);
+        ownedLightingMeshes.Clear();
+        if (GameManager.Instance != null) GameManager.Instance.players.Remove(this);
     }
 }

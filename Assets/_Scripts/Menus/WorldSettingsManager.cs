@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -24,15 +24,7 @@ public class WorldSettingsManager : MonoBehaviour
 
     private void Start()
     {
-        SceneManager.sceneLoaded += (scene, mode) =>
-        {
-            if (World.Instance != null)
-            {
-                World.Instance.mapSeedOffset = seedOffset;
-                World.Instance.betaWorldSeed = betaWorldSeed;
-                World.Instance.worldName = worldName;
-            }
-        };
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     public Task LoadWorldSettings(WorldSaveData worldSaveData)
@@ -43,5 +35,20 @@ public class WorldSettingsManager : MonoBehaviour
             seedOffset = worldSaveData.seedOffset;
             betaWorldSeed = worldSaveData.betaWorldSeed;
         });
+    }
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (World.Instance != null)
+        {
+            World.Instance.mapSeedOffset = seedOffset;
+            World.Instance.betaWorldSeed = betaWorldSeed;
+            World.Instance.worldName = worldName;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        if (Instance == this) Instance = null;
     }
 }

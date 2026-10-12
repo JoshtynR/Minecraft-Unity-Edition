@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -50,6 +50,7 @@ public partial class World : MonoBehaviour
     public bool binaryCompressSaves = true;
 
     private CancellationTokenSource taskTokenSource = new CancellationTokenSource();
+    private CancellationToken worldCancellationToken;
 
     public UnityEvent OnWorldCreated;
     public UnityEvent OnNewChunksGenerated;
@@ -67,6 +68,7 @@ public partial class World : MonoBehaviour
 
     private void Awake()
     {
+        worldCancellationToken = taskTokenSource.Token;
         Instance = this;
         validateDone = false;
         isInPlayMode = Application.isPlaying;
@@ -102,6 +104,7 @@ public partial class World : MonoBehaviour
 
     private void OnValidate()
     {
+        worldCancellationToken = taskTokenSource.Token;
         Update();
         if (!Application.isPlaying || !validateDone)
         {
@@ -158,17 +161,20 @@ public partial class World : MonoBehaviour
     
     private Task<ConcurrentDictionary<ChunkRenderer, MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> dataToRender, bool markModifiedByPlayer = true)
     {
+        var jobs = dataToRender.Distinct().Where(chunk => chunk != null)
+            .Select(chunk => new KeyValuePair<ChunkRenderer, ChunkData>(chunk, chunk.ChunkData)).ToArray();
+        if (markModifiedByPlayer)
+            foreach (var job in jobs) job.Value.modifiedByPlayer = true;
         return Task.Run(() =>
         {
             var dict = new ConcurrentDictionary<ChunkRenderer, MeshData>();
-            Parallel.ForEach(dataToRender, chunkRenderer =>
+            Parallel.ForEach(jobs, job =>
             {
-                if (markModifiedByPlayer) chunkRenderer.ModifiedByPlayer = true;
-                var data = chunkRenderer.ChunkData.GetMeshData();
-                dict.TryAdd(chunkRenderer, data);
+                worldCancellationToken.ThrowIfCancellationRequested();
+                dict.TryAdd(job.Key, job.Value.GetMeshData());
             });
             return dict;
-        });
+        }, worldCancellationToken);
     }
 
     // public void UpdateChunk(Vector3Int chunkPos)
@@ -224,7 +230,7 @@ public partial class World : MonoBehaviour
 
     public async void SetBlocks(ChunkRenderer chunk, IEnumerable<Vector3Int> blockPoss, BlockType blockType)
     {
-        var neightBourUpdates = new List<ChunkRenderer>();
+        var neightBourUpdates = new HashSet<ChunkRenderer>();
         
         foreach (var pos in blockPoss)
         {
@@ -254,11 +260,12 @@ public partial class World : MonoBehaviour
         }
         neightBourUpdates.Add(chunk);
 
-        var meshData = await UpdateMeshDataAsync(neightBourUpdates);
+        var meshData = await UpdateMeshDataAsync(neightBourUpdates.ToList());
         
         foreach (var chunkRenderer in neightBourUpdates)
         {
-            chunkRenderer.UpdateChunk(meshData[chunkRenderer]);
+            if (chunkRenderer != null && worldData.chunkDict.TryGetValue(chunkRenderer.ChunkData.worldPos, out var current) && current == chunkRenderer)
+                chunkRenderer.UpdateChunk(meshData[chunkRenderer]);
         }
     }
 
@@ -333,7 +340,7 @@ public partial class World : MonoBehaviour
         worldRenderer.chunkPool?.Clear();
         isSaving = false;
         
-        chunksToUpdate?.Clear();
+        ResetChunkUpdates();
         
         MyNoise.noiseStopwatch.Reset();
         MyNoise.noise3DStopwatch.Reset();
@@ -346,9 +353,20 @@ public partial class World : MonoBehaviour
 
     public void OnDisable()
     {
-        updateThread?.Abort();
         taskTokenSource.Cancel();
         disabled = true;
+        ResetChunkUpdates();
+    }
+
+    private void OnDestroy()
+    {
+        taskTokenSource.Cancel();
+        taskTokenSource.Dispose();
+        if (Instance == this)
+        {
+            NetworkClient.UnregisterHandler<StartWorldMessage>();
+            Instance = null;
+        }
     }
 
     public struct WorldGenerationData

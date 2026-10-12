@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -41,20 +41,7 @@ public class SettingsManager : MonoBehaviour
             }
 
             ApplySettings();
-            SceneManager.sceneLoaded += (scene, mode) =>
-            {
-                foreach (var slider in UISlider.sliders.Values)
-                {
-                    slider.SetValue(settings[slider.name]);
-                }
-
-                foreach (var toggleButton in UIToggleButton.toggleButtons)
-                {
-                    toggleButton.SetValue((int)settings[toggleButton.name]);
-                }
-
-                ApplySettings();
-            };
+            SceneManager.sceneLoaded += OnSceneLoaded;
         });
     }
     
@@ -119,4 +106,18 @@ public class SettingsManager : MonoBehaviour
         if (World.Instance != null && Camera.main != null) Camera.main.fieldOfView = fov;
     }
     
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        foreach (var slider in UISlider.sliders.Values)
+            slider.SetValue(settings[slider.name]);
+        foreach (var toggleButton in UIToggleButton.toggleButtons)
+            toggleButton.SetValue((int)settings[toggleButton.name]);
+        ApplySettings();
+    }
+
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        if (instance == this) instance = null;
+    }
 }

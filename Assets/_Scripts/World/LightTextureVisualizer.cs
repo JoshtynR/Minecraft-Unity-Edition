@@ -1,8 +1,18 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class LightTextureVisualizer : MonoBehaviour
 {
     public Texture2D lightTexture;
+    private Texture2D ownedLightTexture;
+
+    private void OnDestroy()
+    {
+        if (ownedLightTexture != null)
+        {
+            if (Application.isPlaying) Destroy(ownedLightTexture);
+            else DestroyImmediate(ownedLightTexture);
+        }
+    }
     [Range(0, 1)] public float gamma;
     [Range(0.15f, 1)]
     public float skyLightMultiplier = 0.75f;
@@ -26,7 +36,13 @@ public class LightTextureVisualizer : MonoBehaviour
         }
         else
         {
+            if (ownedLightTexture != null)
+            {
+                if (Application.isPlaying) Destroy(ownedLightTexture);
+                else DestroyImmediate(ownedLightTexture);
+            }
             lightTexture = new Texture2D(16, 16);
+            ownedLightTexture = lightTexture;
             lightTexture.filterMode = FilterMode.Point;
             lightTexture.wrapMode = TextureWrapMode.Clamp;
         }

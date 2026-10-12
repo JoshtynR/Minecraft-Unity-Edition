@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -27,9 +27,7 @@ public partial class World
         OnValidate();
         IsWorldCreated = false;
 
-        updateThread?.Abort();
-        updateThread = new Thread(UpdateLoop);
-        updateThread.Start();
+        disabled = false;
     }
 
     public async void GenerateWorld(Vector3Int position, Action onGenerateNewChunks = null)
@@ -42,7 +40,7 @@ public partial class World
         
         terrainGenerator.GenerateBiomePoints(position, renderDistance, chunkSize, mapSeedOffset);
         
-        WorldGenerationData worldGenerationData = await Task.Run(() => GetPositionsInRenderDistance(position), taskTokenSource.Token);
+        WorldGenerationData worldGenerationData = await Task.Run(() => GetPositionsInRenderDistance(position), worldCancellationToken);
         
         foreach (var pos in worldGenerationData.chunkPositionsToRemove)
         {
@@ -175,7 +173,7 @@ public partial class World
     {
         terrainGenerator.GenerateBiomePoints(position, renderDistance, chunkSize, mapSeedOffset);
         
-        WorldGenerationData worldGenerationData = await Task.Run(() => GetPositionsInRenderDistance(position), taskTokenSource.Token);
+        WorldGenerationData worldGenerationData = await Task.Run(() => GetPositionsInRenderDistance(position), worldCancellationToken);
 
         // Generate data chunks
         ConcurrentDictionary<Vector3Int, ChunkData> dataDict = new ConcurrentDictionary<Vector3Int, ChunkData>();
@@ -296,52 +294,15 @@ public partial class World
         return UniTask.RunOnThreadPool(() =>
         {
             var dict = new ConcurrentDictionary<Vector3Int, MeshData>();
-            if (IsWorldCreated)
+            Parallel.ForEach(dataToRender, data =>
             {
-                while (dataToRender.Count > 0)
-                {
-                    Parallel.For(0, 1, i =>
-                    {
-                        if(taskTokenSource.IsCancellationRequested)
-                        {
-                            taskTokenSource.Token.ThrowIfCancellationRequested();
-                        }
-
-                        var data = dataToRender.First();
-                        var meshData = data.GetMeshData();
-                        dict.TryAdd(data.worldPos, meshData);
-                        dataToRender.RemoveAt(0);
-                    });
-                    UniTask.NextFrame();
-                }
-            }
-            else
-            {
-                Parallel.ForEach(dataToRender, data =>
-                {
-                    if(taskTokenSource.IsCancellationRequested)
-                    {
-                        taskTokenSource.Token.ThrowIfCancellationRequested();
-                    }
-                    
-                    var meshData = data.GetMeshData();
-                    dict.TryAdd(data.worldPos, meshData);
-                });
-            }
-
-            // foreach (var data in dataToRender)
-            // {
-            //     if(taskTokenSource.IsCancellationRequested)
-            //     {
-            //         taskTokenSource.Token.ThrowIfCancellationRequested();
-            //     }
-            //     
-            //     var meshData = data.GetMeshData();
-            //     dict.TryAdd(data.worldPos, meshData);
-            // }
+                worldCancellationToken.ThrowIfCancellationRequested();
+                var meshData = data.GetMeshData();
+                dict.TryAdd(data.worldPos, meshData);
+            });
 
             return dict;
-        }, true, taskTokenSource.Token);
+        }, true, worldCancellationToken);
     }
 
     // private Task<ConcurrentDictionary<Vector3Int, MeshData>> CalculateChunkMeshData(List<Vector3Int> chunkPositionsToCreate)
@@ -378,7 +339,7 @@ public partial class World
             //     {
             //         if(taskTokenSource.IsCancellationRequested)
             //         {
-            //             taskTokenSource.Token.ThrowIfCancellationRequested();
+            //             worldCancellationToken.ThrowIfCancellationRequested();
             //         }
             //
             //         var pos = chunkDataPositionsToCreate.First();
@@ -395,7 +356,7 @@ public partial class World
             {
                 if(taskTokenSource.IsCancellationRequested)
                 {
-                    taskTokenSource.Token.ThrowIfCancellationRequested();
+                    worldCancellationToken.ThrowIfCancellationRequested();
                 }
 
                 var data = new ChunkData(chunkSize, chunkHeight, this, pos);
@@ -408,7 +369,7 @@ public partial class World
             // {
             //     if(taskTokenSource.IsCancellationRequested)
             //     {
-            //         taskTokenSource.Token.ThrowIfCancellationRequested();
+            //         worldCancellationToken.ThrowIfCancellationRequested();
             //     }
             //     
             //     var data = new ChunkData(chunkSize, chunkHeight, this, pos);
@@ -419,7 +380,7 @@ public partial class World
 
             Profiler.EndThreadProfiling();
             return dataDict;
-        }, true, taskTokenSource.Token);
+        }, true, worldCancellationToken);
     }
 
     private UniTask CalculateFeatures(HashSet<Vector3Int> chunkDataPositionsToCreate)
@@ -429,7 +390,7 @@ public partial class World
             foreach (var pos in chunkDataPositionsToCreate.OrderBy(p => -p.x).ThenBy(p => p.z))
             {
                 if (taskTokenSource.IsCancellationRequested)
-                    taskTokenSource.Token.ThrowIfCancellationRequested();
+                    worldCancellationToken.ThrowIfCancellationRequested();
                 var data = worldData.chunkDataDict[pos];
                 terrainGenerator.GenerateFeatures(data, mapSeedOffset);
                 data.isGenerated = true;
@@ -439,10 +400,10 @@ public partial class World
             foreach (var data in worldData.chunkDataDict.Values.Where(d => d.isGenerated && !d.betaTreePopulationDone)
                 .OrderBy(d => -d.worldPos.x).ThenBy(d => d.worldPos.z))
             {
-                taskTokenSource.Token.ThrowIfCancellationRequested();
+                worldCancellationToken.ThrowIfCancellationRequested();
                 terrainGenerator.GenerateBetaTrees(data);
             }
-        },true, taskTokenSource.Token);
+        },true, worldCancellationToken);
     }
     
     

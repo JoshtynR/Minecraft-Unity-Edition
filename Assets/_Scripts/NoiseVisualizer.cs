@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 
 public class NoiseVisualizer : MonoBehaviour
@@ -10,6 +13,16 @@ public class NoiseVisualizer : MonoBehaviour
     public int resolution = 256;
     
     public Renderer _renderer;
+    private Texture2D generatedTexture;
+
+    private void OnDestroy()
+    {
+        if (generatedTexture != null)
+        {
+            if (Application.isPlaying) Destroy(generatedTexture);
+            else DestroyImmediate(generatedTexture);
+        }
+    }
 
     public void Start()
     {
@@ -38,7 +51,13 @@ public class NoiseVisualizer : MonoBehaviour
             }
         }
         
+        if (generatedTexture != null)
+        {
+            if (Application.isPlaying) Destroy(generatedTexture);
+            else DestroyImmediate(generatedTexture);
+        }
         var texture = new Texture2D(resolution, resolution);
+        generatedTexture = texture;
         texture.SetPixels(pixs);
         texture.Apply();
         
@@ -50,6 +69,11 @@ public class NoiseVisualizer : MonoBehaviour
     [CustomEditor(typeof(NoiseVisualizer))]
     public class NoiseVisualizerEditor : Editor
     {
+        private Editor settingsEditor;
+        private void OnDisable()
+        {
+            if (settingsEditor != null) DestroyImmediate(settingsEditor);
+        }
         public override void OnInspectorGUI()
         {
             var biomeGenerator = (NoiseVisualizer)this.target;
@@ -58,8 +82,11 @@ public class NoiseVisualizer : MonoBehaviour
             {
                 biomeGenerator.UpdateTexture();
             }
-            var customEditor = Editor.CreateEditor(biomeGenerator.settings);
-            customEditor.OnInspectorGUI();
+            if (biomeGenerator.settings != null)
+            {
+                Editor.CreateCachedEditor(biomeGenerator.settings, null, ref settingsEditor);
+                settingsEditor.OnInspectorGUI();
+            }
         }
     }
     

@@ -23,7 +23,7 @@ namespace UnityEngine
         public float x,y,z;
         public Vector3(float x,float y,float z) { this.x=x; this.y=y; this.z=z; }
     }
-    public struct Vector2 { public float x,y; }
+    public struct Vector2 { public float x,y; public Vector2(float x,float y){this.x=x;this.y=y;} }
     public struct Color {}
     public static class Mathf { public static int Max(int a,int b) { return Math.Max(a,b); } public static float Min(float a,float b) { return Math.Min(a,b); } public static float Clamp(float v,float a,float b) { return Math.Min(b,Math.Max(a,v)); } }
     public static class Debug { public static void LogException(Exception e) { throw e; } }

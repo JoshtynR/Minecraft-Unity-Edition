@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
@@ -162,11 +162,18 @@ public class ChunkData
         );
     }
 
+    private readonly object meshBuildLock = new object();
+
     public MeshData GetMeshData()
     {
-        MeshData meshData = new MeshData(true);
+        lock (meshBuildLock) return BuildMeshData();
+    }
+
+    private MeshData BuildMeshData()
+    {
+        MeshData meshData = new MeshData(true) { sourceChunk = this };
         
-        UpdateLight();
+        if (HasPendingLighting) UpdateLight();
 
         LoopThroughTheBlocks(this, (x, y, z,block) =>
         {
@@ -176,6 +183,11 @@ public class ChunkData
         
         return meshData;
     }
+
+    public bool HasPendingLighting => skyRemoveList.Count > 0 || skyExtendList.Count > 0 ||
+        skyLightUpdateQueue.Count > 0 || skyLightRemoveQueue.Count > 0 ||
+        blockLightUpdateQueue.Count > 0 || blockLightRemoveQueue.Count > 0 ||
+        chunkToUpdateAfterLighting.Count > 0;
 
     public void UpdateLight()
     {

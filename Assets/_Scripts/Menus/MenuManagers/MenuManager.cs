@@ -1,4 +1,4 @@
-﻿using Mirror;
+using Mirror;
 using Mirror.FizzySteam;
 using Newtonsoft.Json;
 using Steamworks;
@@ -13,8 +13,20 @@ public class MenuManager : MonoBehaviour
     {
         Instance = this;
         Cursor.lockState = CursorLockMode.None;
+    }
+
+    private void OnEnable()
+    {
+        Instance = this;
         SteamFriends.OnGameLobbyJoinRequested += OnGameLobbyJoinRequested;
         SteamMatchmaking.OnLobbyEntered += OnLobbyEntered;
+    }
+
+    private void OnDisable()
+    {
+        SteamFriends.OnGameLobbyJoinRequested -= OnGameLobbyJoinRequested;
+        SteamMatchmaking.OnLobbyEntered -= OnLobbyEntered;
+        if (Instance == this) Instance = null;
     }
 
     public void OnGameLobbyJoinRequested(Lobby lobby, SteamId steamId)

@@ -12,6 +12,7 @@ public class MeshData
     public List<Vector3> sides      = new List<Vector3>();
 
     public int subMeshCount;
+    public ChunkData sourceChunk;
 
     public MeshData transparentMesh;   // secondary container for transparent faces (if you use it)
 
@@ -19,6 +20,39 @@ public class MeshData
     {
         if (isMainMesh)
             transparentMesh = new MeshData(false);
+    }
+
+    private bool prepared;
+    public readonly List<Vector2> lightingUVs = new List<Vector2>();
+
+    // Upload preparation is idempotent: a repeated upload must not duplicate
+    // transparent geometry or offset its indices for a second time.
+    public void PrepareForRendering()
+    {
+        if (prepared) return;
+        if (transparentMesh != null)
+        {
+            int offset = vertices.Count;
+            for (int i = 0; i < transparentMesh.triangles.Count; i++)
+                transparentMesh.triangles[i] += offset;
+            vertices.AddRange(transparentMesh.vertices);
+            uv.AddRange(transparentMesh.uv);
+            colors.AddRange(transparentMesh.colors);
+            skyLight.AddRange(transparentMesh.skyLight);
+            blockLight.AddRange(transparentMesh.blockLight);
+            sides.AddRange(transparentMesh.sides);
+        }
+        for (int i = 0; i < skyLight.Count; i++)
+            lightingUVs.Add(new Vector2(skyLight[i], blockLight[i]));
+        prepared = true;
+    }
+
+    public void AddFaceUVs(int layer)
+    {
+        uv.Add(new Vector3(0, 0, layer));
+        uv.Add(new Vector3(0, 1, layer));
+        uv.Add(new Vector3(1, 1, layer));
+        uv.Add(new Vector3(1, 0, layer));
     }
 
     public void AddVertex(Vector3 v)

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -42,7 +42,7 @@ public static class Lighting
 
         foreach (var chunk in data.chunkToUpdateAfterLighting)
         {
-            World.Instance.AddChunkToUpdate(chunk, true);
+            data.worldRef.AddChunkToUpdate(chunk, true);
         }
         data.chunkToUpdateAfterLighting.Clear();
     }

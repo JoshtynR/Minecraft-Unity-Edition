@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -118,7 +118,7 @@ public partial class World
             {
                 if(taskTokenSource.IsCancellationRequested)
                 {
-                    taskTokenSource.Token.ThrowIfCancellationRequested();
+                    worldCancellationToken.ThrowIfCancellationRequested();
                 }
                 
                 var path = GetChunkPath(worldName, chunkPos);
@@ -145,7 +145,7 @@ public partial class World
 
             // });
             return dict;
-        }, cancellationToken: taskTokenSource.Token);
+        }, cancellationToken: worldCancellationToken);
     }
 
     public static string GetChunkPath(string worldName, Vector3Int chunkPos)
