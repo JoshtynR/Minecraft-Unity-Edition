@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Cysharp.Threading.Tasks;
 using UnityEditor;
@@ -83,8 +83,8 @@ public class ChunkRenderer : MonoBehaviour
         // --- UV0 for albedo ---
         meshData.uv.AddRange(meshData.transparentMesh.uv);
         meshData.colors.AddRange(meshData.transparentMesh.colors);
+        mesh.SetUVs(0, meshData.uv);
         if (meshData.colors.Count == meshData.vertices.Count)
-            mesh.SetUVs(0, meshData.uv);
             mesh.SetColors(meshData.colors);
 
 

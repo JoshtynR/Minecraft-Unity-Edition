@@ -1,6 +1,6 @@
 Shader "Custom/VoxelVertexLit"
 {
-  Properties { _MainTex ("Atlas", 2D) = "white" {} }
+  Properties {}
   SubShader
   {
     Tags { "Queue"="Geometry" "RenderType"="Opaque" }
@@ -10,18 +10,20 @@ Shader "Custom/VoxelVertexLit"
       CGPROGRAM
       #pragma vertex vert
       #pragma fragment frag
+      #pragma target 3.5
+      #pragma require 2darray
       #include "UnityCG.cginc"
 
-      sampler2D _MainTex;
+      UNITY_DECLARE_TEX2DARRAY(_BlockFaceTextures);
 
       struct appdata {
         float4 vertex : POSITION;
-        float2 uv     : TEXCOORD0;
+        float3 uv     : TEXCOORD0;
         fixed4 color  : COLOR;
       };
       struct v2f {
         float4 pos   : SV_POSITION;
-        float2 uv    : TEXCOORD0;
+        float3 uv    : TEXCOORD0;
         fixed4 color : COLOR;
       };
 
@@ -34,7 +36,7 @@ Shader "Custom/VoxelVertexLit"
       }
 
       fixed4 frag (v2f i) : SV_Target {
-        fixed4 albedo = tex2D(_MainTex, i.uv);
+        fixed4 albedo = UNITY_SAMPLE_TEX2DARRAY(_BlockFaceTextures, i.uv);
         return albedo * i.color; // multiply by vertex color (smooth lighting / AO)
       }
       ENDCG

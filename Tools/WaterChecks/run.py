@@ -30,7 +30,7 @@ def main():
         server = server.replace('RpcWaterUpdates(positions, levels);', 'RecordSend(positions, levels); RpcWaterUpdates(positions, levels);')
         (tmp / 'WorldServer.cs').write_text('using UnityEngine; using Mirror; public partial class WorldServer {\n' + server + '\n}')
         helper=(ROOT/'Assets/_Scripts/World/Rendering/BlockHelper.cs').read_text(encoding='utf-8-sig')
-        height=helper[helper.index('    private static void SetWaterFaceHeight'):helper.index('    public static Vector2Int TexturePosition')]
+        height=helper[helper.index('    private static void SetWaterFaceHeight'):helper.index('        public static void GetFaceLightingAndAO')]
         height=height.replace('private static void SetWaterFaceHeight','public static void SetWaterFaceHeight')
         (tmp/'WaterMeshCheck.cs').write_text('using UnityEngine; public static class WaterMeshCheck {\n'+height+'\n}')
         files = ['World/WaterSimulation.cs','World/WaterSurface.cs','World/World_Water.cs','World/World_Trees.cs',

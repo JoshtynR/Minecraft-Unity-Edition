@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class MeshData
 {
     public List<Vector3> vertices   = new List<Vector3>();
     public List<int>     triangles  = new List<int>();
-    public List<Vector2> uv         = new List<Vector2>();
+    public List<Vector3> uv         = new List<Vector3>(); // xy = face UV, z = image layer
     public List<Color>   colors     = new List<Color>();   // ← keep only this ONE
     public List<float>   skyLight   = new List<float>();
     public List<float>   blockLight = new List<float>();

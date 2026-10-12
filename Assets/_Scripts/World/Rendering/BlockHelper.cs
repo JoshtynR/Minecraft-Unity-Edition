@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -116,26 +116,6 @@ public static class BlockHelper
         }
     }
     
-    public static Vector2Int TexturePosition(Direction dir, BlockTypeData blockTypeData)
-    {
-        return dir switch
-        {
-            Direction.up => blockTypeData.textureData.up,
-            Direction.down => blockTypeData.textureData.down,
-            _ => blockTypeData.textureData.side
-        };
-    }
-
-    public static Vector2 TextureExtends(Direction dir, BlockTypeData blockTypeData)
-    {
-        return dir switch
-        {
-            Direction.up => blockTypeData.textureData.upExtends,
-            Direction.down => blockTypeData.textureData.downExtends,
-            _ => blockTypeData.textureData.sideExtends
-        };
-    }
-
         public static void GetFaceLightingAndAO(Direction direction, Vector3Int pos, MeshData meshData, ChunkData chunk)
     {
         // assumes SetFaceVertices already appended 4 verts (bottom-left clockwise)
@@ -204,20 +184,17 @@ public static class BlockHelper
         return pos.x + pos.y * chunk.chunkSize + pos.z * chunk.chunkSize * World.Instance.worldHeight;
     }
 
-    public static Vector2[] FaceUVs(Direction dir, BlockType type, BlockTypeData blockTypeData = null)
+    public static Vector3[] FaceUVs(Direction dir, BlockType type, BlockTypeData blockTypeData = null)
     {
-        Vector2[] UVs = new Vector2[4];
-        blockTypeData ??= BlockDataManager.blockTypeDataDictionary[(int)type];
-        var tilePos = TexturePosition(dir, blockTypeData);
-        var tileExtends = TextureExtends(dir, blockTypeData);
-        var tileSizeX = blockTypeData.textureSizeOverride.x > 0 ? blockTypeData.textureSizeOverride.x : BlockDataManager.tileSizeX;
-        var tileSizeY = blockTypeData.textureSizeOverride.y > 0 ? blockTypeData.textureSizeOverride.y : BlockDataManager.tileSizeY;
-
-        UVs[0] = new Vector2(tilePos.x * tileSizeX, tilePos.y * tileSizeY);
-        UVs[1] = new Vector2(tilePos.x * tileSizeX, (tilePos.y + tileExtends.y) * tileSizeY);
-        UVs[2] = new Vector2((tilePos.x + tileExtends.x) * tileSizeX, (tilePos.y + tileExtends.y) * tileSizeY);
-        UVs[3] = new Vector2((tilePos.x + tileExtends.x) * tileSizeX, tilePos.y * tileSizeY);
-
-        return UVs;
+        if (blockTypeData == null)
+            blockTypeData = BlockDataManager.blockTypeDataDictionary[(int)type];
+        int layer = blockTypeData.textureData.FaceIndex(dir);
+        return new[]
+        {
+            new Vector3(0, 0, layer),
+            new Vector3(0, 1, layer),
+            new Vector3(1, 1, layer),
+            new Vector3(1, 0, layer)
+        };
     }
 }

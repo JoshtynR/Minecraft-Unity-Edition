@@ -1,8 +1,7 @@
-﻿Shader "Voxel"
+Shader "Voxel"
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
 
         [MaterialToggle] _TextureOn  ("Texture On", Float) = 1
         [MaterialToggle] _LightingOn ("Lighting On", Float) = 1
@@ -44,10 +43,11 @@
             CGPROGRAM
             #pragma vertex   vert
             #pragma fragment frag
-            #pragma target   3.0
+            #pragma target   3.5
+            #pragma require 2darray
             #include "UnityCG.cginc"
 
-            sampler2D _MainTex;
+            UNITY_DECLARE_TEX2DARRAY(_BlockFaceTextures);
             sampler2D _LightTex;
 
             float _TextureOn, _LightingOn;
@@ -60,14 +60,14 @@
             struct appdata {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
-                float2 uv     : TEXCOORD0;
+                float3 uv     : TEXCOORD0;
                 float2 light  : TEXCOORD1;  // (sky, block) in 0..15
                 float3 sides  : TEXCOORD2;  // AO flags: side1, side2, corner (0/1)
                 float4 color  : COLOR;      // vertex tint
             };
             struct v2f {
                 float4 pos       : SV_POSITION;
-                float2 uv        : TEXCOORD0;
+                float3 uv        : TEXCOORD0;
                 float2 skyBlock  : TEXCOORD1;
                 float  aoOcc     : TEXCOORD2;
                 float  faceShade : TEXCOORD3;
@@ -219,8 +219,8 @@
 
             float4 frag (v2f i) : SV_Target
             {
-                float4 col = (_TextureOn>0.5) ? tex2D(_MainTex, i.uv) : float4(1,1,1,1);
-                clip(col.a - 1); // cutout atlas
+                float4 col = (_TextureOn>0.5) ? UNITY_SAMPLE_TEX2DARRAY(_BlockFaceTextures, i.uv) : float4(1,1,1,1);
+                clip(col.a - 0.5); // cutout face images
 
                 // vertex tint
                 col.rgb *= i.color.rgb;

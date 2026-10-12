@@ -11,18 +11,13 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 432b92bb31d34e8ca3dd662db07a98e0, type: 3}
   m_Name: Block Data
-  m_EditorClassIdentifier: 
-  textureSizeX: 0.03125
-  textureSizeY: 0.03125
+  m_EditorClassIdentifier: null
   textureDataList:
   - blockType: 0
     textureData:
-      up: {x: 0, y: 0}
-      down: {x: 0, y: 0}
-      side: {x: 0, y: 0}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
     isTransparent: 1
     generateCollider: 0
     opacity: 0
@@ -30,12 +25,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 1
     textureData:
-      up: {x: 0, y: 0}
-      down: {x: 0, y: 0}
-      side: {x: 0, y: 0}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
     isTransparent: 1
     generateCollider: 0
     opacity: 0
@@ -43,12 +35,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 3
     textureData:
-      up: {x: 11, y: 1}
-      down: {x: 13, y: 6}
-      side: {x: 12, y: 30}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 2800000, guid: e4b108a3e8f74a5c9530994b900ab1b4, type: 3}
+      bottom: {fileID: 2800000, guid: 5bb2659c451e4543a83385b03fe81fb0, type: 3}
+      side: {fileID: 2800000, guid: b56532467e5e4f46a48eb11927ee51e4, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -56,12 +45,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 2
     textureData:
-      up: {x: 13, y: 6}
-      down: {x: 13, y: 6}
-      side: {x: 13, y: 6}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 2800000, guid: 5bb2659c451e4543a83385b03fe81fb0, type: 3}
+      bottom: {fileID: 2800000, guid: 5bb2659c451e4543a83385b03fe81fb0, type: 3}
+      side: {fileID: 2800000, guid: 5bb2659c451e4543a83385b03fe81fb0, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -69,12 +55,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 8
     textureData:
-      up: {x: 31, y: 31}
-      down: {x: 31, y: 31}
-      side: {x: 31, y: 31}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 2800000, guid: 9582b06b81d1482995bbbfa0a718c655, type: 3}
+      bottom: {fileID: 2800000, guid: 9582b06b81d1482995bbbfa0a718c655, type: 3}
+      side: {fileID: 2800000, guid: 9582b06b81d1482995bbbfa0a718c655, type: 3}
     isTransparent: 1
     generateCollider: 0
     opacity: 13
@@ -82,12 +65,9 @@ MonoBehaviour:
     albedoTint: {r: 0, g: 0.27854395, b: 1, a: 1}
   - blockType: 7
     textureData:
-      up: {x: 2, y: 3}
-      down: {x: 2, y: 3}
-      side: {x: 2, y: 3}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 2800000, guid: 6abf5b9ebd194d21a02bb63d7e4fbc1c, type: 3}
+      bottom: {fileID: 2800000, guid: 6abf5b9ebd194d21a02bb63d7e4fbc1c, type: 3}
+      side: {fileID: 2800000, guid: 6abf5b9ebd194d21a02bb63d7e4fbc1c, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -95,12 +75,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 4
     textureData:
-      up: {x: 1, y: 17}
-      down: {x: 1, y: 17}
-      side: {x: 1, y: 17}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 2800000, guid: a02df9f5ec2542e78e2517dbc1f662f8, type: 3}
+      bottom: {fileID: 2800000, guid: a02df9f5ec2542e78e2517dbc1f662f8, type: 3}
+      side: {fileID: 2800000, guid: a02df9f5ec2542e78e2517dbc1f662f8, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -108,13 +85,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 5
     textureData:
-      up: {x: 23, y: 46}
-      down: {x: 23, y: 46}
-      side: {x: 22, y: 46}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
-    textureSizeOverride: {x: 0.015625, y: 0.015625}
+      top: {fileID: 2800000, guid: 0046a6c188214517a0969364d0276955, type: 3}
+      bottom: {fileID: 2800000, guid: 0046a6c188214517a0969364d0276955, type: 3}
+      side: {fileID: 2800000, guid: d8e788dfcfa547e3919637b084130424, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -122,13 +95,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 6
     textureData:
-      up: {x: 21, y: 46}
-      down: {x: 21, y: 46}
-      side: {x: 21, y: 46}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
-    textureSizeOverride: {x: 0.015625, y: 0.015625}
+      top: {fileID: 2800000, guid: b1e1094496434e748c31a05f29e9645a, type: 3}
+      bottom: {fileID: 2800000, guid: b1e1094496434e748c31a05f29e9645a, type: 3}
+      side: {fileID: 2800000, guid: b1e1094496434e748c31a05f29e9645a, type: 3}
     isTransparent: 1
     generateCollider: 1
     opacity: 1
@@ -136,12 +105,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 10
     textureData:
-      up: {x: 3, y: 20}
-      down: {x: 3, y: 20}
-      side: {x: 3, y: 20}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 2800000, guid: cc04912d93124f3fb1afb54c0b0f2965, type: 3}
+      bottom: {fileID: 2800000, guid: cc04912d93124f3fb1afb54c0b0f2965, type: 3}
+      side: {fileID: 2800000, guid: cc04912d93124f3fb1afb54c0b0f2965, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -149,12 +115,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 11
     textureData:
-      up: {x: 7, y: 22}
-      down: {x: 7, y: 22}
-      side: {x: 7, y: 22}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 0.5}
+      top: {fileID: 2800000, guid: 705bb7e85ab84a9c82597197b3ac1d9a, type: 3}
+      bottom: {fileID: 2800000, guid: 705bb7e85ab84a9c82597197b3ac1d9a, type: 3}
+      side: {fileID: 2800000, guid: e9f8c9e93261473badce22ae4e4ccb94, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 14
@@ -162,12 +125,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 12
     textureData:
-      up: {x: 21, y: 28}
-      down: {x: 21, y: 28}
-      side: {x: 21, y: 28}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 2800000, guid: 9491878e88ef4e99af6ebf7a98649abc, type: 3}
+      bottom: {fileID: 2800000, guid: 9491878e88ef4e99af6ebf7a98649abc, type: 3}
+      side: {fileID: 2800000, guid: 9491878e88ef4e99af6ebf7a98649abc, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -175,12 +135,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 13
     textureData:
-      up: {x: 11, y: 2}
-      down: {x: 11, y: 2}
-      side: {x: 11, y: 2}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 2800000, guid: a49426dd83f442c88f9fd8c4bab0e184, type: 3}
+      bottom: {fileID: 2800000, guid: a49426dd83f442c88f9fd8c4bab0e184, type: 3}
+      side: {fileID: 2800000, guid: a49426dd83f442c88f9fd8c4bab0e184, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -188,12 +145,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 14
     textureData:
-      up: {x: 11, y: 2}
-      down: {x: 11, y: 2}
-      side: {x: 11, y: 2}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 2800000, guid: a49426dd83f442c88f9fd8c4bab0e184, type: 3}
+      bottom: {fileID: 2800000, guid: a49426dd83f442c88f9fd8c4bab0e184, type: 3}
+      side: {fileID: 2800000, guid: a49426dd83f442c88f9fd8c4bab0e184, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -201,12 +155,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 15
     textureData:
-      up: {x: 2, y: 6}
-      down: {x: 2, y: 5}
-      side: {x: 2, y: 4}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 2800000, guid: 571e7462c7ca4b30b210186226f52e51, type: 3}
+      bottom: {fileID: 2800000, guid: ed98561cdb754ee2b98705ef22a8618b, type: 3}
+      side: {fileID: 2800000, guid: a4022c87ac6d4fa3be7d972256aa402c, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -214,12 +165,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 16
     textureData:
-      up: {x: 31, y: 31}
-      down: {x: 31, y: 31}
-      side: {x: 31, y: 31}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
+      top: {fileID: 2800000, guid: 9582b06b81d1482995bbbfa0a718c655, type: 3}
+      bottom: {fileID: 2800000, guid: 9582b06b81d1482995bbbfa0a718c655, type: 3}
+      side: {fileID: 2800000, guid: 9582b06b81d1482995bbbfa0a718c655, type: 3}
     isTransparent: 0
     generateCollider: 0
     opacity: 15
@@ -227,13 +175,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 0.32, b: 0.08, a: 1}
   - blockType: 17
     textureData:
-      up: {x: 27, y: 40}
-      down: {x: 27, y: 40}
-      side: {x: 26, y: 40}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
-    textureSizeOverride: {x: 0.015625, y: 0.015625}
+      top: {fileID: 2800000, guid: 74e1b29fba594627b84aae84c2eff98b, type: 3}
+      bottom: {fileID: 2800000, guid: 74e1b29fba594627b84aae84c2eff98b, type: 3}
+      side: {fileID: 2800000, guid: 3c9a25764ffc40559673ed3031184625, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -241,13 +185,9 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 18
     textureData:
-      up: {x: 25, y: 40}
-      down: {x: 25, y: 40}
-      side: {x: 25, y: 40}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
-    textureSizeOverride: {x: 0.015625, y: 0.015625}
+      top: {fileID: 2800000, guid: b8f4c4a919704d0cb67488fdd4bbd50f, type: 3}
+      bottom: {fileID: 2800000, guid: b8f4c4a919704d0cb67488fdd4bbd50f, type: 3}
+      side: {fileID: 2800000, guid: b8f4c4a919704d0cb67488fdd4bbd50f, type: 3}
     isTransparent: 1
     generateCollider: 1
     opacity: 1
@@ -255,13 +195,9 @@ MonoBehaviour:
     albedoTint: {r: 0.3803921568627451, g: 0.6, b: 0.3803921568627451, a: 1}
   - blockType: 19
     textureData:
-      up: {x: 16, y: 59}
-      down: {x: 16, y: 59}
-      side: {x: 16, y: 60}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
-    textureSizeOverride: {x: 0.015625, y: 0.015625}
+      top: {fileID: 2800000, guid: c1ac25c28013485e89e0967e95a9f363, type: 3}
+      bottom: {fileID: 2800000, guid: c1ac25c28013485e89e0967e95a9f363, type: 3}
+      side: {fileID: 2800000, guid: 2304c58d1b194228a6ebd86aad1b164b, type: 3}
     isTransparent: 0
     generateCollider: 1
     opacity: 15
@@ -269,15 +205,13 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 20
     textureData:
-      up: {x: 16, y: 61}
-      down: {x: 16, y: 61}
-      side: {x: 16, y: 61}
-      upExtends: {x: 1, y: 1}
-      downExtends: {x: 1, y: 1}
-      sideExtends: {x: 1, y: 1}
-    textureSizeOverride: {x: 0.015625, y: 0.015625}
+      top: {fileID: 2800000, guid: 20fccf3477054cd385d65dded88cf156, type: 3}
+      bottom: {fileID: 2800000, guid: 20fccf3477054cd385d65dded88cf156, type: 3}
+      side: {fileID: 2800000, guid: 20fccf3477054cd385d65dded88cf156, type: 3}
     isTransparent: 1
     generateCollider: 1
     opacity: 1
     lightEmission: 0
-    albedoTint: {r: 0.5019607843137255, g: 0.6549019607843137, b: 0.3333333333333333, a: 1}
+    albedoTint: {r: 0.5019607843137255, g: 0.6549019607843137, b: 0.3333333333333333,
+      a: 1}
+  faceTextureResolution: 32

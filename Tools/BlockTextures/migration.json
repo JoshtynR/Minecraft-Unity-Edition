@@ -1,0 +1,255 @@
+[
+  {
+    "path": "Assets/Textures/Blocks/grass_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      176,
+      480,
+      192,
+      496
+    ],
+    "guid": "e4b108a3e8f74a5c9530994b900ab1b4"
+  },
+  {
+    "path": "Assets/Textures/Blocks/grass_bottom.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      208,
+      400,
+      224,
+      416
+    ],
+    "guid": "5bb2659c451e4543a83385b03fe81fb0"
+  },
+  {
+    "path": "Assets/Textures/Blocks/grass_side.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      192,
+      16,
+      208,
+      32
+    ],
+    "guid": "b56532467e5e4f46a48eb11927ee51e4"
+  },
+  {
+    "path": "Assets/Textures/Blocks/water_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      496,
+      0,
+      512,
+      16
+    ],
+    "guid": "9582b06b81d1482995bbbfa0a718c655"
+  },
+  {
+    "path": "Assets/Textures/Blocks/sand_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      32,
+      448,
+      48,
+      464
+    ],
+    "guid": "6abf5b9ebd194d21a02bb63d7e4fbc1c"
+  },
+  {
+    "path": "Assets/Textures/Blocks/stone_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      16,
+      224,
+      32,
+      240
+    ],
+    "guid": "a02df9f5ec2542e78e2517dbc1f662f8"
+  },
+  {
+    "path": "Assets/Textures/Blocks/oak_log_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      184,
+      136,
+      192,
+      144
+    ],
+    "guid": "0046a6c188214517a0969364d0276955"
+  },
+  {
+    "path": "Assets/Textures/Blocks/oak_log_side.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      176,
+      136,
+      184,
+      144
+    ],
+    "guid": "d8e788dfcfa547e3919637b084130424"
+  },
+  {
+    "path": "Assets/Textures/Blocks/oak_leaves_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      168,
+      136,
+      176,
+      144
+    ],
+    "guid": "b1e1094496434e748c31a05f29e9645a"
+  },
+  {
+    "path": "Assets/Textures/Blocks/glowstone_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      48,
+      176,
+      64,
+      192
+    ],
+    "guid": "cc04912d93124f3fb1afb54c0b0f2965"
+  },
+  {
+    "path": "Assets/Textures/Blocks/wooden_slab_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      112,
+      144,
+      128,
+      160
+    ],
+    "guid": "705bb7e85ab84a9c82597197b3ac1d9a"
+  },
+  {
+    "path": "Assets/Textures/Blocks/wooden_slab_side.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      112,
+      152,
+      128,
+      160
+    ],
+    "guid": "e9f8c9e93261473badce22ae4e4ccb94"
+  },
+  {
+    "path": "Assets/Textures/Blocks/bedrock_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      336,
+      48,
+      352,
+      64
+    ],
+    "guid": "9491878e88ef4e99af6ebf7a98649abc"
+  },
+  {
+    "path": "Assets/Textures/Blocks/gravel_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      176,
+      464,
+      192,
+      480
+    ],
+    "guid": "a49426dd83f442c88f9fd8c4bab0e184"
+  },
+  {
+    "path": "Assets/Textures/Blocks/lava_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      32,
+      400,
+      48,
+      416
+    ],
+    "guid": "571e7462c7ca4b30b210186226f52e51"
+  },
+  {
+    "path": "Assets/Textures/Blocks/lava_bottom.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      32,
+      416,
+      48,
+      432
+    ],
+    "guid": "ed98561cdb754ee2b98705ef22a8618b"
+  },
+  {
+    "path": "Assets/Textures/Blocks/lava_side.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      32,
+      432,
+      48,
+      448
+    ],
+    "guid": "a4022c87ac6d4fa3be7d972256aa402c"
+  },
+  {
+    "path": "Assets/Textures/Blocks/spruce_log_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      216,
+      184,
+      224,
+      192
+    ],
+    "guid": "74e1b29fba594627b84aae84c2eff98b"
+  },
+  {
+    "path": "Assets/Textures/Blocks/spruce_log_side.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      208,
+      184,
+      216,
+      192
+    ],
+    "guid": "3c9a25764ffc40559673ed3031184625"
+  },
+  {
+    "path": "Assets/Textures/Blocks/spruce_leaves_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      200,
+      184,
+      208,
+      192
+    ],
+    "guid": "b8f4c4a919704d0cb67488fdd4bbd50f"
+  },
+  {
+    "path": "Assets/Textures/Blocks/birch_log_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      128,
+      32,
+      136,
+      40
+    ],
+    "guid": "c1ac25c28013485e89e0967e95a9f363"
+  },
+  {
+    "path": "Assets/Textures/Blocks/birch_log_side.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      128,
+      24,
+      136,
+      32
+    ],
+    "guid": "2304c58d1b194228a6ebd86aad1b164b"
+  },
+  {
+    "path": "Assets/Textures/Blocks/birch_leaves_top.png",
+    "atlas": "Assets/Textures/sprites.png",
+    "box": [
+      128,
+      16,
+      136,
+      24
+    ],
+    "guid": "20fccf3477054cd385d65dded88cf156"
+  }
+]
