@@ -10,6 +10,24 @@ using Gizmos = Popcron.Gizmos;
 
 public class Player : BaseEntity
 {
+    [Header("Survival HUD")]
+    [SyncVar, Range(0, 20)] public int health = 20;
+    [SyncVar, Range(0, 20)] public int hunger = 20;
+    [SyncVar] public int experienceLevel;
+    [SyncVar, Range(0, 1)] public float experienceProgress;
+
+    // Gameplay systems update these on the server; Mirror replicates them.
+    [Server]
+    public void SetHealth(int points) { health = SurvivalHudValues.ClampPoints(points); }
+    [Server]
+    public void SetHunger(int points) { hunger = SurvivalHudValues.ClampPoints(points); }
+    [Server]
+    public void SetExperience(int level, float progress)
+    {
+        experienceLevel = Mathf.Max(0, level);
+        experienceProgress = float.IsNaN(progress) ? 0 : Mathf.Clamp01(progress);
+    }
+
     [Space]
     public float sensitivity = 10f;
     public float checkIncrement = 0.1f;

@@ -1342,6 +1342,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 322500775}
+  - component: {fileID: 322500776}
   m_Layer: 5
   m_Name: GameUI
   m_TagString: Untagged
@@ -7139,3 +7140,16 @@ SceneRoots:
   - {fileID: 939967754}
   - {fileID: 235628808}
   - {fileID: 1873146131}
+--- !u!114 &322500776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 322500774}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbf8fd4c18b54debb22d2b5eff456d1b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  hotbar: {fileID: 1331513550}
