@@ -4,8 +4,8 @@ public partial class World
 {
     [Tooltip("Beta skylight subtraction: 0 is daytime; 11 is a clear night. This does not add a day/night clock.")]
     [Range(0, 11)] public int betaSkylightSubtracted;
-    [Tooltip("Smooth every visible face, including slabs and liquids, using bilinear face interpolation. Extends Beta's original liquid lighting.")]
-    public bool fullSmoothLighting = true;
+    [Tooltip("Optional enhanced smoothing. Enable bilinear face interpolation and smoothed liquids; disable for Beta vertex interpolation and original liquid sampling.")]
+    public bool fullSmoothLighting = false;
     private int lastFullSmoothLighting = -1;
     private int lastBetaSkyDarkness = -1;
     private float lastBetaBrightnessBoost = -1;

@@ -27,7 +27,7 @@ public class TextureData {public int FaceIndex(Direction d)=>0;}
 public class BlockTypeData {public byte opacity,lightEmission;public TextureData textureData=new TextureData();public Color albedoTint;}
 public class Block
 {
- public byte waterLevel;public BlockType type;public BlockTypeData BlockData=new BlockTypeData();public int sky,light;public ChunkData chunkData;public Vector3Int localChunkPosition;public Vector3Int globalWorldPosition=>localChunkPosition;public ShapeSlot blockShape=new ShapeSlot();
+ public byte waterLevel;public BlockType type;public BlockTypeData BlockData=new BlockTypeData();public int sky,light;public ChunkData chunkData;public Vector3Int localChunkPosition;public Vector3Int globalWorldPosition=>chunkData.worldPos+localChunkPosition;public ShapeSlot blockShape=new ShapeSlot();
  public int GetSkyLight()=>sky;public int GetBlockLight()=>light;public void SetSkyLight(int v){sky=v;}public void SetBlockLight(int v){light=v;}
  public Block[] GetNeighbors(){return new[]{Direction.up,Direction.down,Direction.left,Direction.right,Direction.forwards,Direction.backwards}.Select(d=>chunkData.GetBlock(localChunkPosition+d.GetVector())).ToArray();}
 }
@@ -36,11 +36,15 @@ public class ChunkRenderer {}
 public class World {public int worldHeight=128,betaSkylightSubtracted,updates;public bool fullSmoothLighting=true;public void AddChunkToUpdate(ChunkRenderer c,bool first){updates++;}}
 public class ChunkData
 {
+ public Vector3Int worldPos;
+ public bool lightingInitialized;
+ public bool HasPendingLighting=>skyLightRemoveQueue.Count+skyLightUpdateQueue.Count+blockLightRemoveQueue.Count+blockLightUpdateQueue.Count+skyRemoveList.Count+skyExtendList.Count+chunkToUpdateAfterLighting.Count>0;
+ public void UpdateLight(){Lighting.CalculateSkyLightRemove(this);Lighting.CalculateSkyLightExtend(this);Lighting.CalculateLight(this);}
  public int chunkSize=1;public World worldRef=new World();public ChunkRenderer renderer;
  public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();
  public Queue<BlockLightNode> skyLightRemoveQueue=new Queue<BlockLightNode>(),skyLightUpdateQueue=new Queue<BlockLightNode>(),blockLightRemoveQueue=new Queue<BlockLightNode>(),blockLightUpdateQueue=new Queue<BlockLightNode>();
  public List<Block> skyExtendList=new List<Block>(),skyRemoveList=new List<Block>();public List<ChunkRenderer> chunkToUpdateAfterLighting=new List<ChunkRenderer>();
- public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block{type=BlockType.Nothing,localChunkPosition=p,chunkData=this};}
+ public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(worldPos+p,out b)?b:new Block{type=BlockType.Nothing,localChunkPosition=p,chunkData=this};}
  public bool IsOnEdge(Vector3Int p)=>false;public List<ChunkData> GetNeighbourChunk(Vector3Int p)=>new List<ChunkData>();
 }
 public static class LightingCheck
@@ -48,7 +52,7 @@ public static class LightingCheck
  static int checks,aoCases;static readonly CultureInfo C=CultureInfo.InvariantCulture;
  static void Check(bool condition,string label){checks++;if(!condition)throw new Exception(label);}
  static float F(string s)=>float.Parse(s,C);
- static Block Add(ChunkData c,Vector3Int pos,BlockType type=BlockType.Air,int opacity=0,int emission=0){var b=new Block{chunkData=c,localChunkPosition=pos,type=type,BlockData=new BlockTypeData{opacity=(byte)opacity,lightEmission=(byte)emission}};c.blocks[pos]=b;return b;}
+ static Block Add(ChunkData c,Vector3Int pos,BlockType type=BlockType.Air,int opacity=0,int emission=0){var b=new Block{chunkData=c,localChunkPosition=pos,type=type,BlockData=new BlockTypeData{opacity=(byte)opacity,lightEmission=(byte)emission}};c.blocks[c.worldPos+pos]=b;return b;}
  public static void Main(string[] args)
  {
   ChunkData chunk=null;MeshData lastFaceMesh=null;int orderedVertices=0;Vector3Int center=new Vector3Int(-1,65,17);
@@ -105,6 +109,25 @@ public static class LightingCheck
   column.GetBlock(new Vector3Int(0,5,0)).BlockData.opacity=1;column.GetBlock(new Vector3Int(0,3,0)).BlockData.opacity=3;column.GetBlock(new Vector3Int(0,1,0)).BlockData.opacity=3;column.GetBlock(new Vector3Int(0,0,0)).BlockData.opacity=15;
   Lighting.RecastSunLight(column,new Vector3Int(0,7,0));expected=new[]{0,8,11,11,14,14,15,15};for(int y=0;y<8;y++)Check(column.GetBlock(new Vector3Int(0,y,0)).sky==expected[y],"initial Beta column attenuation");
   Lighting.RecastSunLight(column,new Vector3Int(0,7,0),true);expected=new[]{0,6,9,10,13,14,15,15};for(int y=0;y<8;y++)Check(column.GetBlock(new Vector3Int(0,y,0)).sky==expected[y],"changed Beta column attenuation");
+  // Both rendered data and the renderer-less halo must be seeded before meshes.
+  var visible=new ChunkData{renderer=new ChunkRenderer()};var halo=new ChunkData{worldPos=new Vector3Int(1,0,0),blocks=visible.blocks};
+  visible.worldRef.worldHeight=halo.worldRef.worldHeight=8;
+  foreach(var data in new[]{visible,halo})
+   for(int y=0;y<8;y++)Add(data,new Vector3Int(0,y,0),y==0?BlockType.Stone:BlockType.Air,y==0?15:0);
+  visible.GetBlock(new Vector3Int(0,6,0)).BlockData.opacity=15;
+  Lighting.InitializeLoadedChunks(new[]{visible,halo});
+  Check(visible.GetBlock(new Vector3Int(0,5,0)).sky==14,"halo propagates sideways below visible roof before first mesh");
+  Check(visible.lightingInitialized&&halo.lightingInitialized,"renderer-less lighting halo initialized");
+  Check(halo.GetBlock(new Vector3Int(0,7,0)).sky==15,"halo sky available before first geometry");
+  halo.GetBlock(new Vector3Int(0,7,0)).sky=3;
+  Lighting.InitializeLoadedChunks(new[]{visible,halo});
+  Check(halo.GetBlock(new Vector3Int(0,7,0)).sky==3,"unchanged halo not repeatedly reseeded");
+  halo.lightingInitialized=false;
+  Lighting.InitializeLoadedChunks(new[]{visible,halo});
+  Check(halo.GetBlock(new Vector3Int(0,7,0)).sky==15,"population invalidation reseeds halo");
+  var cancelled=new System.Threading.CancellationToken(true);bool cancelledThrow=false;
+  try{Lighting.InitializeLoadedChunks(new[]{new ChunkData()},cancelled);}catch(OperationCanceledException){cancelledThrow=true;}
+  Check(cancelledThrow,"initial lighting respects cancellation");
   Check(Beta173Lighting.Brightness(15,0,11)==Beta173Lighting.Brightness(4,0),"night sky subtraction");
   Check(Beta173Lighting.Brightness(0,15,11)==1f,"block light remains bright at night");
   Check(Beta173Lighting.Brightness(0,0)==0.05f,"Beta ambient floor");
@@ -130,6 +153,12 @@ public static class LightingCheck
   smoothChunk.worldRef.fullSmoothLighting=false;
   var flatWater=new MeshData(false);BlockHelper.GetFaceDataIn(Direction.right,position,flatWater,partial,partial.BlockData,smoothChunk);
   Check(flatWater.sides.All(v=>v.z==1&&Math.Abs(v.x-v.y)<0.000001f),"previous flat liquid mode retained");
+  var betaWaterTop=new MeshData(false);BlockHelper.GetFaceDataIn(Direction.up,position,betaWaterTop,partial,partial.BlockData,smoothChunk);
+  Check(betaWaterTop.sides.All(v=>Math.Abs(v.x-Beta173Lighting.Brightness(0,6))<0.000001f),"Beta water top samples its own cell");
+  partial.type=BlockType.WoodenSlab;partial.blockShape.shape=new BlockShape(0,0,0,16,8,16);
+  var betaSlab=new MeshData(false);BlockHelper.GetFaceDataIn(Direction.right,position,betaSlab,partial,partial.BlockData,smoothChunk);
+  for(int i=0;i<4;i++)
+   Check(betaSlab.sides[i].z==1&&Math.Abs(betaSlab.sides[i].x-(betaSlab.vertices[i].y-position.y>0.25f?high:low))<0.00001f,"Beta slab uses shape top and bottom corner samples");
   // Bilinear face interpolation uses all four UV-wound corners, not a triangle's
   // three values. The same UV returns the same brightness across the diagonal.
   Check(Beta173Lighting.InterpolateCorners(0,1,0,0,0.5f,0.5f)==0.25f,"quad center uses all four corners");

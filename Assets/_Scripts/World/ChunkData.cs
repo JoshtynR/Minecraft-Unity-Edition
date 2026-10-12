@@ -14,6 +14,7 @@ public class ChunkData
     
     public bool modifiedByPlayer = false;
     public bool isGenerated = false;
+    public bool lightingInitialized;
     public bool betaTreePopulationDone;
     public bool modifiedAfterSave = true;
     
@@ -190,6 +191,11 @@ public class ChunkData
         chunkToUpdateAfterLighting.Count > 0;
 
     public void UpdateLight()
+    {
+        lock (Lighting.SyncRoot) ProcessPendingLight();
+    }
+
+    private void ProcessPendingLight()
     {
         try
         {

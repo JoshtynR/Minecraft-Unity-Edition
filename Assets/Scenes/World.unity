@@ -4533,6 +4533,8 @@ MonoBehaviour:
   terrainGenerator: {fileID: 1658937128}
   mapSeedOffset: {x: -251, y: 150, z: 0}
   betaWorldSeed: 0
+  betaSkylightSubtracted: 0
+  fullSmoothLighting: 0
   GenerateMoreChunks: 1
   gamma: 0
   skyLightMultiplier: 1

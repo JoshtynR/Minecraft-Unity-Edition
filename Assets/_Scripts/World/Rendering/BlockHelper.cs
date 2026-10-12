@@ -126,10 +126,12 @@ public static class BlockHelper
         // adjacent cell as before.
         if (fullSmooth && faceBlock.type != BlockType.Water && faceBlock.type != BlockType.Lava &&
             IsInsetFace(normal, shape)) front = pos;
+        if (!fullSmooth && direction == Direction.up &&
+            (faceBlock.type == BlockType.Water || faceBlock.type == BlockType.Lava)) front = pos;
         int emission = faceBlock.BlockData.lightEmission;
         int darkness = chunk.worldRef.betaSkylightSubtracted;
         float flat = SampleBrightness(chunk, front, darkness, emission);
-        bool smooth = fullSmooth || (faceBlock.type != BlockType.Water && faceBlock.type != BlockType.Lava && shape.isFullBlock());
+        bool smooth = fullSmooth || (faceBlock.type != BlockType.Water && faceBlock.type != BlockType.Lava);
         float c00 = smooth ? SampleCorner(chunk, front, axisA, axisB, -1, -1, darkness, emission, flat) : flat;
         float c01 = smooth ? SampleCorner(chunk, front, axisA, axisB, -1, 1, darkness, emission, flat) : flat;
         float c11 = smooth ? SampleCorner(chunk, front, axisA, axisB, 1, 1, darkness, emission, flat) : flat;
@@ -142,8 +144,8 @@ public static class BlockHelper
             var vertex = meshData.vertices[firstVertex + i];
             float alongA = Vector3.Dot(vertex - (Vector3)pos, (Vector3)axisA);
             float alongB = Vector3.Dot(vertex - (Vector3)pos, (Vector3)axisB);
-            float a = fullSmooth ? FaceCoordinate(alongA) : (alongA >= 0.5f ? 1 : 0);
-            float b = fullSmooth ? FaceCoordinate(alongB) : (alongB >= 0.5f ? 1 : 0);
+            float a = fullSmooth ? FaceCoordinate(alongA) : (alongA >= ShapeMidpoint(axisA, shape) ? 1 : 0);
+            float b = fullSmooth ? FaceCoordinate(alongB) : (alongB >= ShapeMidpoint(axisB, shape) ? 1 : 0);
             float corner = Beta173Lighting.InterpolateCorners(c00, c01, c11, c10, a, b);
             if (i == 0) q0 = corner;
             else if (i == 1) q1 = corner;
@@ -159,6 +161,13 @@ public static class BlockHelper
         // that same order, independently of face orientation or triangle order.
         var corners = new Vector4(q0, q1, q2, q3);
         for (int i = 0; i < 4; i++) meshData.smoothLightCorners.Add(corners);
+    }
+
+    private static float ShapeMidpoint(Vector3Int axis, BlockShape shape)
+    {
+        if (axis.x != 0) return (shape.xMin + shape.xMax) / 32f;
+        if (axis.y != 0) return (shape.yMin + shape.yMax) / 32f;
+        return (shape.zMin + shape.zMax) / 32f;
     }
 
     private static bool IsInsetFace(Vector3Int normal, BlockShape shape)

@@ -16,4 +16,7 @@ def main():
   subprocess.run([a.mcs,'-langversion:latest','-out:'+str(binary),*[str(ROOT/s) for s in sources],str(t/'BlockHelper.cs'),str(t/'ChunkSection.cs')],check=True)
   fixture=t/'fixtures.tsv';fixture.write_bytes(gzip.decompress((ROOT/'Tools/LightingParity/fixtures.tsv.gz').read_bytes()))
   subprocess.run([a.mono,str(binary),str(fixture)],check=True)
+  boot=t/'boot.exe'
+  subprocess.run([a.mcs,'-out:'+str(boot),str(ROOT/'Assets/_Scripts/World/LightTexBoot.cs'),str(ROOT/'Tools/LightingParity/BootCheck.cs')],check=True)
+  subprocess.run([a.mono,str(boot)],check=True)
 if __name__=='__main__':main()

@@ -1,9 +1,36 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 
 public static class Lighting
 {
+    internal static readonly object SyncRoot = new object();
+
+    // Seed the entire loaded lighting halo before propagating or sampling. The
+    // outer data ring has no renderer yet, but AO samples its light values.
+    public static void InitializeLoadedChunks(IList<ChunkData> chunks, CancellationToken token = default(CancellationToken))
+    {
+        lock (SyncRoot)
+        {
+            foreach (var chunk in chunks)
+            {
+                token.ThrowIfCancellationRequested();
+                if (chunk.lightingInitialized) continue;
+                RecastSunLightFirstTime(chunk);
+                chunk.lightingInitialized = true;
+            }
+            // One sequential transport phase prevents adjacent meshing workers
+            // from racing writes to packed sky/block light or observing half-
+            // initialized neighbors during the first mesh build.
+            foreach (var chunk in chunks)
+            {
+                token.ThrowIfCancellationRequested();
+                if (chunk.HasPendingLighting) chunk.UpdateLight();
+            }
+        }
+    }
+
     public static void CalculateLight(ChunkData data)
     {
         // --- Sky light removal pass ---

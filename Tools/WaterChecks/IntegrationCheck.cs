@@ -73,7 +73,7 @@ public class ChunkData
     public int chunkSize,chunkHeight=2;
     public World worldRef;
     public Vector3Int worldPos;
-    public bool isGenerated=true,modifiedAfterSave=false;
+    public bool isGenerated=true,modifiedAfterSave=false,lightingInitialized;
     public ChunkSection[] sections;
     public Queue<BlockLightNode> blockLightUpdateQueue=new Queue<BlockLightNode>(),blockLightRemoveQueue=new Queue<BlockLightNode>(),skyLightUpdateQueue=new Queue<BlockLightNode>(),skyLightRemoveQueue=new Queue<BlockLightNode>();
     public List<Block> skyRemoveList=new List<Block>(),skyExtendList=new List<Block>();
@@ -190,4 +190,4 @@ public static class IntegrationCheck
     }
 }
 
-public static class Lighting { public static void RecastSunLight(ChunkData c, UnityEngine.Vector3Int p, bool changedColumn = false) {} }
+public static class Lighting { internal static readonly object SyncRoot = new object(); public static void RecastSunLight(ChunkData c, UnityEngine.Vector3Int p, bool changedColumn = false) {} }

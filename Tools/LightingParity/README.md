@@ -13,14 +13,19 @@ outside plane, with Beta's material-based diagonal fallback. It replaces the
 front/back weighted level sampling and separate multiplicative voxel AO. UV2
 now stores smooth brightness, flat brightness and a Beta sample marker. Raw
 sky/block values in UV1 remain available to debug views and inventory/player
-meshes. Half-slab sampling borrows brightness from above and four sides. World's **Full Smooth Lighting** is enabled by default. It extends the Beta
-renderer to partial shapes and liquids, using actual vertex heights, inset face
-planes, and per-fragment bilinear interpolation across all four face corners.
-This avoids assigning a full-height sample to a slab/water vertex and removes
-the brightness crease caused by interpolating separately inside two triangles.
-Disable this world option to retain the previous Beta-style vertex interpolation
-and flat liquid/partial-shape mode. MainMat's Smooth Lighting checkbox still
-switches all faces to flat brightness when disabled.
+meshes. Half-slab sampling borrows brightness from above and four sides. The default uses Beta vertex interpolation, including slab corner lighting and original
+flat fluid lighting (the water top samples its own cell). World's **Full Smooth
+Lighting** remains an optional extension, disabled by default: it uses actual
+vertex heights, inset face planes, and per-fragment bilinear interpolation across
+all four face corners. MainMat's Smooth Lighting checkbox switches all faces to
+flat brightness when disabled.
+
+All loaded chunks, including the renderer-less data halo, receive initial lighting
+before geometry is built. Initial transport runs sequentially after seeding, with
+serialized live light changes to avoid competing packed-light writes. Populating
+an already lit halo invalidates it for re-seeding before tree mesh refreshes.
+LightTexBoot only allocates a LUT for legacy materials declaring `_LightTex`;
+the current Voxel shader needs no LUT.
 
 UV3 stores a repeated float4 of corner brightness values, ordered to match the
 face's full-image UV winding. It adds 16 bytes per vertex to mesh attributes;
@@ -55,7 +60,10 @@ reference render-face methods are compared. This verifies corner placement as
 well as brightness. The full-smooth bilinear interior is an intentional extension
 of Beta's triangle interpolation. Additional tests cover mixed-opacity/cross-chunk transport,
 source removal, initial/dynamic sky columns, daytime/night brightness, slab
-heights, inset slab faces, deformed water surfaces, and smooth-mode fallback.
+heights, inset slab faces, deformed water surfaces, smooth-mode fallback, halo
+initialization/sideways transport, invalidation and cancellation. The separate
+LightTexBoot harness checks modern-material allocation avoidance and legacy
+texture ownership/cleanup.
 
 Regenerate using `python Tools/LightingParity/generate_fixtures.py <reference-checkout>`.
 Fixtures are compressed with deterministic gzip metadata; reference Java source

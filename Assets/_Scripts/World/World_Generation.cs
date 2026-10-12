@@ -112,7 +112,6 @@ public partial class World
         
         // Generate features like trees
         await CalculateFeatures(worldGenerationData.chunkPositionsToCreate);
-        await RefreshTreeMeshes();
         
 
         await Task.Run(() =>
@@ -143,6 +142,7 @@ public partial class World
             .ToList();
 
         await CastLightFirstTime(dataToRender);
+        await RefreshTreeMeshes();
 
         try
         {
@@ -235,7 +235,6 @@ public partial class World
         
         // Generate features like trees
         await CalculateFeatures(worldGenerationData.chunkPositionsToCreate);
-        await RefreshTreeMeshes();
         
 
         await Task.Run(() =>
@@ -252,6 +251,8 @@ public partial class World
             Debug.Log($"Feature generation took {featureStopWatch.ElapsedMilliseconds}ms");
         }
         
+        await CastLightFirstTime(worldData.chunkDataDict.Values.ToList());
+        await RefreshTreeMeshes();
         onDone?.Invoke();
     }
 
@@ -283,10 +284,11 @@ public partial class World
 
     public UniTask CastLightFirstTime(List<ChunkData> dataToCast)
     {
+        var loadedLightingChunks = worldData.chunkDataDict.Values.ToList();
         return UniTask.RunOnThreadPool(() =>
         {
-            Parallel.ForEach(dataToCast, Lighting.RecastSunLightFirstTime);
-        });
+            Lighting.InitializeLoadedChunks(loadedLightingChunks, worldCancellationToken);
+        }, true, worldCancellationToken);
     }
     
     public UniTask<ConcurrentDictionary<Vector3Int, MeshData>> CreateMeshDataAsync(List<ChunkData> dataToRender)

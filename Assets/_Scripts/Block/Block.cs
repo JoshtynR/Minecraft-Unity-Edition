@@ -97,11 +97,21 @@ public class Block
     
     public void SetType(BlockType type)
     {
+        if (chunkData.isGenerated && chunkData.worldRef.IsWorldCreated)
+        {
+            lock (Lighting.SyncRoot) SetTypeCore(type);
+        }
+        else SetTypeCore(type);
+    }
+
+    private void SetTypeCore(BlockType type)
+    {
         var x = position.x;
         var y = position.y;
         var z = position.z;
         
         var oldOpacity = BlockData.opacity;
+        var oldEmission = BlockData.lightEmission;
         var brokeBlock = this.type != BlockType.Nothing && type == BlockType.Air;
         var oldType = this.type;
 
@@ -118,6 +128,10 @@ public class Block
         }
 
         section.blocks[x, y, z] = BlockMapping.MapTypeToBlock(type, this);
+        // A previously lit data-only halo can receive trees before it gets its
+        // first renderer. Re-seed it after those population changes.
+        if ((oldOpacity != BlockData.opacity || oldEmission != BlockData.lightEmission) && (!chunkData.isGenerated || !chunkData.worldRef.IsWorldCreated))
+            chunkData.lightingInitialized = false;
         if (oldOpacity != BlockData.opacity && chunkData.isGenerated && chunkData.worldRef.IsWorldCreated)
         {
             Lighting.RecastSunLight(chunkData, localChunkPosition, true);
