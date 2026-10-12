@@ -14,18 +14,23 @@ public static class HandMining
             case BlockType.Log: case BlockType.SpruceLog: case BlockType.BirchLog: case BlockType.WoodenSlab: return 2;
             case BlockType.Leaves: case BlockType.SpruceLeaves: case BlockType.BirchLeaves: return 0.2f;
             case BlockType.Glass: case BlockType.GlowStone: return 0.3f;
-            default: return -1; // bedrock and fluids cannot be mined
+            default:
+                BetaBlockCatalog.Entry entry;
+                return BetaBlockCatalog.TryGet(type, out entry) ? entry.Hardness : -1;
         }
     }
     public static bool Harvestable(BlockType type)
     {
         // Beta glowstone and wooden slabs use rock material, unlike later Java.
+        BetaBlockCatalog.Entry entry;
+        if ((int)type > 20 && BetaBlockCatalog.TryGet(type, out entry)) return entry.HandHarvestable;
         return IsTarget(type) && type != BlockType.Stone && type != BlockType.Sandstone && type != BlockType.WoodenSlab && type != BlockType.GlowStone && type != BlockType.Bedrock;
     }
     public static float DamagePerTick(BlockType type, bool grounded, bool underwater)
     {
         float hardness = Hardness(type);
         if (hardness < 0) return 0;
+        if (hardness == 0) return 1;
         if (!Harvestable(type)) return 1 / hardness / 100;
         float strength = 1;
         if (underwater) strength /= 5;
@@ -42,7 +47,9 @@ public static class HandMining
             case BlockType.Leaves: case BlockType.BirchLeaves: case BlockType.SpruceLeaves: return BlockType.Nothing;
             // Flint/saplings aren't represented by the current block inventory.
             case BlockType.Gravel: return gravelRoll == 0 ? BlockType.Nothing : BlockType.Gravel;
-            default: return type;
+            default:
+                BetaBlockCatalog.Entry entry;
+                return (int)type > 20 && BetaBlockCatalog.TryGet(type, out entry) ? entry.Drop : type;
         }
     }
     public static int CrackStage(float progress) { return Math.Max(0, Math.Min(9, (int)(progress * 10))); }

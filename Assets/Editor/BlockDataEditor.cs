@@ -1,126 +1,83 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
-using UnityEngine.UIElements;
 
-
-[EditorWindowTitle(title="Block data editor")]
 public class BlockDataEditor : EditorWindow
 {
     public BlockDataManager blockDataManager;
-    [FormerlySerializedAs("selectedTextureData")] public BlockTypeData selectedBlockTypeData;
+    public BlockTypeData selectedBlockTypeData;
+    private BlockDataSO data;
+    private string search = "";
+    private Vector2 listScroll, detailScroll;
 
-    private PreviewRenderUtility previewRenderer;
-    private Mesh cubeMesh;
-    public Material previewMaterial;
-
-    // Add menu item named "My Window" to the Window menu
     [MenuItem("Minecraft/BlockDataEditor")]
-    public static void ShowWindow()
-    {
-        //Show existing window instance. If one doesn't exist, make one.
-        EditorWindow.GetWindow(typeof(BlockDataEditor));
-    }
-
-    public void Initialize()
-    {
-        previewRenderer = new PreviewRenderUtility();
-        previewRenderer.camera.fieldOfView = 30;
-        previewRenderer.camera.nearClipPlane = 0.01f;
-        previewRenderer.camera.farClipPlane = 100;
-        previewRenderer.camera.transform.position = new Vector3(0, 3, -5);
-
-        cubeMesh = Instantiate(Resources.GetBuiltinResource<Mesh>("Cube.fbx"));
-    }
+    public static void ShowWindow() { GetWindow<BlockDataEditor>("Block Data"); }
 
     private void OnEnable()
     {
         blockDataManager = FindObjectOfType<BlockDataManager>();
-    }
-
-    private void OnDisable()
-    {
-        previewRenderer?.Cleanup();
-        previewRenderer = null;
-        if (cubeMesh != null) DestroyImmediate(cubeMesh);
-        cubeMesh = null;
+        data = blockDataManager != null ? blockDataManager.textureData : AssetDatabase.LoadAssetAtPath<BlockDataSO>("Assets/Block Data.asset");
     }
 
     private void OnGUI()
     {
-        blockDataManager = (BlockDataManager)EditorGUILayout.ObjectField(blockDataManager, typeof(BlockDataManager), true);
-        previewMaterial = (Material)EditorGUILayout.ObjectField(previewMaterial, typeof(Material), true);
-        if (blockDataManager == null || previewMaterial == null)
-        {
-            return;
-        }
-
-        var blockDataList = blockDataManager.textureData.textureDataList;
-        
+        data = (BlockDataSO)EditorGUILayout.ObjectField("Block Data", data, typeof(BlockDataSO), false);
+        if (data == null || data.textureDataList == null) return;
+        search = EditorGUILayout.TextField("Search", search);
         EditorGUILayout.BeginHorizontal();
-
-        EditorGUILayout.BeginVertical(new GUILayoutOption[] { GUILayout.Width(100) });
-        
-        for (int i = 0; i < blockDataList.Count; i++)
+        listScroll = EditorGUILayout.BeginScrollView(listScroll, GUILayout.Width(220));
+        foreach (var block in data.textureDataList)
         {
-            var blockData = blockDataList[i];
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button(blockData.blockType.ToString(), new GUIStyle(GUI.skin.button) { alignment = TextAnchor.MiddleCenter }))
-            {
-                selectedBlockTypeData = blockData;
-            }
-            EditorGUILayout.EndHorizontal();
+            if (block == null || (!string.IsNullOrEmpty(search) && block.blockType.ToString().IndexOf(search, System.StringComparison.OrdinalIgnoreCase) < 0)) continue;
+            if (GUILayout.Button(block.blockType.ToString())) selectedBlockTypeData = block;
         }
-        
-        EditorGUILayout.EndVertical();
-
-        if (selectedBlockTypeData != null)
-        {
-            
-            EditorGUILayout.BeginVertical();
-            
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Block type: ", GUILayout.Width(80));
-            selectedBlockTypeData.blockType = (BlockType)EditorGUILayout.EnumPopup(selectedBlockTypeData.blockType);
-            EditorGUILayout.EndHorizontal();
-            
-            
-            if (previewRenderer == null)
-            {
-                Initialize();
-            }
-            
-            
-            var uvs = new List<Vector3>();
-            foreach (Direction direction in BlockHelper.directions)
-            {
-                uvs.AddRange(BlockHelper.FaceUVs(direction, selectedBlockTypeData.blockType, selectedBlockTypeData));
-            }
-            
-            cubeMesh.SetUVs(0, uvs);
-            
-            previewRenderer.BeginPreview(new Rect(150, 100, 300, 300), "box");
-            
-            previewRenderer.camera.transform.LookAt(Vector3.zero);
-            previewRenderer.camera.transform.RotateAround(Vector3.zero, Vector3.up, Time.deltaTime * 1);
-            
-            previewRenderer.DrawMesh(cubeMesh, Vector3.zero, Quaternion.identity, previewMaterial , 0);
-            previewRenderer.camera.Render();
-
-            previewRenderer.EndAndDrawPreview(new Rect(150, 100, 300, 300));
-
-            EditorGUILayout.EndVertical();
-        
-        }
-        
+        EditorGUILayout.EndScrollView();
+        detailScroll = EditorGUILayout.BeginScrollView(detailScroll);
+        if (selectedBlockTypeData != null && data.textureDataList.Contains(selectedBlockTypeData)) DrawDetails();
+        EditorGUILayout.EndScrollView();
         EditorGUILayout.EndHorizontal();
+        if (GUILayout.Button("Save Block Data")) AssetDatabase.SaveAssetIfDirty(data);
     }
 
-    private void Update()
+    private void DrawDetails()
     {
-        Repaint();
+        var block = selectedBlockTypeData;
+        EditorGUILayout.LabelField(block.blockType.ToString(), EditorStyles.boldLabel);
+        BetaBlockCatalog.Entry entry;
+        if (BetaBlockCatalog.TryGet(block.blockType, out entry))
+        {
+            EditorGUILayout.LabelField("Beta ID / metadata", entry.SourceId + " / " + entry.Metadata);
+            EditorGUILayout.LabelField("Hardness / hand harvest", entry.Hardness + " / " + entry.HandHarvestable);
+        }
+        EditorGUILayout.HelpBox("Assign Top, Bottom and Side images. Restart Play Mode to rebuild the runtime face texture array. Special block models and gameplay are separate from these catalog definitions.", MessageType.Info);
+        if (block.textureData == null) block.textureData = new TextureData();
+        EditorGUI.BeginChangeCheck();
+        var top = (Texture2D)EditorGUILayout.ObjectField("Top", block.textureData.top, typeof(Texture2D), false);
+        var bottom = (Texture2D)EditorGUILayout.ObjectField("Bottom", block.textureData.bottom, typeof(Texture2D), false);
+        var side = (Texture2D)EditorGUILayout.ObjectField("Side", block.textureData.side, typeof(Texture2D), false);
+        bool transparent = EditorGUILayout.Toggle("Cutout / transparent faces", block.isTransparent);
+        bool collider = EditorGUILayout.Toggle("Collidable", block.generateCollider);
+        int opacity = EditorGUILayout.IntSlider("Light opacity", block.opacity, 0, 15);
+        int emission = EditorGUILayout.IntSlider("Light emission", block.lightEmission, 0, 15);
+        Color tint = EditorGUILayout.ColorField("Tint", block.albedoTint);
+        if (EditorGUI.EndChangeCheck())
+        {
+            Undo.RecordObject(data, "Edit block textures and lighting");
+            block.textureData.top = top; block.textureData.bottom = bottom; block.textureData.side = side;
+            block.isTransparent = transparent; block.generateCollider = collider;
+            block.opacity = (byte)opacity; block.lightEmission = (byte)emission; block.albedoTint = tint;
+            EditorUtility.SetDirty(data);
+        }
+        EditorGUILayout.BeginHorizontal();
+        DrawImage(top); DrawImage(bottom); DrawImage(side);
+        EditorGUILayout.EndHorizontal();
+        var player = Application.isPlaying && GameManager.Instance != null ? GameManager.Instance.localPlayer : null;
+        using (new EditorGUI.DisabledScope(player == null || block.blockType == BlockType.Nothing || block.blockType == BlockType.Air))
+            if (GUILayout.Button("Give 64 to Local Player (Play Mode)") && player != null) player.inventory.AddItem(block.blockType, 64);
+    }
+
+    private void DrawImage(Texture2D image)
+    {
+        Rect rect = GUILayoutUtility.GetRect(80, 80, GUILayout.Width(80), GUILayout.Height(80));
+        if (image != null) EditorGUI.DrawPreviewTexture(rect, image, null, ScaleMode.ScaleToFit);
     }
 }

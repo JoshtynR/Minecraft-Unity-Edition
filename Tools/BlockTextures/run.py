@@ -24,11 +24,12 @@ def main():
         assert set(b['textureData'])=={'top','bottom','side'}
         assert 'textureSizeOverride' not in b
         for ref in b['textureData'].values():
-            if b['blockType'] in (0,1):assert ref['fileID']==0
+            if b['blockType'] in (0,1) or b['blockType']>20:assert ref['fileID']==0
             else:assert ref['fileID']==2800000 and ref['guid'] in sources;count+=1
     assert 'textureSizeX' not in asset and 'textureSizeY' not in asset
     for name in ['Voxel','VoxelVertexLit']:
         shader=(ROOT/f'Assets/Shaders/{name}.shader').read_text()
+        if '#include "VoxelLighting.cginc"' in shader:shader+='\n'+(ROOT/'Assets/Shaders/VoxelLighting.cginc').read_text()
         assert 'UNITY_SAMPLE_TEX2DARRAY(_BlockFaceTextures, i.uv)' in shader
         assert 'float3 uv' in shader and '#pragma require 2darray' in shader
     print(f'{len(manifest)} lossless image crops and {count} face image references verified.')

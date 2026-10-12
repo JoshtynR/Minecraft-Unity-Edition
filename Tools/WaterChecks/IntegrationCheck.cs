@@ -47,7 +47,7 @@ public static class BlockDataManager
     public static Dictionary<int,BlockTypeData> blockTypeDataDictionary = new Dictionary<int,BlockTypeData>();
     static BlockDataManager() { foreach(BlockType t in Enum.GetValues(typeof(BlockType))) blockTypeDataDictionary[(int)t]=new BlockTypeData(); }
 }
-public struct BlockLightNode { public BlockLightNode(Block b,int light) {} }
+public struct BlockLightNode { public Block block;public int lightLevel;public BlockLightNode(Block b,int light) {block=b;lightLevel=light;} }
 public enum Direction { up, down, left, right, forwards, backwards }
 public static class DirectionExtensions
 {
@@ -139,6 +139,14 @@ public static class IntegrationCheck
     {
         var w = World.Instance = new World();
         var c = AddChunk(w,V(0,0,0));
+        // Newly cataloged torches have the same opacity as air. Removing an
+        // emitter must still queue its block-light removal.
+        BlockDataManager.blockTypeDataDictionary[(int)BlockType.Torch].lightEmission=14;
+        c.SetBlock(V(0,2,0),BlockType.Torch);
+        WaterCheck.Assert(c.GetBlock(V(0,2,0)).GetBlockLight()==14,"catalog torch seeds emitted light");
+        c.blockLightRemoveQueue.Clear();
+        c.SetBlock(V(0,2,0),BlockType.Air);
+        WaterCheck.Assert(c.GetBlock(V(0,2,0)).GetBlockLight()==0&&c.blockLightRemoveQueue.Count>0&&c.blockLightRemoveQueue.Peek().lightLevel==14,"same-opacity emitter removal queued");
         c.SetBlock(V(0,2,0),BlockType.Water);
         var b=c.GetBlock(V(0,2,0)); b.waterLevel=12;
         WaterCheck.Assert(b is WaterBlock && b.globalWorldPosition.Equals(V(0,2,0)),"placed water mapping/global section coordinates");

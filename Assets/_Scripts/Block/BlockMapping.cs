@@ -1,13 +1,15 @@
-﻿
 public static class BlockMapping
 {
     public static Block MapTypeToBlock(BlockType type, Block block)
     {
-        return type switch
+        switch (type)
         {
-            BlockType.Water => new WaterBlock(block),
-            BlockType.WoodenSlab => new SlabBlock(block),
-            _ => block.Reset(block)
-        };
+            case BlockType.Water: return new WaterBlock(block);
+            case BlockType.WoodenSlab:
+            case BlockType.StoneSlab:
+            case BlockType.SandstoneSlab:
+            case BlockType.CobblestoneSlab: return new SlabBlock(block);
+            default: return block.Reset(block);
+        }
     }
 }

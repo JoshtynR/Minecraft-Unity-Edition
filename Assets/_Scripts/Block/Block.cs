@@ -132,9 +132,9 @@ public class Block
         // first renderer. Re-seed it after those population changes.
         if ((oldOpacity != BlockData.opacity || oldEmission != BlockData.lightEmission) && (!chunkData.isGenerated || !chunkData.worldRef.IsWorldCreated))
             chunkData.lightingInitialized = false;
-        if (oldOpacity != BlockData.opacity && chunkData.isGenerated && chunkData.worldRef.IsWorldCreated)
+        if ((oldOpacity != BlockData.opacity || oldEmission != BlockData.lightEmission) && chunkData.isGenerated && chunkData.worldRef.IsWorldCreated)
         {
-            Lighting.RecastSunLight(chunkData, localChunkPosition, true);
+            if (oldOpacity != BlockData.opacity) Lighting.RecastSunLight(chunkData, localChunkPosition, true);
             int previousLight = GetBlockLight();
             if (previousLight > 0)
                 chunkData.blockLightRemoveQueue.Enqueue(new BlockLightNode(this, (byte)previousLight));

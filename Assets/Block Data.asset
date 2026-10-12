@@ -225,3 +225,1123 @@ MonoBehaviour:
     opacity: 0
     lightEmission: 0
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 21
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 22
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 23
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 24
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 25
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 26
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 27
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 28
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 29
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 30
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 31
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 32
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 33
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 34
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 35
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 36
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 1
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 37
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 38
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 39
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 40
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 41
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 42
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 43
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 44
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 45
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 1
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 46
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 47
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 48
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 49
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 50
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 51
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 52
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 53
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 54
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 55
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 56
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 14
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 57
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 15
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 58
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 59
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 60
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 61
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 62
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 63
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 64
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 65
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 66
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 67
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 68
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 13
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 69
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 70
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 71
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 72
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 73
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 74
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 75
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 76
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 77
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 78
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 79
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 80
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 9
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 81
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 82
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 7
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 83
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 84
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 85
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 86
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 87
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 88
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 89
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 90
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 91
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 92
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 93
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 94
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 11
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 95
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 15
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 96
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 97
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 98
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 9
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 99
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 15
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 100
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 101
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 102
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 103
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 104
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 105
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 106
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 107
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 108
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 109
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 110
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 111
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 112
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 113
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 114
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 115
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 116
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 117
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 118
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 119
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 120
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 121
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 122
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 123
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 124
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 125
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 0
+    generateCollider: 1
+    opacity: 15
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 126
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 127
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 128
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 129
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 130
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 131
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
+  - blockType: 132
+    textureData:
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
+    isTransparent: 1
+    generateCollider: 0
+    opacity: 0
+    lightEmission: 0
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}

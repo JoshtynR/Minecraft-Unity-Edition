@@ -77,7 +77,7 @@ public static class MiningCheck
  public static void Main()
  {
   foreach(BlockType t in Enum.GetValues(typeof(BlockType)))
-  {float h=HandMining.Hardness(t);Check(h>=0||HandMining.DamagePerTick(t,true,false)==0,"unbreakable/fluid progress zero");if(h>=0){float normal=HandMining.DamagePerTick(t,true,false);float penalty=HandMining.DamagePerTick(t,false,true);Check(Math.Abs(penalty-(HandMining.Harvestable(t)?normal/25:normal))<0.00001f,"Beta material-sensitive penalties");}}
+  {float h=HandMining.Hardness(t);Check(h>=0||HandMining.DamagePerTick(t,true,false)==0,"unbreakable/fluid progress zero");if(h>=0){float normal=HandMining.DamagePerTick(t,true,false);float penalty=HandMining.DamagePerTick(t,false,true);Check(Math.Abs(penalty-(h==0?1:HandMining.Harvestable(t)?normal/25:normal))<0.00001f,"Beta material-sensitive penalties");}}
   Check(HandMining.Hardness(BlockType.Stone)==1.5f&&HandMining.Hardness(BlockType.WoodenSlab)==2&&HandMining.Hardness(BlockType.GlowStone)==0.3f,"Beta hardness cases");
   Check(!HandMining.Harvestable(BlockType.WoodenSlab)&&!HandMining.Harvestable(BlockType.GlowStone),"Beta rock slab and glowstone require tool");
   Check(HandMining.ExistingDrop(BlockType.Grass,1)==BlockType.Dirt&&HandMining.ExistingDrop(BlockType.Stone,1)==BlockType.Nothing,"hand harvest/drop restrictions");

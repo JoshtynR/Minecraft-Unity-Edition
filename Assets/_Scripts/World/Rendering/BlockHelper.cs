@@ -206,7 +206,9 @@ public static class BlockHelper
     {
         // All currently implemented solid/liquid materials use Beta's false
         // canBlockGrass entry; air (including outside bounds) uses true.
-        return block == null || block.type == BlockType.Air || block.type == BlockType.Nothing;
+        if (block == null || block.type == BlockType.Air || block.type == BlockType.Nothing) return true;
+        BetaBlockCatalog.Entry entry;
+        return BetaBlockCatalog.TryGet(block.type, out entry) && entry.CornerPass;
     }
 
     private static float SampleBrightness(ChunkData chunk, Vector3Int position, int darkness, int emission)
