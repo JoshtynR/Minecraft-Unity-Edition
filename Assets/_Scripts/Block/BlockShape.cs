@@ -1,13 +1,13 @@
-﻿
+
 using System;
 using UnityEngine;
 
 public class BlockShape
 {
     // min 0,0,0 and max 16,16,16 is the size of a full block
-    public int xMin, yMin, zMin, xMax, yMax, zMax;
+    public float xMin, yMin, zMin, xMax, yMax, zMax;
     
-    public BlockShape(int xMin, int yMin, int zMin, int xMax,  int yMax,  int zMax)
+    public BlockShape(float xMin, float yMin, float zMin, float xMax, float yMax, float zMax)
     {
         this.xMin = xMin;
         this.yMin = yMin;
@@ -69,7 +69,7 @@ public class BlockShape
 
     public Vector4 FaceUVTransform(Direction dir)
     {
-        int uMin, uMax, vMin, vMax;
+        float uMin, uMax, vMin, vMax;
         switch (dir)
         {
             case Direction.forwards: uMin=16-xMax; uMax=16-xMin; vMin=yMin; vMax=yMax; break;

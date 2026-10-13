@@ -36,6 +36,20 @@ public static class ShapeCheck
  static Vector3 V(float x,float y,float z)=>new Vector3(x,y,z);
  public static void Main()
  {
+  var plants = new[]{BlockType.Dandelion,BlockType.Rose,BlockType.BrownMushroom,BlockType.RedMushroom,
+   BlockType.OakSapling,BlockType.SpruceSapling,BlockType.BirchSapling,BlockType.TallGrass,BlockType.DryTallGrass,
+   BlockType.Fern,BlockType.DeadBush,BlockType.SugarCane,BlockType.WheatCrop0,BlockType.WheatCrop7};
+  foreach(var plant in plants)
+  {
+   var plantWorld=new World();Put(plantWorld,0,0,0,plant);
+   Check(Near(BlockCollision.Clip(plantWorld,V(-1,0,0.5f),0.3f,1.8f,2,0),2),"plants have no body collision even with collider flag enabled");
+   Vector3Int next;Vector3 point;
+   var pickedPlant=BlockTargeting.Raycast(plantWorld,V(0.5f,0.1f,-1),V(0,0,1),3,out next,out point);
+   Check(pickedPlant!=null&&pickedPlant.type==plant,"thin plant selection remains targetable");
+  }
+  Check(Near(BlockShapesList.Flower.xMin/16f,.3f)&&Near(BlockShapesList.Flower.yMax/16f,.6f),"Beta flower bounds");
+  Check(Near(BlockShapesList.Mushroom.yMax/16f,.4f)&&Near(BlockShapesList.Bush.xMin/16f,.1f)&&Near(BlockShapesList.Bush.yMax/16f,.8f),"Beta mushroom/sapling/bush bounds");
+  Check(Near(BlockShapesList.Reed.xMin/16f,.125f)&&Near(BlockShapesList.Crop.yMax/16f,.25f),"Beta reed/crop bounds");
   foreach(BlockType type in Enum.GetValues(typeof(BlockType)))
   {
    var s=BlockShapesExtensions.ForBlock(type).GetShape();Check(s!=null&&s.xMax>s.xMin&&s.yMax>s.yMin&&s.zMax>s.zMin,"all catalog types have valid geometry");

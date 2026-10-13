@@ -277,7 +277,7 @@ public partial class Player : BaseEntity
 
     public bool IsPlayerStandingIn(Vector3 posU, BlockType type = BlockType.Stone)
     {
-        if (!BlockDataManager.blockTypeDataDictionary[(int)type].generateCollider) return false;
+        if (BlockShapesExtensions.IsPlant(type) || !BlockDataManager.blockTypeDataDictionary[(int)type].generateCollider) return false;
         var shape = BlockShapesExtensions.CollisionShape(type, BlockShapesExtensions.ForBlock(type).GetShape());
         return BlockCollision.OverlapsBody(transform.position, entityWidth, entityHeight, Vector3Int.FloorToInt(posU), shape);
     }

@@ -411,39 +411,14 @@ public partial class PlayerInventory : MonoBehaviour
         block = BlockMapping.MapTypeToBlock(type, block);
         foreach (var direction in BlockHelper.directions)
         {
+            int first = meshData.vertices.Count;
             BlockHelper.GetFaceDataIn(direction, Vector3Int.zero, meshData, block, BlockDataManager.blockTypeDataDictionary[(int)type], null);
-            switch (direction)
+            float light = direction == Direction.backwards ? 13 : direction == Direction.right ? 10 : 14;
+            bool plant = BlockShapesExtensions.IsPlant(type);
+            for (int i = first; i < meshData.vertices.Count; i++)
             {
-                case Direction.backwards:
-                    meshData.skyLight.Add(13);
-                    meshData.skyLight.Add(13);
-                    meshData.skyLight.Add(13);
-                    meshData.skyLight.Add(13);
-                    meshData.sides.Add(Vector3.zero);
-                    meshData.sides.Add(Vector3.zero);
-                    meshData.sides.Add(Vector3.zero);
-                    meshData.sides.Add(Vector3.zero);
-                    break;
-                case Direction.right:
-                    meshData.skyLight.Add(10);
-                    meshData.skyLight.Add(10);
-                    meshData.skyLight.Add(10);
-                    meshData.skyLight.Add(10);
-                    meshData.sides.Add(Vector3.zero);
-                    meshData.sides.Add(Vector3.zero);
-                    meshData.sides.Add(Vector3.zero);
-                    meshData.sides.Add(Vector3.zero);
-                    break;
-                default:
-                    meshData.skyLight.Add(14);
-                    meshData.skyLight.Add(14);
-                    meshData.skyLight.Add(14);
-                    meshData.skyLight.Add(14);
-                    meshData.sides.Add(Vector3.zero);
-                    meshData.sides.Add(Vector3.zero);
-                    meshData.sides.Add(Vector3.zero);
-                    meshData.sides.Add(Vector3.zero);
-                    break;
+                meshData.skyLight.Add(light);
+                meshData.sides.Add(plant ? new Vector3(1, 1, 3) : Vector3.zero);
             }
         }
         
@@ -451,6 +426,7 @@ public partial class PlayerInventory : MonoBehaviour
         mesh.SetVertices(meshData.vertices);
         mesh.SetTriangles(meshData.triangles, 0);
         mesh.SetUVs(0, meshData.uv);
+        mesh.SetColors(meshData.colors);
         mesh.RecalculateNormals();
         var lighArray = new Vector2[meshData.skyLight.Count];
         for (int i = 0; i < meshData.skyLight.Count; i++)

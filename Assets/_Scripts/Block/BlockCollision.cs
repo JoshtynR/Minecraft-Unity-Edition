@@ -21,7 +21,7 @@ public static class BlockCollision
         for (int z = Mathf.FloorToInt(sweepMin.z); z <= Mathf.FloorToInt(sweepMax.z); z++)
         {
             var block = world.GetBlock(new Vector3Int(x,y,z));
-            if (block == null || block.type == BlockType.Nothing || block.type == BlockType.Air || !block.BlockData.generateCollider) continue;
+            if (block == null || block.type == BlockType.Nothing || block.type == BlockType.Air || BlockShapesExtensions.IsPlant(block.type) || !block.BlockData.generateCollider) continue;
             var shape = BlockShapesExtensions.CollisionShape(block.type, block.blockShape.GetShape());
             Vector3 bmin = new Vector3(x + shape.xMin/16f,y + shape.yMin/16f,z + shape.zMin/16f);
             Vector3 bmax = new Vector3(x + shape.xMax/16f,y + shape.yMax/16f,z + shape.zMax/16f);

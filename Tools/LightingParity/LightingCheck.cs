@@ -14,7 +14,7 @@ namespace UnityEngine
   public static Vector3Int operator *(Vector3Int a,int b)=>new Vector3Int(a.x*b,a.y*b,a.z*b);
   public static explicit operator Vector3(Vector3Int a)=>new Vector3(a.x,a.y,a.z);
  }
- public struct Vector3 {public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}public static Vector3 operator -(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static float Dot(Vector3 a,Vector3 b)=>a.x*b.x+a.y*b.y+a.z*b.z;}
+ public struct Vector3 {public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}public static Vector3 operator -(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static float Dot(Vector3 a,Vector3 b)=>a.x*b.x+a.y*b.y+a.z*b.z;}
  public struct Vector4 { public float x,y,z,w; public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public struct Color {}
@@ -24,7 +24,7 @@ public enum Direction {down,up,backwards,forwards,left,right}
 public static class DirectionExt {public static Direction GetOpposite(this Direction d)=>new[]{Direction.up,Direction.down,Direction.forwards,Direction.backwards,Direction.right,Direction.left}[(int)d];public static Vector3Int GetVector(this Direction d){return new[]{Vector3Int.down,Vector3Int.up,Vector3Int.back,Vector3Int.forward,Vector3Int.left,Vector3Int.right}[(int)d];}}
 public class ShapeSlot {public BlockShape shape=new BlockShape(0,0,0,16,16,16);public BlockShape GetShape()=>shape;}
 public class TextureData {public int FaceIndex(Direction d)=>0;}
-public static class BlockDataManager {public static BlockTypeData[] blockTypeDataDictionary=new BlockTypeData[32];}
+public static class BlockDataManager {public static BlockTypeData[] blockTypeDataDictionary=new BlockTypeData[133];}
 public class BlockTypeData {public bool isTransparent;public byte opacity,lightEmission;public TextureData textureData=new TextureData();public Color albedoTint;}
 public class Block
 {
@@ -37,7 +37,7 @@ public class ChunkRenderer {}
 public class World {public int worldHeight=128,betaSkylightSubtracted,updates;public bool fullSmoothLighting=true;public void AddChunkToUpdate(ChunkRenderer c,bool first){updates++;}}
 public class ChunkData
 {
- public Vector3Int worldPos;
+ public Vector3Int worldPos;public Vector3Int GetGlobalBlockCoords(Vector3Int p)=>worldPos+p;
  public bool lightingInitialized;
  public bool HasPendingLighting=>skyLightRemoveQueue.Count+skyLightUpdateQueue.Count+blockLightRemoveQueue.Count+blockLightUpdateQueue.Count+skyRemoveList.Count+skyExtendList.Count+chunkToUpdateAfterLighting.Count>0;
  public void UpdateLight(){Lighting.CalculateSkyLightRemove(this);Lighting.CalculateSkyLightExtend(this);Lighting.CalculateLight(this);}
@@ -48,7 +48,7 @@ public class ChunkData
  public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(worldPos+p,out b)?b:new Block{type=BlockType.Nothing,localChunkPosition=p,chunkData=this};}
  public bool IsOnEdge(Vector3Int p)=>false;public List<ChunkData> GetNeighbourChunk(Vector3Int p)=>new List<ChunkData>();
 }
-public static class LightingCheck
+public static partial class LightingCheck
 {
  static int checks,aoCases;static readonly CultureInfo C=CultureInfo.InvariantCulture;
  static void Check(bool condition,string label){checks++;if(!condition)throw new Exception(label);}
@@ -94,7 +94,7 @@ public static class LightingCheck
   }
   // Production face routing: only water enters the blended draw; its neighbors
   // still emit the terrain seen through it. Leaves/glass keep cutout geometry.
-  for(int i=0;i<32;i++)BlockDataManager.blockTypeDataDictionary[i]=new BlockTypeData{isTransparent=true};
+  for(int i=0;i<133;i++)BlockDataManager.blockTypeDataDictionary[i]=new BlockTypeData{isTransparent=true};
   BlockDataManager.blockTypeDataDictionary[(int)BlockType.Stone].isTransparent=false;
   var renderChunk=new ChunkData();var renderPos=new Vector3Int(0,65,0);Add(renderChunk,renderPos,BlockType.Water);
   var renderMesh=BlockHelper.GetMeshData(renderChunk,renderPos,new MeshData(true),BlockType.Water);
@@ -184,6 +184,7 @@ public static class LightingCheck
   Check(Beta173Lighting.InterpolateCorners(0,1,0,0,0.5f,0.5f)==0.25f,"quad center uses all four corners");
   Check(Beta173Lighting.InterpolateCorners(0,1,0,0,0,1)==1,"UV corner winding");
   Check(Beta173Lighting.InterpolateCorners(0,1,0,0,-1,2)==1,"partial coordinate clamping");
+  CheckPlants();
   Console.WriteLine(aoCases+" Java six-face AO cases, "+orderedVertices+" positioned vertices; "+checks+" brightness/adapter/transport checks passed (Unity storage mocked).");
  }
 }

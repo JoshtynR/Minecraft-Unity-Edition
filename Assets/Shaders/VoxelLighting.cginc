@@ -53,7 +53,7 @@
                 float3 an = abs(normal);
                 float shade = an.y >= an.x && an.y >= an.z ? (normal.y >= 0 ? _ShadeUp : _ShadeDown)
                     : (an.z >= an.x ? _ShadeSideNS : _ShadeSideEW);
-                o.faceShade = _FaceShadeOn > 0.5 ? shade : 1;
+                o.faceShade = _FaceShadeOn > 0.5 && v.sides.z < 2.5 ? shade : 1;
                 return o;
             }
             float4 frag(v2f i) : SV_Target
@@ -71,7 +71,7 @@
                 #endif
                 col.rgb *= i.color.rgb;
                 float brightness = i.brightness;
-                if (_AOOn > 0.5 && i.samplingMode > 1.5)
+                if (_AOOn > 0.5 && i.samplingMode > 1.5 && i.samplingMode < 2.5)
                 {
                     float bottom = lerp(i.corners.x, i.corners.w, i.faceUV.x);
                     float top = lerp(i.corners.y, i.corners.z, i.faceUV.x);

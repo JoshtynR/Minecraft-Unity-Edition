@@ -1,5 +1,11 @@
 public static class BlockShapesList
 {
+    // Beta plant selection bounds, in sixteenths (not their rendered sheets).
+    public static readonly BlockShape Flower = new BlockShape(4.8f, 0, 4.8f, 11.2f, 9.6f, 11.2f);
+    public static readonly BlockShape Mushroom = new BlockShape(4.8f, 0, 4.8f, 11.2f, 6.4f, 11.2f);
+    public static readonly BlockShape Bush = new BlockShape(1.6f, 0, 1.6f, 14.4f, 12.8f, 14.4f);
+    public static readonly BlockShape Reed = new BlockShape(2, 0, 2, 14, 16, 14);
+    public static readonly BlockShape Crop = new BlockShape(0, 0, 0, 16, 4, 16);
     public static readonly BlockShape FullBlock = new BlockShape(0, 0, 0, 16, 16, 16);
     public static readonly BlockShape Slab = new BlockShape(0, 0, 0, 16, 8, 16);
     public static readonly BlockShape Farmland = new BlockShape(0, 0, 0, 16, 15, 16);
@@ -16,14 +22,21 @@ public static class BlockShapesList
 
 // Preserve serialized values 0/1. State-dependent and multipart models are
 // separate from these default cuboids; no texture/data asset migration needed.
-public enum BlockShapes { FullBlock = 0, Slab = 1, Farmland, SnowLayer, Cactus, Cake, Bed, PressurePlate, Repeater, Trapdoor, WallButton }
+public enum BlockShapes { FullBlock = 0, Slab = 1, Farmland, SnowLayer, Cactus, Cake, Bed, PressurePlate, Repeater, Trapdoor, WallButton, Flower, Mushroom, Bush, Reed, Crop }
 
 public static class BlockShapesExtensions
 {
     public static BlockShapes ForBlock(BlockType type)
     {
+        if (IsCrop(type)) return BlockShapes.Crop;
         switch (type)
         {
+            case BlockType.Dandelion: case BlockType.Rose: return BlockShapes.Flower;
+            case BlockType.BrownMushroom: case BlockType.RedMushroom: return BlockShapes.Mushroom;
+            case BlockType.OakSapling: case BlockType.SpruceSapling: case BlockType.BirchSapling:
+            case BlockType.TallGrass: case BlockType.DryTallGrass: case BlockType.Fern:
+            case BlockType.DeadBush: return BlockShapes.Bush;
+            case BlockType.SugarCane: return BlockShapes.Reed;
             case BlockType.WoodenSlab: case BlockType.StoneSlab: case BlockType.SandstoneSlab: case BlockType.CobblestoneSlab: return BlockShapes.Slab;
             case BlockType.Farmland: case BlockType.MoistFarmland: return BlockShapes.Farmland;
             case BlockType.SnowLayer: return BlockShapes.SnowLayer;
@@ -41,6 +54,11 @@ public static class BlockShapesExtensions
     {
         switch (shape)
         {
+            case BlockShapes.Flower: return BlockShapesList.Flower;
+            case BlockShapes.Mushroom: return BlockShapesList.Mushroom;
+            case BlockShapes.Bush: return BlockShapesList.Bush;
+            case BlockShapes.Reed: return BlockShapesList.Reed;
+            case BlockShapes.Crop: return BlockShapesList.Crop;
             case BlockShapes.Slab: return BlockShapesList.Slab;
             case BlockShapes.Farmland: return BlockShapesList.Farmland;
             case BlockShapes.SnowLayer: return BlockShapesList.SnowLayer;
@@ -53,6 +71,16 @@ public static class BlockShapesExtensions
             case BlockShapes.WallButton: return BlockShapesList.WallButton;
             default: return BlockShapesList.FullBlock;
         }
+    }
+    public static bool IsCrop(BlockType type)
+    {
+        return type == BlockType.WheatCrop0 || (type >= BlockType.WheatCrop1 && type <= BlockType.WheatCrop7);
+    }
+    public static bool IsPlant(BlockType type)
+    {
+        var shape = ForBlock(type);
+        return shape == BlockShapes.Flower || shape == BlockShapes.Mushroom ||
+            shape == BlockShapes.Bush || shape == BlockShapes.Reed || shape == BlockShapes.Crop;
     }
     public static BlockShape CollisionShape(BlockType type, BlockShape shape)
     {

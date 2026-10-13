@@ -40,6 +40,11 @@ public static class BlockHelper
         BlockTypeData blockTypeData = BlockDataManager.blockTypeDataDictionary[(int)blockType];
         Block block = chunk.GetBlock(pos);
 
+        if (BlockShapesExtensions.IsPlant(blockType))
+        {
+            GetFaceDataIn(Direction.forwards, pos, meshData.transparentMesh, block, blockTypeData, chunk);
+            return meshData;
+        }
         foreach (var dir in directions)
         {
             Vector3Int neighbourPos = pos + dir.GetVector();
@@ -52,7 +57,7 @@ public static class BlockHelper
 
                 var shape = block.blockShape.GetShape();
                 var neighborShape = neighbourBlock.blockShape.GetShape();
-                bool visible = !shape.TouchesCellBoundary(dir) || neighbourBlockTypeData.isTransparent ||
+                bool visible = BlockShapesExtensions.IsPlant(neighbourBlockType) || !shape.TouchesCellBoundary(dir) || neighbourBlockTypeData.isTransparent ||
                     !neighborShape.CoversBoundaryFace(shape, dir.GetOpposite());
                 if (blockType == BlockType.Water)
                 {
@@ -69,6 +74,27 @@ public static class BlockHelper
 
     public static MeshData GetFaceDataIn(Direction dir, Vector3Int pos, MeshData meshData, Block block, BlockTypeData blockTypeData, ChunkData chunk)
     {
+        if (BlockShapesExtensions.IsPlant(block.type))
+        {
+            // Emit the entire model once. Inventory and world share this path.
+            if (dir != Direction.forwards) return meshData;
+            int first = meshData.vertices.Count;
+            PlantMesh.Append(block.type, pos, chunk == null ? pos : chunk.GetGlobalBlockCoords(pos),
+                chunk != null, blockTypeData.textureData.FaceIndex(Direction.backwards), blockTypeData.albedoTint, meshData);
+            if (chunk != null)
+            {
+                float brightness = SampleBrightness(chunk, pos, chunk.worldRef.betaSkylightSubtracted, block.BlockData.lightEmission);
+                for (int i = first; i < meshData.vertices.Count; i++)
+                {
+                    meshData.skyLight.Add(block.GetSkyLight());
+                    meshData.blockLight.Add(block.GetBlockLight());
+                    // Marker 3: flat plant brightness, no AO or cube face shading.
+                    meshData.sides.Add(new Vector3(brightness, brightness, 3));
+                    meshData.smoothLightCorners.Add(new Vector4(brightness, brightness, brightness, brightness));
+                }
+            }
+            return meshData;
+        }
         block.blockShape.GetShape().SetFaceVertices(dir,pos,meshData);
         if (block.type == BlockType.Water && chunk != null)
             SetWaterFaceHeight(pos, meshData, chunk);
