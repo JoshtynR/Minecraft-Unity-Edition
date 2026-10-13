@@ -256,7 +256,7 @@ public partial class Player : BaseEntity
             if (targetedBlock != null)
             {
                 // Check if the block is not in the player
-                if (!IsPlayerStandingIn(blockPos))
+                if (!IsPlayerStandingIn(blockPos, type))
                 {
                     if (networkStarted)
                     {
@@ -275,52 +275,16 @@ public partial class Player : BaseEntity
         return false;
     }
 
-    public bool IsPlayerStandingIn(Vector3 posU)
+    public bool IsPlayerStandingIn(Vector3 posU, BlockType type = BlockType.Stone)
     {
-        var pos = Vector3Int.FloorToInt(posU);
-        var blockPoss = new List<Vector3Int>();
-
-        var position = transform.position;
-        blockPoss.Add(Vector3Int.FloorToInt(new Vector3(position.x - entityWidth, position.y, position.z - entityWidth)));
-        blockPoss.Add( Vector3Int.FloorToInt(new Vector3(position.x - entityWidth, position.y + 1, position.z - entityWidth)));
-        
-        blockPoss.Add(Vector3Int.FloorToInt(new Vector3(position.x + entityWidth, position.y, position.z - entityWidth)));
-        blockPoss.Add(Vector3Int.FloorToInt(new Vector3(position.x + entityWidth, position.y + 1, position.z - entityWidth)));
-        
-        blockPoss.Add(Vector3Int.FloorToInt(new Vector3(position.x - entityWidth, position.y, position.z + entityWidth)));
-        blockPoss.Add(Vector3Int.FloorToInt(new Vector3(position.x - entityWidth, position.y + 1, position.z + entityWidth)));
-        
-        blockPoss.Add(Vector3Int.FloorToInt(new Vector3(position.x + entityWidth, position.y, position.z + entityWidth)));
-        blockPoss.Add(Vector3Int.FloorToInt(new Vector3(position.x + entityWidth, position.y + 1, position.z + entityWidth)));
-        
-        return blockPoss.Contains(pos);
+        if (!BlockDataManager.blockTypeDataDictionary[(int)type].generateCollider) return false;
+        var shape = BlockShapesExtensions.CollisionShape(type, BlockShapesExtensions.ForBlock(type).GetShape());
+        return BlockCollision.OverlapsBody(transform.position, entityWidth, entityHeight, Vector3Int.FloorToInt(posU), shape);
     }
 
-    public Block TargetedBlock(float tReach,out Vector3Int lastGlobalPos)
+    public Block TargetedBlock(float tReach, out Vector3Int lastGlobalPos)
     {
-        lastGlobalPos = Vector3Int.zero;
-        var step = checkIncrement;
-        while (step < tReach)
-        {
-            var pos = cam.position + cam.forward * step;
-            var block = world.GetBlock(pos);
-            if (block == null) return null;
-            if (HandMining.IsTarget(block.type))
-            {
-                var shape = block.blockShape.GetShape();
-                var local = pos - (Vector3)block.globalWorldPosition;
-                if (local.x >= shape.xMin / 16f && local.x <= shape.xMax / 16f &&
-                    local.y >= shape.yMin / 16f && local.y <= shape.yMax / 16f &&
-                    local.z >= shape.zMin / 16f && local.z <= shape.zMax / 16f)
-                { targetHitPoint = pos; return block; }
-            }
-
-            // lastGlobalPos = Vector3Int.FloorToInt(pos + FindNormal(pos, lastGlobalPos));
-            lastGlobalPos = Vector3Int.FloorToInt(pos);
-            
-            step += checkIncrement;
-        }
-        return null;
+        return BlockTargeting.Raycast(world, cam.position, cam.forward, tReach, out lastGlobalPos, out targetHitPoint);
     }
 
     // I am a fucking genius, I just fully came up with this shit
@@ -467,7 +431,10 @@ public partial class Player : BaseEntity
         {
             var blockPos = targetedBlock.section.dataRef.GetGlobalBlockCoords(targetedBlock.position);
             blockPos.y += targetedBlock.section.yOffset;
-            Gizmos.Draw<CubeDrawer>(Color.black, false, blockPos+ new Vector3(0.5f,0.5f,0.5f),Quaternion.identity, Vector3.one*1.01f);
+            var shape = targetedBlock.blockShape.GetShape();
+            var center = new Vector3((shape.xMin + shape.xMax) / 32f, (shape.yMin + shape.yMax) / 32f, (shape.zMin + shape.zMax) / 32f);
+            var size = new Vector3((shape.xMax - shape.xMin) / 16f, (shape.yMax - shape.yMin) / 16f, (shape.zMax - shape.zMin) / 16f);
+            Gizmos.Draw<CubeDrawer>(Color.black, false, blockPos + center, Quaternion.identity, size + Vector3.one * 0.01f);
         }
     }
 

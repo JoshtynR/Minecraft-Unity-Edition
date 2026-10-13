@@ -50,27 +50,18 @@ public static class BlockHelper
             {
                 BlockTypeData neighbourBlockTypeData = BlockDataManager.blockTypeDataDictionary[(int)neighbourBlockType];
 
-                if (blockTypeData.isTransparent)
+                var shape = block.blockShape.GetShape();
+                var neighborShape = neighbourBlock.blockShape.GetShape();
+                bool visible = !shape.TouchesCellBoundary(dir) || neighbourBlockTypeData.isTransparent ||
+                    !neighborShape.CoversBoundaryFace(shape, dir.GetOpposite());
+                if (blockType == BlockType.Water)
                 {
-                    if (blockType == BlockType.Water)
-                    {
-                        if (neighbourBlockType != BlockType.Water && neighbourBlockTypeData.isTransparent)
-                        {
-                            meshData.waterMesh = GetFaceDataIn(dir, pos, meshData.waterMesh, block,blockTypeData, chunk);
-                        }
-                    }
-                    else if (neighbourBlockTypeData.isTransparent)
-                    {
-                        meshData.transparentMesh = GetFaceDataIn(dir, pos, meshData.transparentMesh, block,blockTypeData, chunk);
-                    }
+                    if (neighbourBlockType != BlockType.Water && visible)
+                        GetFaceDataIn(dir, pos, meshData.waterMesh, block, blockTypeData, chunk);
                 }
-                else if(neighbourBlockTypeData.isTransparent || !neighbourBlock.blockShape.GetShape().isFullBlock() && !neighbourBlock.blockShape.GetShape().isSideFull(dir.GetOpposite()))
-                {
-                    meshData = GetFaceDataIn(dir, pos, meshData, block,blockTypeData, chunk);
-                } else if (!block.blockShape.GetShape().isFullBlock() && !block.blockShape.GetShape().isSideFull(dir))
-                {
-                    meshData = GetFaceDataIn(dir, pos, meshData, block,blockTypeData, chunk);
-                }
+                else if (visible)
+                    GetFaceDataIn(dir, pos, blockTypeData.isTransparent ? meshData.transparentMesh : meshData, block, blockTypeData, chunk);
+
             }
         }
         return meshData;
@@ -84,7 +75,10 @@ public static class BlockHelper
         if (chunk != null)
             GetFaceLightingAndAO(dir, pos, meshData, chunk);
         meshData.AddQuadTriangles();
-        meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(dir));
+        var shape = block.blockShape.GetShape();
+        // Cactus uses the complete face artwork on its inset sides/top, as in
+        // Beta's special cactus renderer. Generic partial cuboids crop by bounds.
+        meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(dir), block.type == BlockType.Cactus ? new Vector4(1,1,0,0) : shape.FaceUVTransform(dir));
 
         // Add tint from block data
         meshData.AddQuadColor(blockTypeData.albedoTint);

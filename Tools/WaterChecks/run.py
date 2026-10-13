@@ -34,7 +34,7 @@ def main():
         height=height.replace('private static void SetWaterFaceHeight','public static void SetWaterFaceHeight')
         (tmp/'WaterMeshCheck.cs').write_text('using UnityEngine; public static class WaterMeshCheck {\n'+height+'\n}')
         files = ['World/WaterSimulation.cs','World/WaterSurface.cs','World/World_Water.cs','World/World_Trees.cs',
-                 'Block/BlockType.cs','Block/BlockShape.cs','World/Rendering/MeshData.cs','Block/Block.cs','Block/Blocks/WaterBlock.cs',
+                 'Block/BlockType.cs','Block/BlockShapes.cs','Block/BlockShape.cs','World/Rendering/MeshData.cs','Block/Block.cs','Block/Blocks/WaterBlock.cs',
                  'World/ChunkSection.cs','World/Saving/BlockSaveData.cs','World/Saving/ChunkSectionSaveData.cs']
         sources = [ROOT / 'Assets/_Scripts' / f for f in files]
         sources += [ROOT / 'Tools/WaterChecks/WaterCheck.cs', ROOT / 'Tools/WaterChecks/IntegrationCheck.cs',tmp/'BlockMapping.cs',tmp/'WorldServer.cs',tmp/'WaterMeshCheck.cs']

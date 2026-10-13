@@ -5,6 +5,7 @@ public class MeshData
 {
     public List<Vector3> vertices   = new List<Vector3>();
     public List<int>     triangles  = new List<int>();
+    public List<Vector2> faceCoordinates = new List<Vector2>(); // normalized quad coordinates, independent of cropped image UVs
     public List<Vector3> uv         = new List<Vector3>(); // xy = face UV, z = image layer
     public List<Color>   colors     = new List<Color>();   // ← keep only this ONE
     public List<float>   skyLight   = new List<float>();
@@ -49,6 +50,7 @@ public class MeshData
         for (int i = 0; i < part.triangles.Count; i++) part.triangles[i] += offset;
         vertices.AddRange(part.vertices);
         uv.AddRange(part.uv);
+        faceCoordinates.AddRange(part.faceCoordinates);
         colors.AddRange(part.colors);
         skyLight.AddRange(part.skyLight);
         blockLight.AddRange(part.blockLight);
@@ -56,12 +58,18 @@ public class MeshData
         smoothLightCorners.AddRange(part.smoothLightCorners);
     }
 
-    public void AddFaceUVs(int layer)
+    public void AddFaceUVs(int layer) { AddFaceUVs(layer, new Vector4(1,1,0,0)); }
+
+    public void AddFaceUVs(int layer, Vector4 mapping)
     {
-        uv.Add(new Vector3(0, 0, layer));
-        uv.Add(new Vector3(0, 1, layer));
-        uv.Add(new Vector3(1, 1, layer));
-        uv.Add(new Vector3(1, 0, layer));
+        uv.Add(new Vector3(mapping.z, mapping.w, layer));
+        uv.Add(new Vector3(mapping.z, mapping.w+mapping.y, layer));
+        uv.Add(new Vector3(mapping.z+mapping.x, mapping.w+mapping.y, layer));
+        uv.Add(new Vector3(mapping.z+mapping.x, mapping.w, layer));
+        faceCoordinates.Add(new Vector2(0,0));
+        faceCoordinates.Add(new Vector2(0,1));
+        faceCoordinates.Add(new Vector2(1,1));
+        faceCoordinates.Add(new Vector2(1,0));
     }
 
     public void AddVertex(Vector3 v)

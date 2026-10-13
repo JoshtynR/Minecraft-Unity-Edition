@@ -15,6 +15,7 @@
                 float3 sides : TEXCOORD2; // smooth, flat, sampling mode
                 float4 corners : TEXCOORD3; // face corners in UV winding order
                 float4 color : COLOR;
+                float2 faceUV : TEXCOORD4;
             };
             struct v2f
             {
@@ -26,6 +27,7 @@
                 float4 color : COLOR;
                 float4 corners : TEXCOORD4;
                 float samplingMode : TEXCOORD5;
+                float2 faceUV : TEXCOORD6;
             };
             float BetaBrightness(float sky, float block)
             {
@@ -38,6 +40,7 @@
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.uv = v.uv;
+                o.faceUV = v.faceUV;
                 o.skyBlock = v.light;
                 o.color = v.color;
                 o.corners = v.corners;
@@ -70,9 +73,9 @@
                 float brightness = i.brightness;
                 if (_AOOn > 0.5 && i.samplingMode > 1.5)
                 {
-                    float bottom = lerp(i.corners.x, i.corners.w, i.uv.x);
-                    float top = lerp(i.corners.y, i.corners.z, i.uv.x);
-                    brightness = lerp(bottom, top, i.uv.y);
+                    float bottom = lerp(i.corners.x, i.corners.w, i.faceUV.x);
+                    float top = lerp(i.corners.y, i.corners.z, i.faceUV.x);
+                    brightness = lerp(bottom, top, i.faceUV.y);
                     brightness = lerp(brightness, 1, saturate(_BetaBrightnessBoost));
                 }
                 if (_LightingOn > 0.5) col.rgb *= brightness * i.faceShade;

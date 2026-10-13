@@ -30,7 +30,7 @@ public class Block
         this.type = type;
         this.position = position;
         this.section = section;
-        blockShape = BlockShapes.FullBlock;
+        blockShape = BlockShapesExtensions.ForBlock(this.type);
     }
 
     public Block(Block block)
@@ -39,7 +39,7 @@ public class Block
         this.waterLevel = block.waterLevel;
         this.position = block.position;
         this.section = block.section;
-        blockShape = BlockShapes.FullBlock;
+        blockShape = BlockShapesExtensions.ForBlock(this.type);
     }
 
     public Block Reset(Block block)
@@ -48,7 +48,7 @@ public class Block
         this.waterLevel = block.waterLevel;
         this.position = block.position;
         this.section = block.section;
-        blockShape = BlockShapes.FullBlock;
+        blockShape = BlockShapesExtensions.ForBlock(this.type);
         return this;
     }
 

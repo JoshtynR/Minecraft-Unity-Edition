@@ -27,9 +27,9 @@ namespace UnityEngine
  public class Mesh:Object
  {
   public int vertexCount=4;public static int created;public int uploads;public int subMeshCount;public Rendering.IndexFormat indexFormat;
-  public List<Vector3> vertices;public List<Vector2> lightUVs;public List<Vector4> cornerUVs;public Dictionary<int,List<int>> indices=new Dictionary<int,List<int>>();
+  public List<Vector3> vertices;public List<Vector2> faceUVs;public List<Vector2> lightUVs;public List<Vector4> cornerUVs;public Dictionary<int,List<int>> indices=new Dictionary<int,List<int>>();
   public Mesh(){created++;}public void Clear(){}public void MarkDynamic(){}public void SetVertices(List<Vector3> list){vertices=new List<Vector3>(list);uploads++;}
-  public void SetUVs<T>(int channel,List<T> data){if(channel==1)lightUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==3)cornerUVs=new List<Vector4>((IEnumerable<Vector4>)(object)data);}public void SetColors(List<Color> data){}
+  public void SetUVs<T>(int channel,List<T> data){if(channel==4)faceUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==1)lightUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==3)cornerUVs=new List<Vector4>((IEnumerable<Vector4>)(object)data);}public void SetColors(List<Color> data){}
   public void SetTriangles(List<int> data,int submesh){indices[submesh]=new List<int>(data);}public void RecalculateNormals(){}public void RecalculateBounds(){}
  }
  namespace Rendering { public enum IndexFormat{UInt32} }
@@ -81,6 +81,7 @@ public static class LifecycleCheck
   Check(mesh.lightUVs.Count==12&&mesh.cornerUVs[11].w==0.4f,"water retains brightness and corner channels");
   renderer.RenderMesh(new MeshData(true){sourceChunk=renderer.ChunkData});
   Check(mesh.indices[2].Count==0,"dry rebuild clears previous water triangles");
+  Check(staging.faceCoordinates.Count==12&&staging.faceCoordinates[2].x==1,"normalized face coordinates merge independently of cropped images");
   int uploads=mesh.uploads;renderer.Initialize(new ChunkData());renderer.RenderMesh(staging);
   Check(mesh.uploads==uploads,"stale chunk data rejected after pool reuse");
   Check(typeof(ChunkRenderer).GetField("MeshData")==null,"renderer doesn't retain staging lists");

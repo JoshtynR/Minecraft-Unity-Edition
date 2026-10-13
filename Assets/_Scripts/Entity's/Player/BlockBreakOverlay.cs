@@ -20,7 +20,7 @@ public sealed class BlockBreakOverlay : System.IDisposable
             root.transform.position = position;
             var data = new MeshData(false);
             foreach (var dir in BlockHelper.directions)
-            { shape.SetFaceVertices(dir, Vector3Int.zero, data); data.AddFaceUVs(0); data.AddQuadTriangles(); }
+            { shape.SetFaceVertices(dir, Vector3Int.zero, data); data.AddFaceUVs(0, shape.FaceUVTransform(dir)); data.AddQuadTriangles(); }
             mesh.Clear(); mesh.SetVertices(data.vertices); mesh.SetUVs(0, data.uv); mesh.SetTriangles(data.triangles, 0); mesh.RecalculateBounds();
         }
         int column = stage % columns, row = stage / columns;

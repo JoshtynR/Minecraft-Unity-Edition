@@ -39,7 +39,6 @@ namespace Mirror
     public class NetworkConnectionToClient {}
     public interface NetworkMessage {}
 }
-public enum BlockShapes { FullBlock }
 public class SlabBlock : Block { public SlabBlock(Block b):base(b) {} }
 public class BlockTypeData { public byte opacity,lightEmission; }
 public static class BlockDataManager
@@ -160,6 +159,15 @@ public static class IntegrationCheck
         WaterCheck.Assert(ChunkSection.Deserialize(legacy,c).blocks[0,0,0].waterLevel==0,"old water save must default to source");
         c.SetBlock(V(0,2,0),BlockType.Air);WaterCheck.Assert(c.GetBlock(V(0,2,0)).waterLevel==0,"air retained water metadata");
         c.SetBlock(V(0,2,0),BlockType.Water);WaterCheck.Assert(c.GetBlock(V(0,2,0)).waterLevel==0,"new water was not source");
+        // Render/pick shapes are reconstructed from type on both placement and
+        // load, without adding metadata or rewriting the completed block asset.
+        foreach(BlockType type in Enum.GetValues(typeof(BlockType)))
+        {
+            c.SetBlock(V(1,0,1),type);
+            var shapeSave=new ChunkSectionSaveData(c.sections[0]);
+            var shapeLoad=ChunkSection.Deserialize(shapeSave,c);
+            WaterCheck.Assert(shapeLoad.blocks[1,0,1].blockShape==BlockShapesExtensions.ForBlock(type),"saved catalog type reconstructs code-defined shape");
+        }
         // Exercise production face vertex adjustment with four equal flow cells.
         for(int x=0;x<2;x++) for(int z=0;z<2;z++)
         { c.SetBlock(V(x,1,z),BlockType.Water);c.GetBlock(V(x,1,z)).waterLevel=7;c.SetBlock(V(x,2,z),BlockType.Air); }

@@ -41,6 +41,7 @@ public class ChunkRenderer : MonoBehaviour
         mesh.SetUVs(1, meshData.lightingUVs);
         mesh.SetUVs(2, meshData.sides);
         mesh.SetUVs(3, meshData.smoothLightCorners);
+        mesh.SetUVs(4, meshData.faceCoordinates);
         mesh.SetColors(meshData.colors);
         mesh.SetTriangles(meshData.triangles, 0);
         if (meshData.transparentMesh != null)
