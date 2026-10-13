@@ -5,12 +5,13 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerInventory : MonoBehaviour
+public partial class PlayerInventory : MonoBehaviour
 {
     private readonly Dictionary<BlockType, Mesh> iconMeshes = new Dictionary<BlockType, Mesh>();
 
     private void OnDestroy()
     {
+        if (creativeRoot != null) Destroy(creativeRoot.gameObject);
         foreach (var mesh in iconMeshes.Values)
             if (mesh != null) Destroy(mesh);
         iconMeshes.Clear();
@@ -94,6 +95,8 @@ public class PlayerInventory : MonoBehaviour
         
         inventoryRect.gameObject.SetActive(false);
 
+        BuildCreativeInventory();
+
         AddItem(BlockType.GlowStone, 64);AddItem(BlockType.Bedrock, 64);AddItem(BlockType.WoodenSlab, 64);AddItem(BlockType.Water, 64);
     }
 
@@ -146,7 +149,8 @@ public class PlayerInventory : MonoBehaviour
     public void OpenInventory()
     {
         isOpen = true;
-        inventoryRect.gameObject.SetActive(true);
+        creativeRoot.gameObject.SetActive(true);
+        ShowInventoryTab(pickedUpSlot == null);
         Cursor.lockState = CursorLockMode.None;
     }
     
@@ -154,6 +158,7 @@ public class PlayerInventory : MonoBehaviour
     {
         isOpen = false;
         inventoryRect.gameObject.SetActive(false);
+        if (creativeRoot != null) creativeRoot.gameObject.SetActive(false);
         Cursor.lockState = CursorLockMode.Locked;
     }
     
@@ -346,11 +351,11 @@ public class PlayerInventory : MonoBehaviour
 
     private void UpdateSelectedSlotUI()
     {
-        if (Input.GetAxis("Mouse ScrollWheel") < 0)
+        if (!isOpen && Input.GetAxis("Mouse ScrollWheel") < 0)
         {
             selectedSlotIndex = (selectedSlotIndex + 1) % 9;
         }
-        else if (Input.GetAxis("Mouse ScrollWheel") > 0)
+        else if (!isOpen && Input.GetAxis("Mouse ScrollWheel") > 0)
         {
             selectedSlotIndex = (selectedSlotIndex + 9-1) % 9;
         }
