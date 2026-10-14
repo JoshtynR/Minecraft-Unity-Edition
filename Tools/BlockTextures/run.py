@@ -37,8 +37,11 @@ def main():
     uvs=helper[helper.index('    public static Vector3[] FaceUVs'):]
     with tempfile.TemporaryDirectory() as tmp:
         tmp=Path(tmp);(tmp/'BlockHelper.cs').write_text('using UnityEngine; public static class BlockHelper {\n'+uvs)
+        block=(ROOT/'Assets/_Scripts/Block/Block.cs').read_text()
+        loaded=block[block.index('    public void Loaded()'):block.index('    public int GetBlockLight()')]
+        (tmp/'LoadingProbe.cs').write_text('public partial class LoadingProbe{'+loaded+'}')
         binary=tmp/'textures.exe'
-        files=[ROOT/'Tools/BlockTextures/TextureCheck.cs',ROOT/'Assets/_Scripts/BlockDataSO.cs',ROOT/'Assets/_Scripts/BlockDataManager.cs',ROOT/'Assets/_Scripts/Block/BlockType.cs',tmp/'BlockHelper.cs']
+        files=[ROOT/'Tools/BlockTextures/TextureCheck.cs',ROOT/'Assets/_Scripts/BlockDataSO.cs',ROOT/'Assets/_Scripts/BlockDataManager.cs',ROOT/'Assets/_Scripts/BlockDataDefaults.cs',ROOT/'Assets/_Scripts/Block/BlockType.cs',tmp/'BlockHelper.cs',ROOT/'Tools/BlockTextures/LoadingProbe.cs',tmp/'LoadingProbe.cs']
         subprocess.run([args.mcs,'-langversion:latest','-out:'+str(binary),*map(str,files)],check=True)
         subprocess.run([args.mono,str(binary)],check=True)
 if __name__=='__main__':main()

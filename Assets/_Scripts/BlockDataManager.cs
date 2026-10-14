@@ -7,14 +7,13 @@ using UnityEditor;
 [DefaultExecutionOrder(-1000)]
 public class BlockDataManager : MonoBehaviour
 {
-    public static BlockTypeData[] blockTypeDataDictionary;
+    public static BlockTypeData[] blockTypeDataDictionary = BlockDataDefaults.CreateLookup();
     public BlockDataSO textureData;
     private Texture2DArray faceTextures;
     private static BlockDataManager activeManager;
 
     private void OnEnable()
     {
-        if (textureData == null || textureData.textureDataList == null) return;
         var images = InitializeData();
         if (!Application.isPlaying) return;
         activeManager = this;
@@ -30,20 +29,40 @@ public class BlockDataManager : MonoBehaviour
 
     private List<Texture2D> InitializeData()
     {
+        var entries = textureData != null ? textureData.textureDataList : null;
         int maxType = 0;
-        foreach (var item in textureData.textureDataList)
-            if (item != null) maxType = Mathf.Max(maxType, (int)item.blockType);
-        blockTypeDataDictionary = new BlockTypeData[maxType + 1];
+        if (entries != null)
+            foreach (var item in entries)
+                if (item != null) maxType = Mathf.Max(maxType, (int)item.blockType);
+        var definitions = BlockDataDefaults.CreateLookup(maxType + 1);
+        var assigned = new bool[definitions.Length];
         var images = new List<Texture2D>();
         var indices = new Dictionary<Texture2D, int>();
-        foreach (var item in textureData.textureDataList)
+        if (entries != null)
+            foreach (var item in entries)
+            {
+                if (item == null || (int)item.blockType < 0) continue;
+                int id = (int)item.blockType;
+                definitions[id] = item;
+                assigned[id] = true;
+                if (item.textureData == null) item.textureData = new TextureData();
+                item.textureData.topIndex = Register(item.textureData.top, images, indices);
+                item.textureData.bottomIndex = Register(item.textureData.bottom, images, indices);
+                item.textureData.sideIndex = Register(item.textureData.side, images, indices);
+            }
+        // Publish a complete map, never a partially filled array, to chunk workers.
+        blockTypeDataDictionary = definitions;
+        if (Application.isPlaying)
         {
-            if (item == null) continue;
-            blockTypeDataDictionary[(int)item.blockType] = item;
-            if (item.textureData == null) item.textureData = new TextureData();
-            item.textureData.topIndex = Register(item.textureData.top, images, indices);
-            item.textureData.bottomIndex = Register(item.textureData.bottom, images, indices);
-            item.textureData.sideIndex = Register(item.textureData.side, images, indices);
+            var missing = new List<string>();
+            foreach (BlockType type in System.Enum.GetValues(typeof(BlockType)))
+                if (!assigned[(int)type]) missing.Add(type.ToString());
+            if (missing.Count > 0)
+            {
+                string examples = string.Join(", ", missing.GetRange(0, Mathf.Min(8, missing.Count)));
+                Debug.LogWarning("Block Data is missing " + missing.Count + " definitions (" + examples +
+                    "). Runtime defaults and missing-image textures will be used; assigned asset entries are preserved.", this);
+            }
         }
         return images;
     }
@@ -60,7 +79,7 @@ public class BlockDataManager : MonoBehaviour
 
     private void BuildFaceTextures(List<Texture2D> images)
     {
-        int size = Mathf.Clamp(textureData.faceTextureResolution, 16, 512);
+        int size = Mathf.Clamp(textureData != null ? textureData.faceTextureResolution : 32, 16, 512);
         var array = new Texture2DArray(size, size, images.Count + 1, TextureFormat.RGBA32, false, false)
         {
             name = "Block face images",

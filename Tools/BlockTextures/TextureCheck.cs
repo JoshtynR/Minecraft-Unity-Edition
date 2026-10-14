@@ -13,7 +13,7 @@ namespace UnityEngine
     public class RangeAttribute : Attribute { public RangeAttribute(int a,int b){} }
     public static class Application { public static bool isPlaying=true; }
     public static class SystemInfo { public static bool supports2DArrayTextures=true; }
-    public static class Mathf { public static int Max(int a,int b)=>Math.Max(a,b); public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v)); }
+    public static class Mathf { public static int Max(int a,int b)=>Math.Max(a,b);public static int Min(int a,int b)=>Math.Min(a,b); public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v)); }
     public struct Vector3 { public float x,y,z; public Vector3(float a,float b,float c){x=a;y=b;z=c;} }
     public struct Color { public static Color white=>new Color(); }
     public struct Color32 { public byte r,g,b,a; public Color32(byte r,byte g,byte b,byte a){this.r=r;this.g=g;this.b=b;this.a=a;} }
@@ -57,7 +57,7 @@ namespace UnityEngine
         public static void Blit(Texture2D src,RenderTexture rt){if(src.filterMode!=FilterMode.Point||!GL.sRGBWrite)throw new Exception("readback state");blits++;rt.source=src;}
     }
     public static class Shader { public static Texture2DArray bound; public static void SetGlobalTexture(string n,Texture2DArray a){if(n!="_BlockFaceTextures")throw new Exception("property");bound=a;} }
-    public static class Debug { public static int errors;public static void LogError(string s,Object o){errors++;} }
+    public static class Debug { public static int errors,warnings;public static void LogWarning(string s,Object o){warnings++;}public static void LogError(string s,Object o){errors++;} }
 }
 public enum Direction { up,down,left,right,forwards,backwards }
 public static class TextureCheck
@@ -68,6 +68,8 @@ public static class TextureCheck
     static Texture2D Image(int size,byte r,bool readable=true){var t=new Texture2D(size,size,TextureFormat.RGBA32,false,false);t.isReadable=readable;for(int i=0;i<t.pixels.Length;i++)t.pixels[i]=new Color32(r,13,21,127);return t;}
     public static void Main()
     {
+        foreach(BlockType type in Enum.GetValues(typeof(BlockType)))
+            Check(BlockDataManager.blockTypeDataDictionary[(int)type]!=null,"static lookup safe before manager OnEnable");
         var top=Image(32,10);var bottom=Image(16,20,false);var side=Image(8,30);
         var data=new BlockTypeData{blockType=BlockType.Grass,textureData=new TextureData{top=top,bottom=bottom,side=side}};
         var uniform=new BlockTypeData{blockType=BlockType.Dirt,textureData=new TextureData{top=side,bottom=side,side=side}};
@@ -76,6 +78,16 @@ public static class TextureCheck
         var manager=new BlockDataManager{textureData=asset};
         var previous=new RenderTexture();RenderTexture.active=previous;GL.sRGBWrite=false;
         Invoke(manager,"OnEnable");
+        foreach(BlockType type in Enum.GetValues(typeof(BlockType)))
+            Check(BlockDataManager.blockTypeDataDictionary[(int)type]!=null&&BlockDataManager.blockTypeDataDictionary[(int)type].textureData!=null,"sparse asset has safe complete runtime lookup");
+        foreach(BlockType type in Enum.GetValues(typeof(BlockType)))
+        {
+            var probe=new LoadingProbe{type=type};probe.Loaded();
+            Check(probe.light==probe.BlockData.lightEmission&&probe.chunkData.blockLightUpdateQueue.Count==(probe.BlockData.lightEmission>0?1:0),"production Block.Loaded handles every saved type with sparse asset");
+        }
+        Check(asset.textureDataList.Count==3&&ReferenceEquals(BlockDataManager.blockTypeDataDictionary[(int)BlockType.Grass],data),"fallback never replaces or appends user asset definitions");
+        Check(!BlockDataManager.blockTypeDataDictionary[0].generateCollider&&BlockDataManager.blockTypeDataDictionary[0].opacity==0,"missing Nothing definition safe for unloaded cells");
+        Check(BlockDataManager.blockTypeDataDictionary[(int)BlockType.Torch].lightEmission==14,"missing emitter has default emission");
         var array=Shader.bound;
         Check(array.depth==4&&array.applied,"unique images + missing layer");
         Check(array.filterMode==FilterMode.Point&&array.wrapMode==TextureWrapMode.Clamp,"sampling");
@@ -98,6 +110,10 @@ public static class TextureCheck
         Invoke(manager,"OnDisable");Check(Shader.bound==null&&array.destroyed,"release global and GPU resource");
         asset.faceTextureResolution=1;Invoke(manager,"OnEnable");Check(Shader.bound.width==16,"minimum resolution");Invoke(manager,"OnDisable");
         SystemInfo.supports2DArrayTextures=false;Invoke(manager,"OnEnable");Check(Shader.bound==null&&Debug.errors==1,"unsupported GPU preserves CPU map");Check(BlockDataManager.blockTypeDataDictionary[3]==data,"CPU map available");Invoke(manager,"OnDisable");
+        SystemInfo.supports2DArrayTextures=true;
+        manager.textureData=new BlockDataSO{textureDataList=new List<BlockTypeData>{null,data,uniform,missing}};
+        Invoke(manager,"OnEnable");Check(BlockDataManager.blockTypeDataDictionary.Length>=133&&ReferenceEquals(BlockDataManager.blockTypeDataDictionary[3],data),"null catalog entries skipped while texture assignments survive");Invoke(manager,"OnDisable");
+        manager.textureData=null;Invoke(manager,"OnEnable");Check(BlockDataManager.blockTypeDataDictionary.Length>=133&&Shader.bound.depth==1,"missing asset uses CPU definitions and checker texture");Invoke(manager,"OnDisable");
         Console.WriteLine(checks+" block texture data/UV/startup checks passed (Unity GPU APIs mocked).");
     }
 }

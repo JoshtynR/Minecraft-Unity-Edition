@@ -133,7 +133,7 @@ public partial class Player
                 if (below != null && below.type != BlockType.Nothing && below.type != BlockType.Air) replacement = BlockType.Water;
             }
             world.SetBlock(serverMinePosition, replacement);
-            if (WorldServer.instance != null && isServer) WorldServer.instance.RpcSetBlock(serverMinePosition, replacement);
+            if (WorldServer.instance != null && isServer) WorldServer.instance.RpcSetBlock(serverMinePosition, replacement, 0);
             // Mining is a later survival addition to the Beta renderer: normal
             // harvested blocks use the classic 0.025 exhaustion cost.
             if (HandMining.Harvestable(serverMineType))

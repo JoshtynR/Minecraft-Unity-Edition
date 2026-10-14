@@ -219,6 +219,10 @@ public static class IntegrationCheck
         WaterCheck.Assert(w.meshRequests==beforeMeshes+1,"cross-border tree mesh notification was not deduplicated/refreshed");
         Mirror.NetworkServer.active=true;
         var server=new WorldServer();
+        foreach(var method in typeof(WorldServer).GetMethods(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance))
+            if(Attribute.IsDefined(method,typeof(Mirror.ClientRpcAttribute)))
+                foreach(var parameter in method.GetParameters())
+                    WaterCheck.Assert(!parameter.IsOptional,"Mirror RPC parameters must be explicit");
         int edits=w.playerEdits;
         server.SetBlockMessageHandler(null,new WorldServer.SetBlockMessage(V(0,2,0),BlockType.Water));
         WaterCheck.Assert(w.playerEdits==edits+1,"host player edit applied twice or server omitted edit");

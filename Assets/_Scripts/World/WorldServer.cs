@@ -36,7 +36,7 @@ public class WorldServer : NetworkBehaviour
     }
 
     [ClientRpc]
-    public void RpcSetBlock(Vector3Int position, BlockType blockType, byte stairFacing = 0)
+    public void RpcSetBlock(Vector3Int position, BlockType blockType, byte stairFacing)
     {
         if (!NetworkServer.active) World.Instance.SetBlock(position, blockType, stairFacing);
     }
