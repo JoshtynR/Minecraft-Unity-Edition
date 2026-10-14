@@ -52,7 +52,7 @@ namespace TMPro {public class TMP_FontAsset:UnityEngine.Object {}}
 public enum Direction {down,up,backwards,forwards,left,right}
 public static class BlockHelper {public static Direction[] directions=(Direction[])Enum.GetValues(typeof(Direction));}
 public class ChunkData {}
-public class ShapeSlot {public BlockShape shape=new BlockShape(0,0,0,16,16,16);public BlockShape GetShape()=>shape;}
+public class ShapeSlot {public BlockShapes orientation;public static implicit operator BlockShapes(ShapeSlot s)=>s.orientation;public BlockShape shape=new BlockShape(0,0,0,16,16,16);public BlockShape GetShape()=>shape;}
 public class Block {public BlockType type;public Vector3Int globalWorldPosition;public ShapeSlot blockShape=new ShapeSlot();}
 public class World
 {
@@ -92,6 +92,18 @@ public static class MiningCheck
   var cooldown=Setup(BlockType.Dirt);cooldown.Begin(cooldown.aimed,BlockType.Dirt);for(int i=0;i<20;i++)cooldown.Step();cooldown.world.blocks[cooldown.aimed].type=BlockType.Dirt;cooldown.Begin(cooldown.aimed,BlockType.Dirt);for(int i=0;i<30;i++)cooldown.Step();Check(cooldown.world.edits==1,"post-break cooldown rejects early restart");cooldown.Begin(cooldown.aimed,BlockType.Dirt);for(int i=0;i<20;i++)cooldown.Step();Check(cooldown.world.edits==2,"restart after cooldown can break again");
   var bedrock=Setup(BlockType.Bedrock);bedrock.Begin(bedrock.aimed,BlockType.Bedrock);for(int i=0;i<500;i++)bedrock.Step();Check(bedrock.world.edits==0,"bedrock never removed");
   Resources.assets=new PlayerHudAssets{blockBreak=new Texture2D(),blockBreakMaterial=new Material()};var visual=Setup(BlockType.Log);Input.held=true;visual.Visual();Check(Material.last.frame.x==0.1f&&Mesh.last.vertices.Count==24,"ten-frame strip and six-face overlay");var ownedMesh=Mesh.last;var ownedMaterial=Material.last;Input.held=false;visual.Visual();visual.Cleanup();Check(ownedMesh.destroyed&&ownedMaterial.destroyed,"overlay destroys owned mesh/material");
+  foreach(var stair in new[]{BlockType.WoodenStairs,BlockType.CobblestoneStairs})
+  for(byte facing=0;facing<4;facing++)
+  {
+   var target=new Block{type=stair};target.blockShape.orientation=StairGeometry.Shape(facing);
+   var cracks=new BlockBreakOverlay();cracks.Show(target,3);
+   Check(Mesh.last.vertices.Count==44,"stair cracks follow eleven exterior quads");
+   float maxX=0,maxZ=0;
+   foreach(var v in Mesh.last.vertices)if(v.y>.9f){maxX=Math.Max(maxX,v.x);maxZ=Math.Max(maxZ,v.z);}
+   Check(facing!=1||maxX<.501f,"west stair overlay upper half orientation");
+   Check(facing!=3||maxZ<.501f,"north stair overlay upper half orientation");
+   cracks.Dispose();
+  }
   Check(HandMining.CrackStage(0)==0&&HandMining.CrackStage(0.99f)==9&&HandMining.CrackStage(1)==9,"ten bounded crack stages");
   Console.WriteLine(checks+" production hand mining/progress/drop/reach/overlay checks passed (Unity/Mirror mocked).");
  }

@@ -33,6 +33,7 @@ public class ChunkSection
                 pos.y = (posIndex / dataRef.chunkSize) % dataRef.chunkHeight;
 
                 var block = new Block(saveData.blocks[i].type, pos, chunkSection);
+                if (StairGeometry.IsStair(block.type)) block.blockShape = StairGeometry.Shape(saveData.blocks[i].stairFacing);
                 block.waterLevel = block.type == BlockType.Water ? (byte)(saveData.blocks[i].waterLevel & 15) : (byte)0;
                 chunkSection.blocks[pos.x, pos.y, pos.z] = BlockMapping.MapTypeToBlock(block.type, block);
                 chunkSection.blocks[pos.x, pos.y, pos.z].Loaded();

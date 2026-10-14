@@ -7,6 +7,7 @@ public sealed class BlockBreakOverlay : System.IDisposable
     private Material material;
     private Vector3Int position;
     private BlockShape shape;
+    private byte stairFacing;
     private int columns, rows;
     private bool warned;
 
@@ -14,13 +15,23 @@ public sealed class BlockBreakOverlay : System.IDisposable
     {
         if (root == null && !Create()) return;
         var nextShape = block.blockShape.GetShape();
-        if (shape == null || position != block.globalWorldPosition || !ReferenceEquals(shape, nextShape))
+        if (shape == null || position != block.globalWorldPosition || !ReferenceEquals(shape, nextShape) || (StairGeometry.IsStair(block.type) && stairFacing != StairGeometry.Facing(block.blockShape)))
         {
             position = block.globalWorldPosition; shape = nextShape;
+            stairFacing = StairGeometry.Facing(block.blockShape);
             root.transform.position = position;
             var data = new MeshData(false);
             foreach (var dir in BlockHelper.directions)
-            { shape.SetFaceVertices(dir, Vector3Int.zero, data); data.AddFaceUVs(0, shape.FaceUVTransform(dir)); data.AddQuadTriangles(); }
+            {
+                int parts = StairGeometry.IsStair(block.type) ? 2 : 1;
+                for (int part=0; part<parts; part++)
+                {
+                    var face = parts == 2 ? StairGeometry.RenderFace(stairFacing, part, dir) : shape;
+                    if (face == null) continue;
+                    face.SetFaceVertices(dir, Vector3Int.zero, data);
+                    data.AddFaceUVs(0, face.FaceUVTransform(dir)); data.AddQuadTriangles();
+                }
+            }
             mesh.Clear(); mesh.SetVertices(data.vertices); mesh.SetUVs(0, data.uv); mesh.SetTriangles(data.triangles, 0); mesh.RecalculateBounds();
         }
         int column = stage % columns, row = stage / columns;

@@ -39,7 +39,7 @@ public class Block
         this.waterLevel = block.waterLevel;
         this.position = block.position;
         this.section = block.section;
-        blockShape = BlockShapesExtensions.ForBlock(this.type);
+        blockShape = StairGeometry.IsStair(type) ? StairGeometry.Shape(StairGeometry.Facing(block.blockShape)) : BlockShapesExtensions.ForBlock(type);
     }
 
     public Block Reset(Block block)
@@ -48,7 +48,7 @@ public class Block
         this.waterLevel = block.waterLevel;
         this.position = block.position;
         this.section = block.section;
-        blockShape = BlockShapesExtensions.ForBlock(this.type);
+        blockShape = StairGeometry.IsStair(type) ? StairGeometry.Shape(StairGeometry.Facing(block.blockShape)) : BlockShapesExtensions.ForBlock(type);
         return this;
     }
 
@@ -117,6 +117,7 @@ public class Block
 
         this.type = type;
         waterLevel = 0;
+        blockShape = BlockShapesExtensions.ForBlock(type);
 
         if (brokeBlock)
         {

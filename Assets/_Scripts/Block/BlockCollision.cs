@@ -22,17 +22,22 @@ public static class BlockCollision
         {
             var block = world.GetBlock(new Vector3Int(x,y,z));
             if (block == null || block.type == BlockType.Nothing || block.type == BlockType.Air || BlockShapesExtensions.IsPlant(block.type) || !block.BlockData.generateCollider) continue;
-            var shape = BlockShapesExtensions.CollisionShape(block.type, block.blockShape.GetShape());
-            Vector3 bmin = new Vector3(x + shape.xMin/16f,y + shape.yMin/16f,z + shape.zMin/16f);
-            Vector3 bmax = new Vector3(x + shape.xMax/16f,y + shape.yMax/16f,z + shape.zMax/16f);
-            bool overlaps = true;
-            for (int a=0; a<3; a++)
-                if (a != axis && (Axis(max,a) <= Axis(bmin,a) + Epsilon || Axis(min,a) >= Axis(bmax,a) - Epsilon)) overlaps=false;
-            if (!overlaps) continue;
-            if (movement > 0 && Axis(max,axis) <= Axis(bmin,axis) + Epsilon)
-                movement = Mathf.Min(movement, Mathf.Max(0,Axis(bmin,axis)-Axis(max,axis)));
-            else if (movement < 0 && Axis(min,axis) >= Axis(bmax,axis) - Epsilon)
-                movement = Mathf.Max(movement, Mathf.Min(0,Axis(bmax,axis)-Axis(min,axis)));
+            int parts = StairGeometry.IsStair(block.type) ? 2 : 1;
+            for (int part = 0; part < parts; part++)
+            {
+                var shape = parts == 2 ? StairGeometry.CollisionPart(StairGeometry.Facing(block.blockShape), part) :
+                    BlockShapesExtensions.CollisionShape(block.type, block.blockShape.GetShape());
+                Vector3 bmin = new Vector3(x + shape.xMin/16f,y + shape.yMin/16f,z + shape.zMin/16f);
+                Vector3 bmax = new Vector3(x + shape.xMax/16f,y + shape.yMax/16f,z + shape.zMax/16f);
+                bool overlaps = true;
+                for (int a=0; a<3; a++)
+                    if (a != axis && (Axis(max,a) <= Axis(bmin,a) + Epsilon || Axis(min,a) >= Axis(bmax,a) - Epsilon)) overlaps=false;
+                if (!overlaps) continue;
+                if (movement > 0 && Axis(max,axis) <= Axis(bmin,axis) + Epsilon)
+                    movement = Mathf.Min(movement, Mathf.Max(0,Axis(bmin,axis)-Axis(max,axis)));
+                else if (movement < 0 && Axis(min,axis) >= Axis(bmax,axis) - Epsilon)
+                    movement = Mathf.Max(movement, Mathf.Min(0,Axis(bmax,axis)-Axis(min,axis)));
+            }
         }
         return movement;
     }

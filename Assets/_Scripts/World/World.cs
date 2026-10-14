@@ -212,14 +212,14 @@ public partial class World : MonoBehaviour
         SetBlock(Vector3Int.FloorToInt(pos), blockType);
     }
     
-    public void SetBlock(Vector3Int blockPos, BlockType blockType)
+    public void SetBlock(Vector3Int blockPos, BlockType blockType, byte stairFacing = 0)
     {
         var chunkPos = WorldDataHelper.GetChunkPosition(this, blockPos);
         var chunk = WorldDataHelper.GetChunk(this, chunkPos);
         if (chunk == null) return;
         chunk.ModifiedByPlayer = true;
         chunk.ChunkData.modifiedAfterSave = true;
-        SetBlock(chunk, blockPos, blockType);
+        SetBlock(chunk, blockPos, blockType, stairFacing);
     }
 
     public void SetBlocks(IEnumerable<Vector3Int> blockPoss, BlockType blockType)
@@ -229,7 +229,7 @@ public partial class World : MonoBehaviour
         SetBlocks(chunk, blockPoss, blockType);
     }
 
-    public async void SetBlocks(ChunkRenderer chunk, IEnumerable<Vector3Int> blockPoss, BlockType blockType)
+    public async void SetBlocks(ChunkRenderer chunk, IEnumerable<Vector3Int> blockPoss, BlockType blockType, byte stairFacing = 0)
     {
         var neightBourUpdates = new HashSet<ChunkRenderer>();
         
@@ -242,6 +242,7 @@ public partial class World : MonoBehaviour
             // else
             // {
                 WorldDataHelper.SetBlock(chunk.ChunkData.worldRef, pos, blockType);
+                if (StairGeometry.IsStair(blockType)) GetBlock(pos).blockShape = StairGeometry.Shape(stairFacing);
             // }
             
             if (chunk.ChunkData.IsOnEdge(pos))
@@ -270,9 +271,9 @@ public partial class World : MonoBehaviour
         }
     }
 
-    public void SetBlock(ChunkRenderer chunk, Vector3Int blockPos, BlockType blockType)
+    public void SetBlock(ChunkRenderer chunk, Vector3Int blockPos, BlockType blockType, byte stairFacing = 0)
     {
-        SetBlocks(chunk, new[] {blockPos}, blockType);
+        SetBlocks(chunk, new[] {blockPos}, blockType, stairFacing);
     }
     
     public Vector3Int GetBlockPos(RaycastHit hit)

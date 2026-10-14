@@ -22,7 +22,7 @@ namespace UnityEngine
 }
 public enum Direction {down,up,backwards,forwards,left,right}
 public static class DirectionExt {public static Direction GetOpposite(this Direction d)=>new[]{Direction.up,Direction.down,Direction.forwards,Direction.backwards,Direction.right,Direction.left}[(int)d];public static Vector3Int GetVector(this Direction d){return new[]{Vector3Int.down,Vector3Int.up,Vector3Int.back,Vector3Int.forward,Vector3Int.left,Vector3Int.right}[(int)d];}}
-public class ShapeSlot {public BlockShape shape=new BlockShape(0,0,0,16,16,16);public BlockShape GetShape()=>shape;}
+public class ShapeSlot {public BlockShapes orientation;public static implicit operator BlockShapes(ShapeSlot s)=>s.orientation;public BlockShape shape=new BlockShape(0,0,0,16,16,16);public BlockShape GetShape()=>shape;}
 public class TextureData {public int FaceIndex(Direction d)=>0;}
 public static class BlockDataManager {public static BlockTypeData[] blockTypeDataDictionary=new BlockTypeData[133];}
 public class BlockTypeData {public bool isTransparent;public byte opacity,lightEmission;public TextureData textureData=new TextureData();public Color albedoTint;}
@@ -185,6 +185,7 @@ public static partial class LightingCheck
   Check(Beta173Lighting.InterpolateCorners(0,1,0,0,0,1)==1,"UV corner winding");
   Check(Beta173Lighting.InterpolateCorners(0,1,0,0,-1,2)==1,"partial coordinate clamping");
   CheckPlants();
+  CheckStairMeshes();
   Console.WriteLine(aoCases+" Java six-face AO cases, "+orderedVertices+" positioned vertices; "+checks+" brightness/adapter/transport checks passed (Unity storage mocked).");
  }
 }

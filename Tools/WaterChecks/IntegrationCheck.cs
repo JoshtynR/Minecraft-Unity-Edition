@@ -65,6 +65,8 @@ public class WorldData
 }
 public static class WorldDataHelper
 {
+    public static ChunkRenderer GetChunk(World w,Vector3Int p){return w.worldData.chunkDict[p];}
+    public static void SetBlock(World w,Vector3Int p,BlockType type){var c=w.worldData.chunkDataDict[GetChunkPosition(w,p)];c.SetBlock(p-c.worldPos,type);}
     public static Vector3Int GetChunkPosition(World w,Vector3Int p) { return new Vector3Int((int)Math.Floor((double)p.x/w.chunkSize)*w.chunkSize,0,(int)Math.Floor((double)p.z/w.chunkSize)*w.chunkSize); }
 }
 public class ChunkData
@@ -89,6 +91,8 @@ public class ChunkData
         if(p.x<0 || p.x>=chunkSize || p.z<0 || p.z>=chunkSize) return worldRef.GetBlock(worldPos+p);
         return sections[p.y/chunkHeight].GetBlock(p);
     }
+    public bool IsOnEdge(Vector3Int p)=>false;
+    public List<ChunkData> GetNeighbourChunk(Vector3Int p)=>new List<ChunkData>();
     public void SetBlock(Vector3Int p,BlockType type) { sections[p.y/chunkHeight].SetBlock(p,type); }
 }
 public partial class World
@@ -106,7 +110,7 @@ public partial class World
         if(worldData.chunkDataDict.TryGetValue(WorldDataHelper.GetChunkPosition(this,p),out c)) return c.GetBlock(p-c.worldPos);
         return new Block(BlockType.Nothing,p,null);
     }
-    public void SetBlock(Vector3Int p,BlockType t) { playerEdits++; GetBlock(p).SetType(t); }
+    public void SetBlock(Vector3Int p,BlockType t,byte stairFacing=0) { playerEdits++;SetBlock(WorldDataHelper.GetChunk(this,WorldDataHelper.GetChunkPosition(this,p)),p,t,stairFacing); }
     private System.Threading.Tasks.Task<Dictionary<ChunkRenderer,MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> chunks, bool markModifiedByPlayer = true)
     {
         var result=new Dictionary<ChunkRenderer,MeshData>();foreach(var c in chunks) result[c]=new MeshData(false);
@@ -168,6 +172,21 @@ public static class IntegrationCheck
             var shapeLoad=ChunkSection.Deserialize(shapeSave,c);
             WaterCheck.Assert(shapeLoad.blocks[1,0,1].blockShape==BlockShapesExtensions.ForBlock(type),"saved catalog type reconstructs code-defined shape");
         }
+        for(byte facing=0; facing<4; facing++)
+        {
+            c.SetBlock(V(0,0,0),BlockType.WoodenStairs);c.GetBlock(V(0,0,0)).blockShape=StairGeometry.Shape(facing);
+            c.SetBlock(V(1,0,0),BlockType.WoodenStairs);c.GetBlock(V(1,0,0)).blockShape=StairGeometry.Shape((byte)((facing+1)&3));
+            var stairSave=new ChunkSectionSaveData(c.sections[0]);
+            WaterCheck.Assert(stairSave.blocks[0].length==1&&stairSave.blocks[0].stairFacing==facing,"RLE preserves different stair directions");
+            var stairLoad=ChunkSection.Deserialize(stairSave,c);
+            WaterCheck.Assert(stairLoad.blocks[0,0,0].blockShape==StairGeometry.Shape(facing)&&stairLoad.blocks[1,0,0].blockShape==StairGeometry.Shape((byte)((facing+1)&3)),"save/chunk snapshot retains orientation");
+            var placed=c.GetBlock(V(0,0,0));
+            WaterCheck.Assert(new Block(placed).blockShape==placed.blockShape&&new Block(BlockType.Air,V(0,0,0),c.sections[0]).Reset(placed).blockShape==placed.blockShape,"stair copies retain orientation");
+            placed.SetType(BlockType.Air);placed=c.GetBlock(V(0,0,0));placed.SetType(BlockType.CobblestoneStairs);
+            WaterCheck.Assert(c.GetBlock(V(0,0,0)).blockShape==BlockShapes.StairsEast,"fresh stair placement resets old orientation");
+        }
+        var legacyStairs=new ChunkSectionSaveData{yOffset=0,blocks=new[]{new BlockSaveData(BlockType.CobblestoneStairs,8)}};
+        WaterCheck.Assert(ChunkSection.Deserialize(legacyStairs,c).blocks[0,0,0].blockShape==BlockShapes.StairsEast,"old saves without orientation remain loadable");
         // Exercise production face vertex adjustment with four equal flow cells.
         for(int x=0;x<2;x++) for(int z=0;z<2;z++)
         { c.SetBlock(V(x,1,z),BlockType.Water);c.GetBlock(V(x,1,z)).waterLevel=7;c.SetBlock(V(x,2,z),BlockType.Air); }
@@ -203,6 +222,15 @@ public static class IntegrationCheck
         int edits=w.playerEdits;
         server.SetBlockMessageHandler(null,new WorldServer.SetBlockMessage(V(0,2,0),BlockType.Water));
         WaterCheck.Assert(w.playerEdits==edits+1,"host player edit applied twice or server omitted edit");
+        for(byte facing=0;facing<4;facing++)
+        {
+            server.SetBlockMessageHandler(null,new WorldServer.SetBlockMessage(V(0,2,0),BlockType.CobblestoneStairs,facing));
+            WaterCheck.Assert(StairGeometry.Facing(w.GetBlock(V(0,2,0)).blockShape)==facing,"server receives placed stair direction");
+            Mirror.NetworkServer.active=false;
+            server.RpcSetBlock(V(1,2,0),BlockType.WoodenStairs,facing);
+            WaterCheck.Assert(StairGeometry.Facing(w.GetBlock(V(1,2,0)).blockShape)==facing,"RPC replicates stair direction");
+            Mirror.NetworkServer.active=true;
+        }
     }
 }
 

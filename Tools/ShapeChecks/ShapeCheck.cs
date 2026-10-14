@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace UnityEngine
 {
- public struct Vector3Int {public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;} }
+ public struct Vector3Int {public static Vector3Int down=>new Vector3Int(0,-1,0);public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));public static implicit operator Vector3(Vector3Int v)=>new Vector3(v.x,v.y,v.z);public static Vector3Int operator +(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;} }
  public struct Vector3
  {
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
@@ -21,14 +21,14 @@ public enum Direction {down,up,backwards,forwards,left,right}
 public class ChunkData {}
 public class BlockData {public bool generateCollider=true;}
 public class Block {public BlockType type;public BlockData BlockData=new BlockData();public BlockShapes blockShape;public Block(BlockType t){type=t;blockShape=BlockShapesExtensions.ForBlock(t);} }
-public class World {public int worldHeight=12;public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block(BlockType.Air);} }
+public partial class World {public int worldHeight=12;public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block(BlockType.Air);} }
 public class TestTransform {public Vector3 position;public Vector3 forward=new Vector3(0,0,1),right=new Vector3(1,0,0);}
 namespace UnityEngine {public static class Time {public static float deltaTime=0.02f,fixedDeltaTime=0.02f;}}
 public partial class Controller
 {
  public World world;public TestTransform transform=new TestTransform(),direction=new TestTransform();public bool isGrounded,isFlying,isCrouching,isSprinting;public float verticalMomentum,gravity=-32,walkSpeed=4.317f,crouchSpeed=1.31f,sprintSpeed=5.612f,flySpeed=10.92f,flySprintSpeed=21.6f,entityWidth=0.3f,entityHeight=1.8f,horizontal,vertical;public Vector3 velocity;
 }
-public static class ShapeCheck
+public static partial class ShapeCheck
 {
  static int checks;static void Check(bool ok,string name){checks++;if(!ok)throw new Exception(name);}
  static bool Near(float a,float b)=>Math.Abs(a-b)<0.00001f;
@@ -36,6 +36,8 @@ public static class ShapeCheck
  static Vector3 V(float x,float y,float z)=>new Vector3(x,y,z);
  public static void Main()
  {
+  CheckStairs();
+  PlacementCheck.Run();
   var plants = new[]{BlockType.Dandelion,BlockType.Rose,BlockType.BrownMushroom,BlockType.RedMushroom,
    BlockType.OakSapling,BlockType.SpruceSapling,BlockType.BirchSapling,BlockType.TallGrass,BlockType.DryTallGrass,
    BlockType.Fern,BlockType.DeadBush,BlockType.SugarCane,BlockType.WheatCrop0,BlockType.WheatCrop7};

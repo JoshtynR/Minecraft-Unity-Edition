@@ -40,6 +40,12 @@ public static class BlockHelper
         BlockTypeData blockTypeData = BlockDataManager.blockTypeDataDictionary[(int)blockType];
         Block block = chunk.GetBlock(pos);
 
+        if (StairGeometry.IsStair(blockType))
+        {
+            foreach (var direction in directions)
+                GetFaceDataIn(direction, pos, blockTypeData.isTransparent ? meshData.transparentMesh : meshData, block, blockTypeData, chunk);
+            return meshData;
+        }
         if (BlockShapesExtensions.IsPlant(blockType))
         {
             GetFaceDataIn(Direction.forwards, pos, meshData.transparentMesh, block, blockTypeData, chunk);
@@ -58,7 +64,7 @@ public static class BlockHelper
                 var shape = block.blockShape.GetShape();
                 var neighborShape = neighbourBlock.blockShape.GetShape();
                 bool visible = BlockShapesExtensions.IsPlant(neighbourBlockType) || !shape.TouchesCellBoundary(dir) || neighbourBlockTypeData.isTransparent ||
-                    !neighborShape.CoversBoundaryFace(shape, dir.GetOpposite());
+                    !(StairGeometry.IsStair(neighbourBlockType) ? StairGeometry.CoversFace(StairGeometry.Facing(neighbourBlock.blockShape), shape, dir.GetOpposite()) : neighborShape.CoversBoundaryFace(shape, dir.GetOpposite()));
                 if (blockType == BlockType.Water)
                 {
                     if (neighbourBlockType != BlockType.Water && visible)
@@ -92,6 +98,27 @@ public static class BlockHelper
                     meshData.sides.Add(new Vector3(brightness, brightness, 3));
                     meshData.smoothLightCorners.Add(new Vector4(brightness, brightness, brightness, brightness));
                 }
+            }
+            return meshData;
+        }
+        if (StairGeometry.IsStair(block.type))
+        {
+            for (int part = 0; part < 2; part++)
+            {
+                var face = StairGeometry.RenderFace(StairGeometry.Facing(block.blockShape), part, dir);
+                if (face == null) continue;
+                if (chunk != null && face.TouchesCellBoundary(dir))
+                {
+                    var neighbor = chunk.GetBlock(pos + dir.GetVector());
+                    if (!BlockDataManager.blockTypeDataDictionary[(int)neighbor.type].isTransparent && !BlockShapesExtensions.IsPlant(neighbor.type) &&
+                        (StairGeometry.IsStair(neighbor.type) ? StairGeometry.CoversFace(StairGeometry.Facing(neighbor.blockShape), face, dir.GetOpposite()) :
+                            neighbor.blockShape.GetShape().CoversBoundaryFace(face, dir.GetOpposite()))) continue;
+                }
+                face.SetFaceVertices(dir, pos, meshData);
+                if (chunk != null) GetFaceLightingAndAO(dir, pos, meshData, chunk, face);
+                meshData.AddQuadTriangles();
+                meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(dir), face.FaceUVTransform(dir));
+                meshData.AddQuadColor(blockTypeData.albedoTint);
             }
             return meshData;
         }
@@ -133,18 +160,19 @@ public static class BlockHelper
         }
     }
     
-    public static void GetFaceLightingAndAO(Direction direction, Vector3Int pos, MeshData meshData, ChunkData chunk)
+    public static void GetFaceLightingAndAO(Direction direction, Vector3Int pos, MeshData meshData, ChunkData chunk, BlockShape faceShape = null)
     {
         Vector3Int normal = direction.GetVector();
         ChunkSection.ChooseFaceAxes(normal, out var axisA, out var axisB);
         var faceBlock = chunk.GetBlock(pos);
-        var shape = faceBlock.blockShape.GetShape();
+        var shape = faceShape ?? faceBlock.blockShape.GetShape();
         bool fullSmooth = chunk.worldRef.fullSmoothLighting;
         var front = pos + normal;
-        // A slab's inset face is inside its block cell, whose brightness already
+        // A slab/stair inset face is inside its block cell, whose brightness already
         // borrows from above/four sides. External cube and liquid faces use the
         // adjacent cell as before.
-        if (fullSmooth && faceBlock.type != BlockType.Water && faceBlock.type != BlockType.Lava &&
+        if ((fullSmooth || StairGeometry.IsStair(faceBlock.type) || BlockShapesExtensions.ForBlock(faceBlock.type) == BlockShapes.Slab) &&
+            faceBlock.type != BlockType.Water && faceBlock.type != BlockType.Lava &&
             IsInsetFace(normal, shape)) front = pos;
         if (!fullSmooth && direction == Direction.up &&
             (faceBlock.type == BlockType.Water || faceBlock.type == BlockType.Lava)) front = pos;
@@ -237,9 +265,9 @@ public static class BlockHelper
             return Beta173Lighting.Brightness(15, 0, darkness, emission);
         if (position.y < 0) return Beta173Lighting.Brightness(0, 0, darkness, emission);
         var block = chunk.GetBlock(position);
-        if (block.type == BlockType.WoodenSlab)
+        if (BlockShapesExtensions.ForBlock(block.type) == BlockShapes.Slab || StairGeometry.IsStair(block.type))
         {
-            // Beta half slabs sample above and four sides, never below.
+            // Beta half slabs and stairs sample above and four sides, never below.
             int sky = 0, light = 0;
             foreach (var dir in SlabLightNeighbors)
             {

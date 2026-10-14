@@ -31,14 +31,14 @@ public class WorldServer : NetworkBehaviour
     {
         // Survival removal is authorized by Player's timed mining commands.
         if (message.blockType == BlockType.Air || message.blockType == BlockType.Nothing) return;
-        World.Instance.SetBlock(message.position, message.blockType);
-        RpcSetBlock(message.position, message.blockType);
+        World.Instance.SetBlock(message.position, message.blockType, message.stairFacing);
+        RpcSetBlock(message.position, message.blockType, message.stairFacing);
     }
 
     [ClientRpc]
-    public void RpcSetBlock(Vector3Int position, BlockType blockType)
+    public void RpcSetBlock(Vector3Int position, BlockType blockType, byte stairFacing = 0)
     {
-        if (!NetworkServer.active) World.Instance.SetBlock(position, blockType);
+        if (!NetworkServer.active) World.Instance.SetBlock(position, blockType, stairFacing);
     }
     [Server]
     public void BroadcastWaterUpdates(Vector3Int[] positions, byte[] levels)
@@ -58,11 +58,13 @@ public class WorldServer : NetworkBehaviour
     {
         public Vector3Int position;
         public BlockType blockType;
+        public byte stairFacing;
         
-        public SetBlockMessage(Vector3Int position, BlockType blockType)
+        public SetBlockMessage(Vector3Int position, BlockType blockType, byte stairFacing = 0)
         {
             this.position = position;
             this.blockType = blockType;
+            this.stairFacing = (byte)(stairFacing & 3);
         }
     }
     

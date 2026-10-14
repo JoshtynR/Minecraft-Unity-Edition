@@ -22,7 +22,7 @@ public static class BlockShapesList
 
 // Preserve serialized values 0/1. State-dependent and multipart models are
 // separate from these default cuboids; no texture/data asset migration needed.
-public enum BlockShapes { FullBlock = 0, Slab = 1, Farmland, SnowLayer, Cactus, Cake, Bed, PressurePlate, Repeater, Trapdoor, WallButton, Flower, Mushroom, Bush, Reed, Crop }
+public enum BlockShapes { FullBlock = 0, Slab = 1, Farmland, SnowLayer, Cactus, Cake, Bed, PressurePlate, Repeater, Trapdoor, WallButton, Flower, Mushroom, Bush, Reed, Crop, StairsEast, StairsWest, StairsSouth, StairsNorth }
 
 public static class BlockShapesExtensions
 {
@@ -31,6 +31,7 @@ public static class BlockShapesExtensions
         if (IsCrop(type)) return BlockShapes.Crop;
         switch (type)
         {
+            case BlockType.WoodenStairs: case BlockType.CobblestoneStairs: return BlockShapes.StairsEast;
             case BlockType.Dandelion: case BlockType.Rose: return BlockShapes.Flower;
             case BlockType.BrownMushroom: case BlockType.RedMushroom: return BlockShapes.Mushroom;
             case BlockType.OakSapling: case BlockType.SpruceSapling: case BlockType.BirchSapling:

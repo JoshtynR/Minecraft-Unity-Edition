@@ -255,16 +255,28 @@ public partial class Player : BaseEntity
             var targetedBlock = TargetedBlock(reach, out var blockPos);
             if (targetedBlock != null)
             {
-                // Check if the block is not in the player
-                if (!IsPlayerStandingIn(blockPos, type))
+                byte facing = StairGeometry.IsStair(type) ? StairGeometry.FacingForLook(objects.body.forward) : (byte)0;
+                var belowPos = blockPos + Vector3Int.down;
+                var below = world.GetBlock(belowPos);
+                var destination = world.GetBlock(blockPos);
+                BlockType doubled;
+                if (below != null && destination != null &&
+                    (destination.type == BlockType.Air || destination.type == BlockType.Nothing) &&
+                    StairGeometry.TryDoubleSlab(type, below.type, out doubled))
+                {
+                    blockPos = belowPos;
+                    type = doubled;
+                }
+                // Validate the actual solid pieces, including a merged slab.
+                if (!IsPlayerStandingIn(blockPos, type, facing))
                 {
                     if (networkStarted)
                     {
-                        NetworkClient.Send(new WorldServer.SetBlockMessage(blockPos, type));
+                        NetworkClient.Send(new WorldServer.SetBlockMessage(blockPos, type, facing));
                     }
                     else
                     {
-                        world.SetBlock(blockPos, type);
+                        world.SetBlock(blockPos, type, facing);
                     }
                     inventory.RemoveHeldItem();
                     return true;
@@ -275,9 +287,12 @@ public partial class Player : BaseEntity
         return false;
     }
 
-    public bool IsPlayerStandingIn(Vector3 posU, BlockType type = BlockType.Stone)
+    public bool IsPlayerStandingIn(Vector3 posU, BlockType type = BlockType.Stone, byte stairFacing = 0)
     {
         if (BlockShapesExtensions.IsPlant(type) || !BlockDataManager.blockTypeDataDictionary[(int)type].generateCollider) return false;
+        if (StairGeometry.IsStair(type))
+            return BlockCollision.OverlapsBody(transform.position, entityWidth, entityHeight, Vector3Int.FloorToInt(posU), StairGeometry.CollisionPart(stairFacing, 0)) ||
+                BlockCollision.OverlapsBody(transform.position, entityWidth, entityHeight, Vector3Int.FloorToInt(posU), StairGeometry.CollisionPart(stairFacing, 1));
         var shape = BlockShapesExtensions.CollisionShape(type, BlockShapesExtensions.ForBlock(type).GetShape());
         return BlockCollision.OverlapsBody(transform.position, entityWidth, entityHeight, Vector3Int.FloorToInt(posU), shape);
     }
