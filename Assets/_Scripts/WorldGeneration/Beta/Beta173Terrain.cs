@@ -25,6 +25,12 @@ public sealed class Beta173Terrain
         return treeCount.Sample2D(worldX, worldZ, 0.5, 0.5);
     }
 
+    public double[] GetPopulationTemperatures(int worldX, int worldZ)
+    {
+        climate.SampleRegion(worldX, worldZ, 16, 16, out double[] temperatures, out double[] humidity);
+        return temperatures;
+    }
+
     public BetaBiomeType GetBiome(int worldX, int worldZ)
     {
         climate.Sample(worldX, worldZ, out double temperature, out double humidity);

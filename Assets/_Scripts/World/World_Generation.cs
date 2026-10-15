@@ -112,6 +112,8 @@ public partial class World
         
         // Generate features like trees
         await CalculateFeatures(worldGenerationData.chunkPositionsToCreate);
+        if (terrainGenerator.dumpBetaParity)
+            foreach (var data in worldData.chunkDataDict.Values) terrainGenerator.DumpBetaPopulation(data);
         
 
         await Task.Run(() =>
@@ -235,6 +237,8 @@ public partial class World
         
         // Generate features like trees
         await CalculateFeatures(worldGenerationData.chunkPositionsToCreate);
+        if (terrainGenerator.dumpBetaParity)
+            foreach (var data in worldData.chunkDataDict.Values) terrainGenerator.DumpBetaPopulation(data);
         
 
         await Task.Run(() =>
@@ -385,27 +389,44 @@ public partial class World
         }, true, worldCancellationToken);
     }
 
-    private UniTask CalculateFeatures(HashSet<Vector3Int> chunkDataPositionsToCreate)
+    private async UniTask CalculateFeatures(HashSet<Vector3Int> chunkDataPositionsToCreate)
     {
-        return UniTask.RunOnThreadPool(() =>
+        waitForBetaPopulation = terrainGenerator.useCompleteBetaPopulation;
+        var populated = new List<Vector3Int>();
+        Interlocked.Increment(ref betaPopulationJobs);
+        try
         {
-            foreach (var pos in chunkDataPositionsToCreate.OrderBy(p => -p.x).ThenBy(p => p.z))
+            await UniTask.RunOnThreadPool(() =>
             {
-                if (taskTokenSource.IsCancellationRequested)
+                if (!terrainGenerator.useCompleteBetaPopulation)
+                    foreach (var pos in chunkDataPositionsToCreate.OrderBy(p => -p.x).ThenBy(p => p.z))
+                    {
+                        worldCancellationToken.ThrowIfCancellationRequested();
+                        var data = worldData.chunkDataDict[pos];
+                        terrainGenerator.GenerateFeatures(data, mapSeedOffset);
+                        data.isGenerated = true;
+                    }
+                // A single canonical order includes ready data-only halo owners.
+                // Their +8 features can reach visible chunks. Never run render owners
+                // first and halo owners afterward: that changes cross-chunk results.
+                foreach (var data in worldData.chunkDataDict.Values.Where(d => terrainGenerator.useCompleteBetaPopulation ? !d.betaPopulationDone : d.isGenerated && !d.betaTreePopulationDone)
+                    .OrderBy(d => -d.worldPos.x).ThenBy(d => d.worldPos.z))
+                {
                     worldCancellationToken.ThrowIfCancellationRequested();
-                var data = worldData.chunkDataDict[pos];
-                terrainGenerator.GenerateFeatures(data, mapSeedOffset);
-                data.isGenerated = true;
-            }
-            // Newly available neighbors can complete a previously deferred tree
-            // pass. Loaded legacy chunks are marked done and are never repopulated.
-            foreach (var data in worldData.chunkDataDict.Values.Where(d => d.isGenerated && !d.betaTreePopulationDone)
-                .OrderBy(d => -d.worldPos.x).ThenBy(d => d.worldPos.z))
-            {
-                worldCancellationToken.ThrowIfCancellationRequested();
-                terrainGenerator.GenerateBetaTrees(data);
-            }
-        },true, worldCancellationToken);
+                    terrainGenerator.GenerateBetaTrees(data);
+                    if (terrainGenerator.useCompleteBetaPopulation && data.betaPopulationDone) populated.Add(data.worldPos);
+                }
+                foreach (var pos in chunkDataPositionsToCreate)
+                    worldData.chunkDataDict[pos].isGenerated = true;
+            },true, worldCancellationToken);
+        }
+        finally { Interlocked.Decrement(ref betaPopulationJobs); }
+        var wake = new HashSet<Vector3Int>();
+        foreach (var owner in populated)
+            for (int dx=0;dx<=1;dx++) for (int dz=0;dz<=1;dz++)
+                wake.Add(owner+new Vector3Int(-dx*chunkSize,0,dz*chunkSize));
+        foreach (var origin in wake)
+            if (worldData.chunkDict.ContainsKey(origin) && worldData.chunkDataDict.TryGetValue(origin,out var chunk)) QueueWaterChunk(chunk);
     }
     
     

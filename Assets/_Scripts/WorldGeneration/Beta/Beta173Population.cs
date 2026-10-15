@@ -6,7 +6,7 @@ using System.Collections.Generic;
 /// Population uses canonical Beta world coordinates; conversion to Unity is
 /// performed only when reading/writing blocks.
 /// </summary>
-public sealed class Beta173Population
+public sealed partial class Beta173Population
 {
     private readonly long worldSeed;
 
@@ -17,20 +17,25 @@ public sealed class Beta173Population
 
     public void Populate(ChunkData owner, int betaChunkX, int betaChunkZ)
     {
+        var world = new TreeWorld(owner);
+        PopulateLakes(world, PopulationRandom(betaChunkX, betaChunkZ), betaChunkX*16, betaChunkZ*16);
+        world.MarkDirtyChunks();
+    }
+    private JavaRandom PopulationRandom(int x, int z)
+    {
         var random = new JavaRandom(worldSeed);
-        long oddX = MakeOdd(random.NextLong());
-        long oddZ = MakeOdd(random.NextLong());
-        random.SetSeed(unchecked(((long)betaChunkX * oddX + (long)betaChunkZ * oddZ) ^ worldSeed));
-
-        int originX = betaChunkX * 16;
-        int originZ = betaChunkZ * 16;
-
+        long oddX = MakeOdd(random.NextLong()), oddZ = MakeOdd(random.NextLong());
+        random.SetSeed(unchecked(((long)x*oddX+(long)z*oddZ)^worldSeed));
+        return random;
+    }
+    private static void PopulateLakes(IBetaPopulationWorld world, JavaRandom random, int originX, int originZ)
+    {
         if (random.NextInt(4) == 0)
         {
             int x = originX + random.NextInt(16) + 8;
             int y = random.NextInt(128);
             int z = originZ + random.NextInt(16) + 8;
-            GenerateLake(owner, random, x, y, z, BlockType.Water, false);
+            GenerateLake(world, random, x, y, z, BlockType.Water, false);
         }
 
         if (random.NextInt(8) == 0)
@@ -39,7 +44,7 @@ public sealed class Beta173Population
             int y = random.NextInt(random.NextInt(120) + 8);
             int z = originZ + random.NextInt(16) + 8;
             if (y < 64 || random.NextInt(10) == 0)
-                GenerateLake(owner, random, x, y, z, BlockType.Lava, true);
+                GenerateLake(world, random, x, y, z, BlockType.Lava, true);
         }
     }
 
@@ -53,6 +58,15 @@ public sealed class Beta173Population
         for (int dz = 0; dz <= 1; dz++)
             if (Get(owner, betaChunkX * 16 + dx * 31, 0, betaChunkZ * 16 + dz * 31) == BlockType.Nothing)
                 return false;
+        return true;
+    }
+
+    public static bool HasCompleteNeighborhood(ChunkData owner, int chunkX, int chunkZ)
+    {
+        // Feature writes occupy 2x2; plant/lake light queries can reach a
+        // further 15 cells. Require the surrounding raw-data halo as well.
+        for (int dx=-1;dx<=2;dx++) for (int dz=-1;dz<=2;dz++)
+            if (Get(owner,(chunkX+dx)*16,0,(chunkZ+dz)*16)==BlockType.Nothing) return false;
         return true;
     }
 
@@ -77,7 +91,7 @@ public sealed class Beta173Population
         world.MarkDirtyChunks();
     }
 
-    private sealed class TreeWorld : IBetaTreeWorld
+    private sealed partial class TreeWorld : IBetaPopulationWorld
     {
         private readonly ChunkData owner;
         private readonly HashSet<Vector3Int> changedChunks = new HashSet<Vector3Int>();
@@ -90,6 +104,7 @@ public sealed class Beta173Population
         {
             if (y < 0 || y >= 128) return;
             if (Get(x, y, z) == block) return;
+            skyColumns.Remove(new Vector3Int(x,0,z));
             Beta173Population.Set(owner, x, y, z, block);
             int ux = -x - 1;
             changedChunks.Add(new Vector3Int(BetaMathHelper.Floor(ux / 16.0) * 16, 0, BetaMathHelper.Floor(z / 16.0) * 16));
@@ -100,11 +115,9 @@ public sealed class Beta173Population
         }
         public bool IsOpaque(BlockType block)
         {
-            // Generation uses Beta's opaque-cube property, not this project's
-            // render transparency or leaf opacity settings.
-            return block != BlockType.Air && block != BlockType.Water && block != BlockType.Lava &&
-                block != BlockType.Glass && !Beta173Trees.IsLeaves(block);
+            return BetaPopulationFeatures.Opaque(block);
         }
+
         public int Height(int x, int z)
         {
             for (int y = 127; y >= 0; y--)
@@ -112,7 +125,7 @@ public sealed class Beta173Population
                 var block = Get(x, y, z);
                 if (block == BlockType.Nothing) return 0;
                 // Beta's height map includes leaves, logs, and liquids.
-                if (block != BlockType.Air) return y + 1;
+                if (BetaPopulationFeatures.Opacity(block) > 0) return y + 1;
             }
             return 0;
         }
@@ -120,11 +133,11 @@ public sealed class Beta173Population
 
     private static long MakeOdd(long value) => unchecked(value / 2L * 2L + 1L);
 
-    private static bool GenerateLake(ChunkData owner, JavaRandom random, int betaX, int y, int betaZ, BlockType liquid, bool lava)
+    public static bool GenerateLake(IBetaPopulationWorld world, JavaRandom random, int betaX, int y, int betaZ, BlockType liquid, bool lava)
     {
         betaX -= 8;
         betaZ -= 8;
-        while (y > 0 && IsAir(owner, betaX, y, betaZ)) y--;
+        while (y > 0 && world.Get(betaX, y, betaZ) == BlockType.Air) y--;
         y -= 4;
 
         var carve = new bool[2048];
@@ -156,7 +169,7 @@ public sealed class Beta173Population
         {
             bool edge = IsBoundary(carve, x, z, yy);
             if (!edge) continue;
-            BlockType block = Get(owner, betaX + x, y + yy, betaZ + z);
+            BlockType block = world.Get(betaX + x, y + yy, betaZ + z);
             if (yy >= 4 && IsLiquid(block)) return false;
             if (yy < 4 && !IsSolid(block) && block != liquid) return false;
         }
@@ -165,13 +178,13 @@ public sealed class Beta173Population
         for (int z = 0; z < 16; z++)
         for (int yy = 0; yy < 8; yy++)
             if (carve[(x * 16 + z) * 8 + yy])
-                Set(owner, betaX + x, y + yy, betaZ + z, yy >= 4 ? BlockType.Air : liquid);
+                world.Set(betaX + x, y + yy, betaZ + z, yy >= 4 ? BlockType.Air : liquid);
 
         for (int x = 0; x < 16; x++)
         for (int z = 0; z < 16; z++)
         for (int yy = 4; yy < 8; yy++)
-            if (carve[(x * 16 + z) * 8 + yy] && Get(owner, betaX + x, y + yy - 1, betaZ + z) == BlockType.Dirt)
-                Set(owner, betaX + x, y + yy - 1, betaZ + z, BlockType.Grass);
+            if (carve[(x * 16 + z) * 8 + yy] && world.Get(betaX + x, y + yy - 1, betaZ + z) == BlockType.Dirt && world.SkyLight(betaX + x, y + yy, betaZ + z) > 0)
+                world.Set(betaX + x, y + yy - 1, betaZ + z, BlockType.Grass);
 
         if (lava)
         {
@@ -181,7 +194,7 @@ public sealed class Beta173Population
                 if (IsBoundary(carve, x, z, yy) && (yy < 4 || random.NextInt(2) != 0))
                 {
                     int wx = betaX + x, wy = y + yy, wz = betaZ + z;
-                    if (IsSolid(Get(owner, wx, wy, wz))) Set(owner, wx, wy, wz, BlockType.Stone);
+                    if (IsSolid(world.Get(wx, wy, wz))) world.Set(wx, wy, wz, BlockType.Stone);
                 }
         }
         return true;
@@ -200,7 +213,7 @@ public sealed class Beta173Population
     }
 
     private static bool IsLiquid(BlockType b) => b == BlockType.Water || b == BlockType.Lava;
-    private static bool IsSolid(BlockType b) => b != BlockType.Air && b != BlockType.Water && b != BlockType.Lava && b != BlockType.Nothing;
+    private static bool IsSolid(BlockType b) => BetaPopulationFeatures.Solid(b);
     private static bool IsAir(ChunkData owner, int x, int y, int z) => Get(owner, x, y, z) == BlockType.Air;
 
     private static BlockType Get(ChunkData owner, int betaWorldX, int y, int betaWorldZ)

@@ -10,6 +10,7 @@ public sealed class JavaRandom
     private const long Addend = 0xBL;
     private const long Mask = (1L << 48) - 1;
     private long seed;
+    public long State => seed; // Read-only diagnostics; does not consume the stream.
 
     public JavaRandom(long seed) { SetSeed(seed); }
 

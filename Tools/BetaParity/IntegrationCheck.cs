@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 namespace UnityEngine {
  public class MonoBehaviour {}
@@ -11,16 +12,26 @@ namespace UnityEngine {
  public static class Application { public static string dataPath="/tmp"; }
  public static class Debug { public static void Log(string s){} }
 }
-public class Block { public BlockType type; public Block(BlockType t){type=t;} }
-public class World {public long betaWorldSeed;public int worldHeight=240;public void NotifyTreeChunkChanged(UnityEngine.Vector3Int p){}public Block GetBlock(UnityEngine.Vector3Int p){return new Block(BlockType.Air);} }
+public class Block {public ChunkData chunkData; public BlockType type; public Block(BlockType t){type=t;} }
+public class World {
+ public long betaWorldSeed;public int worldHeight=240;public int meshNotifications;
+ public Dictionary<UnityEngine.Vector3Int,ChunkData> chunks=new Dictionary<UnityEngine.Vector3Int,ChunkData>();
+ public void NotifyTreeChunkChanged(UnityEngine.Vector3Int p){meshNotifications++;}
+ public Block GetBlock(UnityEngine.Vector3Int p){
+  if(p.y<0||p.y>=worldHeight)return new Block(BlockType.Air);
+  var origin=new UnityEngine.Vector3Int((int)Math.Floor(p.x/16.0)*16,0,(int)Math.Floor(p.z/16.0)*16);ChunkData c;
+  if(!chunks.TryGetValue(origin,out c))return new Block(BlockType.Nothing);
+  return new Block(c.blocks[p.x-origin.x,p.y,p.z-origin.z]){chunkData=c};
+ }
+}
 public class TreeData {}
 public class ChunkData {
- public bool betaTreePopulationDone,modifiedAfterSave;public int chunkSize=16,chunkHeight=16;public World worldRef;public UnityEngine.Vector3Int worldPos;public TreeData treeData;
+ public bool betaTreePopulationDone,betaPopulationDone,modifiedAfterSave;public List<BetaPopulationRecord> betaPopulationRecords=new List<BetaPopulationRecord>();public int chunkSize=16,chunkHeight=16;public World worldRef;public UnityEngine.Vector3Int worldPos;public TreeData treeData;
  public BlockType[,,] blocks=new BlockType[16,240,16];
  public void SetBlock(UnityEngine.Vector3Int p,BlockType b){blocks[p.x,p.y,p.z]=b;}
  public Block GetBlock(UnityEngine.Vector3Int p){return new Block(blocks[p.x,p.y,p.z]);}
 }
-public static class WorldDataHelper { public static void SetBlock(World w,UnityEngine.Vector3Int p,BlockType b){} }
+public static class WorldDataHelper { public static void SetBlock(World w,UnityEngine.Vector3Int p,BlockType b){var block=w.GetBlock(p);if(block.chunkData!=null){var c=block.chunkData;c.blocks[p.x-c.worldPos.x,p.y,p.z-c.worldPos.z]=b;}} }
 public class IntegrationCheck {
  public static int Main(string[] args) {
   int checks=0;
@@ -37,6 +48,23 @@ public class IntegrationCheck {
    string hash;using(var sha=SHA256.Create())hash=BitConverter.ToString(sha.ComputeHash(BetaParityCheck.BlockBytes(canonical))).Replace("-","").ToLowerInvariant();
    if(hash!=f[4])throw new Exception("Integration mismatch "+line);checks++;
   }
+  var populationWorld=new World{betaWorldSeed=17};var owners=new List<ChunkData>();
+  for(int x=-1;x<=2;x++)for(int z=-1;z<=2;z++){
+   var c=new ChunkData{worldRef=populationWorld,worldPos=new UnityEngine.Vector3Int(-16-x*16,0,z*16)};
+   for(int xx=0;xx<16;xx++)for(int zz=0;zz<16;zz++)for(int y=0;y<240;y++)c.blocks[xx,y,zz]=y<63?BlockType.Stone:y==63?BlockType.Grass:BlockType.Air;
+   owners.Add(c);
+  }
+  for(int i=0;i<15;i++)populationWorld.chunks[owners[i].worldPos]=owners[i];
+  var owner=owners[5];
+  var full=new TerrainGenerator{enableBetaTrees=false};
+  full.GenerateFeatures(owner,new UnityEngine.Vector3Int());
+  if(owner.betaPopulationDone)throw new Exception("population ran without complete neighborhood");checks++;
+  populationWorld.chunks[owners[15].worldPos]=owners[15];full.GenerateFeatures(owner,new UnityEngine.Vector3Int());
+  if(!owner.betaPopulationDone||!owner.betaTreePopulationDone)throw new Exception("complete population did not run/resume");checks++;
+  int ore=0;foreach(var c in owners)foreach(var b in c.blocks)if(b==BlockType.CoalOre||b==BlockType.IronOre||b==BlockType.DiamondOre)ore++;
+  if(ore==0||populationWorld.meshNotifications==0)throw new Exception("population omitted ore/dirty neighbors");checks++;
+  int before=populationWorld.meshNotifications;full.GenerateFeatures(owner,new UnityEngine.Vector3Int());
+  if(before!=populationWorld.meshNotifications)throw new Exception("complete population ran twice");checks++;
   Console.WriteLine(checks+" production TerrainGenerator boundary checks passed (Unity storage mocked).");return 0;
  }
 }

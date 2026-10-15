@@ -7,6 +7,9 @@ public class ChunkSaveData
     public Vector3Int position;
     public int betaTreePopulationVersion;
     public bool betaTreePopulationDone;
+    public int betaPopulationVersion;
+    public bool betaPopulationDone;
+    public BetaPopulationRecord[] betaPopulationRecords;
     
     public ChunkSectionSaveData[] sections;
 
@@ -29,6 +32,10 @@ public class ChunkSaveData
             chunkSaveData.sections[i] = new ChunkSectionSaveData(chunk.sections[i]);
         }
         
+        chunkSaveData.betaPopulationVersion = 1;
+        chunkSaveData.betaPopulationDone = chunk.betaPopulationDone;
+        lock (chunk.betaPopulationRecords)
+            chunkSaveData.betaPopulationRecords = chunk.betaPopulationRecords.ToArray();
         chunkSaveData.betaTreePopulationVersion = 1;
         chunkSaveData.betaTreePopulationDone = chunk.betaTreePopulationDone;
         chunk.modifiedAfterSave = false;

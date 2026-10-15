@@ -7,6 +7,8 @@ using UnityEngine;
 public partial class World : IWaterWorld
 {
     private WaterSimulation waterSimulation;
+    private int betaPopulationJobs;
+    private bool waitForBetaPopulation;
     private readonly ConcurrentQueue<Vector3Int> waterNotifications = new ConcurrentQueue<Vector3Int>();
     private readonly Queue<ChunkData> waterChunksToActivate = new Queue<ChunkData>();
     private readonly Dictionary<Vector3Int, byte> waterChanges = new Dictionary<Vector3Int, byte>();
@@ -45,6 +47,13 @@ public partial class World : IWaterWorld
         var origin = WorldDataHelper.GetChunkPosition(this, p);
         if (!worldData.chunkDataDict.TryGetValue(origin, out var chunk) || !chunk.isGenerated ||
             !worldData.chunkDict.ContainsKey(origin)) return false;
+        if (waitForBetaPopulation)
+            for (int dx=0;dx<=1;dx++) for (int dz=0;dz<=1;dz++)
+            {
+                // All four +8 population owners that can write this chunk.
+                var source=origin+new Vector3Int(dx*chunkSize,0,-dz*chunkSize);
+                if (!worldData.chunkDataDict.TryGetValue(source,out var contributor) || !contributor.betaPopulationDone) return false;
+            }
         block = chunk.GetBlock(p - chunk.worldPos);
         return block.type != BlockType.Nothing;
     }
@@ -130,7 +139,7 @@ public partial class World : IWaterWorld
 
     private void UpdateWater()
     {
-        if (!Application.isPlaying || !IsWorldCreated || disabled) return;
+        if (!Application.isPlaying || !IsWorldCreated || disabled || System.Threading.Volatile.Read(ref betaPopulationJobs) > 0) return;
         if (waterSimulation == null) waterSimulation = new WaterSimulation(this);
         for (int i = 0; i < 2 && waterChunksToActivate.Count > 0; i++)
             ActivateWaterChunk(waterChunksToActivate.Dequeue());

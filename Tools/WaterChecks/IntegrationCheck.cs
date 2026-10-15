@@ -63,10 +63,10 @@ public class WorldData
     public Dictionary<Vector3Int,ChunkData> chunkDataDict = new Dictionary<Vector3Int,ChunkData>();
     public Dictionary<Vector3Int,ChunkRenderer> chunkDict = new Dictionary<Vector3Int,ChunkRenderer>();
 }
-public static class WorldDataHelper
+public static partial class WorldDataHelper
 {
     public static ChunkRenderer GetChunk(World w,Vector3Int p){return w.worldData.chunkDict[p];}
-    public static void SetBlock(World w,Vector3Int p,BlockType type){var c=w.worldData.chunkDataDict[GetChunkPosition(w,p)];c.SetBlock(p-c.worldPos,type);}
+    public static ChunkData GetChunkData(World w,Vector3Int p){ChunkData c;return w.worldData.chunkDataDict.TryGetValue(GetChunkPosition(w,p),out c)?c:null;}
     public static Vector3Int GetChunkPosition(World w,Vector3Int p) { return new Vector3Int((int)Math.Floor((double)p.x/w.chunkSize)*w.chunkSize,0,(int)Math.Floor((double)p.z/w.chunkSize)*w.chunkSize); }
 }
 public class ChunkData
@@ -74,7 +74,7 @@ public class ChunkData
     public int chunkSize,chunkHeight=2;
     public World worldRef;
     public Vector3Int worldPos;
-    public bool isGenerated=true,modifiedAfterSave=false,lightingInitialized;
+    public bool isGenerated=true,modifiedAfterSave=false,lightingInitialized,betaPopulationDone;
     public ChunkSection[] sections;
     public Queue<BlockLightNode> blockLightUpdateQueue=new Queue<BlockLightNode>(),blockLightRemoveQueue=new Queue<BlockLightNode>(),skyLightUpdateQueue=new Queue<BlockLightNode>(),skyLightRemoveQueue=new Queue<BlockLightNode>();
     public List<Block> skyRemoveList=new List<Block>(),skyExtendList=new List<Block>();
@@ -91,6 +91,8 @@ public class ChunkData
         if(p.x<0 || p.x>=chunkSize || p.z<0 || p.z>=chunkSize) return worldRef.GetBlock(worldPos+p);
         return sections[p.y/chunkHeight].GetBlock(p);
     }
+    public List<BetaPopulationRecord> betaPopulationRecords=new List<BetaPopulationRecord>();
+    public Vector3Int GetLocalBlockCoords(Vector3Int p)=>p-worldPos;
     public bool IsOnEdge(Vector3Int p)=>false;
     public List<ChunkData> GetNeighbourChunk(Vector3Int p)=>new List<ChunkData>();
     public void SetBlock(Vector3Int p,BlockType type) { sections[p.y/chunkHeight].SetBlock(p,type); }
@@ -117,6 +119,13 @@ public partial class World
         return System.Threading.Tasks.Task.FromResult(result);
     }
     public void TestUpdate() { UpdateWater(); }
+    public void TestRequirePopulation(bool value){waitForBetaPopulation=value;}
+    public bool TestPopulationPausesWater()
+    {
+        UpdateWater();long tick=waterSimulation.CurrentTick;
+        betaPopulationJobs=1;UpdateWater();bool paused=waterSimulation.CurrentTick==tick;
+        betaPopulationJobs=0;return paused;
+    }
     public void TestReset() { ResetWater(); ResetTreeMeshChanges(); }
     public void TestRefreshTrees() { RefreshTreeMeshes().GetAwaiter().GetResult(); }
     public void TestActivate(ChunkData c) { QueueWaterChunk(c); }
@@ -141,6 +150,7 @@ public static class IntegrationCheck
     public static void Run()
     {
         var w = World.Instance = new World();
+        WaterCheck.Assert(w.TestPopulationPausesWater(),"population holds authoritative water ticks until the worker completes");
         var c = AddChunk(w,V(0,0,0));
         // Newly cataloged torches have the same opacity as air. Removing an
         // emitter must still queue its block-light removal.
@@ -218,6 +228,25 @@ public static class IntegrationCheck
         w.TestRefreshTrees();
         WaterCheck.Assert(w.meshRequests==beforeMeshes+1,"cross-border tree mesh notification was not deduplicated/refreshed");
         Mirror.NetworkServer.active=true;
+        var populationWorld=new World();
+        var contributors=new List<ChunkData>();
+        for(int dx=0;dx<=1;dx++)for(int dz=0;dz<=1;dz++)contributors.Add(AddChunk(populationWorld,V(dx*2,0,-dz*2)));
+        populationWorld.TestRequirePopulation(true);
+        WaterCheck.Assert(populationWorld.GetWaterCell(new WaterPosition(0,1,0))==WaterSimulation.Unloaded,"water waits for unpopulated contributors");
+        foreach(var contributor in contributors)contributor.betaPopulationDone=true;
+        WaterCheck.Assert(populationWorld.GetWaterCell(new WaterPosition(0,1,0))==WaterSimulation.Air,"water resumes after every contributing owner completes");
+        contributors[3].betaPopulationDone=false;
+        WaterCheck.Assert(populationWorld.GetWaterCell(new WaterPosition(0,1,0))==WaterSimulation.Unloaded,"completed target owner alone is insufficient for water");
+        var recordChunk=contributors[0];var recordPosition=V(0,1,0);
+        WorldDataHelper.SetBlock(populationWorld,recordPosition,BlockType.Pumpkin);
+        recordChunk.betaPopulationRecords.Add(new BetaPopulationRecord{position=recordPosition,kind="metadata",metadata=3});
+        WorldDataHelper.SetBlock(populationWorld,recordPosition,BlockType.Pumpkin);
+        WaterCheck.Assert(recordChunk.betaPopulationRecords.Count==1,"same-type writes preserve population metadata");
+        WorldDataHelper.SetBlock(populationWorld,recordPosition,BlockType.Air);
+        WaterCheck.Assert(recordChunk.betaPopulationRecords.Count==0,"block replacement clears old dungeon/pumpkin records");
+        WorldDataHelper.SetBlock(populationWorld,V(0,-1,0),BlockType.Stone);
+        WorldDataHelper.SetBlock(populationWorld,V(0,4,0),BlockType.Stone);
+        WaterCheck.Assert(recordChunk.GetBlock(recordPosition).type==BlockType.Air,"metadata cleanup preserves out-of-height placement guard");
         var server=new WorldServer();
         foreach(var method in typeof(WorldServer).GetMethods(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance))
             if(Attribute.IsDefined(method,typeof(Mirror.ClientRpcAttribute)))

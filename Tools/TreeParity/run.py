@@ -21,8 +21,8 @@ def main():
         fixture.write_bytes(gzip.decompress((ROOT/'Tools/TreeParity/fixtures.tsv.gz').read_bytes()))
         subprocess.run([args.mono,str(exe),str(fixture)],check=True)
         integration=Path(tmp)/'tree-integration.exe'
-        names=['Beta173Trees','JavaRandom','BetaMathHelper','BetaBiome','Beta173Population','Beta173Terrain','BetaClimate','BetaNoise']
-        sources=[ROOT/'Tools/TreeParity/TreeIntegrationCheck.cs',ROOT/'Assets/_Scripts/Block/BlockType.cs',ROOT/'Assets/_Scripts/World/Saving/ChunkSaveData.cs']
+        names=['Beta173Trees','JavaRandom','BetaMathHelper','BetaBiome','Beta173Population','BetaPopulationFeatures','BetaPopulationPipeline','BetaPopulationAdapter','BetaPopulationRecord','Beta173Terrain','BetaClimate','BetaNoise']
+        sources=[ROOT/'Assets/_Scripts/Block/BetaBlockCatalog.cs',ROOT/'Tools/TreeParity/TreeIntegrationCheck.cs',ROOT/'Assets/_Scripts/Block/BlockType.cs',ROOT/'Assets/_Scripts/World/Saving/ChunkSaveData.cs']
         sources += [ROOT/f'Assets/_Scripts/WorldGeneration/Beta/{n}.cs' for n in names]
         subprocess.run([args.mcs,'-langversion:latest','-checked+',f'-out:{integration}',*map(str,sources)],check=True)
         subprocess.run([args.mono,str(integration)],check=True)

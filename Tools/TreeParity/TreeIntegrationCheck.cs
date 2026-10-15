@@ -12,9 +12,10 @@ namespace UnityEngine
         public override int GetHashCode() { unchecked{return(x*397^y)*397^z;} }
     }
 }
-public class Block { public BlockType type; public Block(BlockType type){this.type=type;} }
+public class Block { public ChunkData chunkData;public BlockType type; public Block(BlockType type){this.type=type;} }
 public class World
 {
+    public ChunkData recordOwner;
     public HashSet<UnityEngine.Vector3Int> unavailable=new HashSet<UnityEngine.Vector3Int>();
     public Dictionary<UnityEngine.Vector3Int,BlockType> writes=new Dictionary<UnityEngine.Vector3Int,BlockType>();
     public void NotifyTreeChunkChanged(UnityEngine.Vector3Int p) {}
@@ -23,11 +24,11 @@ public class World
         var origin=new UnityEngine.Vector3Int((int)Math.Floor(p.x/16.0)*16,0,(int)Math.Floor(p.z/16.0)*16);
         if(unavailable.Contains(origin))return new Block(BlockType.Nothing);
         BlockType type;
-        if(writes.TryGetValue(p,out type))return new Block(type);
-        return new Block(p.y==63?BlockType.Grass:p.y<63?BlockType.Stone:BlockType.Air);
+        if(writes.TryGetValue(p,out type))return new Block(type){chunkData=recordOwner};
+        return new Block(p.y==63?BlockType.Grass:p.y<63?BlockType.Stone:BlockType.Air){chunkData=recordOwner};
     }
 }
-public class ChunkData { public World worldRef; public UnityEngine.Vector3Int worldPos; public bool betaTreePopulationDone,modifiedAfterSave; public ChunkSection[] sections=new ChunkSection[0]; }
+public class ChunkData { public World worldRef; public UnityEngine.Vector3Int worldPos; public bool betaTreePopulationDone,betaPopulationDone,modifiedAfterSave;public List<BetaPopulationRecord> betaPopulationRecords=new List<BetaPopulationRecord>(); public ChunkSection[] sections=new ChunkSection[0]; }
 public class ChunkSection {}
 public class ChunkSectionSaveData { public ChunkSectionSaveData(ChunkSection s) {} }
 public static class WorldDataHelper
@@ -81,6 +82,17 @@ public class TreeIntegrationCheck
         if(saved.betaTreePopulationVersion!=1 || saved.betaTreePopulationDone)throw new Exception("deferred tree state not saved");checks++;
         edgeOwner.betaTreePopulationDone=true;saved=ChunkSaveData.Serialize(edgeOwner);
         if(!saved.betaTreePopulationDone)throw new Exception("completed tree state not saved");checks++;
+        edgeOwner.betaPopulationDone=true;
+        edgeOwner.betaPopulationRecords.Add(new BetaPopulationRecord{kind="spawner",mob="Zombie",position=new UnityEngine.Vector3Int(-1,40,0)});
+        saved=ChunkSaveData.Serialize(edgeOwner);
+        if(saved.betaPopulationVersion!=1||!saved.betaPopulationDone||saved.betaPopulationRecords.Length!=1||saved.betaPopulationRecords[0].mob!="Zombie")throw new Exception("population completion/dungeon records not saved");checks++;
+        var recordStorage=new World();var recordOwner=new ChunkData{worldRef=recordStorage};recordStorage.recordOwner=recordOwner;
+        var population=(IBetaPopulationWorld)Activator.CreateInstance(type,recordOwner);
+        population.Set(0,40,0,BlockType.Chest);population.Loot(0,40,0,1,265,3,0);
+        var oldRecord=recordOwner.betaPopulationRecords[0];population.Loot(0,40,0,1,297,1,0);
+        population.Spawner(1,40,0,"Zombie");population.Metadata(2,64,0,3);
+        if(recordOwner.betaPopulationRecords.Count!=3||recordOwner.betaPopulationRecords[0].item!=297||oldRecord.item!=265)throw new Exception("loot slot overwrite/save snapshot ownership mismatch");checks++;
+        if(recordOwner.betaPopulationRecords[0].position.x!=-1||recordOwner.betaPopulationRecords[1].position.x!=-2)throw new Exception("dungeon record coordinate reflection mismatch");checks++;
         Console.WriteLine(checks+" production tree adapter/reflection/height checks passed (Unity storage mocked).");return 0;
     }
 }

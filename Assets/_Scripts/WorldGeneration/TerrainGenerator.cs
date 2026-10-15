@@ -4,13 +4,15 @@ public class TerrainGenerator : MonoBehaviour
 {
     public BiomeGenerator biomeGenerator;
     [Header("Beta 1.7.3")]
-    [Tooltip("Keep full population disabled while exact population parity is being implemented.")]
+    [Tooltip("Run the full ordered Beta population pipeline for newly generated chunks.")]
+    public bool useCompleteBetaPopulation = true;
+    [Tooltip("Legacy lake-only toggle, used only when Complete Beta Population is disabled.")]
     public bool enableBetaPopulation = false;
     [HideInInspector] // Retain the old field so existing serialized data/local edits remain readable.
     public bool enableBetaTreePreview = false;
-    [Tooltip("Beta tree shapes and biome rules. Tree positions remain a preview until preceding population stages are ported.")]
+    [Tooltip("Legacy isolated tree preview, used only when Complete Beta Population is disabled.")]
     public bool enableBetaTrees = true;
-    [Tooltip("Write raw/surface/cave blocks and intermediate noise arrays for Beta chunk (0,0).")]
+    [Tooltip("Write terrain stages and the final population snapshot for Beta chunk (0,0).")]
     public bool dumpBetaParity = false;
 
     private Beta173Terrain betaTerrain;
@@ -60,6 +62,11 @@ public class TerrainGenerator : MonoBehaviour
 
     public void GenerateFeatures(ChunkData data, Vector3Int mapSeedOffset)
     {
+        if (useCompleteBetaPopulation)
+        {
+            GenerateBetaTrees(data);
+            return;
+        }
         if (!enableBetaPopulation && !enableBetaTrees)
             return;
 
@@ -78,6 +85,18 @@ public class TerrainGenerator : MonoBehaviour
 
     public void GenerateBetaTrees(ChunkData data)
     {
+        if (useCompleteBetaPopulation)
+        {
+            if (data.betaPopulationDone) return;
+            EnsureBetaGenerators(data.worldRef.betaWorldSeed);
+            int bx = BetaCoordinateSpace.UnityChunkToBetaChunkX(FloorDiv(data.worldPos.x, data.chunkSize));
+            int bz = BetaCoordinateSpace.UnityChunkToBetaChunkZ(FloorDiv(data.worldPos.z, data.chunkSize));
+            if (!Beta173Population.HasCompleteNeighborhood(data, bx, bz)) return;
+            betaPopulation.PopulateComplete(data, betaTerrain, bx, bz);
+            data.betaPopulationDone = data.betaTreePopulationDone = true;
+            data.modifiedAfterSave = true;
+            return;
+        }
         if (!enableBetaTrees || data.betaTreePopulationDone) return;
         EnsureBetaGenerators(data.worldRef.betaWorldSeed);
         int betaChunkX = BetaCoordinateSpace.UnityChunkToBetaChunkX(FloorDiv(data.worldPos.x, data.chunkSize));
@@ -86,6 +105,14 @@ public class TerrainGenerator : MonoBehaviour
         betaPopulation.PopulateTreePreview(data, betaTerrain, betaChunkX, betaChunkZ);
         data.betaTreePopulationDone = true;
         data.modifiedAfterSave = true;
+    }
+
+    public void DumpBetaPopulation(ChunkData data)
+    {
+        if (!dumpBetaParity || !data.betaPopulationDone) return;
+        int bx = BetaCoordinateSpace.UnityChunkToBetaChunkX(FloorDiv(data.worldPos.x, data.chunkSize));
+        int bz = BetaCoordinateSpace.UnityChunkToBetaChunkZ(FloorDiv(data.worldPos.z, data.chunkSize));
+        BetaParityDump.DumpDataChunk00(data, bx, bz, "population");
     }
 
     public void GenerateBiomePoints(Vector3 playerPos, int renderDistance, int chunkSize, Vector3Int mapSeedOffset)

@@ -29,10 +29,11 @@ public static class WorldDataHelper
 
     public static List<Vector3Int> GetDataPositionsInRenderDistance(World world, Vector3Int playerPos)
     {
-        var startX = playerPos.x - (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+1) * world.chunkSize;
-        var startZ = playerPos.z - (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+1) * world.chunkSize;
-        var endX = playerPos.x +   (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+1) * world.chunkSize;
-        var endZ = playerPos.z +   (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+1) * world.chunkSize;
+        int halo = world.terrainGenerator != null && world.terrainGenerator.useCompleteBetaPopulation ? 2 : 1;
+        var startX = playerPos.x - (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
+        var startZ = playerPos.z - (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
+        var endX = playerPos.x +   (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
+        var endZ = playerPos.z +   (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
         
         return GetPositionsInRenderDistance(world,playerPos, startX, startZ, endX, endZ);
     }
@@ -151,6 +152,10 @@ public static class WorldDataHelper
         if (chunkData != null)
         {
             Vector3Int localPos = chunkData.GetLocalBlockCoords(worldBlockPos);
+            if (localPos.y < 0 || localPos.y >= world.worldHeight) return;
+            if (chunkData.GetBlock(localPos).type != blockType)
+                lock (chunkData.betaPopulationRecords)
+                    chunkData.betaPopulationRecords.RemoveAll(record => record.position.Equals(worldBlockPos));
             chunkData.SetBlock(localPos, blockType);
         }
     }

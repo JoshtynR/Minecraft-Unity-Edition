@@ -86,7 +86,9 @@ public static class BetaParityDump
             case BlockType.Leaves: return 18;
             case BlockType.Sandstone: return 24;
             case BlockType.Ice: return 79;
-            default: return 255;
+            default:
+                BetaBlockCatalog.Entry entry;
+                return BetaBlockCatalog.TryGet(type, out entry) && entry.SourceId >= 0 && entry.SourceId < 255 ? (byte)entry.SourceId : (byte)255;
         }
     }
 }

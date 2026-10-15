@@ -33,6 +33,8 @@ def main():
         extra = [ROOT / 'Tools/BetaParity/IntegrationCheck.cs', adapter,
                  ROOT / 'Assets/_Scripts/WorldGeneration/TerrainGenerator.cs',
                  ROOT / 'Assets/_Scripts/WorldGeneration/Beta/Beta173Population.cs',
+                 ROOT / 'Assets/_Scripts/Block/BetaBlockCatalog.cs',
+                 *[ROOT / ('Assets/_Scripts/WorldGeneration/Beta/'+n+'.cs') for n in ['BetaPopulationFeatures','BetaPopulationPipeline','BetaPopulationAdapter','BetaPopulationRecord']],
                  ROOT / 'Assets/_Scripts/WorldGeneration/Beta/BetaParityDump.cs']
         subprocess.run([args.mcs, '-langversion:latest', '-checked+', '-main:IntegrationCheck', f'-out:{integration}', *map(str, sources + extra)], check=True)
         subprocess.run([args.mono, str(integration), str(args.manifest.resolve())], check=True)

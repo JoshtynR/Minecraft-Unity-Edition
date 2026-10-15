@@ -16,6 +16,8 @@ public class ChunkData
     public bool isGenerated = false;
     public bool lightingInitialized;
     public bool betaTreePopulationDone;
+    public bool betaPopulationDone;
+    public List<BetaPopulationRecord> betaPopulationRecords = new List<BetaPopulationRecord>();
     public bool modifiedAfterSave = true;
     
     public TreeData treeData = new TreeData();
@@ -55,6 +57,8 @@ public class ChunkData
         chunkData.modifiedAfterSave = false;
         chunkData.isGenerated = true;
         // Preserve legacy saved terrain; newly saved deferred edge chunks resume.
+        chunkData.betaPopulationDone = saveData.betaPopulationVersion == 0 || saveData.betaPopulationDone;
+        chunkData.betaPopulationRecords = new List<BetaPopulationRecord>(saveData.betaPopulationRecords ?? new BetaPopulationRecord[0]);
         chunkData.betaTreePopulationDone = saveData.betaTreePopulationVersion == 0 || saveData.betaTreePopulationDone;
         
         return chunkData;
