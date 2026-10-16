@@ -131,7 +131,7 @@ public partial class PlayerInventory
  }
  public static void Main()
  {
-  CheckRules();CheckItems();var inv=BuildMenu();CheckItemUI(inv);
+  CheckRules();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);
   var headless=new GameObject("DedicatedInventory").AddComponent<PlayerInventory>();
   Check(headless.AddItem(ItemType.Stone,64)&&headless.slots[0].count==64,"storage logic works without a canvas on nonlocal/server players");
   headless.LoadInventory(null);headless.AddItem(ItemType.Stone,63);headless.AddItem(ItemType.Dirt,35*64);
@@ -140,7 +140,7 @@ public partial class PlayerInventory
   Check(inv.slots.Length==36&&inv.inventorySlotsRect.childCount==36,"survival capacity is 27 backpack plus nine hotbar");
   Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewMesh.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
   inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival panel and catalogue open together");
-  Check(inv.creativeBlocks.Count==139&&inv.creativePageSize>=139,"all registered blocks fit a normal 1080p GUI screen");
+  Check(inv.creativeBlocks.Count==246&&inv.creativePageSize<inv.creativeBlocks.Count&&inv.nextPage.interactable,"complete item catalogue pages on a normal 1080p GUI screen");
   Check(inv.inventoryRect.anchoredPosition.x+88<=inv.creativePanel.anchoredPosition.x-inv.creativePanel.sizeDelta.x/2-8,"sidebar does not overlap survival panel");
   for(int i=0;i<131;i++)
   {
@@ -181,9 +181,9 @@ public partial class PlayerInventory
   inv.LoadInventory(snapshot.inventory,snapshot.crafting,snapshot.cursor,snapshot.recovery,snapshot.equipment);Check(Total(inv,ItemType.Stone)==71*64&&Total(inv,ItemType.Sand)==1,"cursor and legacy overflow survive actual save-message construction and load");
   inv.OpenInventory();inv.canvasRect.sizeDelta=new Vector2(320,200);inv.UpdateInventoryLayout();
   Check(inv.creativePageSize<131&&inv.nextPage.interactable,"small windows page catalogue while both panes remain visible");
-  var seen=new HashSet<ItemType>();int pages=(139+inv.creativePageSize-1)/inv.creativePageSize;
-  for(int p=0;p<pages;p++){for(int i=0;i<inv.creativePageSize;i++){int n=p*inv.creativePageSize+i;if(n<139)seen.Add(inv.creativeBlocks[n]);}inv.ChangeCreativePage(1);}
-  Check(seen.Count==139&&!inv.nextPage.interactable,"all blocks remain reachable on smaller windows");
+  var seen=new HashSet<ItemType>();int pages=(inv.creativeBlocks.Count+inv.creativePageSize-1)/inv.creativePageSize;
+  for(int p=0;p<pages;p++){for(int i=0;i<inv.creativePageSize;i++){int n=p*inv.creativePageSize+i;if(n<inv.creativeBlocks.Count)seen.Add(inv.creativeBlocks[n]);}inv.ChangeCreativePage(1);}
+  Check(seen.Count==inv.creativeBlocks.Count&&!inv.nextPage.interactable,"all blocks remain reachable on smaller windows");
   var meshes=inv.iconMeshes.Values.ToArray();var preview=inv.inventoryPreviewMesh;var material=inv.inventoryPreviewMaterial;inv.OnDestroy();
   Check(meshes.All(m=>m.destroyed)&&preview.destroyed&&material.destroyed,"owned icon/preview meshes and material released");
   Console.WriteLine(checks+" inventory arithmetic/layout/crafting/migration/lifecycle checks passed (Unity UI/transport mocked).");

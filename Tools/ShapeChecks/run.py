@@ -7,7 +7,7 @@ with tempfile.TemporaryDirectory() as tmp:
  paths=['Assets/_Scripts/Block/BlockType.cs','Assets/_Scripts/Block/StairGeometry.cs','Assets/_Scripts/Block/SpecialBlockGeometry.cs','Assets/_Scripts/World/Rendering/SpecialBlockMesh.cs','Assets/_Scripts/Block/BetaBlockCatalog.cs',"Assets/_Scripts/Entity's/Player/HandMining.cs","Assets/_Scripts/Entity's/Player/BlockTargeting.cs",'Assets/_Scripts/Block/BlockShape.cs','Assets/_Scripts/Block/BlockShapes.cs','Assets/_Scripts/Block/BlockCollision.cs','Assets/_Scripts/World/Rendering/MeshData.cs','Tools/ShapeChecks/ShapeCheck.cs','Tools/ShapeChecks/StairCheck.cs','Tools/ShapeChecks/PlacementCheck.cs']
  controller=(ROOT/"Assets/_Scripts/Entity's/BaseEntity.cs").read_text()
  paths.append('Tools/ShapeChecks/SpecialCheck.cs')
- paths.extend(['Assets/_Scripts/ItemType.cs','Assets/_Scripts/ItemDataSO.cs'])
+ paths.extend(['Assets/_Scripts/ItemType.cs','Assets/_Scripts/ItemDataSO.cs','Assets/_Scripts/BetaItemCatalog.cs'])
  methods=controller[controller.index('    public virtual void CalculateVelocity()'):controller.rfind('}')]
  extra=Path(tmp)/'Controller.cs';extra.write_text('using UnityEngine;public partial class Controller{'+methods+'}')
  player=(ROOT/"Assets/_Scripts/Entity's/Player/Player.cs").read_text()

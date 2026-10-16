@@ -9,8 +9,9 @@ armor items. Equipment rejects ordinary blocks while accepting Beta's pumpkin
 helmet exception (limit one), which also appears on the preview. Armor items/stats
 and the first-person pumpkin mask remain separate future systems.
 
-The sidebar uses the item catalogue: 131 block counterparts and eight standalone
-items, fitting the scene's normal 1080p/3x GUI scale. Smaller windows use pages
+The sidebar uses the item catalogue: 131 block counterparts and 115 standalone
+items/variants. The complete 246-entry catalogue uses pages, including at the
+scene's normal 1080p/3x GUI scale. Smaller windows use pages
 while retaining both panels. Hover displays the editable item name;
 left-click adds up to the item's stack limit, right-click one, merging into available storage rather
 than replacing the selected hotbar slot. This follows the original TMI right
@@ -59,13 +60,28 @@ mutations. Both server and client builds need the updated message schema.
 ## Item definitions and stacks
 
 Select Minecraft > Select Item Data, or open Assets/Resources/Item Data.asset.
-This separate catalogue contains ItemDefinition entries: stable ItemType ID,
+The searchable inspector filters by display name or ItemType. Expand a matching
+entry and assign its icon. This separate catalogue contains ItemDefinition entries: stable ItemType ID,
 display name, individual Texture2D icon, maximum stack, maximum damage and optional
 placedBlock. Block Data is untouched. Blank block icons reuse the existing mesh
 and textures; standalone entries with no image show two-letter placeholders.
-The eight initial standalone entries are Stick, Coal, Charcoal, IronIngot,
-GoldIngot, Diamond, RedstoneDust and Flint. Their material definitions and catalogue
-grants exist; new ore-drop rules and furnace smelting are not implemented here.
+All Beta 1.7.3 item definitions are present: five tool/sword tiers, five armor
+sets (including chainmail), food, materials, buckets, transport, fishing rod,
+shears, compass, clock, map, both music discs, all sixteen dyes and charcoal.
+Each variant has a separate image field. Existing block entries represent the
+seven overlapping native items: sign, wooden/iron doors, sugar cane, cake, bed
+and repeater. Technical world-block counterparts are retained for compatibility.
+Definitions and catalogue grants do not implement tool actions, armor equipment,
+food use, bucket interactions, projectiles, vehicles, maps, music playback or new
+recipes/drops. Icons remain empty for the user to assign.
+
+BetaItemCatalog maps all 106 native item registrations and 122 item/metadata
+variants to stable project IDs, with source stack limits and maxDamage defaults.
+The independent tab-separated reference is beta-items.tsv, reviewed against
+Item.java and item subclasses in the pinned Beta source above. Tool durability
+comes from EnumToolMaterial; armor uses (base * 3) << tier. Native signs stack to
+one, cookies eight, eggs/snowballs sixteen. Beta bows have no durability and maps
+retain the original 64-item limit. No later-version items are included.
 
 InventoryStack and serialized PlayerInventory.Slot now store ItemType, count and
 damage used. Existing numeric IDs 0..132 and the serialized field name "type"
@@ -80,8 +96,8 @@ drops to their corresponding item before inserting. New callers can use
 AddItem(ItemType, count). Damage travels with clicks, transfers, crafting-grid
 returns, snapshots, equipment and recovery; differing damage cannot merge.
 Durable definitions force stack limit one, but no tool wear/actions or durability
-bar is added yet. Bed/cake/doors default to one, signs sixteen, other current
-entries sixty-four. Oversized old stacks are split into available slots/recovery.
+bar is added yet. Native per-item limits apply, bounded to sixty-four.
+Oversized old stacks are split into available slots/recovery.
 
 The runtime snapshots resource definitions on first use each play session.
 Missing entries receive defaults without modifying assets. Invalid/duplicate
@@ -99,7 +115,9 @@ failed output takes, actual menu construction, both visible panes, responsive
 pagination, icon reuse/depth, old-save recovery and owned-resource cleanup.
 Item checks cover all legacy ID mappings, standalone placement rejection,
 editable limits/images/names, damage preservation, oversized-stack recovery,
-and cursor versus shift-crafting capacity.
+and cursor versus shift-crafting capacity. The runner also validates that all
+246 asset entries match the enum without duplicates, all 122 native variants
+have the expected stack/durability settings, and all catalogue pages are reachable.
 Unity shader compilation, Mirror weaving and live pointer/rendering still require
 Play Mode validation. The skinned cuboid preview is a lightweight separate model;
 it does not clone a networked player or allocate an extra camera/render texture.

@@ -418,7 +418,7 @@ MonoBehaviour:
   - id: 69
     displayName: Standing Sign
     icon: {fileID: 0}
-    maxStack: 16
+    maxStack: 1
     maxDamage: 0
     placedBlock: 69
   - id: 70
@@ -448,7 +448,7 @@ MonoBehaviour:
   - id: 74
     displayName: Wall Sign
     icon: {fileID: 0}
-    maxStack: 16
+    maxStack: 1
     maxDamage: 0
     placedBlock: 74
   - id: 75
@@ -843,6 +843,648 @@ MonoBehaviour:
     placedBlock: 0
   - id: 1007
     displayName: Flint
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1008
+    displayName: Iron Shovel
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 250
+    placedBlock: 0
+  - id: 1009
+    displayName: Iron Pickaxe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 250
+    placedBlock: 0
+  - id: 1010
+    displayName: Iron Axe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 250
+    placedBlock: 0
+  - id: 1011
+    displayName: Flint And Steel
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 64
+    placedBlock: 0
+  - id: 1012
+    displayName: Apple
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1013
+    displayName: Bow
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1014
+    displayName: Arrow
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1015
+    displayName: Iron Sword
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 250
+    placedBlock: 0
+  - id: 1016
+    displayName: Wooden Sword
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 59
+    placedBlock: 0
+  - id: 1017
+    displayName: Wooden Shovel
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 59
+    placedBlock: 0
+  - id: 1018
+    displayName: Wooden Pickaxe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 59
+    placedBlock: 0
+  - id: 1019
+    displayName: Wooden Axe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 59
+    placedBlock: 0
+  - id: 1020
+    displayName: Stone Sword
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 131
+    placedBlock: 0
+  - id: 1021
+    displayName: Stone Shovel
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 131
+    placedBlock: 0
+  - id: 1022
+    displayName: Stone Pickaxe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 131
+    placedBlock: 0
+  - id: 1023
+    displayName: Stone Axe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 131
+    placedBlock: 0
+  - id: 1024
+    displayName: Diamond Sword
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 1561
+    placedBlock: 0
+  - id: 1025
+    displayName: Diamond Shovel
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 1561
+    placedBlock: 0
+  - id: 1026
+    displayName: Diamond Pickaxe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 1561
+    placedBlock: 0
+  - id: 1027
+    displayName: Diamond Axe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 1561
+    placedBlock: 0
+  - id: 1028
+    displayName: Bowl
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1029
+    displayName: Mushroom Stew
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1030
+    displayName: Golden Sword
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 32
+    placedBlock: 0
+  - id: 1031
+    displayName: Golden Shovel
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 32
+    placedBlock: 0
+  - id: 1032
+    displayName: Golden Pickaxe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 32
+    placedBlock: 0
+  - id: 1033
+    displayName: Golden Axe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 32
+    placedBlock: 0
+  - id: 1034
+    displayName: String
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1035
+    displayName: Feather
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1036
+    displayName: Gunpowder
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1037
+    displayName: Wooden Hoe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 59
+    placedBlock: 0
+  - id: 1038
+    displayName: Stone Hoe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 131
+    placedBlock: 0
+  - id: 1039
+    displayName: Iron Hoe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 250
+    placedBlock: 0
+  - id: 1040
+    displayName: Diamond Hoe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 1561
+    placedBlock: 0
+  - id: 1041
+    displayName: Golden Hoe
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 32
+    placedBlock: 0
+  - id: 1042
+    displayName: Seeds
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1043
+    displayName: Wheat
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1044
+    displayName: Bread
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1045
+    displayName: Leather Helmet
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 33
+    placedBlock: 0
+  - id: 1046
+    displayName: Leather Chestplate
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 48
+    placedBlock: 0
+  - id: 1047
+    displayName: Leather Leggings
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 45
+    placedBlock: 0
+  - id: 1048
+    displayName: Leather Boots
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 39
+    placedBlock: 0
+  - id: 1049
+    displayName: Chainmail Helmet
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 66
+    placedBlock: 0
+  - id: 1050
+    displayName: Chainmail Chestplate
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 96
+    placedBlock: 0
+  - id: 1051
+    displayName: Chainmail Leggings
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 90
+    placedBlock: 0
+  - id: 1052
+    displayName: Chainmail Boots
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 78
+    placedBlock: 0
+  - id: 1053
+    displayName: Iron Helmet
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 132
+    placedBlock: 0
+  - id: 1054
+    displayName: Iron Chestplate
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 192
+    placedBlock: 0
+  - id: 1055
+    displayName: Iron Leggings
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 180
+    placedBlock: 0
+  - id: 1056
+    displayName: Iron Boots
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 156
+    placedBlock: 0
+  - id: 1057
+    displayName: Diamond Helmet
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 264
+    placedBlock: 0
+  - id: 1058
+    displayName: Diamond Chestplate
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 384
+    placedBlock: 0
+  - id: 1059
+    displayName: Diamond Leggings
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 360
+    placedBlock: 0
+  - id: 1060
+    displayName: Diamond Boots
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 312
+    placedBlock: 0
+  - id: 1061
+    displayName: Golden Helmet
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 66
+    placedBlock: 0
+  - id: 1062
+    displayName: Golden Chestplate
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 96
+    placedBlock: 0
+  - id: 1063
+    displayName: Golden Leggings
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 90
+    placedBlock: 0
+  - id: 1064
+    displayName: Golden Boots
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 78
+    placedBlock: 0
+  - id: 1065
+    displayName: Raw Porkchop
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1066
+    displayName: Cooked Porkchop
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1067
+    displayName: Painting
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1068
+    displayName: Golden Apple
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1069
+    displayName: Bucket
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1070
+    displayName: Water Bucket
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1071
+    displayName: Lava Bucket
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1072
+    displayName: Minecart
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1073
+    displayName: Saddle
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1074
+    displayName: Snowball
+    icon: {fileID: 0}
+    maxStack: 16
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1075
+    displayName: Boat
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1076
+    displayName: Leather
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1077
+    displayName: Milk Bucket
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1078
+    displayName: Brick
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1079
+    displayName: Clay Ball
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1080
+    displayName: Paper
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1081
+    displayName: Book
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1082
+    displayName: Slimeball
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1083
+    displayName: Chest Minecart
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1084
+    displayName: Furnace Minecart
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1085
+    displayName: Egg
+    icon: {fileID: 0}
+    maxStack: 16
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1086
+    displayName: Compass
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1087
+    displayName: Fishing Rod
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 64
+    placedBlock: 0
+  - id: 1088
+    displayName: Clock
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1089
+    displayName: Glowstone Dust
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1090
+    displayName: Raw Fish
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1091
+    displayName: Cooked Fish
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1092
+    displayName: Ink Sac
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1093
+    displayName: Bone
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1094
+    displayName: Sugar
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1095
+    displayName: Cookie
+    icon: {fileID: 0}
+    maxStack: 8
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1096
+    displayName: Map
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1097
+    displayName: Shears
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 238
+    placedBlock: 0
+  - id: 1098
+    displayName: Music Disc13
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1099
+    displayName: Music Disc Cat
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1100
+    displayName: Rose Red
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1101
+    displayName: Cactus Green
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1102
+    displayName: Cocoa Beans
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1103
+    displayName: Lapis Lazuli
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1104
+    displayName: Purple Dye
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1105
+    displayName: Cyan Dye
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1106
+    displayName: Light Gray Dye
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1107
+    displayName: Gray Dye
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1108
+    displayName: Pink Dye
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1109
+    displayName: Lime Dye
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1110
+    displayName: Dandelion Yellow
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1111
+    displayName: Light Blue Dye
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1112
+    displayName: Magenta Dye
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1113
+    displayName: Orange Dye
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1114
+    displayName: Bone Meal
     icon: {fileID: 0}
     maxStack: 64
     maxDamage: 0

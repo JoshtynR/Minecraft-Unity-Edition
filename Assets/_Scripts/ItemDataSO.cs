@@ -75,8 +75,11 @@ public static class ItemCatalog
         var block=(BlockType)(int)id;
         bool blockItem=Enum.IsDefined(typeof(BlockType),block)&&block!=BlockType.Nothing&&block!=BlockType.Air;
         int limit=id==ItemType.Bed||id==ItemType.Cake||id==ItemType.WoodenDoor||id==ItemType.IronDoor?1:
-            id==ItemType.StandingSign||id==ItemType.WallSign?16:64;
-        return new ItemDefinition{id=id,displayName=System.Text.RegularExpressions.Regex.Replace(id.ToString(),"([a-z0-9])([A-Z])","$1 $2"),
+            id==ItemType.StandingSign||id==ItemType.WallSign?1:64;
+        BetaItemCatalog.Entry beta;
+        int damage=0;
+        if(BetaItemCatalog.TryGet(id,out beta)){limit=beta.StackLimit;damage=beta.MaxDamage;}
+        return new ItemDefinition{id=id,maxDamage=damage,displayName=System.Text.RegularExpressions.Regex.Replace(id.ToString(),"([a-z0-9])([A-Z])","$1 $2"),
             placedBlock=blockItem?block:BlockType.Nothing,maxStack=limit};
     }
 }
