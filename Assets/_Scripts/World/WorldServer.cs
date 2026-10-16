@@ -94,14 +94,23 @@ public class WorldServer : NetworkBehaviour
         public Quaternion bodyRotation;
         public Quaternion headRotation;
         public PlayerInventory.Slot[] inventory;
+        public PlayerInventory.Slot[] crafting;
+        public PlayerInventory.Slot cursor;
+        public PlayerInventory.Slot[] recovery;
+        public PlayerInventory.Slot[] equipment;
         public ulong steamId;
 
-        public SavePlayerMessage(Vector3 position, Quaternion bodyRotation, Quaternion headRotation, PlayerInventory.Slot[] inventory, ulong steamId)
+        public SavePlayerMessage(Vector3 position, Quaternion bodyRotation, Quaternion headRotation, PlayerInventory.Slot[] inventory, ulong steamId,
+            PlayerInventory.Slot[] crafting = null, PlayerInventory.Slot cursor = null, PlayerInventory.Slot[] recovery = null, PlayerInventory.Slot[] equipment = null)
         {
             this.position = position;
             this.bodyRotation = bodyRotation;
             this.headRotation = headRotation;
             this.inventory = inventory;
+            this.crafting = crafting;
+            this.cursor = cursor;
+            this.recovery = recovery;
+            this.equipment = equipment;
             this.steamId = steamId;
         }
     }

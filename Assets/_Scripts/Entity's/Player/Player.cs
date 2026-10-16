@@ -515,7 +515,8 @@ public partial class Player : BaseEntity
 
     public WorldServer.SavePlayerMessage SavePlayer()
     {
-        return new WorldServer.SavePlayerMessage(transform.position, objects.body.rotation, objects.head.rotation, inventory.slots, SteamId);
+        return new WorldServer.SavePlayerMessage(transform.position, objects.body.rotation, objects.head.rotation, inventory.SavedInventory(), SteamId,
+            inventory.SavedCrafting(),inventory.SavedCursor(),inventory.SavedRecovery(),inventory.SavedEquipment());
     }
     
     [TargetRpc]
@@ -531,14 +532,7 @@ public partial class Player : BaseEntity
             transform.position = message.position;
             objects.body.rotation = message.bodyRotation;
             objects.head.rotation = message.headRotation;
-            for (var i = 0; i < inventory.slots.Length; i++)
-            {
-                var slot = inventory.slots[i];
-                var saveSlot = message.inventory[i];
-                inventory.slots[i] = new PlayerInventory.Slot(slot, saveSlot.type, saveSlot.count, saveSlot.index);
-                inventory.SetSlotBlockType(i, saveSlot.type);
-                inventory.slots[i].SetCount(saveSlot.count);
-            }
+            inventory.LoadInventory(message.inventory,message.crafting,message.cursor,message.recovery,message.equipment);
         });
     }
 
