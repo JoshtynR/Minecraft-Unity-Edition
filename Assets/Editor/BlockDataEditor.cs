@@ -86,6 +86,12 @@ public class BlockDataEditor : EditorWindow
             block.opacity = (byte)opacity; block.lightEmission = (byte)emission; block.albedoTint = tint;
             EditorUtility.SetDirty(data);
         }
+        var serialized=new SerializedObject(data);
+        serialized.Update();
+        int selectedIndex=data.textureDataList.IndexOf(block);
+        if(selectedIndex>=0)
+            SpecialTextureEditor.Draw(serialized.FindProperty("textureDataList").GetArrayElementAtIndex(selectedIndex).FindPropertyRelative("textureData"),block.blockType);
+        serialized.ApplyModifiedProperties();
         EditorGUILayout.BeginHorizontal();
         DrawImage(top); DrawImage(bottom); DrawImage(side);
         EditorGUILayout.EndHorizontal();

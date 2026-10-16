@@ -63,6 +63,14 @@ public class BlockDataManager : MonoBehaviour
                 settings.backIndex = Register(settings.back, settings, images, indices, ref nextLayer);
                 settings.leftIndex = Register(settings.left, settings, images, indices, ref nextLayer);
                 settings.rightIndex = Register(settings.right, settings, images, indices, ref nextLayer);
+                settings.ResetPartIndices();
+                if(settings.specialTextures!=null)
+                {
+                    var parts=new HashSet<BlockTexturePart>();
+                    foreach(var part in settings.specialTextures)
+                        if(part!=null&&parts.Add(part.part))
+                            settings.SetPartIndex(part.part,Register(part.image,settings,images,indices,ref nextLayer));
+                }
             }
         // Publish a complete map, never a partially filled array, to chunk workers.
         blockTypeDataDictionary = definitions;

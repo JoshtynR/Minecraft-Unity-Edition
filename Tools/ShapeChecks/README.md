@@ -106,10 +106,12 @@ Special artwork conventions (assign only if current images need changing):
 
 Full pixel parity is **not certified** for this whole pass. Tests verify geometry,
 state, channels and connections, not a Java golden renderer for every model.
-Fire attachment/animation, redstone overlay art/directional repeater connections,
-powered junction decisions, piston animation, sign text, separate bed-head/foot
-artwork and exact special-model AO remain follow-up work. Cake bite states, snow
-stacking and other gameplay effects are unchanged.
+Fire attachment geometry, directional repeater connections, powered junction
+decisions, piston animation, sign text and exact special-model AO remain follow-up
+work. Special model images, including animated fire, dust overlays and separate
+bed-head/foot artwork, can now be assigned in Block Data; see
+Tools/BlockTextures/README.md. Cake bite metadata selects its cut bounds and inner
+face image, but eating, snow stacking and other gameplay effects are unchanged.
 
 Run `python Tools/ShapeChecks/run.py --mcs <compiler> --mono <runtime>`.
 Checks compile production registry/geometry/UVs, collision, targeting, and the

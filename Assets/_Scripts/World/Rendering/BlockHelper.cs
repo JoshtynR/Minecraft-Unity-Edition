@@ -92,7 +92,7 @@ public static class BlockHelper
             int first = meshData.vertices.Count;
             SpecialBlockMesh.Append(block.type, SpecialBlockGeometry.State(block.type, block.blockShape), pos,
                 chunk == null ? (Func<Vector3Int,BlockType>)null : p => chunk.GetBlock(p).type,
-                d => blockTypeData.textureData.FaceIndex(SpecialBlockGeometry.TextureDirection(block.type, SpecialBlockGeometry.State(block.type, block.blockShape), d)), blockTypeData.albedoTint, meshData);
+                d => blockTypeData.textureData.FaceIndex(SpecialBlockGeometry.TextureDirection(block.type, SpecialBlockGeometry.State(block.type, block.blockShape), d)), blockTypeData.albedoTint, meshData, part => blockTypeData.textureData.PartIndex(part));
             if (chunk != null)
             {
                 float brightness = SampleBrightness(chunk, pos, chunk.worldRef.betaSkylightSubtracted, block.BlockData.lightEmission);
@@ -154,7 +154,7 @@ public static class BlockHelper
                 face.SetFaceVertices(dir, pos, meshData);
                 if (chunk != null) GetFaceLightingAndAO(dir, pos, meshData, chunk, face);
                 meshData.AddQuadTriangles();
-                meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(dir), face.FaceUVTransform(dir));
+                meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(block.type, dir), face.FaceUVTransform(dir));
                 meshData.AddQuadColor(blockTypeData.albedoTint);
             }
             return meshData;
@@ -168,11 +168,26 @@ public static class BlockHelper
         var shape = block.blockShape.GetShape();
         // Cactus uses the complete face artwork on its inset sides/top, as in
         // Beta's special cactus renderer. Generic partial cuboids crop by bounds.
-        meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(dir), block.type == BlockType.Cactus ? new Vector4(1,1,0,0) : shape.FaceUVTransform(dir));
+        meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(block.type, dir), block.type == BlockType.Cactus ? new Vector4(1,1,0,0) : shape.FaceUVTransform(dir));
 
         // Add tint from block data
         meshData.AddQuadColor(blockTypeData.albedoTint);
 
+        int overlay=block.type==BlockType.Grass&&dir!=Direction.up&&dir!=Direction.down?
+            blockTypeData.textureData.PartIndex(BlockTexturePart.GrassSideOverlay):0;
+        if(overlay!=0)
+        {
+            int first=meshData.vertices.Count-4;
+            var n=dir.GetVector();
+            for(int i=0;i<4;i++)
+            {
+                var v=meshData.vertices[first+i];
+                meshData.AddVertex(new Vector3(v.x+n.x*.0001f,v.y+n.y*.0001f,v.z+n.z*.0001f));
+            }
+            if(chunk!=null)GetFaceLightingAndAO(dir,pos,meshData,chunk);
+            meshData.AddQuadTriangles();meshData.AddFaceUVs(overlay);
+            meshData.AddQuadColor(blockTypeData.albedoTint);
+        }
 
         return meshData;
     }
@@ -327,7 +342,7 @@ public static class BlockHelper
     {
         if (blockTypeData == null)
             blockTypeData = BlockDataManager.blockTypeDataDictionary[(int)type];
-        int layer = blockTypeData.textureData.FaceIndex(dir);
+        int layer = blockTypeData.textureData.FaceIndex(type, dir);
         return new[]
         {
             new Vector3(0, 0, layer),

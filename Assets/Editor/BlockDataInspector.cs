@@ -39,6 +39,8 @@ public class BlockDataInspector : Editor
                 label.IndexOf(query, StringComparison.OrdinalIgnoreCase) < 0) continue;
             shown++;
             EditorGUILayout.PropertyField(entry, new GUIContent(label), true);
+            if(entry.isExpanded)
+                SpecialTextureEditor.Draw(entry.FindPropertyRelative("textureData"),type);
         }
         EditorGUILayout.LabelField(shown + " / " + blocks.arraySize + " entries");
         serializedObject.ApplyModifiedProperties();

@@ -7,6 +7,22 @@ public static partial class LightingCheck
  {
   {
    var chunk=new ChunkData();var p=new Vector3Int(0,10,0);
+   for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++)for(int z=-1;z<=1;z++)Add(chunk,p+new Vector3Int(x,y,z),BlockType.Air).sky=15;
+   var b=Add(chunk,p,BlockType.RedstoneRepeater);b.sky=15;
+   b.blockShape.orientation=SpecialBlockGeometry.Shape(b.type,0);b.blockShape.shape=b.blockShape.orientation.GetShape();
+   b.BlockData.textureData.parts[BlockTexturePart.RepeaterTorch]=50;
+   var mesh=new MeshData(false);BlockHelper.GetFaceDataIn(Direction.forwards,p,mesh,b,b.BlockData,chunk);
+   Check(mesh.uv.Count(v=>v.z==50)==40&&mesh.vertices.Count==mesh.sides.Count,"world and inventory dispatch passes dedicated repeater torch image to mesh");
+   b.type=BlockType.Grass;b.blockShape.orientation=BlockShapes.FullBlock;b.blockShape.shape=b.blockShape.orientation.GetShape();
+   b.BlockData.textureData.parts.Clear();b.BlockData.textureData.parts[BlockTexturePart.GrassSideOverlay]=51;
+   mesh=new MeshData(false);BlockHelper.GetFaceDataIn(Direction.right,p,mesh,b,b.BlockData,chunk);
+   Check(mesh.vertices.Count==8&&mesh.uv.Count(v=>v.z==51)==4,"grass side overlay selects its own image layer");
+   Check(mesh.vertices.Count==mesh.skyLight.Count&&mesh.vertices.Count==mesh.blockLight.Count&&mesh.vertices.Count==mesh.sides.Count&&mesh.vertices.Count==mesh.smoothLightCorners.Count&&mesh.vertices.Count==mesh.faceCoordinates.Count,"grass overlay retains all smooth lighting and UV channels");
+   mesh=new MeshData(false);BlockHelper.GetFaceDataIn(Direction.up,p,mesh,b,b.BlockData,chunk);
+   Check(mesh.vertices.Count==4&&mesh.uv.All(v=>v.z!=51),"grass overlay never covers the top artwork");
+  }
+  {
+   var chunk=new ChunkData();var p=new Vector3Int(0,10,0);
    for(int x=-1;x<=2;x++)for(int y=-1;y<=1;y++)for(int z=-1;z<=1;z++)Add(chunk,p+new Vector3Int(x,y,z),BlockType.Air).sky=15;
    var lava=Add(chunk,p,BlockType.Lava);lava.waterLevel=6;lava.BlockData.lightEmission=15;
    BlockDataManager.blockTypeDataDictionary[(int)BlockType.Lava].isTransparent=true;

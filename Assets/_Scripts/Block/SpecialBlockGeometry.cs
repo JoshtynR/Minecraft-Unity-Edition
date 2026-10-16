@@ -16,7 +16,7 @@ public static class SpecialBlockGeometry
         switch(t)
         {
             case BlockType.Torch: case BlockType.RedstoneTorch: case BlockType.RedstoneTorchOff:
-            case BlockType.Fence: case BlockType.RedstoneWire: case BlockType.Ladder:
+            case BlockType.Fence: case BlockType.RedstoneWire: case BlockType.Ladder: case BlockType.Cake:
             case BlockType.Rail: case BlockType.PoweredRail: case BlockType.DetectorRail:
             case BlockType.StandingSign: case BlockType.WallSign: case BlockType.WoodenDoor: case BlockType.IronDoor:
             case BlockType.Lever: case BlockType.StoneButton: case BlockType.Trapdoor:
@@ -71,6 +71,7 @@ public static class SpecialBlockGeometry
             b=s==1?Box(0,3.2f,5.6f,4.8f,12.8f,10.4f):s==2?Box(11.2f,3.2f,5.6f,16,12.8f,10.4f):
               s==3?Box(5.6f,3.2f,0,10.4f,12.8f,4.8f):s==4?Box(5.6f,3.2f,11.2f,10.4f,12.8f,16):Box(6.4f,0,6.4f,9.6f,9.6f,9.6f);
         }
+        else if(t==BlockType.Cake) b=Box(1+Math.Min(5,s&7)*2,0,1,15,8,15);
         else if(t==BlockType.RedstoneWire) b=Box(0,0,0,16,1,16);
         else if(IsRail(t)) {int rail=t==BlockType.Rail?s:s&7;b=Box(0,0,0,16,rail>=2&&rail<=5?10:2,16);}
         else if(t==BlockType.Ladder || t==BlockType.WallSign)

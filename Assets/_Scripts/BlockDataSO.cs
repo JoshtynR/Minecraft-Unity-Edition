@@ -30,6 +30,27 @@ public class TextureData
     public Texture2D side;
     // Optional local-space overrides. Existing Top/Bottom/Side assignments stay valid.
     public Texture2D front, back, left, right;
+    // Optional part images; the inspector exposes only this block's model slots.
+    [HideInInspector] public List<SpecialBlockTexture> specialTextures = new List<SpecialBlockTexture>();
+    [NonSerialized] private int[] specialIndices;
+    public void ResetPartIndices() { specialIndices=new int[Enum.GetValues(typeof(BlockTexturePart)).Length]; }
+    public void SetPartIndex(BlockTexturePart part,int index)
+    {
+        if(specialIndices==null)ResetPartIndices();
+        int p=(int)part;if(p>=0&&p<specialIndices.Length)specialIndices[p]=index;
+    }
+    public int PartIndex(BlockTexturePart part,int fallback=0)
+    {
+        int p=(int)part;
+        return specialIndices!=null&&p>=0&&p<specialIndices.Length&&specialIndices[p]!=0?specialIndices[p]:fallback;
+    }
+    public int FaceIndex(BlockType type,Direction direction)
+    {
+        int fallback=FaceIndex(direction);
+        if(type==BlockType.Water||type==BlockType.Lava)
+            return PartIndex(direction==Direction.up||direction==Direction.down?BlockTexturePart.FluidStill:BlockTexturePart.FluidFlow,fallback);
+        return fallback;
+    }
     [Tooltip("Treat face images as animation sheets. Static images remain unchanged when disabled.")]
     public bool animateFaces;
     [Range(1, 64)] public int animationColumns = 1;
@@ -46,6 +67,8 @@ public class TextureData
 
     public int FaceIndex(Direction direction)
     {
+        int surface=PartIndex(BlockTexturePart.Surface);
+        if(surface!=0)return surface;
         switch (direction)
         {
             case Direction.up: return topIndex;

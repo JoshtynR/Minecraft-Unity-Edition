@@ -38,6 +38,7 @@ public static partial class ShapeCheck
  {
   CheckStairs();
   CheckSpecial();
+  CheckSpecialTextures();
   PlacementCheck.Run();
   var plants = new[]{BlockType.Dandelion,BlockType.Rose,BlockType.BrownMushroom,BlockType.RedMushroom,
    BlockType.OakSapling,BlockType.SpruceSapling,BlockType.BirchSapling,BlockType.TallGrass,BlockType.DryTallGrass,

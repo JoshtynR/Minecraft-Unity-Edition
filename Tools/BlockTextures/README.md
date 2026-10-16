@@ -1,5 +1,59 @@
 # Block face images
 
+## Special model image slots
+
+Select Minecraft > Select Block Data (or click the existing asset), search for a
+block and expand its entry. **Special model images** exposes only the applicable
+part slots. Minecraft > BlockDataEditor provides the same fields. The fields
+appear automatically on existing assets; no asset regeneration or texture relinking
+is required. Assigning a slot uses serialized properties and Unity undo. Simply
+searching/opening the editor does not populate or replace the asset's list.
+
+Every part image is optional. Empty slots retain the previous Top/Bottom/Side
+and directional face lookup. The original asset and all image references are
+left unchanged by this code update. Restart Play Mode after assigning images.
+
+| Block/model | Dedicated slots |
+| --- | --- |
+| Doors | Lower and upper halves |
+| Bed | Head/foot top, side and outer end, plus bottom |
+| Rail | Straight and corner artwork |
+| Powered/detector rails | Inactive straight and active/powered artwork |
+| Redstone dust | Cross and straight line, plus optional untinted overlays |
+| Lever | Base and handle |
+| Repeaters | Top, side, bottom and torch image |
+| Pistons | Face, sticky face where applicable, sides, bottom, exposed inner face and head rod |
+| Standing/wall signs | Front, back, edge and standing post where applicable |
+| Fire | Two flame sheets |
+| Water/lava | Still (top/bottom) and flow (sides) |
+| Cake | Inner cut face, selected by bite metadata |
+| Adjacent chests | Left/right front, back and top half artwork |
+| Grass | Optional side overlay |
+| Plants, crops, leaves, torches, fence, ladder, web, button, trapdoor, portal | Optional single Surface image |
+
+For plants and crops, each existing variant/growth-stage entry has its own Surface
+slot. Standard cuboids, cactus, stairs, slabs and pressure plates already use the
+appropriate Top/Bottom/Side images; furnaces, dispensers, pumpkins and single chests
+already have Front/Back/Left/Right overrides. These fields remain available.
+Moving pistons still require their future moving-entity renderer.
+
+Use transparent PNGs for cutout artwork and overlay layers. Grass overlay receives
+the block tint; redstone base artwork receives power tint while its optional
+overlay is white/uncoloured. Overlays are offset slightly to avoid z-fighting,
+with the same lighting and UV streams as their base model.
+
+Special images join the existing shared texture array, including image
+deduplication and animation timing. Enable Animate Faces for animated fire/fluid
+sheets; the block's column/row/frame/FPS settings also apply to part images.
+Fluid flow-vector UV rotation, new fire attachment geometry, redstone simulation,
+sign text, piston motion, chest inventory merging and cake eating are not added by
+these image slots. Cake's existing metadata can now select the cut geometry/image.
+Full pixel parity for special models is not certified; inspect assigned art in Unity.
+
+Verification covers every exposed special-model slot across metadata and neighbour
+patterns, blank fallbacks, UV/colour/light channel alignment, source-image
+ownership, shared animated frame ranges and world/inventory dispatch.
+
 Open `Assets/Block Data.asset`. Expand a block's Texture Data and drag a
 Texture2D/PNG into **Top**, **Bottom**, and **Side**. Use the same image in all
 three slots for a uniform block. Side is used for all four horizontal faces.

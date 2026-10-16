@@ -11,6 +11,7 @@ namespace UnityEngine
     public class DefaultExecutionOrderAttribute : Attribute { public DefaultExecutionOrderAttribute(int i){} }
     public class TooltipAttribute : Attribute { public TooltipAttribute(string s){} }
     public class RangeAttribute : Attribute { public RangeAttribute(int a,int b){} }
+    public class HideInInspector:Attribute {}
     public static class Application { public static bool isPlaying=true; }
     public static class SystemInfo { public static bool supports2DArrayTextures=true; }
     public static class Mathf { public static int Max(int a,int b)=>Math.Max(a,b);public static int Min(int a,int b)=>Math.Min(a,b); public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v)); }
@@ -126,8 +127,41 @@ public static class TextureCheck
         manager.textureData=new BlockDataSO{textureDataList=new List<BlockTypeData>{null,data,uniform,missing}};
         Invoke(manager,"OnEnable");Check(BlockDataManager.blockTypeDataDictionary.Length>=133&&ReferenceEquals(BlockDataManager.blockTypeDataDictionary[3],data),"null catalog entries skipped while texture assignments survive");Invoke(manager,"OnDisable");
         manager.textureData=null;Invoke(manager,"OnEnable");Check(BlockDataManager.blockTypeDataDictionary.Length>=133&&Shader.bound.depth==1,"missing asset uses CPU definitions and checker texture");Invoke(manager,"OnDisable");
+        CheckSpecialParts();
         CheckAnimations();
         Console.WriteLine(checks+" block texture data/UV/startup checks passed (Unity GPU APIs mocked).");
+    }
+    static void CheckSpecialParts()
+    {
+        var side=Image(16,91);
+        var texture=new TextureData{side=side,top=side,bottom=side};
+        foreach(BlockTexturePart part in Enum.GetValues(typeof(BlockTexturePart)))
+            texture.specialTextures.Add(new SpecialBlockTexture{part=part,image=side});
+        var block=new BlockTypeData{blockType=BlockType.Bed,textureData=texture};
+        var manager=new BlockDataManager{textureData=new BlockDataSO{textureDataList=new List<BlockTypeData>{block}}};
+        Invoke(manager,"OnEnable");
+        foreach(BlockTexturePart part in Enum.GetValues(typeof(BlockTexturePart)))
+            Check(texture.PartIndex(part)==1,"every named model image registers and deduplicates shared references");
+        Check(Shader.bound.depth==2&&texture.specialTextures.Count==Enum.GetValues(typeof(BlockTexturePart)).Length,"part registration neither copies nor replaces user assignments");
+        texture.specialTextures.Clear();Invoke(manager,"OnEnable");
+        Check(texture.PartIndex(BlockTexturePart.BedHeadTop,7)==7,"rebuild clears stale indices after an override is removed");
+        Check(texture.FaceIndex(Direction.backwards)==1,"legacy side fallback survives removal of part overrides");
+        Invoke(manager,"OnDisable");
+        texture.specialTextures.Add(new SpecialBlockTexture{part=BlockTexturePart.FluidStill,image=Image(16,92)});
+        texture.specialTextures.Add(new SpecialBlockTexture{part=BlockTexturePart.FluidFlow,image=Image(16,93)});
+        Invoke(manager,"OnEnable");
+        Check(texture.FaceIndex(BlockType.Water,Direction.up)==2&&texture.FaceIndex(BlockType.Lava,Direction.right)==3,"water and lava select still versus flowing images");
+        Check(texture.FaceIndex(BlockType.Stone,Direction.up)==1,"fluid overrides cannot change ordinary block faces");
+        Invoke(manager,"OnDisable");
+        texture.specialTextures.Clear();texture.top=texture.bottom=texture.side=null;
+        var sheet=Sheet(16,1,3,31);texture.animateFaces=true;
+        texture.specialTextures.Add(new SpecialBlockTexture{part=BlockTexturePart.FireA,image=sheet});
+        texture.specialTextures.Add(new SpecialBlockTexture{part=BlockTexturePart.FireB,image=sheet});
+        Invoke(manager,"OnEnable");
+        Check(Shader.bound.depth==4&&texture.PartIndex(BlockTexturePart.FireA)==texture.PartIndex(BlockTexturePart.FireB),"animated special parts share frame ranges without duplicate allocations");
+        Check(Shader.animations.colors[1].g==3&&Shader.animations.colors[1].b==20,"special part sheets use the existing animation timing table");
+        Invoke(manager,"OnDisable");
+        Check(!sheet.destroyed&&!side.destroyed,"rebuilding and disposing runtime part images preserves source textures");
     }
     static Texture2D Sheet(int cell,int columns,int rows,byte first,bool readable=true)
     {

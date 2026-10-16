@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine;
 namespace UnityEngine
 {
+ public class Texture2D {}
  public struct Vector3Int
  {
   public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}
@@ -23,7 +24,13 @@ namespace UnityEngine
 public enum Direction {down,up,backwards,forwards,left,right}
 public static class DirectionExt {public static Direction GetOpposite(this Direction d)=>new[]{Direction.up,Direction.down,Direction.forwards,Direction.backwards,Direction.right,Direction.left}[(int)d];public static Vector3Int GetVector(this Direction d){return new[]{Vector3Int.down,Vector3Int.up,Vector3Int.back,Vector3Int.forward,Vector3Int.left,Vector3Int.right}[(int)d];}}
 public class ShapeSlot {public BlockShapes orientation;public static implicit operator BlockShapes(ShapeSlot s)=>s.orientation;public BlockShape shape=new BlockShape(0,0,0,16,16,16);public BlockShape GetShape()=>shape;}
-public class TextureData {public int FaceIndex(Direction d)=>0;}
+public class TextureData
+{
+ public Dictionary<BlockTexturePart,int> parts=new Dictionary<BlockTexturePart,int>();
+ public int FaceIndex(Direction d)=>PartIndex(BlockTexturePart.Surface);
+ public int FaceIndex(BlockType t,Direction d)=>t==BlockType.Water||t==BlockType.Lava?PartIndex(d==Direction.up||d==Direction.down?BlockTexturePart.FluidStill:BlockTexturePart.FluidFlow,FaceIndex(d)):FaceIndex(d);
+ public int PartIndex(BlockTexturePart p,int fallback=0){int value;return parts.TryGetValue(p,out value)&&value!=0?value:fallback;}
+}
 public static class BlockDataManager {public static BlockTypeData[] blockTypeDataDictionary=new BlockTypeData[133];}
 public class BlockTypeData {public bool isTransparent;public byte opacity,lightEmission;public TextureData textureData=new TextureData();public Color albedoTint;}
 public class Block
