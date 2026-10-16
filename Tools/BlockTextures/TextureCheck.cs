@@ -13,12 +13,12 @@ namespace UnityEngine
     public class RangeAttribute : Attribute { public RangeAttribute(int a,int b){} }
     public static class Application { public static bool isPlaying=true; }
     public static class SystemInfo { public static bool supports2DArrayTextures=true; }
-    public static class Mathf { public static int Max(int a,int b)=>Math.Max(a,b);public static int Min(int a,int b)=>Math.Min(a,b); public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v)); }
+    public static class Mathf { public static int Max(int a,int b)=>Math.Max(a,b);public static int Min(int a,int b)=>Math.Min(a,b); public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v)); }
     public struct Vector3 { public float x,y,z; public Vector3(float a,float b,float c){x=a;y=b;z=c;} }
-    public struct Color { public static Color white=>new Color(); }
+    public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;} public static Color white=>new Color(1,1,1,1); }
     public struct Color32 { public byte r,g,b,a; public Color32(byte r,byte g,byte b,byte a){this.r=r;this.g=g;this.b=b;this.a=a;} }
     public struct Rect { public Rect(int a,int b,int c,int d){} }
-    public enum TextureFormat { RGBA32 }
+    public enum TextureFormat { RGBA32, RGBAFloat }
     public enum FilterMode { Point, Bilinear }
     public enum TextureWrapMode { Clamp }
     public enum RenderTextureFormat { ARGB32 }
@@ -30,7 +30,10 @@ namespace UnityEngine
     {
         public int width,height; public bool isReadable=true; public FilterMode filterMode=FilterMode.Bilinear;
         public Color32[] pixels;
-        public Texture2D(int w,int h,TextureFormat f,bool mip,bool linear){width=w;height=h;pixels=new Color32[w*h];}
+        public Color[] colors;public TextureWrapMode wrapMode;public bool applied,linear;public TextureFormat format;
+        public Texture2D(int w,int h,TextureFormat f,bool mip,bool linear){width=w;height=h;pixels=new Color32[w*h];this.linear=linear;format=f;}
+        public void SetPixels(Color[] value){if(value.Length!=width*height)throw new Exception("size");colors=value;}
+        public void Apply(bool mip,bool discard){applied=true;}
         public Color32[] GetPixels32(){if(!isReadable)throw new Exception("Read/Write disabled");return pixels;}
         public void ReadPixels(Rect r,int x,int y,bool mip)
         {
@@ -56,7 +59,12 @@ namespace UnityEngine
         public static int blits;
         public static void Blit(Texture2D src,RenderTexture rt){if(src.filterMode!=FilterMode.Point||!GL.sRGBWrite)throw new Exception("readback state");blits++;rt.source=src;}
     }
-    public static class Shader { public static Texture2DArray bound; public static void SetGlobalTexture(string n,Texture2DArray a){if(n!="_BlockFaceTextures")throw new Exception("property");bound=a;} }
+    public static class Shader
+    {
+        public static Texture2DArray bound;public static Texture2D animations;public static float animationWidth;
+        public static void SetGlobalTexture(string n,Object a){if(n=="_BlockFaceTextures")bound=(Texture2DArray)a;else if(n=="_BlockFaceAnimations")animations=(Texture2D)a;else throw new Exception("property");}
+        public static void SetGlobalFloat(string n,float value){if(n!="_BlockFaceAnimationWidth")throw new Exception("property");animationWidth=value;}
+    }
     public static class Debug { public static int errors,warnings;public static void LogWarning(string s,Object o){warnings++;}public static void LogError(string s,Object o){errors++;} }
 }
 public enum Direction { up,down,left,right,forwards,backwards }
@@ -96,7 +104,7 @@ public static class TextureCheck
         Check(array.layers[0][0].r==255&&array.layers[0][4].r==0,"missing checker");
         Check(RenderTexture.active==previous&&!GL.sRGBWrite&&RenderTexture.allocated==0,"GPU state restored");
         Check(bottom.filterMode==FilterMode.Bilinear&&side.filterMode==FilterMode.Bilinear,"source filters restored");
-        Check(Graphics.blits==2,"mixed size/unreadable readback");
+        Check(Graphics.blits==1,"only unreadable images need GPU readback; readable faces resize on CPU");
         foreach(Direction d in Enum.GetValues(typeof(Direction)))
         {
             var uv=BlockHelper.FaceUVs(d,BlockType.Grass);
@@ -118,6 +126,51 @@ public static class TextureCheck
         manager.textureData=new BlockDataSO{textureDataList=new List<BlockTypeData>{null,data,uniform,missing}};
         Invoke(manager,"OnEnable");Check(BlockDataManager.blockTypeDataDictionary.Length>=133&&ReferenceEquals(BlockDataManager.blockTypeDataDictionary[3],data),"null catalog entries skipped while texture assignments survive");Invoke(manager,"OnDisable");
         manager.textureData=null;Invoke(manager,"OnEnable");Check(BlockDataManager.blockTypeDataDictionary.Length>=133&&Shader.bound.depth==1,"missing asset uses CPU definitions and checker texture");Invoke(manager,"OnDisable");
+        CheckAnimations();
         Console.WriteLine(checks+" block texture data/UV/startup checks passed (Unity GPU APIs mocked).");
+    }
+    static Texture2D Sheet(int cell,int columns,int rows,byte first,bool readable=true)
+    {
+        var t=new Texture2D(cell*columns,cell*rows,TextureFormat.RGBA32,false,false){isReadable=readable};
+        for(int y=0;y<t.height;y++)for(int x=0;x<t.width;x++)
+        {
+            int frame=(rows-1-y/cell)*columns+x/cell;
+            t.pixels[y*t.width+x]=new Color32((byte)(first+frame),(byte)(x%cell),(byte)(y%cell),127);
+        }
+        return t;
+    }
+    static void CheckAnimations()
+    {
+        var still=Sheet(16,1,4,16);var flow=Sheet(32,1,4,64,false);
+        var water=new BlockTypeData{blockType=BlockType.Water,textureData=new TextureData{top=still,bottom=still,side=flow,animateFaces=true}};
+        var lava=new BlockTypeData{blockType=BlockType.Lava,textureData=new TextureData{top=still,bottom=still,side=still,animateFaces=true,animationFramesPerSecond=10}};
+        var stone=new BlockTypeData{blockType=BlockType.Stone,textureData=new TextureData{top=still,bottom=still,side=still}};
+        var manager=new BlockDataManager{textureData=new BlockDataSO{faceTextureResolution=16,textureDataList=new List<BlockTypeData>{water,lava,stone}}};
+        Invoke(manager,"OnEnable");var array=Shader.bound;var timing=Shader.animations;
+        Check(array.depth==14&&water.textureData.topIndex==1&&water.textureData.bottomIndex==1&&water.textureData.sideIndex==5&&lava.textureData.topIndex==9&&stone.textureData.topIndex==13,"sheet deduplication includes animation timing and static/animated usage");
+        for(int i=0;i<4;i++)
+        {
+            Check(array.layers[1+i][0].r==16+i&&array.layers[9+i][0].r==16+i,"vertical strips extract top frame first without squeezing the sheet");
+            Check(array.layers[5+i][0].r==64+i&&array.layers[5+i][0].a==127,"unreadable/rescaled flowing sheets retain frame pixels and alpha");
+            Check(timing.colors[1+i].r==1&&timing.colors[1+i].g==4&&timing.colors[1+i].b==20,"water timing table points to contiguous four-frame range");
+            Check(timing.colors[9+i].r==9&&timing.colors[9+i].g==4&&timing.colors[9+i].b==10,"lava playback speed independent of shared source image");
+        }
+        Check(timing.format==TextureFormat.RGBAFloat&&timing.linear&&timing.filterMode==FilterMode.Point&&timing.wrapMode==TextureWrapMode.Clamp,"timing metadata keeps exact values without filtering or gamma transforms");
+        Check(timing.colors[13].r==13&&timing.colors[13].g==1&&timing.colors[13].b==0,"static faces are explicitly nonanimated");
+        Check(Shader.animationWidth==array.depth&&timing.applied,"timing table bound for every array layer including checker");
+        Invoke(manager,"OnEnable");Check(array.destroyed&&timing.destroyed,"reinitialization releases both old GPU allocations");
+        array=Shader.bound;timing=Shader.animations;Invoke(manager,"OnDisable");
+        Check(array.destroyed&&timing.destroyed&&Shader.bound==null&&Shader.animations==null&&Shader.animationWidth==0,"disable clears bindings and releases texture and timing resources");
+        var grid=Sheet(16,2,2,100);
+        water.textureData=new TextureData{top=grid,bottom=grid,side=grid,animateFaces=true,animationColumns=2,animationRows=2,animationFrameCount=3,animationFramesPerSecond=7.5f};
+        manager.textureData.textureDataList=new List<BlockTypeData>{water};Invoke(manager,"OnEnable");
+        Check(Shader.bound.depth==4&&Shader.animations.colors[1].g==3&&Shader.animations.colors[1].b==7.5f,"grid count may exclude trailing unused cell and retain fractional FPS");
+        for(int i=0;i<3;i++)Check(Shader.bound.layers[1+i][0].r==100+i,"grid order is left-to-right then top-to-bottom");
+        Invoke(manager,"OnDisable");
+        water.textureData.animationColumns=3;int warnings=Debug.warnings;Invoke(manager,"OnEnable");
+        Check(Debug.warnings>warnings&&Shader.bound.depth==2&&Shader.animations.colors[1].g==1,"invalid grids warn and fall back safely to static");Invoke(manager,"OnDisable");
+        water.textureData=new TextureData{top=Sheet(16,4,1,120),animateFaces=true,animationColumns=4,animationFramesPerSecond=0};Invoke(manager,"OnEnable");
+        Check(Shader.bound.depth==5&&Shader.bound.layers[4][0].r==123&&Shader.animations.colors[1].b==0,"horizontal strips and paused playback supported");Invoke(manager,"OnDisable");
+        Check(RenderTexture.allocated==0,"all animated image readbacks release temporary render textures");
     }
 }

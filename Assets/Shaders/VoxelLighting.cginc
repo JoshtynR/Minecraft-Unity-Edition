@@ -1,5 +1,6 @@
             #include "UnityCG.cginc"
             UNITY_DECLARE_TEX2DARRAY(_BlockFaceTextures);
+            #include "BlockFaceAnimation.cginc"
             float _TextureOn, _LightingOn, _AOOn, _FaceShadeOn;
             float _ShadeUp, _ShadeSideNS, _ShadeSideEW, _ShadeDown, _Debug;
             float _BetaSkyDarkness, _BetaBrightnessBoost;
@@ -39,7 +40,7 @@
             {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                o.uv = v.uv;
+                o.uv = AnimatedBlockFaceUV(v.uv);
                 o.faceUV = v.faceUV;
                 o.skyBlock = v.light;
                 o.color = v.color;

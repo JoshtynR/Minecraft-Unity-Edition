@@ -27,11 +27,16 @@ def main():
             if b['blockType'] in (0,1) or b['blockType']>20:assert ref['fileID']==0
             else:assert ref['fileID']==2800000 and ref['guid'] in sources;count+=1
     assert 'textureSizeX' not in asset and 'textureSizeY' not in asset
-    for name in ['Voxel','VoxelVertexLit']:
+    for name in ['Voxel','VoxelVertexLit','VoxelWater']:
         shader=(ROOT/f'Assets/Shaders/{name}.shader').read_text()
         if '#include "VoxelLighting.cginc"' in shader:shader+='\n'+(ROOT/'Assets/Shaders/VoxelLighting.cginc').read_text()
         assert 'UNITY_SAMPLE_TEX2DARRAY(_BlockFaceTextures, i.uv)' in shader
         assert 'float3 uv' in shader and '#pragma require 2darray' in shader
+        vertex=shader[re.search(r'\bv2f\s+vert\s*\(',shader).start():re.search(r'\b(?:float4|fixed4)\s+frag\s*\(',shader).start()]
+        assert 'AnimatedBlockFaceUV(v.uv)' in vertex
+        animation=(ROOT/'Assets/Shaders/BlockFaceAnimation.cginc').read_text()
+        assert 'tex2Dlod(_BlockFaceAnimations' in animation and 'floor(_Time.y * timing.z)' in animation
+        assert 'uv.z = timing.x + fmod(' in animation
     print(f'{len(manifest)} lossless image crops and {count} face image references verified.')
     helper=(ROOT/'Assets/_Scripts/World/Rendering/BlockHelper.cs').read_text()
     uvs=helper[helper.index('    public static Vector3[] FaceUVs'):]

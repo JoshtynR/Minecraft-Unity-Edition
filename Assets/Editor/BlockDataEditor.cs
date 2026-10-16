@@ -59,6 +59,17 @@ public class BlockDataEditor : EditorWindow
         var back = (Texture2D)EditorGUILayout.ObjectField("Back", block.textureData.back, typeof(Texture2D), false);
         var left = (Texture2D)EditorGUILayout.ObjectField("Left", block.textureData.left, typeof(Texture2D), false);
         var right = (Texture2D)EditorGUILayout.ObjectField("Right", block.textureData.right, typeof(Texture2D), false);
+        bool animate=EditorGUILayout.Toggle("Animate face sheets",block.textureData.animateFaces);
+        int columns=block.textureData.animationColumns,rows=block.textureData.animationRows,frames=block.textureData.animationFrameCount;
+        float fps=block.textureData.animationFramesPerSecond;
+        if(animate)
+        {
+            columns=EditorGUILayout.IntSlider("Sheet columns",columns,1,64);
+            rows=EditorGUILayout.IntSlider("Sheet rows (0 = auto)",rows,0,256);
+            frames=EditorGUILayout.IntField("Frames (0 = all)",frames);
+            fps=EditorGUILayout.Slider("Frames per second",fps,0,120);
+            EditorGUILayout.HelpBox("Frames run left-to-right, top-to-bottom. Vertical Minecraft strips: Columns 1, Rows 0, Frames 0. Apply sheets to Top/Bottom/Side; restart Play Mode after changes.",MessageType.Info);
+        }
         bool transparent = EditorGUILayout.Toggle("Cutout / transparent faces", block.isTransparent);
         bool collider = EditorGUILayout.Toggle("Collidable", block.generateCollider);
         int opacity = EditorGUILayout.IntSlider("Light opacity", block.opacity, 0, 15);
@@ -69,6 +80,8 @@ public class BlockDataEditor : EditorWindow
             Undo.RecordObject(data, "Edit block textures and lighting");
             block.textureData.top = top; block.textureData.bottom = bottom; block.textureData.side = side;
             block.textureData.front = front; block.textureData.back = back; block.textureData.left = left; block.textureData.right = right;
+            block.textureData.animateFaces=animate;block.textureData.animationColumns=columns;block.textureData.animationRows=rows;
+            block.textureData.animationFrameCount=System.Math.Max(0,frames);block.textureData.animationFramesPerSecond=fps;
             block.isTransparent = transparent; block.generateCollider = collider;
             block.opacity = (byte)opacity; block.lightEmission = (byte)emission; block.albedoTint = tint;
             EditorUtility.SetDirty(data);

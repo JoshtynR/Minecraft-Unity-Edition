@@ -30,6 +30,14 @@ public class TextureData
     public Texture2D side;
     // Optional local-space overrides. Existing Top/Bottom/Side assignments stay valid.
     public Texture2D front, back, left, right;
+    [Tooltip("Treat face images as animation sheets. Static images remain unchanged when disabled.")]
+    public bool animateFaces;
+    [Range(1, 64)] public int animationColumns = 1;
+    [Tooltip("Zero detects square frames from the sheet width. Frames play left-to-right, top-to-bottom.")]
+    [Range(0, 256)] public int animationRows;
+    [Tooltip("Zero uses every grid cell. Set a smaller count to exclude unused trailing cells.")]
+    [Range(0, 4096)] public int animationFrameCount;
+    [Range(0, 120)] public float animationFramesPerSecond = 20;
 
     // Assigned on the main thread before chunk workers start. No Unity object
     // access is needed when a worker builds UVs. Zero is the missing-image layer.

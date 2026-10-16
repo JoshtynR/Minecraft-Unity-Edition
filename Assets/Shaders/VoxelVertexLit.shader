@@ -13,6 +13,7 @@ Shader "Custom/VoxelVertexLit"
       #pragma target 3.5
       #pragma require 2darray
       #include "UnityCG.cginc"
+      #include "BlockFaceAnimation.cginc"
 
       UNITY_DECLARE_TEX2DARRAY(_BlockFaceTextures);
 
@@ -30,7 +31,7 @@ Shader "Custom/VoxelVertexLit"
       v2f vert (appdata v) {
         v2f o;
         o.pos   = UnityObjectToClipPos(v.vertex);
-        o.uv    = v.uv;
+        o.uv    = AnimatedBlockFaceUV(v.uv);
         o.color = v.color;       // pass vertex color to fragment
         return o;
       }
