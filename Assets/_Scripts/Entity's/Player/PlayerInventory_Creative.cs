@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 public partial class PlayerInventory
 {
-    private readonly List<BlockType> creativeBlocks = new List<BlockType>();
+    private readonly List<ItemType> creativeBlocks = new List<ItemType>();
     private readonly List<RectTransform> creativeCells = new List<RectTransform>();
     private readonly RectTransform[] craftingRects = new RectTransform[4];
     private readonly RectTransform[] equipmentRects = new RectTransform[4],equipmentGhosts = new RectTransform[4];
@@ -21,15 +21,13 @@ public partial class PlayerInventory
     private int hoveredSlot=-1;
     private bool hoveredCatalog;
     private RectTransform hoveredRect;
-    private BlockType tooltipType=BlockType.Nothing;
+    private ItemType tooltipType=ItemType.Nothing;
 
     private void BuildCreativeInventory(Transform parent)
     {
         creativeBlocks.Clear();
-        foreach(BlockType type in Enum.GetValues(typeof(BlockType)))
-            if(type!=BlockType.Nothing&&type!=BlockType.Air&&BlockDataManager.blockTypeDataDictionary!=null&&
-                (int)type<BlockDataManager.blockTypeDataDictionary.Length&&BlockDataManager.blockTypeDataDictionary[(int)type]!=null)
-                creativeBlocks.Add(type);
+        foreach(var item in ItemCatalog.All)creativeBlocks.Add(item.id);
+        creativeBlocks.Sort((a,b)=>((int)a).CompareTo((int)b));
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         creativeFont=assets!=null&&assets.levelFont!=null?assets.levelFont:SlotTextPrefab.GetComponent<TextMeshProUGUI>().font;
         creativeRoot=CreativeRect("InventoryMenu",parent,0,0,640,360);
@@ -138,18 +136,18 @@ public partial class PlayerInventory
             int index=creativePage*creativePageSize+i;
             bool active=i<creativePageSize&&index<creativeBlocks.Count;
             cell.gameObject.SetActive(active);
-            if(active)CreateBlockMesh(creativeBlocks[index],cell);
+            if(active)CreateItemIcon(creativeBlocks[index],cell);
         }
     }
     public void GiveCatalogItem(int cell,bool single)
     {
         int index=creativePage*creativePageSize+cell;
         if(cell<0||cell>=creativePageSize||index>=creativeBlocks.Count)return;
-        AddUpTo(creativeBlocks[index],single?1:maxStackSize);
+        AddUpTo(creativeBlocks[index],single?1:ItemCatalog.StackLimit(creativeBlocks[index]));
     }
     public void HoverSlot(RectTransform rect,int index,bool catalog)
     {
-        hoveredRect=rect;hoveredSlot=index;hoveredCatalog=catalog;tooltipType=BlockType.Nothing;
+        hoveredRect=rect;hoveredSlot=index;hoveredCatalog=catalog;tooltipType=ItemType.Nothing;
         inventoryHighlightRect.position=rect.position;
         var p=inventoryHighlightRect.localPosition;p.z=-45;inventoryHighlightRect.localPosition=p;
         inventoryHighlightRect.gameObject.SetActive(true);
@@ -166,13 +164,14 @@ public partial class PlayerInventory
         if(hoveredRect==null||hoveredSlot<0)return;
         int index=creativePage*creativePageSize+hoveredSlot;
         var slot=hoveredCatalog?null:GetSlot(hoveredSlot);
-        BlockType type=hoveredCatalog?(index<creativeBlocks.Count?creativeBlocks[index]:BlockType.Nothing):slot==null?BlockType.Nothing:slot.type;
-        tooltipRect.gameObject.SetActive(type!=BlockType.Nothing);
-        if(type==BlockType.Nothing)return;
+        ItemType type=hoveredCatalog?(index<creativeBlocks.Count?creativeBlocks[index]:ItemType.Nothing):slot==null?ItemType.Nothing:slot.type;
+        tooltipRect.gameObject.SetActive(type!=ItemType.Nothing);
+        if(type==ItemType.Nothing)return;
         if(type!=tooltipType)
         {
             tooltipType=type;
-            creativeNameText.text=Regex.Replace(type.ToString(),"([a-z0-9])([A-Z])","$1 $2");
+            var definition=ItemCatalog.Get(type);
+            creativeNameText.text=definition==null||string.IsNullOrEmpty(definition.displayName)?type.ToString():definition.displayName;
             float width=Math.Max(48,creativeNameText.text.Length*5+10);
             tooltipRect.sizeDelta=new Vector2(width,17);
             creativeNameText.rectTransform.sizeDelta=new Vector2(width-8,15);

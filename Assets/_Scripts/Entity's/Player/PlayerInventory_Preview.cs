@@ -62,7 +62,7 @@ public partial class PlayerInventory
     private void RefreshPreviewEquipment()
     {
         if(inventoryPreview==null)return;
-        bool pumpkin=equipmentSlots[0]!=null&&equipmentSlots[0].type==BlockType.Pumpkin&&equipmentSlots[0].count>0;
+        bool pumpkin=equipmentSlots[0]!=null&&equipmentSlots[0].type==ItemType.Pumpkin&&equipmentSlots[0].count>0;
         if(pumpkin&&inventoryPreviewHelmet==null)
         {
             CreateBlockMesh(BlockType.Pumpkin,inventoryPreview.transform);

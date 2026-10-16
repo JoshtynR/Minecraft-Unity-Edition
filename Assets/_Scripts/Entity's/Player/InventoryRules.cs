@@ -2,17 +2,19 @@ using System;
 
 public struct InventoryStack
 {
-    public BlockType type;
-    public int count;
-    public InventoryStack(BlockType type,int count) { this.type=type;this.count=count; }
-    public bool Empty => count<=0||type==BlockType.Nothing||type==BlockType.Air;
-    public void Normalize() { if(Empty) { type=BlockType.Nothing;count=0; } }
+    public ItemType type;
+    public int count,damage;
+    public InventoryStack(ItemType type,int count,int damage=0) { this.type=type;this.count=count;this.damage=damage; }
+    public bool Empty => count<=0||type==ItemType.Nothing||type==ItemType.Air;
+    public void Normalize() { if(Empty) { type=ItemType.Nothing;count=0;damage=0; } else damage=Math.Max(0,damage); }
+    public bool Matches(InventoryStack other) => type==other.type&&damage==other.damage;
 }
 
-// Slot arithmetic is independent of Unity, rendering, input and networking.
+// Slot arithmetic is independent of rendering, input and networking.
 public static class InventoryRules
 {
     public const int StorageSlots=36, HotbarSlots=9, MaxStack=64;
+    public static int Limit(ItemType type) => Math.Max(1,ItemCatalog.StackLimit(type));
     public static void Click(ref InventoryStack slot,ref InventoryStack cursor,bool right)
     {
         slot.Normalize();cursor.Normalize();
@@ -20,41 +22,43 @@ public static class InventoryRules
         {
             if(slot.Empty)return;
             int take=right?(slot.count+1)/2:slot.count;
-            cursor=new InventoryStack(slot.type,take);slot.count-=take;
+            cursor=new InventoryStack(slot.type,take,slot.damage);slot.count-=take;
         }
-        else if(slot.Empty||slot.type==cursor.type)
+        else if(slot.Empty||slot.Matches(cursor))
         {
-            int move=Math.Min(right?1:cursor.count,MaxStack-(slot.Empty?0:slot.count));
-            if(move>0){if(slot.Empty)slot=new InventoryStack(cursor.type,0);slot.count+=move;cursor.count-=move;}
+            int move=Math.Min(right?1:cursor.count,Limit(cursor.type)-(slot.Empty?0:slot.count));
+            if(move>0){if(slot.Empty)slot=new InventoryStack(cursor.type,0,cursor.damage);slot.count+=move;cursor.count-=move;}
         }
         else { var swap=slot;slot=cursor;cursor=swap; }
         slot.Normalize();cursor.Normalize();
     }
-    public static bool EquipmentAccepts(int index,BlockType type) => index==0&&type==BlockType.Pumpkin;
+    public static bool EquipmentAccepts(int index,ItemType type) => index==0&&type==ItemType.Pumpkin;
     public static void ClickEquipment(ref InventoryStack slot,ref InventoryStack cursor,int index)
     {
         slot.Normalize();cursor.Normalize();
         if(cursor.Empty){cursor=slot;slot=new InventoryStack();return;}
         if(!EquipmentAccepts(index,cursor.type)||!slot.Empty)return;
-        slot=new InventoryStack(cursor.type,1);cursor.count--;cursor.Normalize();
+        slot=new InventoryStack(cursor.type,1,cursor.damage);cursor.count--;cursor.Normalize();
     }
-    public static int Capacity(InventoryStack[] slots,BlockType type,int start,int end)
+    public static int Capacity(InventoryStack[] slots,ItemType type,int start,int end,int damage=0)
     {
-        int capacity=0;
-        for(int i=start;i<end;i++)capacity+=slots[i].Empty?MaxStack:slots[i].type==type?Math.Max(0,MaxStack-slots[i].count):0;
+        int capacity=0,limit=Limit(type);
+        for(int i=start;i<end;i++)capacity+=slots[i].Empty?limit:
+            slots[i].type==type&&slots[i].damage==damage?Math.Max(0,limit-slots[i].count):0;
         return capacity;
     }
-    // Merge existing stacks first, then empty slots. Returns the uninserted count.
-    public static int Insert(InventoryStack[] slots,BlockType type,int count,int start,int end)
+    // Merge matching ID + damage first, then empty slots. Return uninserted count.
+    public static int Insert(InventoryStack[] slots,ItemType type,int count,int start,int end,int damage=0)
     {
-        if(type==BlockType.Nothing||type==BlockType.Air||count<=0)return Math.Max(0,count);
+        if(type==ItemType.Nothing||type==ItemType.Air||count<=0)return Math.Max(0,count);
+        int limit=Limit(type);
         for(int pass=0;pass<2&&count>0;pass++)for(int i=start;i<end&&count>0;i++)
         {
             bool empty=slots[i].Empty;
-            if(pass==0?(empty||slots[i].type!=type):!empty)continue;
-            int move=Math.Min(count,MaxStack-(empty?0:slots[i].count));
+            if(pass==0?(empty||slots[i].type!=type||slots[i].damage!=damage):!empty)continue;
+            int move=Math.Min(count,limit-(empty?0:slots[i].count));
             if(move<=0)continue;
-            slots[i]=new InventoryStack(type,(empty?0:slots[i].count)+move);count-=move;
+            slots[i]=new InventoryStack(type,(empty?0:slots[i].count)+move,damage);count-=move;
         }
         return count;
     }
@@ -62,38 +66,40 @@ public static class InventoryRules
     {
         if(index<0||index>=StorageSlots||slots[index].Empty)return;
         var stack=slots[index];
-        int remaining=Insert(slots,stack.type,stack.count,index<9?9:0,index<9?36:9);
-        slots[index]=new InventoryStack(stack.type,remaining);slots[index].Normalize();
+        int remaining=Insert(slots,stack.type,stack.count,index<9?9:0,index<9?36:9,stack.damage);
+        slots[index]=new InventoryStack(stack.type,remaining,stack.damage);slots[index].Normalize();
     }
     public static InventoryStack CraftResult(InventoryStack[] input)
     {
         int used=0,last=-1;
         for(int i=0;i<4;i++)if(!input[i].Empty){used++;last=i;}
-        if(used==1&&(input[last].type==BlockType.Log||input[last].type==BlockType.SpruceLog||input[last].type==BlockType.BirchLog))
-            return new InventoryStack(BlockType.WoodenPlanks,4);
+        if(used==1&&(input[last].type==ItemType.Log||input[last].type==ItemType.SpruceLog||input[last].type==ItemType.BirchLog))
+            return new InventoryStack(ItemType.WoodenPlanks,4);
         if(used==2)
         {
             for(int row=0;row<2;row++)
             {
                 int a=row*2,b=a+1;
                 if(input[a].Empty||input[b].Empty||input[a].type!=input[b].type)continue;
-                if(input[a].type==BlockType.Stone)return new InventoryStack(BlockType.StonePressurePlate,1);
-                if(input[a].type==BlockType.WoodenPlanks)return new InventoryStack(BlockType.WoodenPressurePlate,1);
+                if(input[a].type==ItemType.Stone)return new InventoryStack(ItemType.StonePressurePlate,1);
+                if(input[a].type==ItemType.WoodenPlanks)return new InventoryStack(ItemType.WoodenPressurePlate,1);
             }
             for(int column=0;column<2;column++)
             {
                 var top=input[column];var bottom=input[column+2];
                 if(top.Empty||bottom.Empty)continue;
-                if(top.type==BlockType.Stone&&bottom.type==BlockType.Stone)return new InventoryStack(BlockType.StoneButton,1);
-                if(top.type==BlockType.Pumpkin&&bottom.type==BlockType.Torch)return new InventoryStack(BlockType.JackOLantern,1);
+                if(top.type==ItemType.WoodenPlanks&&bottom.type==ItemType.WoodenPlanks)return new InventoryStack(ItemType.Stick,4);
+                if((top.type==ItemType.Coal||top.type==ItemType.Charcoal)&&bottom.type==ItemType.Stick)return new InventoryStack(ItemType.Torch,4);
+                if(top.type==ItemType.Stone&&bottom.type==ItemType.Stone)return new InventoryStack(ItemType.StoneButton,1);
+                if(top.type==ItemType.Pumpkin&&bottom.type==ItemType.Torch)return new InventoryStack(ItemType.JackOLantern,1);
             }
         }
         if(used==4)
         {
-            BlockType type=input[0].type;
+            ItemType type=input[0].type;
             for(int i=1;i<4;i++)if(input[i].type!=type)return new InventoryStack();
-            if(type==BlockType.WoodenPlanks)return new InventoryStack(BlockType.CraftingTable,1);
-            if(type==BlockType.Sand)return new InventoryStack(BlockType.Sandstone,1);
+            if(type==ItemType.WoodenPlanks)return new InventoryStack(ItemType.CraftingTable,1);
+            if(type==ItemType.Sand)return new InventoryStack(ItemType.Sandstone,1);
         }
         return new InventoryStack();
     }

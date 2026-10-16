@@ -267,7 +267,9 @@ public partial class Player : BaseEntity
 
     public bool PlaceBlock()
     {
-        var type = inventory.slots[inventory.selectedSlotIndex].type;
+        var held = inventory.slots[inventory.selectedSlotIndex];
+        BlockType type;
+        if (held.count <= 0 || !ItemCatalog.TryPlacedBlock(held.type, out type)) return false;
         if (type != BlockType.Nothing)
         {
             var targetedBlock = TargetedBlock(reach, out var blockPos);

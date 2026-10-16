@@ -43,11 +43,11 @@ public partial class PlayerInventory : MonoBehaviour
         BuildCreativeInventory(gameUI);
         for (int i=0;i<9;i++)
             slots[i].hotbarCountText = hotbarRect.GetChild(i+1).GetChild(0).GetComponent<TextMeshProUGUI>();
-        for(int i=0;i<36;i++){SetSlotBlockType(i,slots[i].type);slots[i].SetCount(slots[i].count);}
-        for(int i=0;i<4;i++){CreateBlockMesh(craftingSlots[i].type,craftingRects[i]);craftingSlots[i].SetCount(craftingSlots[i].count);}
-        for(int i=0;i<4;i++){CreateBlockMesh(equipmentSlots[i].type,equipmentRects[i]);equipmentGhosts[i].gameObject.SetActive(equipmentSlots[i].count<=0);}
+        for(int i=0;i<36;i++){SetSlotItemType(i,slots[i].type);slots[i].SetCount(slots[i].count);}
+        for(int i=0;i<4;i++){CreateItemIcon(craftingSlots[i].type,craftingRects[i]);craftingSlots[i].SetCount(craftingSlots[i].count);}
+        for(int i=0;i<4;i++){CreateItemIcon(equipmentSlots[i].type,equipmentRects[i]);equipmentGhosts[i].gameObject.SetActive(equipmentSlots[i].count<=0);}
         RefreshPreviewEquipment();
-        craftedOutput.type=BlockType.Nothing;RefreshCraftingOutput();
+        craftedOutput.type=ItemType.Nothing;RefreshCraftingOutput();
         creativeRoot.gameObject.SetActive(false);
     }
 
@@ -107,26 +107,26 @@ public partial class PlayerInventory : MonoBehaviour
     private static void ClearSlotIcon(Transform parent)
     {
         for (int i=parent.childCount-1;i>=0;i--)
-            if (parent.GetChild(i).GetComponent<MeshFilter>() != null)
+            if (parent.GetChild(i).GetComponent<MeshFilter>() != null || parent.GetChild(i).gameObject.name == "ItemIcon")
             {
                 parent.GetChild(i).gameObject.SetActive(false);
                 Destroy(parent.GetChild(i).gameObject);
             }
     }
 
-    public void SetSlotBlockType(int index, BlockType type)
+    public void SetSlotItemType(int index, ItemType type)
     {
         if (index<0 || index>=slots.Length) return;
         slots[index].type=type;
         if (index<9 && hotbarRect!=null)
         {
             var hotbar=hotbarRect.GetChild(index+1);
-            ClearSlotIcon(hotbar);CreateBlockMesh(type,hotbar);
+            ClearSlotIcon(hotbar);CreateItemIcon(type,hotbar);
         }
         if(inventorySlotsRect!=null)
         {
             var cell=inventorySlotsRect.GetChild(index);
-            ClearSlotIcon(cell);CreateBlockMesh(type,cell);
+            ClearSlotIcon(cell);CreateItemIcon(type,cell);
         }
     }
 
@@ -138,8 +138,27 @@ public partial class PlayerInventory : MonoBehaviour
         text.text="";
         if (pickedUpSlot==null) return;
         pickedUpSlot.countText=text;
-        CreateBlockMesh(pickedUpSlot.type,pickedUpItemRect);
+        CreateItemIcon(pickedUpSlot.type,pickedUpItemRect);
         pickedUpSlot.SetCount(pickedUpSlot.count);
+    }
+
+    private void CreateItemIcon(ItemType type, Transform parent)
+    {
+        var item=ItemCatalog.Get(type);if(item==null)return;
+        BlockType block;
+        if(item.icon==null&&ItemCatalog.TryPlacedBlock(type,out block)){CreateBlockMesh(block,parent);return;}
+        var rect=CreativeRect("ItemIcon",parent,0,0,16,16);
+        rect.localPosition=new Vector3(0,0,-20);
+        if(item.icon!=null)
+        {
+            var image=rect.gameObject.AddComponent<RawImage>();image.texture=item.icon;image.raycastTarget=false;
+        }
+        else
+        {
+            // Readable placeholder until the user supplies an individual image.
+            var text=CreativeText("MissingImage",rect,0,0,16,16,type.ToString().Substring(0,Math.Min(2,type.ToString().Length)),7,Color.white);
+            text.raycastTarget=false;
+        }
     }
 
     private void CreateBlockMesh(BlockType type, Transform parent)
@@ -193,8 +212,9 @@ public partial class PlayerInventory : MonoBehaviour
     [Serializable]
     public class Slot
     {
-        public BlockType type;
+        public ItemType type;
         public int count;
+        public int damage;
         public int index;
         [NonSerialized]
         public TextMeshProUGUI countText;
@@ -204,7 +224,7 @@ public partial class PlayerInventory : MonoBehaviour
 
         public Slot(int index)
         {
-            type = BlockType.Nothing;
+            type = ItemType.Nothing;
             count = 0;
             this.index = index;
         }
@@ -213,13 +233,15 @@ public partial class PlayerInventory : MonoBehaviour
         {
             type = slot.type;
             count = slot.count;
+            damage = slot.damage;
             index = slot.index;
         }
 
-        public Slot(Slot slot, BlockType type, int count, int index)
+        public Slot(Slot slot, ItemType type, int count, int index)
         {
             this.type = type;
             this.count = count;
+            damage = slot.type==type ? slot.damage : 0;
             this.index = index;
             
             countText = slot.countText;
@@ -229,7 +251,7 @@ public partial class PlayerInventory : MonoBehaviour
 
         public Slot()
         {
-            type = BlockType.Nothing;
+            type = ItemType.Nothing;
             count = 0;
             index = 0;
         }

@@ -1,0 +1,849 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a581cd01c2734f73aacba7234cde674a, type: 3}
+  m_Name: Item Data
+  m_EditorClassIdentifier:
+  items:
+  - id: 2
+    displayName: Dirt
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 2
+  - id: 3
+    displayName: Grass
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 3
+  - id: 4
+    displayName: Stone
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 4
+  - id: 5
+    displayName: Log
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 5
+  - id: 6
+    displayName: Leaves
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 6
+  - id: 7
+    displayName: Sand
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 7
+  - id: 8
+    displayName: Water
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 8
+  - id: 9
+    displayName: Glass
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 9
+  - id: 10
+    displayName: Glow Stone
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 10
+  - id: 11
+    displayName: Wooden Slab
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 11
+  - id: 12
+    displayName: Bedrock
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 12
+  - id: 13
+    displayName: Gravel
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 13
+  - id: 14
+    displayName: Sandstone
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 14
+  - id: 15
+    displayName: Lava
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 15
+  - id: 16
+    displayName: Ice
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 16
+  - id: 17
+    displayName: Spruce Log
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 17
+  - id: 18
+    displayName: Spruce Leaves
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 18
+  - id: 19
+    displayName: Birch Log
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 19
+  - id: 20
+    displayName: Birch Leaves
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 20
+  - id: 21
+    displayName: Cobblestone
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 21
+  - id: 22
+    displayName: Wooden Planks
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 22
+  - id: 23
+    displayName: Oak Sapling
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 23
+  - id: 24
+    displayName: Gold Ore
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 24
+  - id: 25
+    displayName: Iron Ore
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 25
+  - id: 26
+    displayName: Coal Ore
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 26
+  - id: 27
+    displayName: Sponge
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 27
+  - id: 28
+    displayName: Lapis Ore
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 28
+  - id: 29
+    displayName: Lapis Block
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 29
+  - id: 30
+    displayName: Dispenser
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 30
+  - id: 31
+    displayName: Note Block
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 31
+  - id: 32
+    displayName: Bed
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 32
+  - id: 33
+    displayName: Powered Rail
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 33
+  - id: 34
+    displayName: Detector Rail
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 34
+  - id: 35
+    displayName: Sticky Piston
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 35
+  - id: 36
+    displayName: Cobweb
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 36
+  - id: 37
+    displayName: Tall Grass
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 37
+  - id: 38
+    displayName: Dead Bush
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 38
+  - id: 39
+    displayName: Piston
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 39
+  - id: 40
+    displayName: Piston Head
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 40
+  - id: 41
+    displayName: White Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 41
+  - id: 42
+    displayName: Moving Piston
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 42
+  - id: 43
+    displayName: Dandelion
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 43
+  - id: 44
+    displayName: Rose
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 44
+  - id: 45
+    displayName: Brown Mushroom
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 45
+  - id: 46
+    displayName: Red Mushroom
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 46
+  - id: 47
+    displayName: Gold Block
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 47
+  - id: 48
+    displayName: Iron Block
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 48
+  - id: 49
+    displayName: Double Stone Slab
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 49
+  - id: 50
+    displayName: Stone Slab
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 50
+  - id: 51
+    displayName: Bricks
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 51
+  - id: 52
+    displayName: TNT
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 52
+  - id: 53
+    displayName: Bookshelf
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 53
+  - id: 54
+    displayName: Mossy Cobblestone
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 54
+  - id: 55
+    displayName: Obsidian
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 55
+  - id: 56
+    displayName: Torch
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 56
+  - id: 57
+    displayName: Fire
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 57
+  - id: 58
+    displayName: Monster Spawner
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 58
+  - id: 59
+    displayName: Wooden Stairs
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 59
+  - id: 60
+    displayName: Chest
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 60
+  - id: 61
+    displayName: Redstone Wire
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 61
+  - id: 62
+    displayName: Diamond Ore
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 62
+  - id: 63
+    displayName: Diamond Block
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 63
+  - id: 64
+    displayName: Crafting Table
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 64
+  - id: 65
+    displayName: Wheat Crop0
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 65
+  - id: 66
+    displayName: Farmland
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 66
+  - id: 67
+    displayName: Furnace
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 67
+  - id: 68
+    displayName: Lit Furnace
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 68
+  - id: 69
+    displayName: Standing Sign
+    icon: {fileID: 0}
+    maxStack: 16
+    maxDamage: 0
+    placedBlock: 69
+  - id: 70
+    displayName: Wooden Door
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 70
+  - id: 71
+    displayName: Ladder
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 71
+  - id: 72
+    displayName: Rail
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 72
+  - id: 73
+    displayName: Cobblestone Stairs
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 73
+  - id: 74
+    displayName: Wall Sign
+    icon: {fileID: 0}
+    maxStack: 16
+    maxDamage: 0
+    placedBlock: 74
+  - id: 75
+    displayName: Lever
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 75
+  - id: 76
+    displayName: Stone Pressure Plate
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 76
+  - id: 77
+    displayName: Iron Door
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 77
+  - id: 78
+    displayName: Wooden Pressure Plate
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 78
+  - id: 79
+    displayName: Redstone Ore
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 79
+  - id: 80
+    displayName: Lit Redstone Ore
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 80
+  - id: 81
+    displayName: Redstone Torch Off
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 81
+  - id: 82
+    displayName: Redstone Torch
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 82
+  - id: 83
+    displayName: Stone Button
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 83
+  - id: 84
+    displayName: Snow Layer
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 84
+  - id: 85
+    displayName: Snow Block
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 85
+  - id: 86
+    displayName: Cactus
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 86
+  - id: 87
+    displayName: Clay
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 87
+  - id: 88
+    displayName: Sugar Cane
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 88
+  - id: 89
+    displayName: Jukebox
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 89
+  - id: 90
+    displayName: Fence
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 90
+  - id: 91
+    displayName: Pumpkin
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 91
+  - id: 92
+    displayName: Netherrack
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 92
+  - id: 93
+    displayName: Soul Sand
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 93
+  - id: 94
+    displayName: Nether Portal
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 94
+  - id: 95
+    displayName: Jack OLantern
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 95
+  - id: 96
+    displayName: Cake
+    icon: {fileID: 0}
+    maxStack: 1
+    maxDamage: 0
+    placedBlock: 96
+  - id: 97
+    displayName: Redstone Repeater
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 97
+  - id: 98
+    displayName: Powered Repeater
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 98
+  - id: 99
+    displayName: Locked Chest
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 99
+  - id: 100
+    displayName: Trapdoor
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 100
+  - id: 101
+    displayName: Spruce Sapling
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 101
+  - id: 102
+    displayName: Birch Sapling
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 102
+  - id: 103
+    displayName: Dry Tall Grass
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 103
+  - id: 104
+    displayName: Fern
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 104
+  - id: 105
+    displayName: Sandstone Slab
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 105
+  - id: 106
+    displayName: Cobblestone Slab
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 106
+  - id: 107
+    displayName: Double Sandstone Slab
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 107
+  - id: 108
+    displayName: Double Wooden Slab
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 108
+  - id: 109
+    displayName: Double Cobblestone Slab
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 109
+  - id: 110
+    displayName: Moist Farmland
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 110
+  - id: 111
+    displayName: Orange Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 111
+  - id: 112
+    displayName: Magenta Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 112
+  - id: 113
+    displayName: Light Blue Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 113
+  - id: 114
+    displayName: Yellow Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 114
+  - id: 115
+    displayName: Lime Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 115
+  - id: 116
+    displayName: Pink Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 116
+  - id: 117
+    displayName: Gray Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 117
+  - id: 118
+    displayName: Light Gray Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 118
+  - id: 119
+    displayName: Cyan Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 119
+  - id: 120
+    displayName: Purple Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 120
+  - id: 121
+    displayName: Blue Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 121
+  - id: 122
+    displayName: Brown Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 122
+  - id: 123
+    displayName: Green Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 123
+  - id: 124
+    displayName: Red Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 124
+  - id: 125
+    displayName: Black Wool
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 125
+  - id: 126
+    displayName: Wheat Crop1
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 126
+  - id: 127
+    displayName: Wheat Crop2
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 127
+  - id: 128
+    displayName: Wheat Crop3
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 128
+  - id: 129
+    displayName: Wheat Crop4
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 129
+  - id: 130
+    displayName: Wheat Crop5
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 130
+  - id: 131
+    displayName: Wheat Crop6
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 131
+  - id: 132
+    displayName: Wheat Crop7
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 132
+  - id: 1000
+    displayName: Stick
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1001
+    displayName: Coal
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1002
+    displayName: Charcoal
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1003
+    displayName: Iron Ingot
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1004
+    displayName: Gold Ingot
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1005
+    displayName: Diamond
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1006
+    displayName: Redstone Dust
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0
+  - id: 1007
+    displayName: Flint
+    icon: {fileID: 0}
+    maxStack: 64
+    maxDamage: 0
+    placedBlock: 0

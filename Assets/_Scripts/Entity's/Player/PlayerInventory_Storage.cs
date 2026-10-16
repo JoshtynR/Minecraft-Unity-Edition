@@ -11,14 +11,14 @@ public partial class PlayerInventory
     private readonly InventoryStack[] storageBuffer = new InventoryStack[36];
     private readonly InventoryStack[] craftBuffer = new InventoryStack[4];
 
-    private static InventoryStack Stack(Slot slot) => slot==null ? new InventoryStack() : new InventoryStack(slot.type,slot.count);
+    private static InventoryStack Stack(Slot slot) => slot==null ? new InventoryStack() : new InventoryStack(slot.type,slot.count,slot.damage);
     private void InitializeSlotData()
     {
         if(slots==null)slots=new Slot[36];
         if(slots.Length!=36)
         {
             var old=slots;slots=new Slot[36];Array.Copy(old,slots,Math.Min(old.Length,36));
-            for(int i=36;i<old.Length;i++)if(old[i]!=null)QueueRecovery(old[i].type,old[i].count);
+            for(int i=36;i<old.Length;i++)if(old[i]!=null)QueueRecovery(old[i].type,old[i].count,old[i].damage);
         }
         for(int i=0;i<36;i++)if(slots[i]==null)slots[i]=new Slot(i);
         for(int i=0;i<4;i++)if(craftingSlots[i]==null)craftingSlots[i]=new Slot(36+i);
@@ -42,14 +42,15 @@ public partial class PlayerInventory
         value.Normalize();var slot=GetSlot(index);
         if(index<36)
         {
-            if(slot.type!=value.type)SetSlotBlockType(index,value.type);
+            if(slot.type!=value.type)SetSlotItemType(index,value.type);
         }
         else if(slot.type!=value.type)
         {
             var rect=index>=41?equipmentRects[index-41]:index==40?craftResultRect:craftingRects[index-36];
-            if(rect!=null){ClearSlotIcon(rect);CreateBlockMesh(value.type,rect);}
+            if(rect!=null){ClearSlotIcon(rect);CreateItemIcon(value.type,rect);}
             slot.type=value.type;
         }
+        slot.damage=value.damage;
         slot.SetCount(value.count);
         if(index>=41)
         {
@@ -59,7 +60,7 @@ public partial class PlayerInventory
     }
     private void SetCursor(InventoryStack stack)
     {
-        stack.Normalize();pickedUpSlot=stack.Empty?null:new Slot{type=stack.type,count=stack.count};
+        stack.Normalize();pickedUpSlot=stack.Empty?null:new Slot{type=stack.type,count=stack.count,damage=stack.damage};
         UpdatePickedUpSlotVisual();
     }
     public void ClickInventorySlot(int index,bool right,bool shift)
@@ -73,7 +74,7 @@ public partial class PlayerInventory
         else if(shift)
         {
             ReadStorage();var value=Stack(slot);
-            value.count=InventoryRules.Insert(storageBuffer,value.type,value.count,0,36);
+            value.count=InventoryRules.Insert(storageBuffer,value.type,value.count,0,36,value.damage);
             CommitStorage();WriteStack(index,value);
         }
         else
@@ -107,8 +108,8 @@ public partial class PlayerInventory
             }
             else
             {
-                if(!cursor.Empty&&(cursor.type!=result.type||cursor.count+result.count>64))break;
-                cursor=new InventoryStack(result.type,(cursor.Empty?0:cursor.count)+result.count);
+                if((!cursor.Empty&&!cursor.Matches(result))||(cursor.Empty?0:cursor.count)+result.count>InventoryRules.Limit(result.type))break;
+                cursor=new InventoryStack(result.type,(cursor.Empty?0:cursor.count)+result.count,result.damage);
             }
             InventoryRules.ConsumeRecipe(craftBuffer);
         }
@@ -116,16 +117,20 @@ public partial class PlayerInventory
         for(int i=0;i<4;i++)WriteStack(36+i,craftBuffer[i]);
         SetCursor(cursor);RefreshCraftingOutput();
     }
-    public bool AddItem(BlockType type,int count=1,bool onlyInventory=false,bool onlyHotbar=false)
+    // Existing block-drop callers cross the block/item boundary here.
+    public bool AddItem(BlockType block,int count=1,bool onlyInventory=false,bool onlyHotbar=false)
+        => AddItem(ItemCatalog.FromBlock(block),count,onlyInventory,onlyHotbar);
+
+    public bool AddItem(ItemType type,int count=1,bool onlyInventory=false,bool onlyHotbar=false,int damage=0)
     {
-        if(count<=0||type==BlockType.Nothing||type==BlockType.Air)return false;
+        if(count<=0||damage<0||!ItemCatalog.Valid(type))return false;
         ReadStorage();int start=onlyInventory?9:0,end=onlyHotbar?9:36;
         // The bool API is transactional: callers must never receive false after
         // some items were inserted and then retry/duplicate the original stack.
-        if(InventoryRules.Capacity(storageBuffer,type,start,end)<count)return false;
-        InventoryRules.Insert(storageBuffer,type,count,start,end);CommitStorage();return true;
+        if(InventoryRules.Capacity(storageBuffer,type,start,end,damage)<count)return false;
+        InventoryRules.Insert(storageBuffer,type,count,start,end,damage);CommitStorage();return true;
     }
-    private int AddUpTo(BlockType type,int count)
+    private int AddUpTo(ItemType type,int count)
     {
         ReadStorage();int remaining=InventoryRules.Insert(storageBuffer,type,count,0,36);CommitStorage();return count-remaining;
     }
@@ -139,10 +144,10 @@ public partial class PlayerInventory
     private void ReturnTransientStacks()
     {
         ReadStorage();var cursor=Stack(pickedUpSlot);
-        cursor.count=InventoryRules.Insert(storageBuffer,cursor.type,cursor.count,0,36);
+        cursor.count=InventoryRules.Insert(storageBuffer,cursor.type,cursor.count,0,36,cursor.damage);
         for(int i=0;i<4;i++)
         {
-            var value=Stack(craftingSlots[i]);value.count=InventoryRules.Insert(storageBuffer,value.type,value.count,0,36);WriteStack(36+i,value);
+            var value=Stack(craftingSlots[i]);value.count=InventoryRules.Insert(storageBuffer,value.type,value.count,0,36,value.damage);WriteStack(36+i,value);
         }
         CommitStorage();SetCursor(cursor);RefreshCraftingOutput();
         // There is no dropped-item entity system yet. When storage is full,
@@ -157,9 +162,9 @@ public partial class PlayerInventory
     {
         var copy=new Slot[source.Length];for(int i=0;i<copy.Length;i++)copy[i]=source[i]==null?new Slot(i):new Slot(source[i]);return copy;
     }
-    private void QueueRecovery(BlockType type,int count)
+    private void QueueRecovery(ItemType type,int count,int damage=0)
     {
-        if(count>0&&type!=BlockType.Nothing&&type!=BlockType.Air)recoveryItems.Add(new Slot{type=type,count=count});
+        if(count>0&&type!=ItemType.Nothing&&type!=ItemType.Air)recoveryItems.Add(new Slot{type=type,count=count,damage=damage});
     }
     public void LoadInventory(Slot[] saved,Slot[] crafting=null,Slot cursor=null,Slot[] recovery=null,Slot[] equipment=null)
     {
@@ -168,22 +173,22 @@ public partial class PlayerInventory
         for(int i=0;i<36;i++)
         {
             var stack=saved!=null&&i<saved.Length?Stack(saved[i]):new InventoryStack();
-            QueueRecovery(stack.type,Math.Max(0,stack.count-64));stack.count=Math.Min(64,stack.count);WriteStack(i,stack);
+            QueueRecovery(stack.type,Math.Max(0,stack.count-InventoryRules.Limit(stack.type)),stack.damage);stack.count=Math.Min(InventoryRules.Limit(stack.type),stack.count);WriteStack(i,stack);
         }
-        if(saved!=null)for(int i=36;i<saved.Length;i++)if(saved[i]!=null)QueueRecovery(saved[i].type,saved[i].count);
-        if(recovery!=null)foreach(var stack in recovery)if(stack!=null)QueueRecovery(stack.type,stack.count);
+        if(saved!=null)for(int i=36;i<saved.Length;i++)if(saved[i]!=null)QueueRecovery(saved[i].type,saved[i].count,saved[i].damage);
+        if(recovery!=null)foreach(var stack in recovery)if(stack!=null)QueueRecovery(stack.type,stack.count,stack.damage);
         for(int i=0;i<4;i++)
         {
             var stack=crafting!=null&&i<crafting.Length?Stack(crafting[i]):new InventoryStack();
-            QueueRecovery(stack.type,Math.Max(0,stack.count-64));stack.count=Math.Min(64,stack.count);WriteStack(36+i,stack);
+            QueueRecovery(stack.type,Math.Max(0,stack.count-InventoryRules.Limit(stack.type)),stack.damage);stack.count=Math.Min(InventoryRules.Limit(stack.type),stack.count);WriteStack(36+i,stack);
         }
-        var carried=Stack(cursor);QueueRecovery(carried.type,Math.Max(0,carried.count-64));carried.count=Math.Min(64,carried.count);SetCursor(carried);
+        var carried=Stack(cursor);QueueRecovery(carried.type,Math.Max(0,carried.count-InventoryRules.Limit(carried.type)),carried.damage);carried.count=Math.Min(InventoryRules.Limit(carried.type),carried.count);SetCursor(carried);
         for(int i=0;i<4;i++)
         {
             var stack=equipment!=null&&i<equipment.Length?Stack(equipment[i]):new InventoryStack();
             bool valid=InventoryRules.EquipmentAccepts(i,stack.type);
-            QueueRecovery(stack.type,valid?Math.Max(0,stack.count-1):stack.count);
-            WriteStack(41+i,valid?new InventoryStack(stack.type,Math.Min(1,stack.count)):new InventoryStack());
+            QueueRecovery(stack.type,valid?Math.Max(0,stack.count-1):stack.count,stack.damage);
+            WriteStack(41+i,valid?new InventoryStack(stack.type,Math.Min(1,stack.count),stack.damage):new InventoryStack());
         }
         RecoverSavedItems();RefreshCraftingOutput();
     }
@@ -192,7 +197,7 @@ public partial class PlayerInventory
         ReadStorage();
         for(int i=0;i<recoveryItems.Count;)
         {
-            var stack=recoveryItems[i];stack.count=InventoryRules.Insert(storageBuffer,stack.type,stack.count,0,36);
+            var stack=recoveryItems[i];stack.count=InventoryRules.Insert(storageBuffer,stack.type,stack.count,0,36,stack.damage);
             if(stack.count==0)recoveryItems.RemoveAt(i);else i++;
         }
         CommitStorage();UpdateRecoveryNotice();

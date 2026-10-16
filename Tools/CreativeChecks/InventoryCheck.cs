@@ -18,6 +18,8 @@ namespace UnityEngine
  public class Component:Object {public GameObject gameObject;public Transform transform=>gameObject.transform;public T GetComponent<T>()where T:Component=>gameObject.GetComponent<T>();}
  public class MonoBehaviour:Component {}
  public class ScriptableObject:Object {}
+ public enum RuntimeInitializeLoadType {SubsystemRegistration}
+ public class RuntimeInitializeOnLoadMethodAttribute:Attribute {public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType type){}}
  public class Texture2D:Object {public int width=64,height=32;}
  public class Material:Object {public Texture2D mainTexture=new Texture2D();public Material(){}public Material(Material value){mainTexture=value.mainTexture;}}
  public class Mesh:Object
@@ -76,6 +78,7 @@ namespace UnityEngine
 namespace UnityEngine.Events {public delegate void UnityAction();}
 namespace UnityEngine.UI
 {
+ public class RawImage:Component {public Texture2D texture;public bool raycastTarget=true;}
  public class Image:Component {public Color color;public bool raycastTarget=true;}
  public class Button:Component {public bool interactable=true;public Click onClick=new Click();public class Click {UnityEngine.Events.UnityAction action;public void AddListener(UnityEngine.Events.UnityAction a){action+=a;}public void Invoke(){action();}}}
 }
@@ -111,7 +114,7 @@ public partial class PlayerInventory
  static int checks;
  static void Check(bool value,string name){checks++;if(!value)throw new Exception(name);}
  static GameObject Child(string name,Transform parent,params Type[] types){var go=new GameObject(name,types);go.layer=5;go.transform.SetParent(parent,false);return go;}
- static int Total(PlayerInventory inv,BlockType type)
+ static int Total(PlayerInventory inv,ItemType type)
  {
   int n=inv.slots.Where(s=>s.type==type).Sum(s=>s.count)+inv.craftingSlots.Where(s=>s.type==type).Sum(s=>s.count)+inv.equipmentSlots.Where(s=>s.type==type).Sum(s=>s.count)+inv.recoveryItems.Where(s=>s.type==type).Sum(s=>s.count);
   return n+(inv.pickedUpSlot!=null&&inv.pickedUpSlot.type==type?inv.pickedUpSlot.count:0);
@@ -128,16 +131,16 @@ public partial class PlayerInventory
  }
  public static void Main()
  {
-  CheckRules();var inv=BuildMenu();
+  CheckRules();CheckItems();var inv=BuildMenu();CheckItemUI(inv);
   var headless=new GameObject("DedicatedInventory").AddComponent<PlayerInventory>();
-  Check(headless.AddItem(BlockType.Stone,64)&&headless.slots[0].count==64,"storage logic works without a canvas on nonlocal/server players");
-  headless.LoadInventory(null);headless.AddItem(BlockType.Stone,63);headless.AddItem(BlockType.Dirt,35*64);
-  Check(!headless.AddItem(BlockType.Stone,2)&&headless.slots[0].count==63,"bool add failure leaves partial-stack room unchanged");
-  Check(headless.AddItem(BlockType.Stone,1)&&headless.slots[0].count==64,"exact-capacity add succeeds");
+  Check(headless.AddItem(ItemType.Stone,64)&&headless.slots[0].count==64,"storage logic works without a canvas on nonlocal/server players");
+  headless.LoadInventory(null);headless.AddItem(ItemType.Stone,63);headless.AddItem(ItemType.Dirt,35*64);
+  Check(!headless.AddItem(ItemType.Stone,2)&&headless.slots[0].count==63,"bool add failure leaves partial-stack room unchanged");
+  Check(headless.AddItem(ItemType.Stone,1)&&headless.slots[0].count==64,"exact-capacity add succeeds");
   Check(inv.slots.Length==36&&inv.inventorySlotsRect.childCount==36,"survival capacity is 27 backpack plus nine hotbar");
   Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewMesh.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
   inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival panel and catalogue open together");
-  Check(inv.creativeBlocks.Count==131&&inv.creativePageSize>=131,"all registered blocks fit a normal 1080p GUI screen");
+  Check(inv.creativeBlocks.Count==139&&inv.creativePageSize>=139,"all registered blocks fit a normal 1080p GUI screen");
   Check(inv.inventoryRect.anchoredPosition.x+88<=inv.creativePanel.anchoredPosition.x-inv.creativePanel.sizeDelta.x/2-8,"sidebar does not overlap survival panel");
   for(int i=0;i<131;i++)
   {
@@ -147,40 +150,40 @@ public partial class PlayerInventory
   }
   inv.GiveCatalogItem(0,false);var first=inv.creativeBlocks[0];Check(inv.slots[0].type==first&&inv.slots[0].count==64,"catalogue click grants full stack into inventory");
   inv.GiveCatalogItem(1,true);Check(inv.slots[0].type==first&&inv.slots[1].type==inv.creativeBlocks[1]&&inv.slots[1].count==1,"right-click gives one without replacing selected stack");
-  inv.LoadInventory(null);Check(inv.slots.All(s=>s.type==BlockType.Nothing&&s.count==0),"missing save inventory loads empty");
-  inv.SetCursor(new InventoryStack(BlockType.Stone,1));inv.ClickInventorySlot(0,true,false);
+  inv.LoadInventory(null);Check(inv.slots.All(s=>s.type==ItemType.Nothing&&s.count==0),"missing save inventory loads empty");
+  inv.SetCursor(new InventoryStack(ItemType.Stone,1));inv.ClickInventorySlot(0,true,false);
   Check(inv.pickedUpSlot==null&&inv.slots[0].count==1,"placing last carried item clears cursor without null access");inv.LoadInventory(null);
-  inv.SetCursor(new InventoryStack(BlockType.Stone,1));inv.ClickInventorySlot(41,false,false);
+  inv.SetCursor(new InventoryStack(ItemType.Stone,1));inv.ClickInventorySlot(41,false,false);
   Check(inv.equipmentSlots[0].count==0&&inv.pickedUpSlot.count==1,"helmet slot rejects normal blocks");
-  inv.SetCursor(new InventoryStack(BlockType.Pumpkin,64));inv.ClickInventorySlot(41,false,false);
+  inv.SetCursor(new InventoryStack(ItemType.Pumpkin,64));inv.ClickInventorySlot(41,false,false);
   Check(inv.equipmentSlots[0].count==1&&inv.pickedUpSlot.count==63&&inv.inventoryPreviewHelmet.activeSelf,"Beta pumpkin helmet consumes one and appears on preview");
   var helmet=inv.SavedEquipment();inv.LoadInventory(null,null,null,null,helmet);
-  Check(inv.equipmentSlots[0].type==BlockType.Pumpkin&&inv.equipmentSlots[0].count==1,"equipment survives save/load separately from storage");
-  inv.ClickInventorySlot(41,false,true);Check(inv.equipmentSlots[0].count==0&&inv.slots[0].type==BlockType.Pumpkin,"shift-removing equipment moves it into storage");inv.LoadInventory(null);
-  inv.AddItem(BlockType.Stone,63);inv.ClickInventorySlot(0,false,false);inv.ClickInventorySlot(1,true,false);
+  Check(inv.equipmentSlots[0].type==ItemType.Pumpkin&&inv.equipmentSlots[0].count==1,"equipment survives save/load separately from storage");
+  inv.ClickInventorySlot(41,false,true);Check(inv.equipmentSlots[0].count==0&&inv.slots[0].type==ItemType.Pumpkin,"shift-removing equipment moves it into storage");inv.LoadInventory(null);
+  inv.AddItem(ItemType.Stone,63);inv.ClickInventorySlot(0,false,false);inv.ClickInventorySlot(1,true,false);
   Check(inv.slots[1].count==1&&inv.pickedUpSlot.count==62,"right click places exactly one");
   inv.ClickInventorySlot(1,false,false);Check(inv.slots[1].count==63&&inv.pickedUpSlot==null,"normal merge empties cursor without duplicate");
   inv.ClickInventorySlot(1,true,false);Check(inv.pickedUpSlot.count==32&&inv.slots[1].count==31,"right click takes rounded-up half");
   inv.ClickInventorySlot(0,false,false);inv.ClickInventorySlot(0,false,true);
   Check(inv.slots[0].count==0&&inv.slots[9].count==32,"shift transfer targets backpack rather than hidden storage");
-  Check(Total(inv,BlockType.Stone)==63,"clicks conserve all items");
-  inv.LoadInventory(null);inv.SetCursor(new InventoryStack(BlockType.Log,2));inv.ClickInventorySlot(36,false,false);
-  Check(inv.craftedOutput.type==BlockType.WoodenPlanks&&inv.craftedOutput.count==4,"single-log recipe preview");
+  Check(Total(inv,ItemType.Stone)==63,"clicks conserve all items");
+  inv.LoadInventory(null);inv.SetCursor(new InventoryStack(ItemType.Log,2));inv.ClickInventorySlot(36,false,false);
+  Check(inv.craftedOutput.type==ItemType.WoodenPlanks&&inv.craftedOutput.count==4,"single-log recipe preview");
   inv.ClickInventorySlot(40,false,false);Check(inv.pickedUpSlot.count==4&&inv.craftingSlots[0].count==1,"taking output consumes one ingredient");
-  inv.SetCursor(new InventoryStack(BlockType.Stone,1));inv.ClickInventorySlot(40,false,false);Check(inv.craftingSlots[0].count==1,"incompatible cursor cannot consume recipe");
-  inv.SetCursor(new InventoryStack());inv.ClickInventorySlot(40,false,true);Check(inv.slots[0].type==BlockType.WoodenPlanks&&inv.slots[0].count==4&&inv.craftingSlots[0].count==0,"shift craft consumes input and inserts only actual output");
-  var old=new Slot[72];for(int i=0;i<72;i++)old[i]=new Slot{type=BlockType.Stone,count=64,index=i};inv.LoadInventory(old);
-  Check(inv.slots.Length==36&&inv.recoveryItems.Count==36&&Total(inv,BlockType.Stone)==72*64,"old 72-slot inventory preserved without hidden live storage");
+  inv.SetCursor(new InventoryStack(ItemType.Stone,1));inv.ClickInventorySlot(40,false,false);Check(inv.craftingSlots[0].count==1,"incompatible cursor cannot consume recipe");
+  inv.SetCursor(new InventoryStack());inv.ClickInventorySlot(40,false,true);Check(inv.slots[0].type==ItemType.WoodenPlanks&&inv.slots[0].count==4&&inv.craftingSlots[0].count==0,"shift craft consumes input and inserts only actual output");
+  var old=new Slot[72];for(int i=0;i<72;i++)old[i]=new Slot{type=ItemType.Stone,count=64,index=i};inv.LoadInventory(old);
+  Check(inv.slots.Length==36&&inv.recoveryItems.Count==36&&Total(inv,ItemType.Stone)==72*64,"old 72-slot inventory preserved without hidden live storage");
   inv.RemoveItem(0);inv.RecoverSavedItems();Check(inv.slots[0].count==64&&inv.recoveryItems.Count==35,"legacy recovery fills free slots only");
-  inv.SetCursor(new InventoryStack(BlockType.Sand,1));inv.CloseInventory();Check(inv.pickedUpSlot!=null,"closing a full inventory preserves cursor");
+  inv.SetCursor(new InventoryStack(ItemType.Sand,1));inv.CloseInventory();Check(inv.pickedUpSlot!=null,"closing a full inventory preserves cursor");
   var snapshot=new WorldServer.SavePlayerMessage(new Vector3(),new Quaternion(),new Quaternion(),inv.SavedInventory(),1,inv.SavedCrafting(),inv.SavedCursor(),inv.SavedRecovery(),inv.SavedEquipment());
   inv.slots[0].count=1;Check(snapshot.inventory[0].count==64,"save snapshots do not alias live stacks");
-  inv.LoadInventory(snapshot.inventory,snapshot.crafting,snapshot.cursor,snapshot.recovery,snapshot.equipment);Check(Total(inv,BlockType.Stone)==71*64&&Total(inv,BlockType.Sand)==1,"cursor and legacy overflow survive actual save-message construction and load");
+  inv.LoadInventory(snapshot.inventory,snapshot.crafting,snapshot.cursor,snapshot.recovery,snapshot.equipment);Check(Total(inv,ItemType.Stone)==71*64&&Total(inv,ItemType.Sand)==1,"cursor and legacy overflow survive actual save-message construction and load");
   inv.OpenInventory();inv.canvasRect.sizeDelta=new Vector2(320,200);inv.UpdateInventoryLayout();
   Check(inv.creativePageSize<131&&inv.nextPage.interactable,"small windows page catalogue while both panes remain visible");
-  var seen=new HashSet<BlockType>();int pages=(131+inv.creativePageSize-1)/inv.creativePageSize;
-  for(int p=0;p<pages;p++){for(int i=0;i<inv.creativePageSize;i++){int n=p*inv.creativePageSize+i;if(n<131)seen.Add(inv.creativeBlocks[n]);}inv.ChangeCreativePage(1);}
-  Check(seen.Count==131&&!inv.nextPage.interactable,"all blocks remain reachable on smaller windows");
+  var seen=new HashSet<ItemType>();int pages=(139+inv.creativePageSize-1)/inv.creativePageSize;
+  for(int p=0;p<pages;p++){for(int i=0;i<inv.creativePageSize;i++){int n=p*inv.creativePageSize+i;if(n<139)seen.Add(inv.creativeBlocks[n]);}inv.ChangeCreativePage(1);}
+  Check(seen.Count==139&&!inv.nextPage.interactable,"all blocks remain reachable on smaller windows");
   var meshes=inv.iconMeshes.Values.ToArray();var preview=inv.inventoryPreviewMesh;var material=inv.inventoryPreviewMaterial;inv.OnDestroy();
   Check(meshes.All(m=>m.destroyed)&&preview.destroyed&&material.destroyed,"owned icon/preview meshes and material released");
   Console.WriteLine(checks+" inventory arithmetic/layout/crafting/migration/lifecycle checks passed (Unity UI/transport mocked).");
