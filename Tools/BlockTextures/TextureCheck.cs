@@ -111,6 +111,10 @@ public static class TextureCheck
         asset.faceTextureResolution=1;Invoke(manager,"OnEnable");Check(Shader.bound.width==16,"minimum resolution");Invoke(manager,"OnDisable");
         SystemInfo.supports2DArrayTextures=false;Invoke(manager,"OnEnable");Check(Shader.bound==null&&Debug.errors==1,"unsupported GPU preserves CPU map");Check(BlockDataManager.blockTypeDataDictionary[3]==data,"CPU map available");Invoke(manager,"OnDisable");
         SystemInfo.supports2DArrayTextures=true;
+        data.textureData.front=top;data.textureData.back=bottom;data.textureData.left=side;data.textureData.right=top;
+        Invoke(manager,"OnEnable");
+        Check(data.textureData.FaceIndex(Direction.backwards)==1&&data.textureData.FaceIndex(Direction.forwards)==2&&data.textureData.FaceIndex(Direction.left)==3&&data.textureData.FaceIndex(Direction.right)==1,"optional directional faces register and reuse existing image layers");
+        Check(Shader.bound.depth==4&&uniform.textureData.FaceIndex(Direction.backwards)==3,"overrides preserve deduplication and blank fallbacks");Invoke(manager,"OnDisable");
         manager.textureData=new BlockDataSO{textureDataList=new List<BlockTypeData>{null,data,uniform,missing}};
         Invoke(manager,"OnEnable");Check(BlockDataManager.blockTypeDataDictionary.Length>=133&&ReferenceEquals(BlockDataManager.blockTypeDataDictionary[3],data),"null catalog entries skipped while texture assignments survive");Invoke(manager,"OnDisable");
         manager.textureData=null;Invoke(manager,"OnEnable");Check(BlockDataManager.blockTypeDataDictionary.Length>=133&&Shader.bound.depth==1,"missing asset uses CPU definitions and checker texture");Invoke(manager,"OnDisable");

@@ -26,14 +26,14 @@ public class ChunkSectionSaveData
         {
             Block first = section.blocks[i % size, (i / size) % height, i / (size * height)];
             byte level = first.type == BlockType.Water ? first.waterLevel : (byte)0;
-            byte facing = StairGeometry.IsStair(first.type) ? StairGeometry.Facing(first.blockShape) : (byte)0;
+            byte facing = SpecialBlockGeometry.State(first.type, first.blockShape);
             int count = 1;
             while (i + count < section.blocks.Length)
             {
                 int next = i + count;
                 Block block = section.blocks[next % size, (next / size) % height, next / (size * height)];
                 if (block.type != first.type || (block.type == BlockType.Water && block.waterLevel != level) ||
-                    (StairGeometry.IsStair(block.type) && StairGeometry.Facing(block.blockShape) != facing)) break;
+                    SpecialBlockGeometry.State(block.type, block.blockShape) != facing) break;
                 count++;
             }
             blocksL.Add(new BlockSaveData(first.type, count, level, facing));

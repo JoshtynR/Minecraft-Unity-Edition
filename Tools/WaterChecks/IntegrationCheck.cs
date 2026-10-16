@@ -196,6 +196,19 @@ public static class IntegrationCheck
             WaterCheck.Assert(c.GetBlock(V(0,0,0)).blockShape==BlockShapes.StairsEast,"fresh stair placement resets old orientation");
         }
         var legacyStairs=new ChunkSectionSaveData{yOffset=0,blocks=new[]{new BlockSaveData(BlockType.CobblestoneStairs,8)}};
+        foreach(BlockType type in Enum.GetValues(typeof(BlockType))) if(SpecialBlockGeometry.Handles(type))
+        for(byte state=0;state<16;state++)
+        {
+            c.SetBlock(V(0,0,0),type);c.GetBlock(V(0,0,0)).blockShape=SpecialBlockGeometry.Shape(type,state);
+            c.SetBlock(V(1,0,0),type);c.GetBlock(V(1,0,0)).blockShape=SpecialBlockGeometry.Shape(type,(byte)((state+1)&15));
+            var specialSave=new ChunkSectionSaveData(c.sections[0]);var specialLoad=ChunkSection.Deserialize(specialSave,c);
+            WaterCheck.Assert(specialSave.blocks[0].length==1&&specialSave.blocks[0].hasBlockState,"RLE separates all special metadata states");
+            WaterCheck.Assert(SpecialBlockGeometry.State(type,specialLoad.blocks[0,0,0].blockShape)==state,"all special states survive actual save/load");
+            var copy=new Block(c.GetBlock(V(0,0,0)));var reset=new Block(BlockType.Air,V(0,0,0),c.sections[0]).Reset(copy);
+            WaterCheck.Assert(SpecialBlockGeometry.State(type,copy.blockShape)==state&&reset.blockShape==copy.blockShape,"mapping/copy/reset retains all metadata bits");
+        }
+        var oldTorch=new ChunkSectionSaveData{yOffset=0,blocks=new[]{new BlockSaveData{type=BlockType.Torch,length=8}}};
+        WaterCheck.Assert(SpecialBlockGeometry.State(BlockType.Torch,ChunkSection.Deserialize(oldTorch,c).blocks[0,0,0].blockShape)==5,"legacy torch saves default to upright");
         WaterCheck.Assert(ChunkSection.Deserialize(legacyStairs,c).blocks[0,0,0].blockShape==BlockShapes.StairsEast,"old saves without orientation remain loadable");
         // Exercise production face vertex adjustment with four equal flow cells.
         for(int x=0;x<2;x++) for(int z=0;z<2;z++)
@@ -263,6 +276,34 @@ public static class IntegrationCheck
             server.RpcSetBlock(V(1,2,0),BlockType.WoodenStairs,facing);
             WaterCheck.Assert(StairGeometry.Facing(w.GetBlock(V(1,2,0)).blockShape)==facing,"RPC replicates stair direction");
             Mirror.NetworkServer.active=true;
+        }
+        foreach(var type in new[]{BlockType.Torch,BlockType.StandingSign,BlockType.Trapdoor,BlockType.Lever})
+        for(byte state=0;state<16;state++)
+        {
+            server.SetBlockMessageHandler(null,new WorldServer.SetBlockMessage(V(0,2,0),type,state));
+            WaterCheck.Assert(SpecialBlockGeometry.State(type,w.GetBlock(V(0,2,0)).blockShape)==state,"server receives all four state bits");
+            Mirror.NetworkServer.active=false;server.RpcSetBlock(V(1,2,0),type,state);
+            WaterCheck.Assert(SpecialBlockGeometry.State(type,w.GetBlock(V(1,2,0)).blockShape)==state,"RPC replicates all four state bits");
+            Mirror.NetworkServer.active=true;
+        }
+        var pairs=new World();for(int x=-2;x<=2;x+=2)for(int z=-2;z<=2;z+=2)AddChunk(pairs,V(x,0,z));
+        foreach(var type in new[]{BlockType.WoodenDoor,BlockType.IronDoor,BlockType.Bed})
+        for(byte state=0;state<4;state++)
+        {
+            var p=V(0,1,0);var other=p+SpecialBlockGeometry.PartnerOffset(type,state);
+            pairs.SetBlock(p,type,state);
+            WaterCheck.Assert(pairs.GetBlock(p).type==type&&pairs.GetBlock(other).type==type,"paired model places both halves");
+            WaterCheck.Assert(SpecialBlockGeometry.State(type,pairs.GetBlock(other).blockShape)==(state|8),"paired model preserves upper/head bit");
+            if(type==BlockType.WoodenDoor)
+            {
+                pairs.SetBlock(p,type,(byte)(state|4));
+                WaterCheck.Assert((SpecialBlockGeometry.State(type,pairs.GetBlock(p).blockShape)&4)!=0&&(SpecialBlockGeometry.State(type,pairs.GetBlock(other).blockShape)&4)!=0,"door opening updates both halves");
+            }
+            pairs.SetBlock(other,BlockType.Air);
+            WaterCheck.Assert(pairs.GetBlock(p).type==BlockType.Air&&pairs.GetBlock(other).type==BlockType.Air,"breaking either half removes its matching partner");
+            pairs.SetBlock(other,BlockType.Stone);pairs.SetBlock(p,type,state);
+            WaterCheck.Assert(pairs.GetBlock(p).type==BlockType.Air&&pairs.GetBlock(other).type==BlockType.Stone,"paired placement never overwrites occupied partner");
+            pairs.SetBlock(other,BlockType.Air);
         }
     }
 }

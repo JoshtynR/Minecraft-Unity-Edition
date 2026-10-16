@@ -40,7 +40,7 @@ def main():
         method=helper[helper.index('    public static void SetBlock(World world,'):helper.index('    [CanBeNull]',helper.index('    public static void SetBlock(World world,'))]
         (tmp/'PopulationRecordCleanup.cs').write_text('using UnityEngine;public static partial class WorldDataHelper{'+method+'}')
         files = ['World/WaterSimulation.cs','World/WaterSurface.cs','World/World_Water.cs','World/World_Trees.cs',
-                 'WorldGeneration/Beta/BetaPopulationRecord.cs','Block/BlockType.cs','Block/StairGeometry.cs','Block/BlockShapes.cs','Block/BlockShape.cs','World/Rendering/MeshData.cs','Block/Block.cs','Block/Blocks/WaterBlock.cs',
+                 'WorldGeneration/Beta/BetaPopulationRecord.cs','Block/BlockType.cs','Block/StairGeometry.cs','Block/SpecialBlockGeometry.cs','Block/BlockShapes.cs','Block/BlockShape.cs','World/Rendering/MeshData.cs','Block/Block.cs','Block/Blocks/WaterBlock.cs',
                  'World/ChunkSection.cs','World/Saving/BlockSaveData.cs','World/Saving/ChunkSectionSaveData.cs']
         sources = [ROOT / 'Assets/_Scripts' / f for f in files]
         sources += [ROOT / 'Tools/WaterChecks/WaterCheck.cs', ROOT / 'Tools/WaterChecks/IntegrationCheck.cs',tmp/'BlockMapping.cs',tmp/'WorldServer.cs',tmp/'WaterMeshCheck.cs',tmp/'WorldStairPlacement.cs',tmp/'PopulationRecordCleanup.cs']

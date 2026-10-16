@@ -54,6 +54,11 @@ public class BlockDataEditor : EditorWindow
         var top = (Texture2D)EditorGUILayout.ObjectField("Top", block.textureData.top, typeof(Texture2D), false);
         var bottom = (Texture2D)EditorGUILayout.ObjectField("Bottom", block.textureData.bottom, typeof(Texture2D), false);
         var side = (Texture2D)EditorGUILayout.ObjectField("Side", block.textureData.side, typeof(Texture2D), false);
+        EditorGUILayout.LabelField("Optional directional overrides (blank = Side)", EditorStyles.boldLabel);
+        var front = (Texture2D)EditorGUILayout.ObjectField("Front", block.textureData.front, typeof(Texture2D), false);
+        var back = (Texture2D)EditorGUILayout.ObjectField("Back", block.textureData.back, typeof(Texture2D), false);
+        var left = (Texture2D)EditorGUILayout.ObjectField("Left", block.textureData.left, typeof(Texture2D), false);
+        var right = (Texture2D)EditorGUILayout.ObjectField("Right", block.textureData.right, typeof(Texture2D), false);
         bool transparent = EditorGUILayout.Toggle("Cutout / transparent faces", block.isTransparent);
         bool collider = EditorGUILayout.Toggle("Collidable", block.generateCollider);
         int opacity = EditorGUILayout.IntSlider("Light opacity", block.opacity, 0, 15);
@@ -63,6 +68,7 @@ public class BlockDataEditor : EditorWindow
         {
             Undo.RecordObject(data, "Edit block textures and lighting");
             block.textureData.top = top; block.textureData.bottom = bottom; block.textureData.side = side;
+            block.textureData.front = front; block.textureData.back = back; block.textureData.left = left; block.textureData.right = right;
             block.isTransparent = transparent; block.generateCollider = collider;
             block.opacity = (byte)opacity; block.lightEmission = (byte)emission; block.albedoTint = tint;
             EditorUtility.SetDirty(data);

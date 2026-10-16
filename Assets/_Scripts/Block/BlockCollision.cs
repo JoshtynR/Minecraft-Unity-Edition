@@ -17,16 +17,16 @@ public static class BlockCollision
         else if (axis == 1) { sweepMin.y += Mathf.Min(0,movement); sweepMax.y += Mathf.Max(0,movement); }
         else { sweepMin.z += Mathf.Min(0,movement); sweepMax.z += Mathf.Max(0,movement); }
         for (int x = Mathf.FloorToInt(sweepMin.x); x <= Mathf.FloorToInt(sweepMax.x); x++)
-        for (int y = Mathf.Max(0,Mathf.FloorToInt(sweepMin.y)); y <= Mathf.Min(world.worldHeight - 1,Mathf.FloorToInt(sweepMax.y)); y++)
+        // Fences extend half a block above their own voxel.
+        for (int y = Mathf.Max(0,Mathf.FloorToInt(sweepMin.y)-1); y <= Mathf.Min(world.worldHeight - 1,Mathf.FloorToInt(sweepMax.y)); y++)
         for (int z = Mathf.FloorToInt(sweepMin.z); z <= Mathf.FloorToInt(sweepMax.z); z++)
         {
             var block = world.GetBlock(new Vector3Int(x,y,z));
-            if (block == null || block.type == BlockType.Nothing || block.type == BlockType.Air || BlockShapesExtensions.IsPlant(block.type) || !block.BlockData.generateCollider) continue;
-            int parts = StairGeometry.IsStair(block.type) ? 2 : 1;
+            if (block == null || block.type == BlockType.Nothing || block.type == BlockType.Air || BlockShapesExtensions.IsPlant(block.type) || SpecialBlockGeometry.NoCollision(block.type) || !block.BlockData.generateCollider) continue;
+            int parts = SpecialBlockGeometry.CollisionCount(block.type);
             for (int part = 0; part < parts; part++)
             {
-                var shape = parts == 2 ? StairGeometry.CollisionPart(StairGeometry.Facing(block.blockShape), part) :
-                    BlockShapesExtensions.CollisionShape(block.type, block.blockShape.GetShape());
+                var shape = SpecialBlockGeometry.CollisionPart(block.type,block.blockShape,part);
                 Vector3 bmin = new Vector3(x + shape.xMin/16f,y + shape.yMin/16f,z + shape.zMin/16f);
                 Vector3 bmax = new Vector3(x + shape.xMax/16f,y + shape.yMax/16f,z + shape.zMax/16f);
                 bool overlaps = true;

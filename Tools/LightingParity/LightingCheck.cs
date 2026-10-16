@@ -17,7 +17,7 @@ namespace UnityEngine
  public struct Vector3 {public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}public static Vector3 operator -(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static float Dot(Vector3 a,Vector3 b)=>a.x*b.x+a.y*b.y+a.z*b.z;}
  public struct Vector4 { public float x,y,z,w; public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
- public struct Color {}
+ public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}}
  public static class Mathf {public static int Max(int a,int b)=>Math.Max(a,b);public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));}
 }
 public enum Direction {down,up,backwards,forwards,left,right}
@@ -186,6 +186,7 @@ public static partial class LightingCheck
   Check(Beta173Lighting.InterpolateCorners(0,1,0,0,-1,2)==1,"partial coordinate clamping");
   CheckPlants();
   CheckStairMeshes();
+  CheckSpecialMeshes();
   Console.WriteLine(aoCases+" Java six-face AO cases, "+orderedVertices+" positioned vertices; "+checks+" brightness/adapter/transport checks passed (Unity storage mocked).");
  }
 }

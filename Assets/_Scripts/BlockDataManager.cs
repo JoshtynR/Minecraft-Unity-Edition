@@ -49,6 +49,10 @@ public class BlockDataManager : MonoBehaviour
                 item.textureData.topIndex = Register(item.textureData.top, images, indices);
                 item.textureData.bottomIndex = Register(item.textureData.bottom, images, indices);
                 item.textureData.sideIndex = Register(item.textureData.side, images, indices);
+                item.textureData.frontIndex = Register(item.textureData.front, images, indices);
+                item.textureData.backIndex = Register(item.textureData.back, images, indices);
+                item.textureData.leftIndex = Register(item.textureData.left, images, indices);
+                item.textureData.rightIndex = Register(item.textureData.right, images, indices);
             }
         // Publish a complete map, never a partially filled array, to chunk workers.
         blockTypeDataDictionary = definitions;

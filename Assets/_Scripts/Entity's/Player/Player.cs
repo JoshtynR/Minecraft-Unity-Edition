@@ -247,6 +247,24 @@ public partial class Player : BaseEntity
         }
     }
 
+    private bool TryUseBlock()
+    {
+        if (isCrouching) return false;
+        Vector3Int adjacent;
+        var block=TargetedBlock(reach,out adjacent);
+        if(block==null)return false;
+        byte state=SpecialBlockGeometry.State(block.type,block.blockShape),next;
+        if(!SpecialBlockGeometry.TryUse(block.type,state,out next))return false;
+        var pos=block.globalWorldPosition;
+        if(SpecialBlockGeometry.IsDoor(block.type)&&(state&8)!=0)
+        {
+            pos+=Vector3Int.down;next=(byte)(next&7);
+        }
+        if(networkStarted)NetworkClient.Send(new WorldServer.SetBlockMessage(pos,block.type,next));
+        else world.SetBlock(pos,block.type,next);
+        return true;
+    }
+
     public bool PlaceBlock()
     {
         var type = inventory.slots[inventory.selectedSlotIndex].type;
@@ -255,7 +273,22 @@ public partial class Player : BaseEntity
             var targetedBlock = TargetedBlock(reach, out var blockPos);
             if (targetedBlock != null)
             {
-                byte facing = StairGeometry.IsStair(type) ? StairGeometry.FacingForLook(objects.body.forward) : (byte)0;
+                if(blockPos.y<0||blockPos.y>=world.worldHeight||world.GetBlock(blockPos).type==BlockType.Nothing)return false;
+                // Targeting returns the adjacent cell for the exact intersected face.
+                Vector3Int normal = new Vector3Int(blockPos.x-targetedBlock.globalWorldPosition.x,
+                    blockPos.y-targetedBlock.globalWorldPosition.y,blockPos.z-targetedBlock.globalWorldPosition.z);
+                var look = type==BlockType.Piston||type==BlockType.StickyPiston||type==BlockType.PistonHead ? cam.forward : objects.body.forward;
+                byte facing = SpecialBlockGeometry.Placement(type, look, normal);
+                if ((type == BlockType.Ladder || type == BlockType.WallSign || type == BlockType.Trapdoor || type == BlockType.StoneButton) && normal.y != 0) return false;
+                if (SpecialBlockGeometry.IsTorch(type) && normal.y < 0) return false;
+                if (!SpecialBlockGeometry.CanAttach(type,facing,blockPos,p => world.GetBlock(p).type)) return false;
+                if (SpecialBlockGeometry.IsDoor(type) || type == BlockType.Bed)
+                {
+                    var partnerPos = blockPos + SpecialBlockGeometry.PartnerOffset(type, facing);
+                    var partner = world.GetBlock(partnerPos);
+                    if (partner == null || partner.type != BlockType.Air || IsPlayerStandingIn(partnerPos, type, (byte)(facing|8)) ||
+                        (type == BlockType.Bed && !SpecialBlockGeometry.NormalCube(world.GetBlock(partnerPos+Vector3Int.down).type))) return false;
+                }
                 var belowPos = blockPos + Vector3Int.down;
                 var below = world.GetBlock(belowPos);
                 var destination = world.GetBlock(blockPos);
@@ -289,12 +322,11 @@ public partial class Player : BaseEntity
 
     public bool IsPlayerStandingIn(Vector3 posU, BlockType type = BlockType.Stone, byte stairFacing = 0)
     {
-        if (BlockShapesExtensions.IsPlant(type) || !BlockDataManager.blockTypeDataDictionary[(int)type].generateCollider) return false;
-        if (StairGeometry.IsStair(type))
-            return BlockCollision.OverlapsBody(transform.position, entityWidth, entityHeight, Vector3Int.FloorToInt(posU), StairGeometry.CollisionPart(stairFacing, 0)) ||
-                BlockCollision.OverlapsBody(transform.position, entityWidth, entityHeight, Vector3Int.FloorToInt(posU), StairGeometry.CollisionPart(stairFacing, 1));
-        var shape = BlockShapesExtensions.CollisionShape(type, BlockShapesExtensions.ForBlock(type).GetShape());
-        return BlockCollision.OverlapsBody(transform.position, entityWidth, entityHeight, Vector3Int.FloorToInt(posU), shape);
+        if (BlockShapesExtensions.IsPlant(type) || SpecialBlockGeometry.NoCollision(type) || !BlockDataManager.blockTypeDataDictionary[(int)type].generateCollider) return false;
+        for(int part=0;part<SpecialBlockGeometry.CollisionCount(type);part++)
+            if(BlockCollision.OverlapsBody(transform.position,entityWidth,entityHeight,Vector3Int.FloorToInt(posU),
+                SpecialBlockGeometry.CollisionPart(type,SpecialBlockGeometry.Shape(type,stairFacing),part)))return true;
+        return false;
     }
 
     public Block TargetedBlock(float tReach, out Vector3Int lastGlobalPos)
@@ -602,6 +634,7 @@ public partial class Player : BaseEntity
         }
         if (Input.GetMouseButtonDown(1))
         {
+            if (TryUseBlock()) return;
             if (placeCoroutine == null)
             {
                 placeCoroutine = PlaceLoop();

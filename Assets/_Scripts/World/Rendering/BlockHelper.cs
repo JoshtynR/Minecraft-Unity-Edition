@@ -40,6 +40,12 @@ public static class BlockHelper
         BlockTypeData blockTypeData = BlockDataManager.blockTypeDataDictionary[(int)blockType];
         Block block = chunk.GetBlock(pos);
 
+        if (SpecialBlockGeometry.Handles(blockType))
+        {
+            GetFaceDataIn(Direction.forwards, pos, SpecialBlockGeometry.NonOccluding(blockType) ? meshData.transparentMesh : meshData, block, blockTypeData, chunk);
+            return meshData;
+        }
+
         if (StairGeometry.IsStair(blockType))
         {
             foreach (var direction in directions)
@@ -63,7 +69,7 @@ public static class BlockHelper
 
                 var shape = block.blockShape.GetShape();
                 var neighborShape = neighbourBlock.blockShape.GetShape();
-                bool visible = BlockShapesExtensions.IsPlant(neighbourBlockType) || !shape.TouchesCellBoundary(dir) || neighbourBlockTypeData.isTransparent ||
+                bool visible = BlockShapesExtensions.IsPlant(neighbourBlockType) || SpecialBlockGeometry.NonOccluding(neighbourBlockType) || !shape.TouchesCellBoundary(dir) || neighbourBlockTypeData.isTransparent ||
                     !(StairGeometry.IsStair(neighbourBlockType) ? StairGeometry.CoversFace(StairGeometry.Facing(neighbourBlock.blockShape), shape, dir.GetOpposite()) : neighborShape.CoversBoundaryFace(shape, dir.GetOpposite()));
                 if (blockType == BlockType.Water)
                 {
@@ -80,6 +86,37 @@ public static class BlockHelper
 
     public static MeshData GetFaceDataIn(Direction dir, Vector3Int pos, MeshData meshData, Block block, BlockTypeData blockTypeData, ChunkData chunk)
     {
+        if (SpecialBlockGeometry.Handles(block.type))
+        {
+            if (dir != Direction.forwards) return meshData;
+            int first = meshData.vertices.Count;
+            SpecialBlockMesh.Append(block.type, SpecialBlockGeometry.State(block.type, block.blockShape), pos,
+                chunk == null ? (Func<Vector3Int,BlockType>)null : p => chunk.GetBlock(p).type,
+                d => blockTypeData.textureData.FaceIndex(SpecialBlockGeometry.TextureDirection(block.type, SpecialBlockGeometry.State(block.type, block.blockShape), d)), blockTypeData.albedoTint, meshData);
+            if (chunk != null)
+            {
+                float brightness = SampleBrightness(chunk, pos, chunk.worldRef.betaSkylightSubtracted, block.BlockData.lightEmission);
+                if (SpecialBlockGeometry.IsTorch(block.type) && block.BlockData.lightEmission > 0) brightness = 1;
+                for (int i=first;i<meshData.vertices.Count;i++)
+                {
+                    int face=first+((i-first)/4)*4;
+                    var a=meshData.vertices[face];var b=meshData.vertices[face+1];var c=meshData.vertices[face+2];
+                    float ax=b.x-a.x,ay=b.y-a.y,az=b.z-a.z,bx=c.x-a.x,by=c.y-a.y,bz=c.z-a.z;
+                    float nx=ay*bz-az*by,ny=az*bx-ax*bz,nz=ax*by-ay*bx;
+                    bool flat=SpecialBlockGeometry.FlatShading(block.type);
+                    float shade=flat?1:Math.Abs(ny)>=Math.Abs(nx)&&Math.Abs(ny)>=Math.Abs(nz)?(ny<0?.5f:1):Math.Abs(nx)>Math.Abs(nz)?.6f:.8f;
+                    var sample=pos;
+                    if (!SpecialBlockGeometry.NonOccluding(block.type))
+                        sample+=Math.Abs(ny)>=Math.Abs(nx)&&Math.Abs(ny)>=Math.Abs(nz)?new Vector3Int(0,ny<0?-1:1,0):Math.Abs(nx)>Math.Abs(nz)?new Vector3Int(nx<0?-1:1,0,0):new Vector3Int(0,0,nz<0?-1:1);
+                    float light=sample.Equals(pos)?brightness:SampleBrightness(chunk,sample,chunk.worldRef.betaSkylightSubtracted,block.BlockData.lightEmission);
+                    var sampleBlock=chunk.GetBlock(sample);
+                    meshData.skyLight.Add(sampleBlock.GetSkyLight());meshData.blockLight.Add(sampleBlock.GetBlockLight());
+                    meshData.sides.Add(new Vector3(light*shade,light*shade,3));
+                    meshData.smoothLightCorners.Add(new Vector4(light*shade,light*shade,light*shade,light*shade));
+                }
+            }
+            return meshData;
+        }
         if (BlockShapesExtensions.IsPlant(block.type))
         {
             // Emit the entire model once. Inventory and world share this path.
@@ -110,7 +147,7 @@ public static class BlockHelper
                 if (chunk != null && face.TouchesCellBoundary(dir))
                 {
                     var neighbor = chunk.GetBlock(pos + dir.GetVector());
-                    if (!BlockDataManager.blockTypeDataDictionary[(int)neighbor.type].isTransparent && !BlockShapesExtensions.IsPlant(neighbor.type) &&
+                    if (!BlockDataManager.blockTypeDataDictionary[(int)neighbor.type].isTransparent && !BlockShapesExtensions.IsPlant(neighbor.type) && !SpecialBlockGeometry.NonOccluding(neighbor.type) &&
                         (StairGeometry.IsStair(neighbor.type) ? StairGeometry.CoversFace(StairGeometry.Facing(neighbor.blockShape), face, dir.GetOpposite()) :
                             neighbor.blockShape.GetShape().CoversBoundaryFace(face, dir.GetOpposite()))) continue;
                 }

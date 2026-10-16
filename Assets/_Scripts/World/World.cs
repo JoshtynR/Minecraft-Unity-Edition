@@ -235,6 +235,35 @@ public partial class World : MonoBehaviour
         
         foreach (var pos in blockPoss)
         {
+            if(pos.y<0||pos.y>=worldHeight)continue;
+            var previous = GetBlock(pos);
+            if(previous.type==BlockType.Nothing)continue;
+            bool pair = SpecialBlockGeometry.IsDoor(blockType) || blockType == BlockType.Bed;
+            // Validate both halves before writing either. Direct calls and remote
+            // clients must not overwrite a neighbor when placing a door/bed.
+            if (pair && (stairFacing & 8) == 0)
+            {
+                var partnerPos = pos + SpecialBlockGeometry.PartnerOffset(blockType, stairFacing);
+                var partner = GetBlock(partnerPos);
+                bool updating = previous.type == blockType && partner != null && partner.type == blockType;
+                if (partnerPos.y < 0 || partnerPos.y >= worldHeight || partner == null || (!updating && (partner.type != BlockType.Air || previous.type != BlockType.Air))) continue;
+                WorldDataHelper.SetBlock(this, partnerPos, blockType);
+                GetBlock(partnerPos).blockShape = SpecialBlockGeometry.Shape(blockType, (byte)(stairFacing|8));
+                var partnerChunk = WorldDataHelper.GetChunk(this, WorldDataHelper.GetChunkPosition(this,partnerPos));
+                if (partnerChunk != null) { partnerChunk.ChunkData.modifiedAfterSave = true; neightBourUpdates.Add(partnerChunk); }
+            }
+            if ((SpecialBlockGeometry.IsDoor(previous.type) || previous.type == BlockType.Bed) && previous.type != blockType)
+            {
+                byte oldState = SpecialBlockGeometry.State(previous.type,previous.blockShape);
+                var partnerPos = pos + SpecialBlockGeometry.PartnerOffset(previous.type,oldState);
+                var partner = GetBlock(partnerPos);
+                if (partner != null && partner.type == previous.type && (SpecialBlockGeometry.State(partner.type,partner.blockShape)^oldState)==8)
+                {
+                    WorldDataHelper.SetBlock(this,partnerPos,BlockType.Air);
+                    var partnerChunk = WorldDataHelper.GetChunk(this,WorldDataHelper.GetChunkPosition(this,partnerPos));
+                    if (partnerChunk != null) { partnerChunk.ChunkData.modifiedAfterSave = true; neightBourUpdates.Add(partnerChunk); }
+                }
+            }
             // if (blockType == BlockType.Air)
             // {
             //     WorldDataHelper.SetBlock(chunk.ChunkData.worldRef, pos, Blocks.AIR);
@@ -242,7 +271,19 @@ public partial class World : MonoBehaviour
             // else
             // {
                 WorldDataHelper.SetBlock(chunk.ChunkData.worldRef, pos, blockType);
-                if (StairGeometry.IsStair(blockType)) GetBlock(pos).blockShape = StairGeometry.Shape(stairFacing);
+                GetBlock(pos).blockShape = SpecialBlockGeometry.Shape(blockType, stairFacing);
+                // Track is stateful, unlike purely visual fence/dust joins. Update
+                // its saved selection bounds and neighboring slopes before meshing.
+                for (int rx=-1;rx<=1;rx++) for(int ry=-1;ry<=1;ry++) for(int rz=-1;rz<=1;rz++)
+                {
+                    var railPos=pos+new Vector3Int(rx,ry,rz);
+                    var rail=GetBlock(railPos);
+                    if(rail==null||!SpecialBlockGeometry.IsRail(rail.type))continue;
+                    byte state=SpecialBlockGeometry.RailState(rail.type,SpecialBlockGeometry.State(rail.type,rail.blockShape),railPos,p=>GetBlock(p).type);
+                    rail.blockShape=SpecialBlockGeometry.Shape(rail.type,state);
+                    var railChunk=WorldDataHelper.GetChunk(this,WorldDataHelper.GetChunkPosition(this,railPos));
+                    if(railChunk!=null){railChunk.ChunkData.modifiedAfterSave=true;neightBourUpdates.Add(railChunk);}
+                }
             // }
             
             if (chunk.ChunkData.IsOnEdge(pos))

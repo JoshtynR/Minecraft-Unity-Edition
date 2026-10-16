@@ -11,14 +11,15 @@ public class WorldServer
 }
 public partial class World
 {
- public void SetBlock(Vector3Int pos,BlockType type,byte facing=0){blocks[pos]=new Block(type){blockShape=StairGeometry.IsStair(type)?StairGeometry.Shape(facing):BlockShapesExtensions.ForBlock(type)};}
+ public void SetBlock(Vector3Int pos,BlockType type,byte facing=0){blocks[pos]=new Block(type){globalWorldPosition=pos,blockShape=SpecialBlockGeometry.Shape(type,facing)};}
 }
 public static class BlockDataManager {public static BlockData[] blockTypeDataDictionary=new BlockData[133];}
 public class Inventory {public class Slot {public BlockType type;public int count=64;}public Slot[] slots={new Slot()};public int selectedSlotIndex;public void RemoveHeldItem(){slots[0].count--;}}
 public partial class Player
 {
  public class Objects {public Transform body=new Transform();}
- public Objects objects=new Objects();public Transform transform=new Transform();public World world=new World();public Inventory inventory=new Inventory();public bool networkStarted;public float reach=5,entityWidth=.3f,entityHeight=1.8f;public Vector3Int aimed,placement;
+ public Objects objects=new Objects();public Transform transform=new Transform(),cam=new Transform();public World world=new World();public Inventory inventory=new Inventory();public bool networkStarted,isCrouching;public float reach=5,entityWidth=.3f,entityHeight=1.8f;public Vector3Int aimed,placement;
+ public bool UseForCheck()=>TryUseBlock();
  public Block TargetedBlock(float reach,out Vector3Int adjacent){adjacent=placement;return world.GetBlock(aimed);}
 }
 public static class PlacementCheck
@@ -42,6 +43,17 @@ public static class PlacementCheck
    Check(p.PlaceBlock()&&p.world.GetBlock(p.aimed).type==doubled&&p.world.GetBlock(p.placement).type==BlockType.Air&&p.inventory.slots[0].count==63,"actual placement combines matching lower slab without leaving an upper block");
    p.world.SetBlock(p.aimed,slab);p.transform.position=new Vector3(.5f,.5f,.5f);Check(!p.PlaceBlock()&&p.world.GetBlock(p.aimed).type==slab,"slab merge cannot fill the player's body");
   }
-  Console.WriteLine("16 production stair/slab placement checks passed (Unity/network mocked).");
+  var normals=new[]{new Vector3Int(1,0,0),new Vector3Int(-1,0,0),new Vector3Int(0,0,1),new Vector3Int(0,0,-1),new Vector3Int(0,1,0)};
+  for(byte s=1;s<=5;s++)
+  {
+   var p=new Player{aimed=new Vector3Int(4,1,4),placement=new Vector3Int(4+normals[s-1].x,1+normals[s-1].y,4+normals[s-1].z)};
+   p.transform.position=new Vector3(20,20,20);p.world.SetBlock(p.aimed,BlockType.Stone);p.inventory.slots[0].type=BlockType.Torch;
+   Check(p.PlaceBlock()&&SpecialBlockGeometry.State(BlockType.Torch,p.world.GetBlock(p.placement).blockShape)==s,"production torch placement records clicked attachment face");
+  }
+  var user=new Player{networkStarted=true,aimed=new Vector3Int(0,2,0)};
+  user.world.SetBlock(user.aimed,BlockType.WoodenDoor,10);
+  Check(user.UseForCheck()&&Mirror.NetworkClient.last.position.y==1&&Mirror.NetworkClient.last.stairFacing==6&&user.inventory.slots[0].count==64,"upper door use addresses lower half and consumes no item");
+  user.isCrouching=true;Check(!user.UseForCheck(),"crouch bypasses block use for placement");
+  Console.WriteLine("23 production stair/slab/torch/interaction placement checks passed (Unity/network mocked).");
  }
 }

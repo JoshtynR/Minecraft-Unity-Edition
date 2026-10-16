@@ -414,7 +414,7 @@ public partial class PlayerInventory : MonoBehaviour
             int first = meshData.vertices.Count;
             BlockHelper.GetFaceDataIn(direction, Vector3Int.zero, meshData, block, BlockDataManager.blockTypeDataDictionary[(int)type], null);
             float light = direction == Direction.backwards ? 13 : direction == Direction.right ? 10 : 14;
-            bool plant = BlockShapesExtensions.IsPlant(type);
+            bool plant = BlockShapesExtensions.IsPlant(type) || SpecialBlockGeometry.FlatShading(type);
             for (int i = first; i < meshData.vertices.Count; i++)
             {
                 meshData.skyLight.Add(light);

@@ -64,7 +64,7 @@ public class WorldServer : NetworkBehaviour
         {
             this.position = position;
             this.blockType = blockType;
-            this.stairFacing = (byte)(stairFacing & 3);
+            this.stairFacing = (byte)(stairFacing & 15);
         }
     }
     

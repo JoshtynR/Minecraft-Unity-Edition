@@ -28,6 +28,7 @@ public static class BlockShapesExtensions
 {
     public static BlockShapes ForBlock(BlockType type)
     {
+        if (SpecialBlockGeometry.Handles(type)) return SpecialBlockGeometry.Shape(type, SpecialBlockGeometry.DefaultState(type));
         if (IsCrop(type)) return BlockShapes.Crop;
         switch (type)
         {
@@ -53,6 +54,7 @@ public static class BlockShapesExtensions
     }
     public static BlockShape GetShape(this BlockShapes shape)
     {
+        if (SpecialBlockGeometry.Encoded(shape)) return SpecialBlockGeometry.Decode(shape);
         switch (shape)
         {
             case BlockShapes.Flower: return BlockShapesList.Flower;
@@ -89,6 +91,7 @@ public static class BlockShapesExtensions
         // full height but its collision surface is two pixels lower.
         if (type == BlockType.Farmland || type == BlockType.MoistFarmland) return BlockShapesList.FullBlock;
         if (type == BlockType.SoulSand) return BlockShapesList.SoulSandCollision;
+        if (type == BlockType.Fence) return SpecialBlockGeometry.FenceCollision;
         return shape;
     }
 }

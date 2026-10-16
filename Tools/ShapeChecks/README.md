@@ -1,4 +1,4 @@
-# Code-defined Beta cuboids
+# Code-defined Beta block models and state
 
 This change does not modify Block Data.asset, enum block IDs, or texture assignments.
 Geometry resolves from BlockType during construction/reset and save-load; the
@@ -50,16 +50,66 @@ recovery and arbitrary multipart collision need further work.
 Targeting uses voxel DDA and ray/box intersections, so thin plates/buttons aren't
 skipped by the former coarse sampling increment. Placement uses actual body/box
 overlap and the hit face's adjacent cell. Selection outlines and crack geometry
-use render bounds. Shapes reconstruct from type on save-load with no format change.
+use render bounds. Shapes now reconstruct from type and saved metadata. Older
+saves keep stair facing and use safe defaults for other directional blocks.
 
-These are default cuboids, not completed nonstandard models or state mechanics.
-Beds still need their second half/model, repeaters their torch details, cake bite
-states, buttons their wall orientation/pressed state, trapdoor rotations/opening,
-and snow stacking. Stairs, fence connectivity, crossed plants/crops, rails,
-doors/signs, torches/levers, pistons and portals still need the multipart/plane
-model and directional texture path. Cactus damage/soul-sand slowing and other
-block effects are outside this geometry change. Existing three-face data fields
-are preserved; a separate future model/texture override setup can cover exceptions.
+## Special-model/state pass
+
+`SpecialBlockGeometry` encodes type and native 4-bit state in existing `blockShape`
+enum storage (values >=1024). The legacy `stairFacing` save/message field carries
+the full nibble; `hasBlockState` distinguishes old files from an explicit zero.
+Construction, copy/reset, mapping, RLE, load, placement and RPC preserve state;
+RPC arguments remain nonoptional for Mirror. Old IDs/stair values are unchanged.
+
+- Torches: original four image sheets, 2x2-pixel cap, native floor/wall attachments,
+  lean and selection bounds; no collision.
+- Fences: 4x4-pixel post and two rails per connected axis. Only other fences
+  connect in Beta. Isolated posts retain short X rails. Collision is the original
+  full-width, 1.5-block-high box, not modern connected posts.
+- Dust: 1/64-block-high cross/line quads, cropped branches, solid-side climbs,
+  native power tint, no collision. Connections derive from neighbors.
+- Ladders: offset sheets and 1/8-thick directional selection/collision.
+- Rails: flat/sloping quads, straight/curve images, basic neighboring turns and
+  slopes saved before meshing. Ambiguous powered-junction logic is not ported.
+- Doors/trapdoors: thin rotating/opening panels. Doors place/remove as two matched
+  halves; beds likewise place/remove head/foot pairs.
+- Signs: standing post/rotating board or wall board; no text editing yet.
+- Levers/buttons: mounted bases/handle and directional/pressed bounds.
+- Repeaters: thin base and two torches; delay moves the second torch.
+- Pistons: six-direction base/head/rod models; extended base and original cap/rod
+  collision boxes. MovingPiston emits no static model: it needs a moving entity.
+- Webs: crossed sheets. Portal: thin directional volume. Fire currently uses static
+  crossed sheets, not the complete attachment-sensitive animated model.
+
+Right-click toggles wooden doors, trapdoors and levers, and cycles repeater delay.
+Crouching bypasses interaction for placement. Iron doors are not hand-toggleable.
+These are visual state changes, **not** a redstone simulation. Paired placement
+checks the second cell before writing; breaking either half removes its matching
+partner. Body checks use oriented pieces. Placement validates attachment support,
+but automatic drops when support is removed are not ported.
+
+`Assets/Block Data.asset` is never edited by this pass. Optional
+Front/Back/Left/Right image fields fall back to Side when blank. Front is local -Z;
+furnace/dispenser/chest/pumpkin metadata rotates those image choices. Existing
+Top/Bottom/Side assignments remain valid.
+
+Special artwork conventions (assign only if current images need changing):
+
+| Model | Existing image fields |
+| --- | --- |
+| Torch, ladder, web, sign board | Side |
+| Dust | Top = cross mask, Side = straight mask |
+| Rail | Top = straight track, Side = curved track |
+| Door | Side = lower panel, Top = upper panel |
+| Repeater | Top = plate artwork, Side = torch artwork |
+| Directional cube | Top/Bottom/Side plus optional directional overrides |
+
+Full pixel parity is **not certified** for this whole pass. Tests verify geometry,
+state, channels and connections, not a Java golden renderer for every model.
+Fire attachment/animation, redstone overlay art/directional repeater connections,
+powered junction decisions, piston animation, sign text, separate bed-head/foot
+artwork and exact special-model AO remain follow-up work. Cake bite states, snow
+stacking and other gameplay effects are unchanged.
 
 Run `python Tools/ShapeChecks/run.py --mcs <compiler> --mono <runtime>`.
 Checks compile production registry/geometry/UVs, collision, targeting, and the
@@ -72,3 +122,8 @@ Other tests cover lighting, mining, texture startup, trees and mesh ownership.
 Unity shader compilation, camera/controller feel, entity scaling and above/below
 partial-block views still require play testing. Restart Play Mode after pulling;
 existing saves can be reused.
+
+LightingParity compiles actual world/inventory dispatch for every special type and
+state. WaterChecks compiles copying, RLE/load, paired world edits and RPC methods.
+The lighting runner accepts `--stair-check <path>` for testing an isolated intact
+copy without changing an unrelated local edit.
