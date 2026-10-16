@@ -100,6 +100,7 @@ public class ChunkData
 public partial class World
 {
     public static World Instance;
+    public long betaWorldSeed;
     public int chunkSize=2,worldHeight=4,playerEdits,meshRequests;
     public bool IsWorldCreated=true,disabled=false;
     public WorldData worldData=new WorldData();
@@ -140,7 +141,7 @@ public partial class WorldServer
     // send for integration checks. Host RPC doesn't apply the update twice.
     public void RecordSend(Vector3Int[] p,byte[] l) { sends++; lastPositions=p;lastLevels=l; }
 }
-public static class IntegrationCheck
+public static partial class IntegrationCheck
 {
     private static Vector3Int V(int x,int y,int z) { return new Vector3Int(x,y,z); }
     private static ChunkData AddChunk(World w,Vector3Int origin)
@@ -305,6 +306,7 @@ public static class IntegrationCheck
             WaterCheck.Assert(pairs.GetBlock(p).type==BlockType.Air&&pairs.GetBlock(other).type==BlockType.Stone,"paired placement never overwrites occupied partner");
             pairs.SetBlock(other,BlockType.Air);
         }
+        CheckLavaWorld();
     }
 }
 

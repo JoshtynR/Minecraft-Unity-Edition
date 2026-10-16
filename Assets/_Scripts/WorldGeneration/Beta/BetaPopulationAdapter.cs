@@ -87,7 +87,8 @@ public sealed partial class Beta173Population
             Set(x,y,z,liquid);
             // The source placement belongs to population; subsequent scheduled
             // water ticks are handled by the existing authoritative simulation.
-            // Lava flow is not yet implemented by the runtime simulation.
+            // Both water and lava have runtime flow/reactions. Beta's immediate
+            // generation-time fluid updates are still separate from this adapter.
         }
     }
 }

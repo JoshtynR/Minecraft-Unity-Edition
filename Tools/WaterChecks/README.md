@@ -1,4 +1,4 @@
-# Water checks
+# Water/lava checks
 
 Run with Mono installed:
 
@@ -31,9 +31,50 @@ rendering, and multiplayer transport still need a play-mode check.
 4. Save/reload while water is flowing. Repeat near a chunk boundary and with a
    second connected player.
 
-This change covers water block flow and its surface mesh. Swimming, entity
-currents, flowing texture animation, and water/lava reactions are separate systems
-and are not added here. All existing non-air blocks block water displacement.
+Water and lava share the legacy-named WaterSimulation through different material
+views. Water advances every five game ticks; lava every thirty. Overworld lava
+increases horizontal decay by two (source levels 0/2/4/6, three-block reach), falls
+with the 8..15 flag, does not regenerate sources, and has Beta's three-in-four
+hesitation when increasing decay. Falling lava initially emits level one and its
+next update recalculates the normal decay. The optional pure-model Nether flag
+uses decay one, but the running game currently uses the Overworld configuration.
+
+## Beta reactions (not modern Java rules)
+
+Original reference: jacobo-mc/mc_b1.7.3_release at
+740c583901e1ff1150e9ef37e37dab5bc0e4f807, BlockFluid.checkForHarden,
+BlockFlowing.updateTick/liquidCanDisplaceBlock and Material/MaterialLogic.
+
+| Lava state | Touching water on side or above |
+| --- | --- |
+| Source, level 0 | Obsidian |
+| Flowing, levels 1..4 | Cobblestone |
+| Levels 5..7 or falling 8..15 | No hardening from this rule |
+
+Water below alone does not harden the lava above it. The original Beta
+BlockFlowing lets downward lava replace water with falling lava; it does **not**
+have the later stone-generator branch. Do not substitute the modern stone rule.
+Hardening runs on change notifications/activation, without waiting thirty ticks.
+
+Fluid displacement follows canonical materials, not user collider/opacity flags.
+Flowers, crops, torches, dust, rails, repeaters, fire, portal and snow
+layers wash away. Reeds, ladders, signs, doors, webs, pressure plates and partial solid blocks stop
+flow. Dropped items for washed-away blocks, fizz/smoke, fire spread, burning
+entities, swimming and currents are not implemented by this pass.
+
+Lava levels use the existing waterLevel field for backwards-compatible save data;
+RLE separates different levels for both fluids. Lava uses the weighted corner
+heights but stays in the solid rendering pass; its changing emission uses normal
+lighting updates. All changes are server-authoritative. The legacy water delta
+batch now encodes water 0..15, lava 32..47, obsidian 64, cobblestone 65, air 255.
+Clients defer deltas until chunk/population readiness and never simulate reactions.
+Both host and joining clients must use the updated build.
+
+The gameplay RNG for lava hesitation is independent of generation/population RNG
+and restarts on world load. Live vanilla tick order/RNG parity is **not certified**;
+tests are controlled regression scenarios, not a full Java-world oracle. Scheduled
+pending ticks are not serialized. This does not port generation-time immediate
+liquid physics into the population oracle.
 
 
 ## Transparent water rendering
@@ -52,4 +93,5 @@ water index offsets, repeat uploads, and removing water on a dry mesh rebuild.
 Shader compilation and above/below-water views need verification in Unity. The
 rendering uses Unity's normal transparent renderer sorting; intersecting or
 layered waterfalls can still require finer face sorting. Underwater fog,
-refraction, and water texture animation are not included in this change.
+and refraction are not included. Animation sheets are supported separately through
+Block Data's Animate face sheets settings; no texture assignments are changed here.

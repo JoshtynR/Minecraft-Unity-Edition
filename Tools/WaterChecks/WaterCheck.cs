@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-public static class WaterCheck
+public static partial class WaterCheck
 {
     private static int checks;
     public static void Assert(bool value, string message) { checks++; if (!value) throw new Exception(message); }
@@ -81,6 +81,7 @@ public static class WaterCheck
         float weighted = WaterSurface.CornerHeight(p => p.y != 1 ? -1 : p.x == 0 && p.z == 0 ? 0 : -1, P(0));
         Assert(Math.Abs(weighted - (1 - (11 / 9f + 3) / 14f)) < 0.00001f, "source weighted surface corner");
         IntegrationCheck.Run();
-        Console.WriteLine("PASS: " + checks + " water checks, including production block, save, and world adapter integration.");
+        CheckLava();
+        Console.WriteLine("PASS: " + checks + " fluid checks, including production block, save, and world adapter integration.");
     }
 }

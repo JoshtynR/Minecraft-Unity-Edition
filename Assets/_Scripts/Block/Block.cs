@@ -16,7 +16,7 @@ public class Block
     /// Note: never set this directly, use <see cref="SetType(BlockType)"/> instead
     /// </summary>
     public BlockType type;
-    // 0: source, 1..7: horizontal flow, 8..15: falling water.
+    // Legacy name: shared water/lava metadata. 0 source, 1..7 flow, 8..15 falling.
     public byte waterLevel;
     public BlockTypeData BlockData => BlockDataManager.blockTypeDataDictionary[(int)type];
     

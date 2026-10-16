@@ -71,10 +71,10 @@ public static class BlockHelper
                 var neighborShape = neighbourBlock.blockShape.GetShape();
                 bool visible = BlockShapesExtensions.IsPlant(neighbourBlockType) || SpecialBlockGeometry.NonOccluding(neighbourBlockType) || !shape.TouchesCellBoundary(dir) || neighbourBlockTypeData.isTransparent ||
                     !(StairGeometry.IsStair(neighbourBlockType) ? StairGeometry.CoversFace(StairGeometry.Facing(neighbourBlock.blockShape), shape, dir.GetOpposite()) : neighborShape.CoversBoundaryFace(shape, dir.GetOpposite()));
-                if (blockType == BlockType.Water)
+                if (blockType == BlockType.Water || blockType == BlockType.Lava)
                 {
-                    if (neighbourBlockType != BlockType.Water && visible)
-                        GetFaceDataIn(dir, pos, meshData.waterMesh, block, blockTypeData, chunk);
+                    if (neighbourBlockType != blockType && visible)
+                        GetFaceDataIn(dir, pos, blockType==BlockType.Water?meshData.waterMesh:meshData, block, blockTypeData, chunk);
                 }
                 else if (visible)
                     GetFaceDataIn(dir, pos, blockTypeData.isTransparent ? meshData.transparentMesh : meshData, block, blockTypeData, chunk);
@@ -160,7 +160,7 @@ public static class BlockHelper
             return meshData;
         }
         block.blockShape.GetShape().SetFaceVertices(dir,pos,meshData);
-        if (block.type == BlockType.Water && chunk != null)
+        if ((block.type == BlockType.Water || block.type == BlockType.Lava) && chunk != null)
             SetWaterFaceHeight(pos, meshData, chunk);
         if (chunk != null)
             GetFaceLightingAndAO(dir, pos, meshData, chunk);
@@ -179,6 +179,7 @@ public static class BlockHelper
 
     private static void SetWaterFaceHeight(Vector3Int pos, MeshData meshData, ChunkData chunk)
     {
+        var liquid=chunk.GetBlock(pos).type;
         for (int i = meshData.vertices.Count - 4; i < meshData.vertices.Count; i++)
         {
             var vertex = meshData.vertices[i];
@@ -188,8 +189,8 @@ public static class BlockHelper
             float height = WaterSurface.CornerHeight(p =>
             {
                 var sample = chunk.GetBlock(new Vector3Int(p.x, p.y, p.z));
-                if (sample.type == BlockType.Water) return sample.waterLevel;
-                if (sample.type == BlockType.Air) return WaterSimulation.Air;
+                if (sample.type == liquid) return sample.waterLevel;
+                if (sample.type == BlockType.Air || sample.type==BlockType.Water || sample.type==BlockType.Lava) return WaterSimulation.Air;
                 return WaterSimulation.Solid;
             }, new WaterPosition(cornerX, pos.y, cornerZ));
             vertex.y = pos.y + height + 0.0005f;

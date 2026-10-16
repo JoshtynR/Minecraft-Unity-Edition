@@ -43,6 +43,7 @@ public class WorldServer : NetworkBehaviour
     [Server]
     public void BroadcastWaterUpdates(Vector3Int[] positions, byte[] levels)
     {
+        // Legacy name: levels also encodes lava and fluid hardening products.
         RpcWaterUpdates(positions, levels);
     }
 

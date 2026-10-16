@@ -35,7 +35,7 @@ public class ChunkSection
                 var block = new Block(saveData.blocks[i].type, pos, chunkSection);
                 if (saveData.blocks[i].hasBlockState || StairGeometry.IsStair(block.type))
                     block.blockShape = SpecialBlockGeometry.Shape(block.type, saveData.blocks[i].stairFacing);
-                block.waterLevel = block.type == BlockType.Water ? (byte)(saveData.blocks[i].waterLevel & 15) : (byte)0;
+                block.waterLevel = block.type == BlockType.Water || block.type == BlockType.Lava ? (byte)(saveData.blocks[i].waterLevel & 15) : (byte)0;
                 chunkSection.blocks[pos.x, pos.y, pos.z] = BlockMapping.MapTypeToBlock(block.type, block);
                 chunkSection.blocks[pos.x, pos.y, pos.z].Loaded();
                 posIndex++;

@@ -32,9 +32,9 @@ output, changed block count, and a SHA-256 of final blocks plus dungeon records.
 
 These are controlled feature and stream comparisons, **not a certificate of
 full live-world seed parity**. The shims mock lighting, notifications, falling
-sand, and fluid ticks. Runtime spring sources use the existing scheduled water
-simulation; Beta's generation-time immediate spring fluid updates and lava
-flow have not been ported. The adapter computes generation lighting from the
+sand, and fluid ticks. Runtime spring sources now use scheduled water/lava
+flow and reactions; Beta's generation-time immediate spring updates are still
+not ported into this generator adapter. The adapter computes generation lighting from the
 current blocks, but exact vanilla light-update timing is not certified.
 Exploration/population order also affects overlapping features in vanilla.
 End-to-end region fixtures with those world services are the remaining work.
