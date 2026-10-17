@@ -4,7 +4,7 @@ using System.Reflection;
 using UnityEngine;
 namespace UnityEngine
 {
-    public class Object { public string name; public bool destroyed; public static void Destroy(Object o) { if(o!=null)o.destroyed=true; } }
+    public partial class Object { public string name; public bool destroyed; public static void Destroy(Object o) { if(o!=null)o.destroyed=true; } }
     public class MonoBehaviour : Object { }
     public class ScriptableObject : Object { }
     public class CreateAssetMenuAttribute : Attribute { public string fileName,menuName; }
@@ -12,7 +12,7 @@ namespace UnityEngine
     public class TooltipAttribute : Attribute { public TooltipAttribute(string s){} }
     public class RangeAttribute : Attribute { public RangeAttribute(int a,int b){} }
     public class HideInInspector:Attribute {}
-    public static class Application { public static bool isPlaying=true; }
+    public static partial class Application { public static bool isPlaying=true; }
     public static class SystemInfo { public static bool supports2DArrayTextures=true; }
     public static class Mathf { public static int Max(int a,int b)=>Math.Max(a,b);public static int Min(int a,int b)=>Math.Min(a,b); public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v)); }
     public struct Vector3 { public float x,y,z; public Vector3(float a,float b,float c){x=a;y=b;z=c;} }
@@ -27,7 +27,7 @@ namespace UnityEngine
     public enum ColorSpace { Linear, Gamma }
     public static class QualitySettings { public static ColorSpace activeColorSpace=ColorSpace.Linear; }
     public static class GL { public static bool sRGBWrite; }
-    public class Texture2D : Object
+    public partial class Texture2D : Object
     {
         public int width,height; public bool isReadable=true; public FilterMode filterMode=FilterMode.Bilinear;
         public Color32[] pixels;
@@ -66,7 +66,7 @@ namespace UnityEngine
         public static void SetGlobalTexture(string n,Object a){if(n=="_BlockFaceTextures")bound=(Texture2DArray)a;else if(n=="_BlockFaceAnimations")animations=(Texture2D)a;else throw new Exception("property");}
         public static void SetGlobalFloat(string n,float value){if(n!="_BlockFaceAnimationWidth")throw new Exception("property");animationWidth=value;}
     }
-    public static class Debug { public static int errors,warnings;public static void LogWarning(string s,Object o){warnings++;}public static void LogError(string s,Object o){errors++;} }
+    public static partial class Debug { public static int errors,warnings;public static void LogWarning(string s,Object o){warnings++;}public static void LogError(string s,Object o){errors++;} }
 }
 public enum Direction { up,down,left,right,forwards,backwards }
 public static class TextureCheck

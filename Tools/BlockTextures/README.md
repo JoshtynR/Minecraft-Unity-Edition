@@ -1,5 +1,46 @@
 # Block face images
 
+## Assign a local Minecraft texture folder
+
+Put the extracted texture tree in Assets/Textures/Minecraft and let Unity import
+it. Keep its block/blocks, item/items, gui, entity and colormap subdirectories.
+Nested assets/minecraft/textures folders are supported too. Exit Play Mode and
+run **Minecraft > Textures > Assign From Minecraft Folder**.
+
+The tool updates the existing Block Data and Item Data assets by matching exact
+names/known aliases, including every current block, special-model slot and item.
+It also assigns GUI icons, combines ten destroy_stage images into the existing
+breaking sheet when available, and maps a Steve skin to the two existing player
+materials. A square modern Steve skin is cropped to the classic upper-half layout.
+Animated item images become their first square frame for the current static UI.
+Ordinary block items keep their existing 3D mesh icons.
+
+Missing/ambiguous matches keep existing links. Nothing is inferred from an
+arbitrary first file, and GUI/item names cannot replace identically named block
+images. IDs, counts, stack limits, transparency/lighting/collision settings, tints,
+recipes, world data, original source images and catalogue ordering are preserved.
+Matching images intentionally replace the old image links. Undo records the edits.
+Animation sheets use per-part settings and read mcmeta frametime where supplied;
+custom arbitrary frame sequences and interpolated playback are not imported.
+
+Derived icon/skin/breaking images go in Assets/Textures/Minecraft_Generated,
+using stable names so reruns retain GUIDs. This tool does not flatten entity skins
+onto ordinary faces: modern bed/chest layouts lacking matching individual face
+images are reported and retain the old assignments. Fonts, menu layouts, gameplay
+for tools/vehicles/maps, and biome tint behaviour are not changed by image linking.
+
+Open **Minecraft > Textures > Open Assignment Report** for all matches, unresolved
+names and a source-file inventory with dimensions. The file is
+Logs/MinecraftTextureAssignment.txt in the Unity project. This is the report to
+use when finishing pack-specific exceptions. Restart Play Mode after assignment.
+
+The Windows directory must exist on the machine running Unity. This editor tool
+can process local files that are not committed to GitHub; remote code changes
+alone do not supply those files or update a separate local asset automatically.
+Tests compile the production mapper and editor assignment flow against Unity
+doubles, verifying full name coverage, category isolation, fallback preservation,
+special slots, crops, breaking stages, source ownership and idempotent output.
+
 ## Special model image slots
 
 Select Minecraft > Select Block Data (or click the existing asset), search for a
