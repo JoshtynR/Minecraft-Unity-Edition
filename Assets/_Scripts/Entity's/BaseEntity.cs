@@ -44,7 +44,6 @@ public abstract class BaseEntity : NetworkBehaviour
     protected Vector3 extraForce;
     protected float verticalMomentum;
     protected bool jumpRequest;
-    protected bool isWaitingOnJumpDelay;
     protected Transform direction;
 
 
@@ -61,18 +60,23 @@ public abstract class BaseEntity : NetworkBehaviour
         }
     }
 
+    protected void RequestJump(bool pressed)
+    {
+        if (pressed) jumpRequest = isGrounded && !isFlying;
+    }
+
     public virtual void FixedUpdate()
     {
+        // A press belongs to one physics tick. Never retain an airborne request
+        // until a timer expires or the player lands.
+        bool requested = jumpRequest;
+        jumpRequest = false;
+        if (requested && isGrounded && !isFlying) Jump();
         CalculateVelocity();
 
         if (Mathf.Abs(velocity.x) <= 0 && Mathf.Abs(velocity.z) <= 0)
         {
             isSprinting = false;
-        }
-
-        if (jumpRequest && !isWaitingOnJumpDelay)
-        {
-            Jump();
         }
 
         Move();
@@ -128,19 +132,11 @@ public abstract class BaseEntity : NetworkBehaviour
         verticalMomentum = jumpForce;
         isGrounded = false;
         jumpRequest = false;
-        StartCoroutine(WaitOnJumpDelay());
         OnJumpPerformed();
     }
 
     protected virtual void OnJumpPerformed() { }
     
-    public IEnumerator WaitOnJumpDelay()
-    {
-        isWaitingOnJumpDelay = true;
-        yield return new WaitForSeconds(0.5f);
-        isWaitingOnJumpDelay = false;
-    }
-
     public virtual void CalculateVelocity()
     {
         // Apply gravity

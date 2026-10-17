@@ -8,8 +8,9 @@ with tempfile.TemporaryDirectory() as tmp:
  controller=(ROOT/"Assets/_Scripts/Entity's/BaseEntity.cs").read_text()
  paths.append('Tools/ShapeChecks/SpecialCheck.cs')
  paths.append('Tools/ShapeChecks/SpecialTextureCheck.cs')
+ paths.append('Tools/ShapeChecks/JumpCheck.cs')
  paths.extend(['Assets/_Scripts/ItemType.cs','Assets/_Scripts/ItemDataSO.cs','Assets/_Scripts/BetaItemCatalog.cs'])
- methods=controller[controller.index('    public virtual void CalculateVelocity()'):controller.rfind('}')]
+ methods=controller[controller.index('    protected void RequestJump('):controller.index('    public virtual void Move()')]+controller[controller.index('    private void Jump()'):controller.rfind('}')]
  extra=Path(tmp)/'Controller.cs';extra.write_text('using UnityEngine;public partial class Controller{'+methods+'}')
  player=(ROOT/"Assets/_Scripts/Entity's/Player/Player.cs").read_text()
  placement=Path(tmp)/'PlayerPlacement.cs'

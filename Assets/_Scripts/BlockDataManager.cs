@@ -33,6 +33,7 @@ public class BlockDataManager : MonoBehaviour
         public Texture2D image;
         public int columns, rows, count, first;
         public float fps;
+        public bool pingPong;
     }
 
     private List<FaceSheet> InitializeData()
@@ -45,7 +46,7 @@ public class BlockDataManager : MonoBehaviour
         var definitions = BlockDataDefaults.CreateLookup(maxType + 1);
         var assigned = new bool[definitions.Length];
         var images = new List<FaceSheet>();
-        var indices = new Dictionary<System.Tuple<Texture2D,int,int,int,float>, int>();
+        var indices = new Dictionary<System.Tuple<Texture2D,int,int,int,float,bool>, int>();
         int nextLayer = 1;
         if (entries != null)
             foreach (var item in entries)
@@ -56,20 +57,22 @@ public class BlockDataManager : MonoBehaviour
                 assigned[id] = true;
                 if (item.textureData == null) item.textureData = new TextureData();
                 var settings=item.textureData;
-                settings.topIndex = Register(settings.top, settings, images, indices, ref nextLayer);
-                settings.bottomIndex = Register(settings.bottom, settings, images, indices, ref nextLayer);
-                settings.sideIndex = Register(settings.side, settings, images, indices, ref nextLayer);
-                settings.frontIndex = Register(settings.front, settings, images, indices, ref nextLayer);
-                settings.backIndex = Register(settings.back, settings, images, indices, ref nextLayer);
-                settings.leftIndex = Register(settings.left, settings, images, indices, ref nextLayer);
-                settings.rightIndex = Register(settings.right, settings, images, indices, ref nextLayer);
+                bool fluid=item.blockType==BlockType.Water||item.blockType==BlockType.Lava;
+                bool lava=item.blockType==BlockType.Lava;
+                settings.topIndex = Register(settings.top, settings, images, indices, ref nextLayer,fluid,null,lava);
+                settings.bottomIndex = Register(settings.bottom, settings, images, indices, ref nextLayer,fluid,null,lava);
+                settings.sideIndex = Register(settings.side, settings, images, indices, ref nextLayer,fluid,null,false);
+                settings.frontIndex = Register(settings.front, settings, images, indices, ref nextLayer,fluid,null,false);
+                settings.backIndex = Register(settings.back, settings, images, indices, ref nextLayer,fluid,null,false);
+                settings.leftIndex = Register(settings.left, settings, images, indices, ref nextLayer,fluid,null,false);
+                settings.rightIndex = Register(settings.right, settings, images, indices, ref nextLayer,fluid,null,false);
                 settings.ResetPartIndices();
                 if(settings.specialTextures!=null)
                 {
                     var parts=new HashSet<BlockTexturePart>();
                     foreach(var part in settings.specialTextures)
                         if(part!=null&&parts.Add(part.part))
-                            settings.SetPartIndex(part.part,Register(part.image,settings,images,indices,ref nextLayer));
+                            settings.SetPartIndex(part.part,Register(part.image,settings,images,indices,ref nextLayer,fluid,part,lava&&part.part==BlockTexturePart.FluidStill));
                 }
             }
         // Publish a complete map, never a partially filled array, to chunk workers.
@@ -90,31 +93,47 @@ public class BlockDataManager : MonoBehaviour
     }
 
     private int Register(Texture2D image, TextureData settings, List<FaceSheet> images,
-        Dictionary<System.Tuple<Texture2D,int,int,int,float>, int> indices, ref int nextLayer)
+        Dictionary<System.Tuple<Texture2D,int,int,int,float,bool>, int> indices, ref int nextLayer,bool fluid=false,SpecialBlockTexture part=null,bool pingPong=false)
     {
         if (image == null || image.width <= 0 || image.height <= 0) return 0;
         int columns=1,rows=1,count=1;
         float fps=0;
-        if(settings.animateFaces)
+        bool animate=settings.animateFaces;
+        int requestedColumns=settings.animationColumns,requestedRows=settings.animationRows,requestedCount=settings.animationFrameCount;
+        float requestedFps=settings.animationFramesPerSecond;
+        if(part!=null&&part.overrideAnimation)
         {
-            columns=Mathf.Clamp(settings.animationColumns,1,64);
-            rows=settings.animationRows<=0 ? Mathf.Max(1,image.height*columns/image.width) : Mathf.Clamp(settings.animationRows,1,256);
-            bool invalidAuto=settings.animationRows<=0 && image.height*columns%image.width!=0;
+            animate=part.animate;requestedColumns=part.columns;requestedRows=part.rows;
+            requestedCount=part.frameCount;requestedFps=part.framesPerSecond;
+        }
+        else if(fluid&&requestedColumns==1)
+        {
+            // Still/flow strips can have different frame counts. A block-wide
+            // row/count setting must not squeeze one strip into the other's grid.
+            requestedRows=0;requestedCount=0;
+        }
+        if(part!=null&&part.playback!=SheetPlayback.Automatic)pingPong=part.playback==SheetPlayback.PingPong;
+        if(animate)
+        {
+            columns=Mathf.Clamp(requestedColumns,1,64);
+            rows=requestedRows<=0 ? Mathf.Max(1,image.height*columns/image.width) : Mathf.Clamp(requestedRows,1,256);
+            bool invalidAuto=requestedRows<=0 && image.height*columns%image.width!=0;
             if(invalidAuto || image.width%columns!=0 || image.height%rows!=0 || columns>image.width || rows>image.height)
             {
                 Debug.LogWarning("Invalid animation grid for '"+image.name+"'. Using it as a static face image.",this);
                 columns=rows=1;
             }
             int cells=columns*rows;
-            count=settings.animationFrameCount<=0 ? cells : Mathf.Clamp(settings.animationFrameCount,1,cells);
-            fps=float.IsNaN(settings.animationFramesPerSecond)||float.IsInfinity(settings.animationFramesPerSecond)?20:Mathf.Clamp(settings.animationFramesPerSecond,0,120);
+            count=requestedCount<=0 ? cells : Mathf.Clamp(requestedCount,1,cells);
+            fps=float.IsNaN(requestedFps)||float.IsInfinity(requestedFps)?20:Mathf.Clamp(requestedFps,0,120);
             if(count==1)fps=0;
         }
-        var key=System.Tuple.Create(image,columns,rows,count,fps);
+        pingPong=pingPong&&count>1;
+        var key=System.Tuple.Create(image,columns,rows,count,fps,pingPong);
         if (indices.TryGetValue(key, out int index)) return index;
         index = nextLayer;
         nextLayer+=count;
-        images.Add(new FaceSheet{image=image,columns=columns,rows=rows,count=count,fps=fps,first=index});
+        images.Add(new FaceSheet{image=image,columns=columns,rows=rows,count=count,fps=fps,first=index,pingPong=pingPong});
         indices.Add(key, index);
         return index;
     }
@@ -158,7 +177,7 @@ public class BlockDataManager : MonoBehaviour
                         tile[row*size+column]=pixels[sourceY*sheet.image.width+sourceX];
                     }
                     array.SetPixels32(tile,sheet.first+frame);
-                    timing[sheet.first+frame]=new Color(sheet.first,sheet.count,sheet.fps,0);
+                    timing[sheet.first+frame]=new Color(sheet.first,sheet.count,sheet.fps,sheet.pingPong?1:0);
                 }
             }
             array.Apply(false, true);

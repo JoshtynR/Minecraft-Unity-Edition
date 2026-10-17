@@ -44,8 +44,25 @@ with the same lighting and UV streams as their base model.
 
 Special images join the existing shared texture array, including image
 deduplication and animation timing. Enable Animate Faces for animated fire/fluid
-sheets; the block's column/row/frame/FPS settings also apply to part images.
-Fluid flow-vector UV rotation, new fire attachment geometry, redstone simulation,
+sheets. Vertical fluid images detect rows/frame counts independently, even if an
+older block-wide Rows/Frames value is set: a 16x320 still strip has 20 frames while
+a 32x1024 flow strip has 32. Other images inherit the block's settings.
+An assigned part exposes Playback and Override Sheet Settings for independent
+columns, rows, frame count, speed, or static images. Automatic still-lava playback
+uses 0..last..1 to avoid a hard last-to-first snap; flowing lava loops forwards.
+Choose Loop explicitly for a still-lava sheet authored as a seamless forward loop.
+
+Assigned animated images are checked after editor reload for non-power-of-two
+scaling, compression, mipmaps and insufficient maximum import size. Importing
+common lava/water/fire strip filenames also preserves source dimensions. Run
+Minecraft > Repair Animated Texture Imports to repeat the check after assigning
+images. This changes image import settings, never block/image links or source PNGs.
+Custom platform import overrides still need to preserve strip dimensions.
+
+Floor fire now uses the original eight leaning planes spanning the full voxel
+footprint at 1.4 blocks high, rather than the narrow crossed-plant placeholder.
+Both fire sheets retain their animation settings.
+Fluid flow-vector UV rotation, side/ceiling fire attachment geometry, redstone simulation,
 sign text, piston motion, chest inventory merging and cake eating are not added by
 these image slots. Cake's existing metadata can now select the cut geometry/image.
 Full pixel parity for special models is not certified; inspect assigned art in Unity.

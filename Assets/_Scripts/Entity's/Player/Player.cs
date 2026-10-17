@@ -686,22 +686,7 @@ public partial class Player : BaseEntity
             }
         }
 
-        if (isGrounded)
-        {
-            if (Input.GetButton("Jump"))
-            {
-                jumpRequest = true;
-            }
-            if (Input.GetButtonDown("Jump"))
-            {
-                isWaitingOnJumpDelay = false;
-                StopCoroutine(nameof(WaitOnJumpDelay));
-            }
-            if (Input.GetButtonUp("Jump"))
-            {
-                jumpRequest = false;
-            }
-        }
+        RequestJump(Input.GetButtonDown("Jump"));
     }
 
 

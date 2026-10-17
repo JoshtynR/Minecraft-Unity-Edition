@@ -39,7 +39,19 @@ public static class SpecialBlockMesh
             else{float x=s==4?.95f:.05f;Quad(pos,V(x,0,1),V(x,1,1),V(x,1,0),V(x,0,0),layer(Direction.backwards),tint,mesh,true);}
             return;
         }
-        if(t==BlockType.Cobweb||t==BlockType.Fire)
+        if(t==BlockType.Fire)
+        {
+            // Beta's floor flame fills the voxel footprint with eight leaning
+            // sheets; the old narrow crossed plant only covered its centre.
+            int a=Texture(parts,BlockTexturePart.FireA,layer(Direction.backwards));
+            int b=Texture(parts,BlockTexturePart.FireB,layer(Direction.backwards));
+            FireX(.7f,.2f,pos,a,tint,mesh);FireX(.3f,.8f,pos,a,tint,mesh);
+            FireZ(.3f,.8f,pos,b,tint,mesh);FireZ(.7f,.2f,pos,b,tint,mesh);
+            FireX(0,.1f,pos,b,tint,mesh);FireX(1,.9f,pos,b,tint,mesh);
+            FireZ(1,.9f,pos,a,tint,mesh);FireZ(0,.1f,pos,a,tint,mesh);
+            return;
+        }
+        if(t==BlockType.Cobweb)
         {
             float a=t==BlockType.Cobweb?0:.2f,b=1-a;
             Quad(pos,V(a,0,a),V(a,1.4f,a),V(b,1.4f,b),V(b,0,b),Texture(parts,t==BlockType.Fire?BlockTexturePart.FireA:BlockTexturePart.Surface,layer(Direction.backwards)),tint,mesh,true);
@@ -145,6 +157,10 @@ public static class SpecialBlockMesh
     {
         int index=parts==null?0:parts(role);return index==0?fallback:index;
     }
+    private static void FireX(float bottom,float top,Vector3Int p,int layer,Color tint,MeshData m)
+    { Quad(p,V(bottom,0,0),V(top,1.4f,0),V(top,1.4f,1),V(bottom,0,1),layer,tint,m,true); }
+    private static void FireZ(float bottom,float top,Vector3Int p,int layer,Color tint,MeshData m)
+    { Quad(p,V(0,0,bottom),V(0,1.4f,top),V(1,1.4f,top),V(1,0,bottom),layer,tint,m,true); }
     private static BlockShape B(float a,float b,float c,float d,float e,float f)=>SpecialBlockGeometry.Box(a,b,c,d,e,f);
     private static Vector3 V(float x,float y,float z)=>new Vector3(x,y,z);
     private static void Cube(BlockShape b,Vector3Int pos,Func<Direction,int> layer,Color tint,MeshData m,bool fullUV=false)

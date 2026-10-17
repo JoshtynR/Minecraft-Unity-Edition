@@ -20,7 +20,14 @@ public class SpecialBlockTexture
 {
     public BlockTexturePart part;
     public Texture2D image;
+    public bool overrideAnimation;
+    public bool animate=true;
+    public int columns=1, rows, frameCount;
+    public float framesPerSecond=20;
+    public SheetPlayback playback;
 }
+
+public enum SheetPlayback { Automatic, Loop, PingPong }
 
 // Every slot in these layouts has a matching runtime mesh/face route.
 // Standard cuboids, stairs and slabs continue using their existing face images.

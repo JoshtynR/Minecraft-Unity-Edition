@@ -10,9 +10,12 @@ float3 AnimatedBlockFaceUV(float3 uv)
     if (_BlockFaceAnimationWidth > 0)
     {
         float layer = floor(uv.z + 0.5);
-        float3 timing = tex2Dlod(_BlockFaceAnimations,
-            float4((layer + 0.5) / _BlockFaceAnimationWidth, 0.5, 0, 0)).rgb;
-        uv.z = timing.x + fmod(floor(_Time.y * timing.z), max(1, timing.y));
+        float4 timing = tex2Dlod(_BlockFaceAnimations,
+            float4((layer + 0.5) / _BlockFaceAnimationWidth, 0.5, 0, 0));
+        float cycle = timing.w > 0.5 ? max(1, 2 * timing.y - 2) : max(1, timing.y);
+        float frame = fmod(floor(_Time.y * timing.z), cycle);
+        if (timing.w > 0.5) frame = min(frame, cycle - frame);
+        uv.z = timing.x + frame;
     }
     return uv;
 }

@@ -128,6 +128,7 @@ public static class TextureCheck
         Invoke(manager,"OnEnable");Check(BlockDataManager.blockTypeDataDictionary.Length>=133&&ReferenceEquals(BlockDataManager.blockTypeDataDictionary[3],data),"null catalog entries skipped while texture assignments survive");Invoke(manager,"OnDisable");
         manager.textureData=null;Invoke(manager,"OnEnable");Check(BlockDataManager.blockTypeDataDictionary.Length>=133&&Shader.bound.depth==1,"missing asset uses CPU definitions and checker texture");Invoke(manager,"OnDisable");
         CheckSpecialParts();
+        CheckFluidSheetGrids();
         CheckAnimations();
         Console.WriteLine(checks+" block texture data/UV/startup checks passed (Unity GPU APIs mocked).");
     }
@@ -163,6 +164,31 @@ public static class TextureCheck
         Invoke(manager,"OnDisable");
         Check(!sheet.destroyed&&!side.destroyed,"rebuilding and disposing runtime part images preserves source textures");
     }
+    static void CheckFluidSheetGrids()
+    {
+        var still=Sheet(16,1,20,40);var flow=Sheet(32,1,32,90);
+        var stillPart=new SpecialBlockTexture{part=BlockTexturePart.FluidStill,image=still};
+        var flowPart=new SpecialBlockTexture{part=BlockTexturePart.FluidFlow,image=flow};
+        var lava=new BlockTypeData{blockType=BlockType.Lava,textureData=new TextureData{
+            animateFaces=true,animationRows=20,animationFrameCount=20,specialTextures=new List<SpecialBlockTexture>{stillPart,flowPart}}};
+        var manager=new BlockDataManager{textureData=new BlockDataSO{textureDataList=new List<BlockTypeData>{lava}}};
+        Invoke(manager,"OnEnable");
+        Check(Shader.bound.depth==53&&lava.textureData.PartIndex(BlockTexturePart.FluidStill)==1&&lava.textureData.PartIndex(BlockTexturePart.FluidFlow)==21,"20-frame still and 32-frame flow detect independent grids despite old block-wide rows");
+        Check(Shader.animations.colors[1].g==20&&Shader.animations.colors[21].g==32,"each fluid sheet plays all its frames");
+        for(int i=0;i<20;i++)Check(Shader.bound.layers[1+i][0].r==40+i,"still lava extracts each 16x16 frame without stretching");
+        for(int i=0;i<32;i++)Check(Shader.bound.layers[21+i][0].r==90+i,"flow lava extracts each 32x32 frame without truncation");
+        Check(Shader.animations.colors[1].a==1&&Shader.animations.colors[21].a==0,"automatic playback reverses still lava but loops flow");
+        Invoke(manager,"OnDisable");
+        stillPart.playback=SheetPlayback.Loop;
+        flowPart.overrideAnimation=true;flowPart.rows=16;flowPart.frameCount=8;flowPart.framesPerSecond=7.5f;
+        Invoke(manager,"OnEnable");
+        Check(Shader.bound.depth==29&&Shader.animations.colors[1].a==0&&Shader.animations.colors[1].g==20,"explicit still playback override preserves its frame grid");
+        Check(Shader.animations.colors[21].g==8&&Shader.animations.colors[21].b==7.5f,"individual flow grid, count and speed overrides are honoured independently");
+        Invoke(manager,"OnDisable");
+        flowPart.animate=false;Invoke(manager,"OnEnable");
+        Check(Shader.animations.colors[21].g==1&&Shader.animations.colors[21].b==0,"a part can be static while its block's other image animates");
+        Invoke(manager,"OnDisable");
+    }
     static Texture2D Sheet(int cell,int columns,int rows,byte first,bool readable=true)
     {
         var t=new Texture2D(cell*columns,cell*rows,TextureFormat.RGBA32,false,false){isReadable=readable};
@@ -181,16 +207,17 @@ public static class TextureCheck
         var stone=new BlockTypeData{blockType=BlockType.Stone,textureData=new TextureData{top=still,bottom=still,side=still}};
         var manager=new BlockDataManager{textureData=new BlockDataSO{faceTextureResolution=16,textureDataList=new List<BlockTypeData>{water,lava,stone}}};
         Invoke(manager,"OnEnable");var array=Shader.bound;var timing=Shader.animations;
-        Check(array.depth==14&&water.textureData.topIndex==1&&water.textureData.bottomIndex==1&&water.textureData.sideIndex==5&&lava.textureData.topIndex==9&&stone.textureData.topIndex==13,"sheet deduplication includes animation timing and static/animated usage");
+        Check(array.depth==18&&water.textureData.topIndex==1&&water.textureData.bottomIndex==1&&water.textureData.sideIndex==5&&lava.textureData.topIndex==9&&lava.textureData.sideIndex==13&&stone.textureData.topIndex==17,"sheet deduplication includes timing, playback direction and static/animated usage");
         for(int i=0;i<4;i++)
         {
             Check(array.layers[1+i][0].r==16+i&&array.layers[9+i][0].r==16+i,"vertical strips extract top frame first without squeezing the sheet");
             Check(array.layers[5+i][0].r==64+i&&array.layers[5+i][0].a==127,"unreadable/rescaled flowing sheets retain frame pixels and alpha");
             Check(timing.colors[1+i].r==1&&timing.colors[1+i].g==4&&timing.colors[1+i].b==20,"water timing table points to contiguous four-frame range");
             Check(timing.colors[9+i].r==9&&timing.colors[9+i].g==4&&timing.colors[9+i].b==10,"lava playback speed independent of shared source image");
+            Check(timing.colors[9+i].a==1&&timing.colors[13+i].a==0,"still lava reverses smoothly while flowing lava loops forward");
         }
         Check(timing.format==TextureFormat.RGBAFloat&&timing.linear&&timing.filterMode==FilterMode.Point&&timing.wrapMode==TextureWrapMode.Clamp,"timing metadata keeps exact values without filtering or gamma transforms");
-        Check(timing.colors[13].r==13&&timing.colors[13].g==1&&timing.colors[13].b==0,"static faces are explicitly nonanimated");
+        Check(timing.colors[17].r==17&&timing.colors[17].g==1&&timing.colors[17].b==0,"static faces are explicitly nonanimated");
         Check(Shader.animationWidth==array.depth&&timing.applied,"timing table bound for every array layer including checker");
         Invoke(manager,"OnEnable");Check(array.destroyed&&timing.destroyed,"reinitialization releases both old GPU allocations");
         array=Shader.bound;timing=Shader.animations;Invoke(manager,"OnDisable");

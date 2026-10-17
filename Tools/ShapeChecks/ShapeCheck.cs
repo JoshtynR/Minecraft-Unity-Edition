@@ -15,7 +15,7 @@ namespace UnityEngine
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;} }
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
  public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}}
- public static class Mathf {public static float Clamp(float f,float a,float b)=>Math.Max(a,Math.Min(b,f));public static int FloorToInt(float f)=>(int)Math.Floor(f);public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int Max(int a,int b)=>Math.Max(a,b);}
+ public static class Mathf {public static float Abs(float f)=>Math.Abs(f);public static float Clamp(float f,float a,float b)=>Math.Max(a,Math.Min(b,f));public static int FloorToInt(float f)=>(int)Math.Floor(f);public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int Max(int a,int b)=>Math.Max(a,b);}
 }
 public enum Direction {down,up,backwards,forwards,left,right}
 public class ChunkData {}
@@ -26,6 +26,9 @@ public class TestTransform {public Vector3 position;public Vector3 forward=new V
 namespace UnityEngine {public static class Time {public static float deltaTime=0.02f,fixedDeltaTime=0.02f;}}
 public partial class Controller
 {
+ public bool jumpRequest;public float jumpForce=10.15f;
+ public void Move(){transform.position+=velocity;}
+ public void MoveForces(){}
  public World world;public TestTransform transform=new TestTransform(),direction=new TestTransform();public bool isGrounded,isFlying,isCrouching,isSprinting;public float verticalMomentum,gravity=-32,walkSpeed=4.317f,crouchSpeed=1.31f,sprintSpeed=5.612f,flySpeed=10.92f,flySprintSpeed=21.6f,entityWidth=0.3f,entityHeight=1.8f,horizontal,vertical;public Vector3 velocity;
 }
 public static partial class ShapeCheck
@@ -39,6 +42,7 @@ public static partial class ShapeCheck
   CheckStairs();
   CheckSpecial();
   CheckSpecialTextures();
+  CheckJumpInput();
   PlacementCheck.Run();
   var plants = new[]{BlockType.Dandelion,BlockType.Rose,BlockType.BrownMushroom,BlockType.RedMushroom,
    BlockType.OakSapling,BlockType.SpruceSapling,BlockType.BirchSapling,BlockType.TallGrass,BlockType.DryTallGrass,

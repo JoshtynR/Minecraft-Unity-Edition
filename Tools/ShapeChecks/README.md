@@ -113,6 +113,16 @@ bed-head/foot artwork, can now be assigned in Block Data; see
 Tools/BlockTextures/README.md. Cake bite metadata selects its cut bounds and inner
 face image, but eating, snow stacking and other gameplay effects are unchanged.
 
+Floor fire uses eight full-footprint leaning planes at the native 1.4-block height.
+Side/ceiling attachment remains separate from that floor model.
+Jump checks compile the production RequestJump/FixedUpdate/Jump methods together
+with the actual movement/collision methods. A button-down queues one physics tick;
+the request is consumed even if airborne, and takeoff happens before velocity is
+calculated. Releasing a quick tap before physics does not erase it. Holding Space
+does not repeat jumps; a new press after landing is required. Coverage includes
+multiple render updates per physics tick, stale airborne requests, low ceilings,
+fresh presses on landing and flying.
+
 Run `python Tools/ShapeChecks/run.py --mcs <compiler> --mono <runtime>`.
 Checks compile production registry/geometry/UVs, collision, targeting, and the
 actual BaseEntity velocity/collision methods against small world storage doubles.

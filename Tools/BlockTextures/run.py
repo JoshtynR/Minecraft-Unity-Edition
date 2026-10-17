@@ -36,7 +36,8 @@ def main():
         assert 'AnimatedBlockFaceUV(v.uv)' in vertex
         animation=(ROOT/'Assets/Shaders/BlockFaceAnimation.cginc').read_text()
         assert 'tex2Dlod(_BlockFaceAnimations' in animation and 'floor(_Time.y * timing.z)' in animation
-        assert 'uv.z = timing.x + fmod(' in animation
+        assert 'uv.z = timing.x + frame;' in animation
+        assert 'frame = min(frame, cycle - frame)' in animation
     print(f'{len(manifest)} lossless image crops and {count} face image references verified.')
     helper=(ROOT/'Assets/_Scripts/World/Rendering/BlockHelper.cs').read_text()
     uvs=helper[helper.index('    public static Vector3[] FaceUVs'):]
@@ -49,4 +50,7 @@ def main():
         files=[ROOT/'Tools/BlockTextures/TextureCheck.cs',ROOT/'Assets/_Scripts/BlockDataSO.cs',ROOT/'Assets/_Scripts/SpecialBlockTextures.cs',ROOT/'Assets/_Scripts/BlockDataManager.cs',ROOT/'Assets/_Scripts/BlockDataDefaults.cs',ROOT/'Assets/_Scripts/Block/BlockType.cs',tmp/'BlockHelper.cs',ROOT/'Tools/BlockTextures/LoadingProbe.cs',tmp/'LoadingProbe.cs']
         subprocess.run([args.mcs,'-langversion:latest','-out:'+str(binary),*map(str,files)],check=True)
         subprocess.run([args.mono,str(binary)],check=True)
+        importer=tmp/'import.exe'
+        subprocess.run([args.mcs,'-langversion:latest','-main:ImportCheck','-out:'+str(importer),*map(str,files),str(ROOT/'Tools/BlockTextures/ImportCheck.cs'),str(ROOT/'Assets/Editor/AnimatedBlockTextureImports.cs')],check=True)
+        subprocess.run([args.mono,str(importer)],check=True)
 if __name__=='__main__':main()
