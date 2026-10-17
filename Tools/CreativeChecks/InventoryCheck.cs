@@ -170,6 +170,7 @@ public partial class PlayerInventory
    menu.inventoryCanvas.renderMode=mode;
    menu.inventoryPreviewGraphic.SetLook(pitch,yaw);
    var drawn=DrawPreview(menu.inventoryPreviewGraphic);
+   Check(menu.inventoryPreviewGraphic.PopulateCount>0&&menu.inventoryPreviewGraphic.PreviewVertexCount==drawn.vertices.Count,"runtime diagnostic counters reflect actual canvas mesh population");
    Check(drawn.triangles.Count>=36&&drawn.vertices.Count>=36,"canvas emits visible skinned triangles for either canvas mode and all look limits");
    foreach(var v in drawn.vertices)
    {

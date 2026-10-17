@@ -130,6 +130,13 @@ The custom graphic explicitly requires CanvasRenderer; MaskableGraphic/Graphic
 do not add that component automatically. The harness models RequireComponent and
 checks that the player and every helmet face receive a renderer when constructed.
 
+If a preview remains invisible in Unity, open the inventory in Play Mode and run
+Minecraft > Diagnostics > Copy Inventory Preview Report. It copies live setup,
+skin references, populate/vertex counts, canvas renderer culling/alpha/depth,
+camera clipping, transforms and canvas groups to the clipboard and also writes
+Logs/InventoryPreviewReport.txt. The report is read-only except for forcing a
+canvas update and writing that report; it does not modify assets or the scene.
+
 The survival panel uses PlayerHudAssets.inventory, automatically bound from
 Assets/Textures/Minecraft/gui/container/inventory.png. It samples only the upper-left
 176x166 pixels of the 256x256 layout (also supports HD multiples), leaving the

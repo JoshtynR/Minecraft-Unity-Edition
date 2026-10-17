@@ -7,6 +7,8 @@ using UnityEngine.UI;
 [RequireComponent(typeof(CanvasRenderer))]
 public class InventoryPlayerGraphic : MaskableGraphic
 {
+    public int PopulateCount { get; private set; }
+    public int PreviewVertexCount { get; private set; }
     private MeshData geometry;
     private Texture skin;
     private float pitch, yaw;
@@ -40,6 +42,8 @@ public class InventoryPlayerGraphic : MaskableGraphic
     }
     protected override void OnPopulateMesh(VertexHelper helper)
     {
+        PopulateCount++;
+        PreviewVertexCount=0;
         helper.Clear();visible.Clear();
         if(geometry==null)return;
         for(int i=0;i<geometry.triangles.Count;i+=3)
@@ -61,6 +65,7 @@ public class InventoryPlayerGraphic : MaskableGraphic
             Add(helper,face.a,face.p,face.shade);Add(helper,face.b,face.q,face.shade);Add(helper,face.c,face.r,face.shade);
             helper.AddTriangle(first,first+1,first+2);
         }
+        PreviewVertexCount=helper.currentVertCount;
     }
     private void Add(VertexHelper helper,int index,Vector3 p,float shade)
     {
