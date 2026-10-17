@@ -20,7 +20,10 @@ namespace UnityEngine
  public class ScriptableObject:Object {}
  public enum RuntimeInitializeLoadType {SubsystemRegistration}
  public class RuntimeInitializeOnLoadMethodAttribute:Attribute {public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType type){}}
- public class Texture2D:Object {public int width=64,height=32;}
+ public class Texture:Object {public int width=64,height=32;}
+ public class Texture2D:Texture {}
+ public static class Debug {public static void LogWarning(string value){}}
+ public struct UIVertex {public Vector3 position;public Vector2 uv0;public Color color;public static UIVertex simpleVert=>new UIVertex();}
  public class Material:Object {public Texture2D mainTexture=new Texture2D();public Material(){}public Material(Material value){mainTexture=value.mainTexture;}}
  public class Mesh:Object
  {
@@ -78,6 +81,18 @@ namespace UnityEngine
 namespace UnityEngine.Events {public delegate void UnityAction();}
 namespace UnityEngine.UI
 {
+ public class MaskableGraphic:Component
+ {
+  public Color color=Color.white;public bool raycastTarget=true;public int dirty;
+  public virtual Texture mainTexture=>null;public void SetVerticesDirty(){dirty++;}public void SetMaterialDirty(){}
+  protected virtual void OnPopulateMesh(VertexHelper helper){}
+ }
+ public class VertexHelper
+ {
+  public readonly List<UIVertex> vertices=new List<UIVertex>();public readonly List<int> triangles=new List<int>();
+  public int currentVertCount=>vertices.Count;public void Clear(){vertices.Clear();triangles.Clear();}
+  public void AddVert(UIVertex v){vertices.Add(v);}public void AddTriangle(int a,int b,int c){triangles.Add(a);triangles.Add(b);triangles.Add(c);}
+ }
  public class RawImage:Component {public Texture2D texture;public Rect uvRect;public bool raycastTarget=true;}
  public class Image:Component {public Color color;public bool raycastTarget=true;}
  public class Button:Component {public bool interactable=true;public Click onClick=new Click();public class Click {UnityEngine.Events.UnityAction action;public void AddListener(UnityEngine.Events.UnityAction a){action+=a;}public void Invoke(){action();}}}
@@ -100,7 +115,8 @@ public class ChunkData {}
 public class Player:MonoBehaviour {public bool escapeMenuOpen;}
 public class Block {public Block(BlockType type,Vector3Int p,object section){}}
 public static class BlockMapping {public static Block MapTypeToBlock(BlockType t,Block b)=>b;}
-public class BlockDefinition {public Color albedoTint;}
+public class TextureData {public Texture2D top,bottom,side,front,back,left,right;}
+public class BlockDefinition {public Color albedoTint;public TextureData textureData=new TextureData();}
 public static class BlockDataManager {public static BlockDefinition[] blockTypeDataDictionary=new BlockDefinition[133];}
 public static class BlockShapesExtensions {public static bool IsPlant(BlockType t)=>false;}
 public static class SpecialBlockGeometry {public static bool FlatShading(BlockType t)=>false;}
@@ -129,6 +145,33 @@ public partial class PlayerInventory
   var go=new GameObject("Player",typeof(Player));var inv=go.AddComponent<PlayerInventory>();
   inv.UIBlockPrefab=new GameObject("BlockIcon",typeof(MeshFilter));inv.SlotTextPrefab=new GameObject("SlotText",typeof(TMPro.TextMeshProUGUI));inv.Start();return inv;
  }
+ static UnityEngine.UI.VertexHelper DrawPreview(InventoryPlayerGraphic graphic)
+ {
+  var helper=new UnityEngine.UI.VertexHelper();
+  typeof(InventoryPlayerGraphic).GetMethod("OnPopulateMesh",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).Invoke(graphic,new object[]{helper});
+  return helper;
+ }
+ static void CheckCanvasPreview(PlayerInventory menu)
+ {
+  Check(menu.inventoryPreview.GetComponent<MeshRenderer>()==null&&menu.inventoryPreviewGraphic is UnityEngine.UI.MaskableGraphic,"paper doll uses canvas graphics instead of a camera-dependent world renderer");
+  Check(ReferenceEquals(menu.inventoryPreviewGraphic.mainTexture,menu.inventoryPreviewSkin)&&!menu.inventoryPreviewGraphic.raycastTarget,"canvas receives skin and preview cannot intercept inventory input");
+  foreach(var mode in new[]{RenderMode.ScreenSpaceCamera,RenderMode.ScreenSpaceOverlay})
+  foreach(float pitch in new[]{-12f,0f,12f})foreach(float yaw in new[]{-30f,0f,30f})
+  {
+   menu.inventoryCanvas.renderMode=mode;
+   menu.inventoryPreviewGraphic.SetLook(pitch,yaw);
+   var drawn=DrawPreview(menu.inventoryPreviewGraphic);
+   Check(drawn.triangles.Count>=36&&drawn.vertices.Count>=36,"canvas emits visible skinned triangles for either canvas mode and all look limits");
+   foreach(var v in drawn.vertices)
+   {
+    Check(Math.Abs(v.position.x)<25&&Math.Abs(v.position.y)<35&&v.position.z==0,"projected player fits window and stays on canvas plane");
+    Check(v.uv0.x>=0&&v.uv0.x<=1&&v.uv0.y>=0&&v.uv0.y<=1&&v.color.a==1&&v.color.r>=.6f,"visible canvas vertices carry valid skin UVs and lighting");
+   }
+   foreach(int index in drawn.triangles)Check(index>=0&&index<drawn.vertices.Count,"canvas triangle indices valid");
+  }
+  int dirty=menu.inventoryPreviewGraphic.dirty;menu.inventoryPreviewGraphic.SetLook(12,30);
+  Check(menu.inventoryPreviewGraphic.dirty==dirty,"unchanged cursor pose does not trigger mesh rebuild");
+ }
  static void CheckInventoryArtwork()
  {
   foreach(int multiplier in new[]{1,2})
@@ -148,9 +191,7 @@ public partial class PlayerInventory
    Check(menu.craftResultRect.anchoredPosition.x==74&&menu.craftResultRect.anchoredPosition.y==47,"result control aligns with atlas output slot");
    var window=menu.inventoryRect.Find("PlayerPreview");
    Check(window.localPosition.x==-37&&window.localPosition.y==40&&window.GetComponent<UnityEngine.UI.Image>()==null,"preview sits in existing black sheet window");
-   var model=menu.inventoryPreview.transform;
-   foreach(var v in menu.inventoryPreviewMesh.vertices)
-    Check(Math.Abs(model.localPosition.x+v.x*model.localScale.x)<25&&Math.Abs(model.localPosition.y+v.y*model.localScale.y)<35,"entire skinned player fits inside preview window at rest");
+   CheckCanvasPreview(menu);
    menu.OnDestroy();Check(!sheet.destroyed,"inventory cleanup preserves source sheet");
   }
   Resources.hud=null;
@@ -164,7 +205,7 @@ public partial class PlayerInventory
   Check(!headless.AddItem(ItemType.Stone,2)&&headless.slots[0].count==63,"bool add failure leaves partial-stack room unchanged");
   Check(headless.AddItem(ItemType.Stone,1)&&headless.slots[0].count==64,"exact-capacity add succeeds");
   Check(inv.slots.Length==36&&inv.inventorySlotsRect.childCount==36,"survival capacity is 27 backpack plus nine hotbar");
-  Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewMesh.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
+  Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewData.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
   CheckInventoryArtwork();
   inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival panel and catalogue open together");
   Check(inv.creativeBlocks.Count==246&&inv.creativePageSize<inv.creativeBlocks.Count&&inv.nextPage.interactable,"complete item catalogue pages on a normal 1080p GUI screen");
@@ -184,6 +225,8 @@ public partial class PlayerInventory
   Check(inv.equipmentSlots[0].count==0&&inv.pickedUpSlot.count==1,"helmet slot rejects normal blocks");
   inv.SetCursor(new InventoryStack(ItemType.Pumpkin,64));inv.ClickInventorySlot(41,false,false);
   Check(inv.equipmentSlots[0].count==1&&inv.pickedUpSlot.count==63&&inv.inventoryPreviewHelmet.activeSelf,"Beta pumpkin helmet consumes one and appears on preview");
+  Check(inv.inventoryHelmetGraphics.Length==6&&inv.inventoryHelmetGraphics.All(g=>g is UnityEngine.UI.MaskableGraphic),"equipped pumpkin also renders through canvas faces");
+  Check(inv.inventoryHelmetGraphics.Sum(g=>DrawPreview(g).triangles.Count)==6,"pumpkin front face reaches canvas at neutral pose");
   var helmet=inv.SavedEquipment();inv.LoadInventory(null,null,null,null,helmet);
   Check(inv.equipmentSlots[0].type==ItemType.Pumpkin&&inv.equipmentSlots[0].count==1,"equipment survives save/load separately from storage");
   inv.ClickInventorySlot(41,false,true);Check(inv.equipmentSlots[0].count==0&&inv.slots[0].type==ItemType.Pumpkin,"shift-removing equipment moves it into storage");inv.LoadInventory(null);
@@ -211,8 +254,8 @@ public partial class PlayerInventory
   var seen=new HashSet<ItemType>();int pages=(inv.creativeBlocks.Count+inv.creativePageSize-1)/inv.creativePageSize;
   for(int p=0;p<pages;p++){for(int i=0;i<inv.creativePageSize;i++){int n=p*inv.creativePageSize+i;if(n<inv.creativeBlocks.Count)seen.Add(inv.creativeBlocks[n]);}inv.ChangeCreativePage(1);}
   Check(seen.Count==inv.creativeBlocks.Count&&!inv.nextPage.interactable,"all blocks remain reachable on smaller windows");
-  var meshes=inv.iconMeshes.Values.ToArray();var preview=inv.inventoryPreviewMesh;var material=inv.inventoryPreviewMaterial;inv.OnDestroy();
-  Check(meshes.All(m=>m.destroyed)&&preview.destroyed&&material.destroyed,"owned icon/preview meshes and material released");
+  var meshes=inv.iconMeshes.Values.ToArray();var skin=inv.inventoryPreviewSkin;inv.OnDestroy();
+  Check(meshes.All(m=>m.destroyed)&&inv.inventoryPreviewData==null&&!skin.destroyed,"owned meshes released and shared preview skin preserved");
   Console.WriteLine(checks+" inventory arithmetic/layout/crafting/migration/lifecycle checks passed (Unity UI/transport mocked).");
  }
 }

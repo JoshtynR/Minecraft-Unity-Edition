@@ -2,24 +2,23 @@ using UnityEngine;
 
 public partial class PlayerInventory
 {
-    private GameObject inventoryPreview;
-    private Mesh inventoryPreviewMesh;
-    private Material inventoryPreviewMaterial;
-    private GameObject inventoryPreviewHelmet;
+    private GameObject inventoryPreview, inventoryPreviewHelmet;
+    private MeshData inventoryPreviewData;
+    private Texture inventoryPreviewSkin;
+    private InventoryPlayerGraphic inventoryPreviewGraphic;
+    private InventoryPlayerGraphic[] inventoryHelmetGraphics;
     private RectTransform inventoryPreviewRect;
 
     private void BuildInventoryPreview(Transform parent,PlayerHudAssets assets)
     {
         var template=Resources.Load<Material>("InventoryPlayerMaterial");
-        if(template==null)return;
+        if(template==null||template.mainTexture==null)
+        {Debug.LogWarning("Inventory preview needs a skin on Resources/InventoryPlayerMaterial.");return;}
+        inventoryPreviewSkin=template.mainTexture;
         inventoryPreviewRect=parent.GetComponent<RectTransform>();
-        inventoryPreview=new GameObject("InventoryPlayer",typeof(MeshFilter),typeof(MeshRenderer));
-        inventoryPreview.layer=parent.gameObject.layer;
-        inventoryPreview.transform.SetParent(parent,false);
-        inventoryPreview.transform.localPosition=new Vector3(0,-29,-20);
-        inventoryPreview.transform.localScale=Vector3.one*29;
-        inventoryPreviewMaterial=new Material(template){name="Owned inventory player material"};
-        inventoryPreview.GetComponent<MeshRenderer>().sharedMaterial=inventoryPreviewMaterial;
+        var rect=CreativeRect("InventoryPlayer",parent,0,0,50,70);
+        inventoryPreview=rect.gameObject;
+        inventoryPreviewGraphic=inventoryPreview.AddComponent<InventoryPlayerGraphic>();
         var data=new MeshData(false);
         SkinBox(data,-4,24,-4,4,32,4,8,0,8,8);
         SkinBox(data,-4,12,-2,4,24,2,20,16,8,12);
@@ -27,19 +26,14 @@ public partial class PlayerInventory
         SkinBox(data,4,12,-2,8,24,2,44,16,4,12);
         SkinBox(data,-4,0,-2,0,12,2,4,16,4,12);
         SkinBox(data,0,0,-2,4,12,2,4,16,4,12);
-        inventoryPreviewMesh=new Mesh{name="Owned inventory player mesh"};
-        inventoryPreviewMesh.SetVertices(data.vertices);
-        var uv=new System.Collections.Generic.List<Vector2>();
-        foreach(var p in data.uv)uv.Add(new Vector2(p.x,p.y));
-        inventoryPreviewMesh.SetUVs(0,uv);inventoryPreviewMesh.SetTriangles(data.triangles,0);
-        inventoryPreviewMesh.RecalculateNormals();inventoryPreviewMesh.RecalculateBounds();
-        inventoryPreview.GetComponent<MeshFilter>().sharedMesh=inventoryPreviewMesh;
+        inventoryPreviewData=data;
+        inventoryPreviewGraphic.Initialize(data,inventoryPreviewSkin);
     }
     private void SkinBox(MeshData data,float x0,float y0,float z0,float x1,float y1,float z1,int u,int v,int width,int height)
     {
         var box=new BlockShape(x0,y0,z0,x1,y1,z1);
         float depth=z1-z0;
-        float skinHeight=inventoryPreviewMaterial.mainTexture!=null?inventoryPreviewMaterial.mainTexture.height:32;
+        float skinHeight=inventoryPreviewSkin.height*64f/inventoryPreviewSkin.width;
         foreach(var direction in BlockHelper.directions)
         {
             box.SetFaceVertices(direction,Vector3Int.zero,data);data.AddQuadTriangles();
@@ -55,11 +49,16 @@ public partial class PlayerInventory
     }
     private void UpdateInventoryPreview()
     {
-        if(inventoryPreview==null)return;
+        if(inventoryPreviewGraphic==null)return;
         Vector2 point;
         if(RectTransformUtility.ScreenPointToLocalPointInRectangle(inventoryPreviewRect,Input.mousePosition,
             inventoryCanvas.renderMode==RenderMode.ScreenSpaceOverlay?null:inventoryCanvas.worldCamera,out point))
-            inventoryPreview.transform.localRotation=Quaternion.Euler(Mathf.Clamp(point.y*.1f,-12,12),Mathf.Clamp(-point.x*.2f,-30,30),0);
+        {
+            float pitch=Mathf.Clamp(point.y*.1f,-12,12),yaw=Mathf.Clamp(-point.x*.2f,-30,30);
+            inventoryPreviewGraphic.SetLook(pitch,yaw);
+            if(inventoryHelmetGraphics!=null)
+                foreach(var face in inventoryHelmetGraphics)face.SetLook(pitch,yaw);
+        }
     }
     private void RefreshPreviewEquipment()
     {
@@ -67,18 +66,29 @@ public partial class PlayerInventory
         bool pumpkin=equipmentSlots[0]!=null&&equipmentSlots[0].type==ItemType.Pumpkin&&equipmentSlots[0].count>0;
         if(pumpkin&&inventoryPreviewHelmet==null)
         {
-            CreateBlockMesh(BlockType.Pumpkin,inventoryPreview.transform);
-            inventoryPreviewHelmet=inventoryPreview.transform.GetChild(inventoryPreview.transform.childCount-1).gameObject;
-            inventoryPreviewHelmet.transform.localScale=Vector3.one*.56f;
-            inventoryPreviewHelmet.transform.localPosition=new Vector3(.28f,1.47f,.28f);
-            inventoryPreviewHelmet.transform.localRotation=Quaternion.Euler(0,180,0);
+            inventoryPreviewHelmet=CreativeRect("PreviewPumpkin",inventoryPreviewRect,0,0,50,70).gameObject;
+            inventoryHelmetGraphics=new InventoryPlayerGraphic[BlockHelper.directions.Length];
+            var textures=BlockDataManager.blockTypeDataDictionary[(int)BlockType.Pumpkin].textureData;
+            for(int i=0;i<inventoryHelmetGraphics.Length;i++)
+            {
+                var direction=BlockHelper.directions[i];
+                Texture texture=direction==Direction.up?textures.top:direction==Direction.down?textures.bottom:
+                    direction==Direction.backwards?textures.front:direction==Direction.forwards?textures.back:
+                    direction==Direction.left?textures.left:textures.right;
+                if(texture==null)texture=textures.side;
+                var face=CreativeRect(direction.ToString(),inventoryPreviewHelmet.transform,0,0,50,70).gameObject.AddComponent<InventoryPlayerGraphic>();
+                var data=new MeshData(false);
+                new BlockShape(-4.5f,23.5f,-4.5f,4.5f,32.5f,4.5f).SetFaceVertices(direction,Vector3Int.zero,data);
+                data.AddQuadTriangles();data.AddFaceUVs(0);
+                face.Initialize(data,texture);inventoryHelmetGraphics[i]=face;
+            }
         }
         if(inventoryPreviewHelmet!=null)inventoryPreviewHelmet.SetActive(pumpkin);
     }
     private void DisposeInventoryPreview()
     {
-        if(inventoryPreviewMesh!=null)Destroy(inventoryPreviewMesh);
-        if(inventoryPreviewMaterial!=null)Destroy(inventoryPreviewMaterial);
-        inventoryPreviewMesh=null;inventoryPreviewMaterial=null;
+        // Canvas graphics own their internal meshes. Skins/materials remain shared assets.
+        inventoryPreviewData=null;inventoryPreviewSkin=null;
+        inventoryPreviewGraphic=null;inventoryHelmetGraphics=null;
     }
 }

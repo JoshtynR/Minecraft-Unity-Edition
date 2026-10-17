@@ -32,6 +32,7 @@ with tempfile.TemporaryDirectory() as tmp:
         str(root / "Assets/_Scripts/Entity's/Player/PlayerInventory_Creative.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/PlayerInventory_Storage.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/PlayerInventory_Preview.cs"),
+        str(root / "Assets/_Scripts/Entity's/Player/InventoryPlayerGraphic.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/InventoryRules.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/InventorySlot.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/PlayerHudAssets.cs"),

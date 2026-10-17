@@ -119,8 +119,13 @@ and cursor versus shift-crafting capacity. The runner also validates that all
 246 asset entries match the enum without duplicates, all 122 native variants
 have the expected stack/durability settings, and all catalogue pages are reachable.
 Unity shader compilation, Mirror weaving and live pointer/rendering still require
-Play Mode validation. The skinned cuboid preview is a lightweight separate model;
-it does not clone a networked player or allocate an extra camera/render texture.
+Play Mode validation. The skinned cuboid preview is projected by InventoryPlayerGraphic
+through MaskableGraphic and the default UI material. It uses canvas draw order rather
+than a world MeshRenderer, supports camera and overlay canvases, and allocates no
+extra camera, render texture, material clone or native mesh. Visible triangles are
+culled, lit and sorted back to front before their depth is flattened onto the canvas.
+Unchanged cursor poses reuse the graphic. Equipped pumpkin faces use the same path
+with their assigned individual block images. The source skin/material stay shared.
 
 The survival panel uses PlayerHudAssets.inventory, automatically bound from
 Assets/Textures/Minecraft/gui/container/inventory.png. It samples only the upper-left
@@ -129,4 +134,5 @@ sheet's extra widgets unused. Slot hit targets remain active over the printed
 borders; crafting/result controls align with their sheet locations. The player
 preview fills the black window and looks toward the mouse relative to that window.
 Missing artwork retains the procedural panel. Tests cover both paths, HD cropping,
-clickable slots and player mesh bounds; actual Unity rendering needs Play Mode.
+clickable slots, emitted canvas triangles, skin UVs and all allowed player poses;
+actual Unity rendering needs Play Mode.
