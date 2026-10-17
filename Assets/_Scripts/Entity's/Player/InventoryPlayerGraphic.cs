@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // Submit the paper doll through the canvas so it follows UI sorting and clipping.
+[RequireComponent(typeof(CanvasRenderer))]
 public class InventoryPlayerGraphic : MaskableGraphic
 {
     private MeshData geometry;

@@ -17,6 +17,9 @@ namespace UnityEngine
  }
  public class Component:Object {public GameObject gameObject;public Transform transform=>gameObject.transform;public T GetComponent<T>()where T:Component=>gameObject.GetComponent<T>();}
  public class MonoBehaviour:Component {}
+ [AttributeUsage(AttributeTargets.Class,AllowMultiple=true,Inherited=true)]
+ public class RequireComponent:Attribute {public Type required;public RequireComponent(Type type){required=type;}}
+ public class CanvasRenderer:Component {}
  public class ScriptableObject:Object {}
  public enum RuntimeInitializeLoadType {SubsystemRegistration}
  public class RuntimeInitializeOnLoadMethodAttribute:Attribute {public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType type){}}
@@ -64,7 +67,12 @@ namespace UnityEngine
  {
   static List<GameObject> all=new List<GameObject>();public int layer;public bool activeSelf=true;public RectTransform transform;public List<Component> components=new List<Component>();
   public GameObject(string name,params Type[] types){this.name=name;transform=new RectTransform{gameObject=this};all.Add(this);foreach(var t in types)if(t!=typeof(RectTransform))Add(t);}
-  Component Add(Type type){var value=(Component)Activator.CreateInstance(type);value.gameObject=this;components.Add(value);return value;}
+  Component Add(Type type)
+  {
+   foreach(RequireComponent requirement in type.GetCustomAttributes(typeof(RequireComponent),true))
+    if(!components.Any(c=>requirement.required.IsInstanceOfType(c)))Add(requirement.required);
+   var value=(Component)Activator.CreateInstance(type);value.gameObject=this;components.Add(value);return value;
+  }
   public T AddComponent<T>()where T:Component,new()=>(T)Add(typeof(T));public T GetComponent<T>()where T:Component=>typeof(T)==typeof(RectTransform)?(T)(Component)transform:(T)components.Find(c=>c is T);
   public void SetActive(bool value){activeSelf=value;}public static GameObject Find(string name)=>all.Find(o=>o.name==name&&o.activeSelf&&!o.destroyed);
  }
@@ -154,6 +162,7 @@ public partial class PlayerInventory
  static void CheckCanvasPreview(PlayerInventory menu)
  {
   Check(menu.inventoryPreview.GetComponent<MeshRenderer>()==null&&menu.inventoryPreviewGraphic is UnityEngine.UI.MaskableGraphic,"paper doll uses canvas graphics instead of a camera-dependent world renderer");
+  Check(menu.inventoryPreview.GetComponent<CanvasRenderer>()!=null,"custom player graphic must have a CanvasRenderer to reach Unity's UI render pipeline");
   Check(ReferenceEquals(menu.inventoryPreviewGraphic.mainTexture,menu.inventoryPreviewSkin)&&!menu.inventoryPreviewGraphic.raycastTarget,"canvas receives skin and preview cannot intercept inventory input");
   foreach(var mode in new[]{RenderMode.ScreenSpaceCamera,RenderMode.ScreenSpaceOverlay})
   foreach(float pitch in new[]{-12f,0f,12f})foreach(float yaw in new[]{-30f,0f,30f})
@@ -226,6 +235,7 @@ public partial class PlayerInventory
   inv.SetCursor(new InventoryStack(ItemType.Pumpkin,64));inv.ClickInventorySlot(41,false,false);
   Check(inv.equipmentSlots[0].count==1&&inv.pickedUpSlot.count==63&&inv.inventoryPreviewHelmet.activeSelf,"Beta pumpkin helmet consumes one and appears on preview");
   Check(inv.inventoryHelmetGraphics.Length==6&&inv.inventoryHelmetGraphics.All(g=>g is UnityEngine.UI.MaskableGraphic),"equipped pumpkin also renders through canvas faces");
+  Check(inv.inventoryHelmetGraphics.All(g=>g.GetComponent<CanvasRenderer>()!=null),"every pumpkin graphic must also have a CanvasRenderer");
   Check(inv.inventoryHelmetGraphics.Sum(g=>DrawPreview(g).triangles.Count)==6,"pumpkin front face reaches canvas at neutral pose");
   var helmet=inv.SavedEquipment();inv.LoadInventory(null,null,null,null,helmet);
   Check(inv.equipmentSlots[0].type==ItemType.Pumpkin&&inv.equipmentSlots[0].count==1,"equipment survives save/load separately from storage");

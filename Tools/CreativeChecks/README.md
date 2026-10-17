@@ -126,6 +126,9 @@ extra camera, render texture, material clone or native mesh. Visible triangles a
 culled, lit and sorted back to front before their depth is flattened onto the canvas.
 Unchanged cursor poses reuse the graphic. Equipped pumpkin faces use the same path
 with their assigned individual block images. The source skin/material stay shared.
+The custom graphic explicitly requires CanvasRenderer; MaskableGraphic/Graphic
+do not add that component automatically. The harness models RequireComponent and
+checks that the player and every helmet face receive a renderer when constructed.
 
 The survival panel uses PlayerHudAssets.inventory, automatically bound from
 Assets/Textures/Minecraft/gui/container/inventory.png. It samples only the upper-left
