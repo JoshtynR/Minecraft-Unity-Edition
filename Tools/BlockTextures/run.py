@@ -54,7 +54,7 @@ def main():
         subprocess.run([args.mcs,'-langversion:latest','-main:ImportCheck','-out:'+str(importer),*map(str,files),str(ROOT/'Tools/BlockTextures/ImportCheck.cs'),str(ROOT/'Assets/Editor/AnimatedBlockTextureImports.cs')],check=True)
         subprocess.run([args.mono,str(importer)],check=True)
         assignment=tmp/'assignment.exe'
-        extras=['Tools/BlockTextures/AssignmentCheck.cs','Assets/Editor/MinecraftTextureNames.cs','Assets/Editor/MinecraftTextureImageTools.cs','Assets/Editor/MinecraftTextureAutoAssign.cs','Assets/Editor/AnimatedBlockTextureImports.cs','Assets/_Scripts/ItemType.cs','Assets/_Scripts/ItemDataSO.cs','Assets/_Scripts/BetaItemCatalog.cs',"Assets/_Scripts/Entity's/Player/PlayerHudAssets.cs"]
+        extras=['Tools/BlockTextures/AssignmentCheck.cs','Assets/Editor/MinecraftTextureImageTools.cs','Assets/Editor/MinecraftTextureAutoAssign.cs','Assets/Editor/AnimatedBlockTextureImports.cs','Assets/_Scripts/ItemType.cs','Assets/_Scripts/ItemDataSO.cs','Assets/_Scripts/BetaItemCatalog.cs',"Assets/_Scripts/Entity's/Player/PlayerHudAssets.cs"]
         subprocess.run([args.mcs,'-langversion:latest','-main:AssignmentCheck','-out:'+str(assignment),*map(str,files),*[str(ROOT/p) for p in extras]],check=True)
         subprocess.run([args.mono,str(assignment)],check=True)
 if __name__=='__main__':main()
