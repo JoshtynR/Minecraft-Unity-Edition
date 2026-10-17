@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using MinecraftTextureKind = MinecraftTextureAutoAssign.MinecraftTextureKind;
+using MinecraftTextureLookup = MinecraftTextureAutoAssign.MinecraftTextureLookup;
 namespace TMPro {public class TMP_FontAsset:UnityEngine.Object {}}
 namespace UnityEngine
 {

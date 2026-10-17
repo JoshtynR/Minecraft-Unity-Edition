@@ -8,6 +8,49 @@ using UnityEngine;
 
 public static class MinecraftTextureAutoAssign
 {
+    // Keep lookup types with their consumer so the editor tool has no separate
+    // helper-type dependency during script imports.
+    public enum MinecraftTextureKind { Block, Item, Gui, Entity, Colormap, Flat }
+
+    // Never search the whole project or accept an arbitrary first match. GUI/item
+    // names collide with block names, and packs can contain duplicate subfolders.
+    public class MinecraftTextureLookup
+    {
+        private static string Key(MinecraftTextureKind kind,string name) => kind+":"+name.Replace("_","").Replace("-","");
+        private readonly Dictionary<string,List<string>> files=new Dictionary<string,List<string>>(StringComparer.OrdinalIgnoreCase);
+        public MinecraftTextureLookup(string root,IEnumerable<string> paths)
+        {
+            root=root.Replace('\\','/').TrimEnd('/')+"/";
+            foreach(var raw in paths)
+            {
+                string path=raw.Replace('\\','/');
+                if(!path.StartsWith(root,StringComparison.OrdinalIgnoreCase))continue;
+                string relative=path.Substring(root.Length),lower="/"+relative.ToLowerInvariant();
+                var kind=lower.Contains("/block/")||lower.Contains("/blocks/")?MinecraftTextureKind.Block:
+                    lower.Contains("/item/")||lower.Contains("/items/")?MinecraftTextureKind.Item:
+                    lower.Contains("/gui/")?MinecraftTextureKind.Gui:lower.Contains("/entity/")?MinecraftTextureKind.Entity:
+                    lower.Contains("/colormap/")?MinecraftTextureKind.Colormap:MinecraftTextureKind.Flat;
+                string key=Key(kind,Path.GetFileNameWithoutExtension(path));
+                List<string> matches;
+                if(!files.TryGetValue(key,out matches))files.Add(key,matches=new List<string>());
+                if(!matches.Contains(path))matches.Add(path);
+            }
+        }
+        public string Find(MinecraftTextureKind kind,string aliases,out bool ambiguous)
+        {
+            ambiguous=false;
+            foreach(string alias in (aliases??"").Split('|'))
+            {
+                if(alias.Length==0)continue;
+                List<string> matches;
+                if(!files.TryGetValue(Key(kind,alias),out matches)&&!files.TryGetValue(Key(MinecraftTextureKind.Flat,alias),out matches))continue;
+                if(matches.Count!=1){ambiguous=true;return null;}
+                return matches[0];
+            }
+            return null;
+        }
+    }
+
     public const string Root="Assets/Textures/Minecraft";
     private static string ReportPath => Path.Combine(Path.GetDirectoryName(Application.dataPath),"Logs/MinecraftTextureAssignment.txt");
     private sealed class Run
