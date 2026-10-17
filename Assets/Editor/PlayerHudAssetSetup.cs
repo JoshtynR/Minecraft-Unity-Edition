@@ -6,6 +6,7 @@ public static class PlayerHudAssetSetup
 {
     public const string BreakPath = "Assets/Textures/Minecraft/block_break.png";
     public const string IconsPath = "Assets/Textures/Minecraft/gui/icons.png";
+    public const string InventoryPath = "Assets/Textures/Minecraft/gui/container/inventory.png";
     static PlayerHudAssetSetup() { EditorApplication.delayCall += Bind; }
 
     public static void Bind()
@@ -19,9 +20,12 @@ public static class PlayerHudAssetSetup
         if (config == null) return;
         var icons = Prepare(IconsPath);
         var cracks = Prepare(BreakPath);
-        if ((icons == null || config.icons == icons) && (cracks == null || config.blockBreak == cracks)) return;
+        var inventory = Prepare(InventoryPath);
+        if ((icons == null || config.icons == icons) && (cracks == null || config.blockBreak == cracks) &&
+            (inventory == null || config.inventory == inventory)) return;
         if (icons != null) config.icons = icons;
         if (cracks != null) config.blockBreak = cracks;
+        if (inventory != null) config.inventory = inventory;
         EditorUtility.SetDirty(config);
         AssetDatabase.SaveAssetIfDirty(config);
     }
@@ -50,7 +54,8 @@ public class PlayerHudIconImporter : AssetPostprocessor
 {
     private void OnPreprocessTexture()
     {
-        if (assetPath != PlayerHudAssetSetup.IconsPath && assetPath != PlayerHudAssetSetup.BreakPath) return;
+        if (assetPath != PlayerHudAssetSetup.IconsPath && assetPath != PlayerHudAssetSetup.BreakPath &&
+            assetPath != PlayerHudAssetSetup.InventoryPath) return;
         var importer = (TextureImporter)assetImporter;
         importer.filterMode = FilterMode.Point;
         importer.mipmapEnabled = false;
@@ -62,6 +67,7 @@ public class PlayerHudIconImporter : AssetPostprocessor
     private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
     {
         foreach (var path in imported)
-            if (path == PlayerHudAssetSetup.IconsPath || path == PlayerHudAssetSetup.BreakPath) { EditorApplication.delayCall += PlayerHudAssetSetup.Bind; break; }
+            if (path == PlayerHudAssetSetup.IconsPath || path == PlayerHudAssetSetup.BreakPath ||
+                path == PlayerHudAssetSetup.InventoryPath) { EditorApplication.delayCall += PlayerHudAssetSetup.Bind; break; }
     }
 }

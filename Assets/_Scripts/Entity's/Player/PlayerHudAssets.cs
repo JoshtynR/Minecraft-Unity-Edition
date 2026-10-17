@@ -6,6 +6,8 @@ using UnityEngine;
 public class PlayerHudAssets : ScriptableObject
 {
     public Texture2D icons;
+    [Tooltip("256x256 inventory sheet; the upper-left 176x166 region is the survival panel.")]
+    public Texture2D inventory;
     public TMP_FontAsset levelFont;
     public Texture2D blockBreak;
     public Material blockBreakMaterial;

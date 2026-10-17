@@ -22,6 +22,7 @@ public partial class PlayerInventory
     private bool hoveredCatalog;
     private RectTransform hoveredRect;
     private ItemType tooltipType=ItemType.Nothing;
+    private bool texturedInventory;
 
     private void BuildCreativeInventory(Transform parent)
     {
@@ -36,22 +37,31 @@ public partial class PlayerInventory
         backdrop.localPosition=new Vector3(0,0,10);
         backdrop.gameObject.AddComponent<Image>().color=new Color(0,0,0,.6f);
         inventoryRect=CreativeRect("SurvivalInventory",creativeRoot,0,0,176,166);
-        Panel(inventoryRect);
+        texturedInventory=assets!=null&&assets.inventory!=null;
+        if(texturedInventory)
+        {
+            var background=inventoryRect.gameObject.AddComponent<RawImage>();
+            background.texture=assets.inventory;
+            // Atlas coordinates are based on the classic 256x256 layout, including HD multiples.
+            background.uvRect=new Rect(0,1-166/256f,176/256f,166/256f);
+            background.raycastTarget=false;
+        }
+        else Panel(inventoryRect);
         inventorySlotsRect=CreativeRect("Storage",inventoryRect,0,0,176,166);
         for(int i=0;i<36;i++)
             slots[i].countText=InventoryCell("Slot"+i,inventorySlotsRect,TmiLayout.SlotX(i),TmiLayout.SlotY(i),i);
         for(int i=0;i<4;i++)
         {
-            craftingSlots[i].countText=InventoryCell("Craft"+i,inventoryRect,8+(i%2)*18,49-(i/2)*18,36+i);
+            craftingSlots[i].countText=InventoryCell("Craft"+i,inventoryRect,18+(i%2)*18,57-(i/2)*18,36+i);
             craftingRects[i]=craftingSlots[i].countText.transform.parent.GetComponent<RectTransform>();
         }
-        craftedOutput.countText=InventoryCell("CraftResult",inventoryRect,64,39,40);
+        craftedOutput.countText=InventoryCell("CraftResult",inventoryRect,74,47,40);
         craftResultRect=craftedOutput.countText.transform.parent.GetComponent<RectTransform>();
-        var craftingLabel=CreativeText("CraftingLabel",inventoryRect,31,67,66,12,"Crafting",8,new Color(.25f,.25f,.25f,1));
+        var craftingLabel=CreativeText("CraftingLabel",inventoryRect,42,73,66,12,"Crafting",8,new Color(.25f,.25f,.25f,1));
         craftingLabel.alignment=TextAlignmentOptions.Left;
-        CreativeText("CraftArrow",inventoryRect,47,39,18,16,">",13,new Color(.45f,.45f,.45f,1));
-        var preview=CreativeRect("PlayerPreview",inventoryRect,-36,40,52,70);
-        preview.gameObject.AddComponent<Image>().color=new Color(.05f,.05f,.05f,1);
+        if(!texturedInventory)CreativeText("CraftArrow",inventoryRect,55,47,18,16,">",13,new Color(.45f,.45f,.45f,1));
+        var preview=CreativeRect("PlayerPreview",inventoryRect,-37,40,50,70);
+        if(!texturedInventory)preview.gameObject.AddComponent<Image>().color=new Color(.05f,.05f,.05f,1);
         BuildInventoryPreview(preview,assets);
         for(int i=0;i<4;i++)
         {
@@ -194,7 +204,10 @@ public partial class PlayerInventory
 
     private TextMeshProUGUI InventoryCell(string name,Transform parent,float x,float y,int index)
     {
-        var rect=CreativeRect(name,parent,x,y,18,18);SlotBackground(rect);
+        var rect=CreativeRect(name,parent,x,y,18,18);
+        // The atlas already contains the bevels. Keep an invisible raycast target for input.
+        if(texturedInventory)rect.gameObject.AddComponent<Image>().color=Color.clear;
+        else SlotBackground(rect);
         var input=rect.gameObject.AddComponent<InventorySlot>();input.playerInventory=this;input.slotIndex=index;
         return SlotCount(rect);
     }

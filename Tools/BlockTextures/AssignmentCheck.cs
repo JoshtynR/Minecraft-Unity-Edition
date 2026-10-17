@@ -37,7 +37,7 @@ namespace UnityEditor
 {
  public class InitializeOnLoadAttribute:Attribute {}
  public class MenuItem:Attribute {public MenuItem(string name){}}
- public static class EditorApplication {public static Action delayCall;public static bool isPlayingOrWillChangePlaymode;}
+ public static class EditorApplication {public static Action delayCall;public static bool isPlayingOrWillChangePlaymode,isCompiling,isUpdating;}
  public class AssetPostprocessor {public string assetPath;public AssetImporter assetImporter;}
  public enum TextureImporterNPOTScale {ToNearest,None}
  public enum TextureImporterCompression {Compressed,Uncompressed}
@@ -50,7 +50,7 @@ namespace UnityEditor
  {
   public TextureImporterNPOTScale npotScale=TextureImporterNPOTScale.None;
   public TextureImporterCompression textureCompression=TextureImporterCompression.Uncompressed;
-  public FilterMode filterMode=FilterMode.Point;public bool mipmapEnabled;
+  public FilterMode filterMode=FilterMode.Point;public bool mipmapEnabled,alphaIsTransparency;
   public int maxTextureSize=2048;public Texture2D image;
   public void SaveAndReimport(){}
   public void GetSourceTextureWidthAndHeight(out int w,out int h){w=image.width;h=image.height;}
@@ -130,6 +130,7 @@ public static class AssignmentCheck
    var clock=Image(root+"/item/clock.png",16,512,7);
    for(int i=0;i<16*16;i++)clock.pixels[clock.pixels.Length-1-i]=new Color32(8,0,0,255);
    var icons=Image(root+"/gui/icons.png",256,256);
+   var inventory=Image(PlayerHudAssetSetup.InventoryPath,256,256);
    var steve=Image(root+"/entity/steve.png",64,64,10);
    for(int i=0;i<steve.pixels.Length/2;i++)steve.pixels[i]=new Color32(11,0,0,255);
    for(int i=0;i<10;i++)Image(root+"/block/destroy_stage_"+i+".png",color:(byte)(20+i));
@@ -148,6 +149,15 @@ public static class AssignmentCheck
    Check(ReferenceEquals(blocks.textureDataList[2].textureData.specialTextures[0].image,torch),"special model slot receives matching image");
    Check(items.items[3].icon.width==16&&items.items[3].icon.height==16&&items.items[3].icon.pixels.All(p=>p.r==8),"animated item sheet becomes its top frame rather than a squeezed strip");
    Check(ReferenceEquals(hud.icons,icons)&&hud.blockBreak.width==160&&hud.blockBreak.height==16,"HUD icons and all ten breaking images are assigned");
+   Check(ReferenceEquals(hud.inventory,inventory),"auto-assign binds exact inventory container sheet");
+   hud.inventory=null;
+   var guiImporter=UnityEditor.AssetImporter.all[PlayerHudAssetSetup.InventoryPath];
+   guiImporter.mipmapEnabled=true;guiImporter.npotScale=UnityEditor.TextureImporterNPOTScale.ToNearest;
+   PlayerHudAssetSetup.Bind();
+   Check(ReferenceEquals(hud.inventory,inventory)&&!guiImporter.mipmapEnabled&&guiImporter.npotScale==UnityEditor.TextureImporterNPOTScale.None,"editor startup binds inventory and preserves pixel layout");
+   UnityEditor.AssetDatabase.assets.Remove(PlayerHudAssetSetup.InventoryPath);PlayerHudAssetSetup.Bind();
+   Check(ReferenceEquals(hud.inventory,inventory),"missing inventory file preserves existing assignment");
+   UnityEditor.AssetDatabase.assets[PlayerHudAssetSetup.InventoryPath]=inventory;
    for(int i=0;i<10;i++)Check(hud.blockBreak.pixels[i*16].r==20+i,"breaking sheet preserves stage order");
    Check(material.mainTexture.width==64&&material.mainTexture.height==32&&material.mainTexture.pixels.All(p=>p.r==10),"modern square Steve skin converts to existing classic UV layout");
    Check(steve.height==64&&clock.height==512&&!steve.destroyed&&!clock.destroyed,"source textures are never cropped or destroyed in place");

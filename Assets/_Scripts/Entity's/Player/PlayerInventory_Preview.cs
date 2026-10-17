@@ -6,11 +6,13 @@ public partial class PlayerInventory
     private Mesh inventoryPreviewMesh;
     private Material inventoryPreviewMaterial;
     private GameObject inventoryPreviewHelmet;
+    private RectTransform inventoryPreviewRect;
 
     private void BuildInventoryPreview(Transform parent,PlayerHudAssets assets)
     {
         var template=Resources.Load<Material>("InventoryPlayerMaterial");
         if(template==null)return;
+        inventoryPreviewRect=parent.GetComponent<RectTransform>();
         inventoryPreview=new GameObject("InventoryPlayer",typeof(MeshFilter),typeof(MeshRenderer));
         inventoryPreview.layer=parent.gameObject.layer;
         inventoryPreview.transform.SetParent(parent,false);
@@ -55,7 +57,7 @@ public partial class PlayerInventory
     {
         if(inventoryPreview==null)return;
         Vector2 point;
-        if(RectTransformUtility.ScreenPointToLocalPointInRectangle(inventoryRect,Input.mousePosition,
+        if(RectTransformUtility.ScreenPointToLocalPointInRectangle(inventoryPreviewRect,Input.mousePosition,
             inventoryCanvas.renderMode==RenderMode.ScreenSpaceOverlay?null:inventoryCanvas.worldCamera,out point))
             inventoryPreview.transform.localRotation=Quaternion.Euler(Mathf.Clamp(point.y*.1f,-12,12),Mathf.Clamp(-point.x*.2f,-30,30),0);
     }

@@ -121,3 +121,12 @@ have the expected stack/durability settings, and all catalogue pages are reachab
 Unity shader compilation, Mirror weaving and live pointer/rendering still require
 Play Mode validation. The skinned cuboid preview is a lightweight separate model;
 it does not clone a networked player or allocate an extra camera/render texture.
+
+The survival panel uses PlayerHudAssets.inventory, automatically bound from
+Assets/Textures/Minecraft/gui/container/inventory.png. It samples only the upper-left
+176x166 pixels of the 256x256 layout (also supports HD multiples), leaving the
+sheet's extra widgets unused. Slot hit targets remain active over the printed
+borders; crafting/result controls align with their sheet locations. The player
+preview fills the black window and looks toward the mouse relative to that window.
+Missing artwork retains the procedural panel. Tests cover both paths, HD cropping,
+clickable slots and player mesh bounds; actual Unity rendering needs Play Mode.

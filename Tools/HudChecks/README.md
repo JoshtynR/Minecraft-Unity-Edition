@@ -10,7 +10,10 @@ The generated UI is destroyed by its owner, and unchanged values reuse it.
 
 The user-owned sprite sheet is expected at
 `Assets/Textures/Minecraft/gui/icons.png`. It is not present in the remote
-repository when this change was written. PlayerHudAssetSetup binds it into
+repository when this change was written. The inventory background is separately
+bound from `Assets/Textures/Minecraft/gui/container/inventory.png` into the same
+Resources asset; importing that sheet or reloading the editor binds it automatically.
+PlayerHudAssetSetup binds the icons into
 `Assets/Resources/PlayerHudAssets.asset` on editor load/import and saves only that
 asset. It sets point filtering, no mipmaps, uncompressed pixels and no NPOT
 rescaling. Resources preserves the texture/font references in builds. The actual

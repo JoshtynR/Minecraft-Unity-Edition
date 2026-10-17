@@ -468,6 +468,11 @@ public static class MinecraftTextureAutoAssign
             run.dirty.Add(hud);
             var icons=run.Find(MinecraftTextureKind.Gui,"icons","HUD icons",true);
             if(icons!=null&&hud.icons!=icons){hud.icons=icons;run.assigned++;}
+            // Use the exact container sheet; other GUI atlases can also be named inventory.
+            string inventoryPath=Root+"/gui/container/inventory.png";
+            var inventory=AssetDatabase.LoadAssetAtPath<Texture2D>(inventoryPath);
+            if(inventory!=null&&hud.inventory!=inventory)
+            {hud.inventory=inventory;run.assigned++;run.report.AppendLine("MATCH Survival inventory -> "+inventoryPath);}
             var breaking=run.Find(MinecraftTextureKind.Block,"block_break","Block breaking sheet",true);
             if(breaking==null)
             {

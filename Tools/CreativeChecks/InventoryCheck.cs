@@ -42,7 +42,7 @@ namespace UnityEngine
  public struct Vector3Int {public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static Vector3Int zero=>new Vector3Int();}
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}}
  public struct Quaternion {public static Quaternion Euler(float x,float y,float z)=>new Quaternion();}
- public struct Rect {public float width,height;public Rect(float x,float y,float width,float height){this.width=width;this.height=height;}}
+ public struct Rect {public float x,y,width,height;public Rect(float x,float y,float width,float height){this.x=x;this.y=y;this.width=width;this.height=height;}}
  public static class Mathf {public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v));}
  public class Transform:Component
  {
@@ -65,7 +65,7 @@ namespace UnityEngine
   public T AddComponent<T>()where T:Component,new()=>(T)Add(typeof(T));public T GetComponent<T>()where T:Component=>typeof(T)==typeof(RectTransform)?(T)(Component)transform:(T)components.Find(c=>c is T);
   public void SetActive(bool value){activeSelf=value;}public static GameObject Find(string name)=>all.Find(o=>o.name==name&&o.activeSelf&&!o.destroyed);
  }
- public static class Resources {public static T Load<T>(string name)where T:Object=>name=="InventoryPlayerMaterial"?(T)(Object)new Material():null;}
+ public static class Resources {public static PlayerHudAssets hud;public static T Load<T>(string name)where T:Object=>name=="InventoryPlayerMaterial"?(T)(Object)new Material():name=="PlayerHudAssets"?(T)(Object)hud:null;}
  public enum KeyCode {Alpha1=49,E=69,LeftShift=304,RightShift=303}
  public static class Input {public static Vector3 mousePosition;public static bool GetKeyDown(KeyCode k)=>false;public static bool GetKey(KeyCode k)=>false;public static float GetAxis(string n)=>0;}
  public enum RenderMode {ScreenSpaceOverlay,ScreenSpaceCamera}
@@ -78,7 +78,7 @@ namespace UnityEngine
 namespace UnityEngine.Events {public delegate void UnityAction();}
 namespace UnityEngine.UI
 {
- public class RawImage:Component {public Texture2D texture;public bool raycastTarget=true;}
+ public class RawImage:Component {public Texture2D texture;public Rect uvRect;public bool raycastTarget=true;}
  public class Image:Component {public Color color;public bool raycastTarget=true;}
  public class Button:Component {public bool interactable=true;public Click onClick=new Click();public class Click {UnityEngine.Events.UnityAction action;public void AddListener(UnityEngine.Events.UnityAction a){action+=a;}public void Invoke(){action();}}}
 }
@@ -129,6 +129,32 @@ public partial class PlayerInventory
   var go=new GameObject("Player",typeof(Player));var inv=go.AddComponent<PlayerInventory>();
   inv.UIBlockPrefab=new GameObject("BlockIcon",typeof(MeshFilter));inv.SlotTextPrefab=new GameObject("SlotText",typeof(TMPro.TextMeshProUGUI));inv.Start();return inv;
  }
+ static void CheckInventoryArtwork()
+ {
+  foreach(int multiplier in new[]{1,2})
+  {
+   var sheet=new Texture2D{width=256*multiplier,height=256*multiplier};
+   Resources.hud=new PlayerHudAssets{inventory=sheet};
+   var menu=BuildMenu();var background=menu.inventoryRect.GetComponent<UnityEngine.UI.RawImage>();
+   Check(background!=null&&ReferenceEquals(background.texture,sheet),"inventory uses configured sheet at native and HD sizes");
+   Check(background.uvRect.x==0&&background.uvRect.y==90/256f&&background.uvRect.width==176/256f&&background.uvRect.height==166/256f,"only top-left survival panel is sampled; extra atlas widgets excluded");
+   Check(menu.inventoryRect.Find("Bevel")==null&&menu.inventoryRect.Find("CraftArrow")==null,"atlas bevels and arrow are not painted over");
+   for(int i=0;i<36;i++)
+   {
+    var cell=menu.inventorySlotsRect.GetChild(i);
+    Check(cell.Find("Inset")==null&&cell.GetComponent<UnityEngine.UI.Image>().color.a==0&&cell.GetComponent<InventorySlot>()!=null,"sheet slots retain invisible clickable targets without duplicate borders");
+   }
+   for(int i=0;i<4;i++)Check(menu.craftingRects[i].anchoredPosition.x==18+i%2*18&&menu.craftingRects[i].anchoredPosition.y==57-i/2*18,"craft controls align with atlas pixel centers");
+   Check(menu.craftResultRect.anchoredPosition.x==74&&menu.craftResultRect.anchoredPosition.y==47,"result control aligns with atlas output slot");
+   var window=menu.inventoryRect.Find("PlayerPreview");
+   Check(window.localPosition.x==-37&&window.localPosition.y==40&&window.GetComponent<UnityEngine.UI.Image>()==null,"preview sits in existing black sheet window");
+   var model=menu.inventoryPreview.transform;
+   foreach(var v in menu.inventoryPreviewMesh.vertices)
+    Check(Math.Abs(model.localPosition.x+v.x*model.localScale.x)<25&&Math.Abs(model.localPosition.y+v.y*model.localScale.y)<35,"entire skinned player fits inside preview window at rest");
+   menu.OnDestroy();Check(!sheet.destroyed,"inventory cleanup preserves source sheet");
+  }
+  Resources.hud=null;
+ }
  public static void Main()
  {
   CheckRules();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);
@@ -139,6 +165,7 @@ public partial class PlayerInventory
   Check(headless.AddItem(ItemType.Stone,1)&&headless.slots[0].count==64,"exact-capacity add succeeds");
   Check(inv.slots.Length==36&&inv.inventorySlotsRect.childCount==36,"survival capacity is 27 backpack plus nine hotbar");
   Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewMesh.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
+  CheckInventoryArtwork();
   inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival panel and catalogue open together");
   Check(inv.creativeBlocks.Count==246&&inv.creativePageSize<inv.creativeBlocks.Count&&inv.nextPage.interactable,"complete item catalogue pages on a normal 1080p GUI screen");
   Check(inv.inventoryRect.anchoredPosition.x+88<=inv.creativePanel.anchoredPosition.x-inv.creativePanel.sizeDelta.x/2-8,"sidebar does not overlap survival panel");
