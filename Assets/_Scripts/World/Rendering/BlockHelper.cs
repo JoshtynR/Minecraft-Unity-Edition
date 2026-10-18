@@ -39,6 +39,11 @@ public static class BlockHelper
 
         BlockTypeData blockTypeData = BlockDataManager.blockTypeDataDictionary[(int)blockType];
         Block block = chunk.GetBlock(pos);
+        if(blockType==BlockType.Chest&&ModernChestVisual.Enabled)
+        {
+            if(meshData.chests==null)meshData.chests=new System.Collections.Generic.List<Vector3Int>();
+            meshData.chests.Add(pos);return meshData;
+        }
 
         if (SpecialBlockGeometry.Handles(blockType))
         {

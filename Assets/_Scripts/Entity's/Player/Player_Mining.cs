@@ -99,6 +99,7 @@ public partial class Player
         if (world == null || health <= 0 || NetworkTime.time < nextServerMineTime || !InMiningReach(position)) return;
         var block = world.GetBlock(position);
         if (block == null || block.type != type || HandMining.Hardness(type) < 0) return;
+        if(!world.CanReplaceChest(position,BlockType.Air))return;
         var shape = block.blockShape.GetShape();
         var local = hitPoint - (Vector3)position;
         if (local.x < shape.xMin / 16f || local.x > shape.xMax / 16f ||
@@ -116,6 +117,7 @@ public partial class Player
         if (world == null || !world.IsWorldCreated || health <= 0 || !InMiningReach(serverMinePosition) || !MiningLineOfSight(serverMinePosition, serverMineHitPoint)) { serverMining = false; return; }
         var block = world.GetBlock(serverMinePosition);
         if (block == null || block.type != serverMineType) { serverMining = false; return; }
+        if(!world.CanReplaceChest(serverMinePosition,BlockType.Air)){serverMining=false;return;}
         serverMineClock += dt;
         while (serverMineClock + 0.000001f >= 0.05f && serverMining)
         {

@@ -4,6 +4,7 @@ using UnityEngine;
 public class MeshData
 {
     public List<Vector3> vertices   = new List<Vector3>();
+    public List<Vector3Int> chests;
     public List<int>     triangles  = new List<int>();
     public List<Vector2> faceCoordinates = new List<Vector2>(); // normalized quad coordinates, independent of cropped image UVs
     public List<Vector3> uv         = new List<Vector3>(); // xy = face UV, z = image layer

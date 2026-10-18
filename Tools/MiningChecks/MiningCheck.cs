@@ -57,6 +57,7 @@ public class Block {public BlockType type;public Vector3Int globalWorldPosition;
 public class World
 {
  public bool IsWorldCreated=true;public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();public int edits;
+ public bool chestProtected;public bool CanReplaceChest(Vector3Int position,BlockType next)=>!chestProtected;
  public Block GetBlock(Vector3 p)=>GetBlock(new Vector3Int((int)Math.Floor(p.x),(int)Math.Floor(p.y),(int)Math.Floor(p.z)));
  public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block{type=BlockType.Air,globalWorldPosition=p};}
  public void SetBlock(Vector3Int p,BlockType type){edits++;blocks[p].type=type;}
@@ -91,6 +92,8 @@ public static class MiningCheck
   var ice=Setup(BlockType.Ice);ice.world.blocks[ice.aimed+Vector3Int.down]=new Block{type=BlockType.Stone};ice.Begin(ice.aimed,BlockType.Ice);for(int i=0;i<20;i++)ice.Step();Check(ice.world.GetBlock(ice.aimed).type==BlockType.Water,"supported ice becomes water");
   var cooldown=Setup(BlockType.Dirt);cooldown.Begin(cooldown.aimed,BlockType.Dirt);for(int i=0;i<20;i++)cooldown.Step();cooldown.world.blocks[cooldown.aimed].type=BlockType.Dirt;cooldown.Begin(cooldown.aimed,BlockType.Dirt);for(int i=0;i<30;i++)cooldown.Step();Check(cooldown.world.edits==1,"post-break cooldown rejects early restart");cooldown.Begin(cooldown.aimed,BlockType.Dirt);for(int i=0;i<20;i++)cooldown.Step();Check(cooldown.world.edits==2,"restart after cooldown can break again");
   var bedrock=Setup(BlockType.Bedrock);bedrock.Begin(bedrock.aimed,BlockType.Bedrock);for(int i=0;i<500;i++)bedrock.Step();Check(bedrock.world.edits==0,"bedrock never removed");
+  var chest=Setup(BlockType.Chest);chest.world.chestProtected=true;chest.Begin(chest.aimed,BlockType.Chest);for(int i=0;i<200;i++)chest.Step();Check(chest.world.edits==0,"filled or open chest rejects mining before destruction");
+  chest.world.chestProtected=false;chest.Begin(chest.aimed,BlockType.Chest);chest.Step();chest.world.chestProtected=true;for(int i=0;i<200;i++)chest.Step();Check(chest.world.edits==0,"chest opened or filled after mining began cancels destruction");
   Resources.assets=new PlayerHudAssets{blockBreak=new Texture2D(),blockBreakMaterial=new Material()};var visual=Setup(BlockType.Log);Input.held=true;visual.Visual();Check(Material.last.frame.x==0.1f&&Mesh.last.vertices.Count==24,"ten-frame strip and six-face overlay");var ownedMesh=Mesh.last;var ownedMaterial=Material.last;Input.held=false;visual.Visual();visual.Cleanup();Check(ownedMesh.destroyed&&ownedMaterial.destroyed,"overlay destroys owned mesh/material");
   foreach(var stair in new[]{BlockType.WoodenStairs,BlockType.CobblestoneStairs})
   for(byte facing=0;facing<4;facing++)

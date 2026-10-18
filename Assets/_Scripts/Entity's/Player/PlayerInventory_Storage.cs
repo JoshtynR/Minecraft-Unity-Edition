@@ -26,6 +26,7 @@ public partial class PlayerInventory
     }
     public Slot GetSlot(int index)
     {
+        if(chestOpen&&index>=100&&index<127)return chestSlots[index-100];
         InitializeSlotData();return index>=0&&index<36 ? slots[index] : index>=36&&index<40 ? craftingSlots[index-36] : index==40 ? craftedOutput : index>=41&&index<45 ? equipmentSlots[index-41] : null;
     }
     private void ReadStorage()
@@ -65,6 +66,8 @@ public partial class PlayerInventory
     }
     public void ClickInventorySlot(int index,bool right,bool shift)
     {
+        if(chestPending)return;
+        if(chestOpen){ClickChest(index,right,shift);return;}
         if(index==40){TakeCraftResult(shift);return;}
         var slot=GetSlot(index);if(slot==null)return;
         if(shift&&index<36)

@@ -23,6 +23,7 @@ public partial class PlayerInventory : MonoBehaviour
 
     private void OnDestroy()
     {
+        ReleaseChest();
         DisposeInventoryPreview();
         if (creativeRoot != null) Destroy(creativeRoot.gameObject);
         foreach (var mesh in iconMeshes.Values) if (mesh != null) Destroy(mesh);
@@ -88,6 +89,7 @@ public partial class PlayerInventory : MonoBehaviour
 
     public void CloseInventory()
     {
+        if(TryCloseChest())return;
         ReturnTransientStacks();
         HideSlotHover();
         isOpen = false;

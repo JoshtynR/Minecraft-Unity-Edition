@@ -8,6 +8,8 @@ public class PlayerHudAssets : ScriptableObject
     public Texture2D icons;
     [Tooltip("256x256 inventory sheet; the upper-left 176x166 region is the survival panel.")]
     public Texture2D inventory;
+    public Texture2D chestSkin;
+    public Texture2D chestContainer;
     public TMP_FontAsset levelFont;
     public Texture2D blockBreak;
     public Material blockBreakMaterial;

@@ -131,6 +131,8 @@ public static class AssignmentCheck
    for(int i=0;i<16*16;i++)clock.pixels[clock.pixels.Length-1-i]=new Color32(8,0,0,255);
    var icons=Image(root+"/gui/icons.png",256,256);
    var inventory=Image(PlayerHudAssetSetup.InventoryPath,256,256);
+   var chestSkin=Image(root+"/block/normal.png",64,64);
+   var chestContainer=Image(root+"/gui/container/generic_54.png",256,256);
    var steve=Image(root+"/entity/steve.png",64,64,10);
    for(int i=0;i<steve.pixels.Length/2;i++)steve.pixels[i]=new Color32(11,0,0,255);
    for(int i=0;i<10;i++)Image(root+"/block/destroy_stage_"+i+".png",color:(byte)(20+i));
@@ -154,6 +156,7 @@ public static class AssignmentCheck
    var guiImporter=UnityEditor.AssetImporter.all[PlayerHudAssetSetup.InventoryPath];
    guiImporter.mipmapEnabled=true;guiImporter.npotScale=UnityEditor.TextureImporterNPOTScale.ToNearest;
    PlayerHudAssetSetup.Bind();
+   Check(ReferenceEquals(hud.chestSkin,chestSkin)&&ReferenceEquals(hud.chestContainer,chestContainer),"editor binds user's modern chest sheet and container GUI without modifying block catalog");
    Check(ReferenceEquals(hud.inventory,inventory)&&!guiImporter.mipmapEnabled&&guiImporter.npotScale==UnityEditor.TextureImporterNPOTScale.None,"editor startup binds inventory and preserves pixel layout");
    UnityEditor.AssetDatabase.assets.Remove(PlayerHudAssetSetup.InventoryPath);PlayerHudAssetSetup.Bind();
    Check(ReferenceEquals(hud.inventory,inventory),"missing inventory file preserves existing assignment");

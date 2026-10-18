@@ -9,6 +9,7 @@ public static class PlayerHudAssetSetup
     public const string InventoryPath = "Assets/Textures/Minecraft/gui/container/inventory.png";
     static PlayerHudAssetSetup() { EditorApplication.delayCall += Bind; }
 
+    [MenuItem("Minecraft/Textures/Refresh GUI and Chest Assets")]
     public static void Bind()
     {
         if (EditorApplication.isCompiling || EditorApplication.isUpdating)
@@ -21,11 +22,18 @@ public static class PlayerHudAssetSetup
         var icons = Prepare(IconsPath);
         var cracks = Prepare(BreakPath);
         var inventory = Prepare(InventoryPath);
+        var chestSkin = Prepare("Assets/Textures/Minecraft/entity/chest/normal.png");
+        if(chestSkin==null)chestSkin=Prepare("Assets/Textures/Minecraft/block/normal.png");
+        var chestContainer=Prepare("Assets/Textures/Minecraft/gui/container/generic_54.png");
         if ((icons == null || config.icons == icons) && (cracks == null || config.blockBreak == cracks) &&
-            (inventory == null || config.inventory == inventory)) return;
+            (inventory == null || config.inventory == inventory) &&
+            (chestSkin == null || config.chestSkin == chestSkin) &&
+            (chestContainer == null || config.chestContainer == chestContainer)) return;
         if (icons != null) config.icons = icons;
         if (cracks != null) config.blockBreak = cracks;
         if (inventory != null) config.inventory = inventory;
+        if (chestSkin != null) config.chestSkin = chestSkin;
+        if (chestContainer != null) config.chestContainer = chestContainer;
         EditorUtility.SetDirty(config);
         AssetDatabase.SaveAssetIfDirty(config);
     }
@@ -68,6 +76,8 @@ public class PlayerHudIconImporter : AssetPostprocessor
     {
         foreach (var path in imported)
             if (path == PlayerHudAssetSetup.IconsPath || path == PlayerHudAssetSetup.BreakPath ||
-                path == PlayerHudAssetSetup.InventoryPath) { EditorApplication.delayCall += PlayerHudAssetSetup.Bind; break; }
+                path == PlayerHudAssetSetup.InventoryPath || path=="Assets/Textures/Minecraft/entity/chest/normal.png" ||
+                path=="Assets/Textures/Minecraft/block/normal.png" || path=="Assets/Textures/Minecraft/gui/container/generic_54.png")
+            { EditorApplication.delayCall += PlayerHudAssetSetup.Bind; break; }
     }
 }

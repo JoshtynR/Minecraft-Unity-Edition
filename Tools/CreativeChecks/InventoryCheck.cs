@@ -3,7 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 namespace JetBrains.Annotations {public class CanBeNullAttribute:Attribute {}}
-namespace Mirror {public interface NetworkMessage {}}
+namespace Mirror
+{
+ public interface NetworkMessage {}
+ public class ClientRpcAttribute:Attribute {}
+ public class NetworkConnectionToClient {public GameObject identity;public int connectionId;public ChestReply last;public void Send(ChestReply reply){last=reply;}}
+ public static class NetworkServer {public static bool active;public static Dictionary<int,NetworkConnectionToClient> connections=new Dictionary<int,NetworkConnectionToClient>();}
+ public static class NetworkClient {public static bool active;public static ChestRequest last;public static void Send(ChestRequest request){last=request;}}
+}
 namespace UnityEngine
 {
  public class Object
@@ -18,7 +25,7 @@ namespace UnityEngine
  public class Component:Object {public GameObject gameObject;public Transform transform=>gameObject.transform;public T GetComponent<T>()where T:Component=>gameObject.GetComponent<T>();}
  public class MonoBehaviour:Component {}
  [AttributeUsage(AttributeTargets.Class,AllowMultiple=true,Inherited=true)]
- public class RequireComponent:Attribute {public Type required;public RequireComponent(Type type){required=type;}}
+ public class RequireComponent:Attribute {public Type required,second;public RequireComponent(Type type){required=type;}public RequireComponent(Type type,Type other){required=type;second=other;}}
  public class CanvasRenderer:Component {}
  public class ScriptableObject:Object {}
  public enum RuntimeInitializeLoadType {SubsystemRegistration}
@@ -30,10 +37,13 @@ namespace UnityEngine
  public class Material:Object {public Texture2D mainTexture=new Texture2D();public Material(){}public Material(Material value){mainTexture=value.mainTexture;}}
  public class Mesh:Object
  {
+  public UnityEngine.Rendering.IndexFormat indexFormat;public int subMeshCount;public void Clear(){vertices=new List<Vector3>();}public void MarkDynamic(){}
   public List<Vector3> vertices;public void SetVertices(List<Vector3> v){vertices=v;}public void SetUVs<T>(int channel,List<T> uv){}public void SetUVs(int channel,Vector2[] uv){}public void SetTriangles(List<int> t,int sub){}public void SetColors(List<Color> c){}public void RecalculateNormals(){}public void RecalculateBounds(){}
  }
  public class MeshFilter:Component {public Mesh sharedMesh;}
- public class MeshRenderer:Component {public Material sharedMaterial;}
+ public class MeshRenderer:Component {public Material sharedMaterial;public void SetPropertyBlock(MaterialPropertyBlock properties){}}
+ public class MaterialPropertyBlock {public void SetFloat(string key,float value){}}
+ public static class Time {public static float deltaTime=.05f,unscaledTime;}
  public class TooltipAttribute:Attribute {public TooltipAttribute(string s){}}
  public class HideInInspector:Attribute {}
  public class RangeAttribute:Attribute {public RangeAttribute(int a,int b){}}
@@ -43,18 +53,30 @@ namespace UnityEngine
  {
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
   public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 operator*(Vector3 v,float s)=>new Vector3(v.x*s,v.y*s,v.z*s);
+  public static Vector3 up=>new Vector3(0,1,0);
+  public float sqrMagnitude=>x*x+y*y+z*z;public float magnitude=>(float)Math.Sqrt(sqrMagnitude);
+  public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
+  public static Vector3 Lerp(Vector3 a,Vector3 b,float t)=>a+(b-a)*t;
   public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
  }
- public struct Vector3Int {public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static Vector3Int zero=>new Vector3Int();}
+ [Serializable] public struct Vector3Int
+ {
+  public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static Vector3Int zero=>new Vector3Int();public static Vector3Int up=>new Vector3Int(0,1,0);
+  public static implicit operator Vector3(Vector3Int v)=>new Vector3(v.x,v.y,v.z);
+  public static Vector3Int operator+(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);
+  public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));
+  public static bool operator==(Vector3Int a,Vector3Int b)=>a.x==b.x&&a.y==b.y&&a.z==b.z;public static bool operator!=(Vector3Int a,Vector3Int b)=>!(a==b);public override bool Equals(object value)=>value is Vector3Int&&(Vector3Int)value==this;public override int GetHashCode()=>x*31+y*17+z;
+ }
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}}
  public struct Quaternion {public static Quaternion Euler(float x,float y,float z)=>new Quaternion();}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float width,float height){this.x=x;this.y=y;this.width=width;this.height=height;}}
- public static class Mathf {public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v));}
+ public static class Mathf {public static int CeilToInt(float x)=>(int)Math.Ceiling(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float MoveTowards(float a,float b,float step)=>a<b?Math.Min(b,a+step):Math.Max(b,a-step);public static float Clamp01(float x)=>Clamp(x,0,1);public static float Pow(float x,float y)=>(float)Math.Pow(x,y);public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v));}
  public class Transform:Component
  {
-  public Transform parent;public Vector3 localPosition,localScale=Vector3.one;public Quaternion localRotation;public List<Transform> children=new List<Transform>();public int childCount=>children.Count;
+  public Transform parent;public Vector3 localPosition,localScale=Vector3.one;public Quaternion localRotation,rotation;public List<Transform> children=new List<Transform>();public int childCount=>children.Count;
   public Vector3 position {get=>parent==null?localPosition:parent.position+localPosition;set{var p=parent==null?new Vector3():parent.position;localPosition=new Vector3(value.x-p.x,value.y-p.y,value.z-p.z);}}
   public Transform GetChild(int i)=>children[i];public void SetParent(Transform p,bool world){if(parent!=null)parent.children.Remove(this);parent=p;p.children.Add(this);}
+  public void SetAsLastSibling(){parent.children.Remove(this);parent.children.Add(this);}
   public Transform Find(string path){Transform current=this;foreach(var name in path.Split('/')){current=current.children.Find(c=>c.gameObject.name==name);if(current==null)return null;}return current;}
  }
  public class RectTransform:Transform
@@ -70,13 +92,16 @@ namespace UnityEngine
   Component Add(Type type)
   {
    foreach(RequireComponent requirement in type.GetCustomAttributes(typeof(RequireComponent),true))
+   {
     if(!components.Any(c=>requirement.required.IsInstanceOfType(c)))Add(requirement.required);
+    if(requirement.second!=null&&!components.Any(c=>requirement.second.IsInstanceOfType(c)))Add(requirement.second);
+   }
    var value=(Component)Activator.CreateInstance(type);value.gameObject=this;components.Add(value);return value;
   }
   public T AddComponent<T>()where T:Component,new()=>(T)Add(typeof(T));public T GetComponent<T>()where T:Component=>typeof(T)==typeof(RectTransform)?(T)(Component)transform:(T)components.Find(c=>c is T);
   public void SetActive(bool value){activeSelf=value;}public static GameObject Find(string name)=>all.Find(o=>o.name==name&&o.activeSelf&&!o.destroyed);
  }
- public static class Resources {public static PlayerHudAssets hud;public static T Load<T>(string name)where T:Object=>name=="InventoryPlayerMaterial"?(T)(Object)new Material():name=="PlayerHudAssets"?(T)(Object)hud:null;}
+ public static class Resources {public static PlayerHudAssets hud;public static T Load<T>(string name)where T:Object=>name=="InventoryPlayerMaterial"||name=="ModernChestMaterial"?(T)(Object)new Material():name=="PlayerHudAssets"?(T)(Object)hud:null;}
  public enum KeyCode {Alpha1=49,E=69,LeftShift=304,RightShift=303}
  public static class Input {public static Vector3 mousePosition;public static bool GetKeyDown(KeyCode k)=>false;public static bool GetKey(KeyCode k)=>false;public static float GetAxis(string n)=>0;}
  public enum RenderMode {ScreenSpaceOverlay,ScreenSpaceCamera}
@@ -119,15 +144,19 @@ namespace UnityEngine.EventSystems
  public interface IPointerDownHandler {void OnPointerDown(PointerEventData data);}
 }
 public enum Direction {down,up,backwards,forwards,left,right}
-public class ChunkData {}
-public class Player:MonoBehaviour {public bool escapeMenuOpen;}
-public class Block {public Block(BlockType type,Vector3Int p,object section){}}
+public class ChunkData
+{
+ public bool modifiedByPlayer;public Vector3Int worldPos;public World worldRef;
+ public Block GetBlock(Vector3Int local)=>worldRef.GetBlock(worldPos+local);
+}
+public class Player:MonoBehaviour {public bool escapeMenuOpen;public float reach=4.5f;public int health=20;}
+public class Block {public BlockType type;public object blockShape;public Block(BlockType type,Vector3Int p,object section){this.type=type;}public int GetSkyLight()=>15;public int GetBlockLight()=>0;}
 public static class BlockMapping {public static Block MapTypeToBlock(BlockType t,Block b)=>b;}
 public class TextureData {public Texture2D top,bottom,side,front,back,left,right;}
 public class BlockDefinition {public Color albedoTint;public TextureData textureData=new TextureData();}
 public static class BlockDataManager {public static BlockDefinition[] blockTypeDataDictionary=new BlockDefinition[133];}
 public static class BlockShapesExtensions {public static bool IsPlant(BlockType t)=>false;}
-public static class SpecialBlockGeometry {public static bool FlatShading(BlockType t)=>false;}
+public static class SpecialBlockGeometry {public static bool FlatShading(BlockType t)=>false;public static bool NormalCube(BlockType type)=>type==BlockType.Stone;public static byte State(BlockType type,object shape)=>2;}
 public static class BlockHelper
 {
  public static Direction[] directions=(Direction[])Enum.GetValues(typeof(Direction));
@@ -208,7 +237,7 @@ public partial class PlayerInventory
  }
  public static void Main()
  {
-  CheckRules();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);
+  CheckRules();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
   var headless=new GameObject("DedicatedInventory").AddComponent<PlayerInventory>();
   Check(headless.AddItem(ItemType.Stone,64)&&headless.slots[0].count==64,"storage logic works without a canvas on nonlocal/server players");
   headless.LoadInventory(null);headless.AddItem(ItemType.Stone,63);headless.AddItem(ItemType.Dirt,35*64);

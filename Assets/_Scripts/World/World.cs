@@ -70,6 +70,7 @@ public partial class World : MonoBehaviour
     {
         worldCancellationToken = taskTokenSource.Token;
         Instance = this;
+        InitializeChests();
         validateDone = false;
         isInPlayMode = Application.isPlaying;
     }
@@ -78,6 +79,11 @@ public partial class World : MonoBehaviour
     {
         OnValidate();
         Clear();
+        NetworkClient.RegisterHandler<ChestReply>(message =>
+        {
+            if(GameManager.Instance!=null&&GameManager.Instance.localPlayer!=null)
+                GameManager.Instance.localPlayer.GetComponent<PlayerInventory>().ReceiveChestReply(message);
+        });
         // GenerateWorld();
         
         NetworkClient.RegisterHandler<StartWorldMessage>(message =>
@@ -237,6 +243,8 @@ public partial class World : MonoBehaviour
         {
             if(pos.y<0||pos.y>=worldHeight)continue;
             var previous = GetBlock(pos);
+            bool removingChest=previous!=null&&previous.type==BlockType.Chest&&blockType!=BlockType.Chest;
+            if(!CanReplaceChest(pos,blockType))continue;
             if(previous.type==BlockType.Nothing)continue;
             bool pair = SpecialBlockGeometry.IsDoor(blockType) || blockType == BlockType.Bed;
             // Validate both halves before writing either. Direct calls and remote
@@ -272,6 +280,7 @@ public partial class World : MonoBehaviour
             // {
                 WorldDataHelper.SetBlock(chunk.ChunkData.worldRef, pos, blockType);
                 GetBlock(pos).blockShape = SpecialBlockGeometry.Shape(blockType, stairFacing);
+                if(removingChest)chests.Removed(pos);
                 // Track is stateful, unlike purely visual fence/dust joins. Update
                 // its saved selection bounds and neighboring slopes before meshing.
                 for (int rx=-1;rx<=1;rx++) for(int ry=-1;ry<=1;ry++) for(int rz=-1;rz<=1;rz++)
@@ -408,6 +417,7 @@ public partial class World : MonoBehaviour
         if (Instance == this)
         {
             NetworkClient.UnregisterHandler<StartWorldMessage>();
+            NetworkClient.UnregisterHandler<ChestReply>();
             Instance = null;
         }
     }

@@ -10,6 +10,7 @@ public class ChunkRenderer : MonoBehaviour
 {
     private MeshFilter meshFilter;
     private Mesh mesh;
+    private readonly Dictionary<Vector3Int,ModernChestVisual> chestVisuals=new Dictionary<Vector3Int,ModernChestVisual>();
     public bool showGizmo = false;
 
     public ChunkData ChunkData { get; private set; }
@@ -50,7 +51,29 @@ public class ChunkRenderer : MonoBehaviour
             mesh.SetTriangles(meshData.waterMesh.triangles, 2);
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
+        if(meshData.chests!=null||chestVisuals.Count>0)RefreshChestVisuals(meshData.chests);
         // MeshData is staging data; retaining it here doubles chunk geometry memory.
+    }
+
+    private void RefreshChestVisuals(List<Vector3Int> positions)
+    {
+        var wanted=new HashSet<Vector3Int>();
+        if(positions!=null)foreach(var local in positions)
+        {
+            var block=ChunkData.GetBlock(local);if(block.type!=BlockType.Chest)continue;
+            var position=ChunkData.worldPos+local;wanted.Add(position);
+            ModernChestVisual visual;
+            if(!chestVisuals.TryGetValue(position,out visual))
+            {
+                var child=new GameObject("ModernChest");child.layer=gameObject.layer;child.transform.SetParent(transform,false);
+                child.transform.localPosition=(Vector3)local+new Vector3(.5f,0,.5f);
+                visual=child.AddComponent<ModernChestVisual>();chestVisuals.Add(position,visual);
+            }
+            visual.Initialize(ChunkData.worldRef,position,SpecialBlockGeometry.State(block.type,block.blockShape));
+        }
+        var removed=new List<Vector3Int>();
+        foreach(var pair in chestVisuals)if(!wanted.Contains(pair.Key)){pair.Value.gameObject.SetActive(false);Destroy(pair.Value.gameObject);removed.Add(pair.Key);}
+        foreach(var position in removed)chestVisuals.Remove(position);
     }
 
     public void UpdateChunkAsync()

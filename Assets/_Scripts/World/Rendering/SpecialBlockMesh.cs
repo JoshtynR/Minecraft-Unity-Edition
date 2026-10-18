@@ -139,7 +139,7 @@ public static class SpecialBlockMesh
                 if(local==Direction.left)half=2;
                 if(local==Direction.right)half=1;
             }
-            Cube(BlockShapesList.FullBlock,pos,d=>
+            Cube(t==BlockType.Chest?SpecialBlockGeometry.Selection(t,s):BlockShapesList.FullBlock,pos,d=>
             {
                 var local=SpecialBlockGeometry.TextureDirection(t,s,d);
                 if(half==0)return layer(d);

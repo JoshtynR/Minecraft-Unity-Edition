@@ -26,12 +26,21 @@ with tempfile.TemporaryDirectory() as tmp:
     server=(root/'Assets/_Scripts/World/WorldServer.cs').read_text()
     start=server.index('    [Serializable]\n    public struct SavePlayerMessage')
     message=Path(tmp)/'SaveMessage.cs'
-    message.write_text('using System;using UnityEngine;using Mirror;public class WorldServer{'+server[start:server.index('    #endregion',start)]+'}')
+    message.write_text('using System;using UnityEngine;using Mirror;public partial class WorldServer{'+server[start:server.index('    #endregion',start)]+'}')
     subprocess.run([a.mcs, '-langversion:latest', '-out:' + str(binary),
         str(root / "Assets/_Scripts/Entity's/Player/PlayerInventory.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/PlayerInventory_Creative.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/PlayerInventory_Storage.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/PlayerInventory_Preview.cs"),
+        str(root / "Assets/_Scripts/Entity's/Player/PlayerInventory_Chest.cs"),
+        str(root / 'Assets/_Scripts/ChestTransactions.cs'),
+        str(root / 'Assets/_Scripts/World/ChestStorage.cs'),
+        str(root / 'Assets/_Scripts/World/Rendering/ChestModelGeometry.cs'),
+        str(root / 'Assets/_Scripts/World/Rendering/ModernChestVisual.cs'),
+        str(root / 'Assets/_Scripts/World/Rendering/ChunkRenderer.cs'),
+        str(root / 'Assets/_Scripts/World/World_Chests.cs'),
+        str(root / 'Assets/_Scripts/WorldGeneration/Beta/Beta173Lighting.cs'),
+        str(root / 'Tools/CreativeChecks/ChestCheck.cs'),
         str(root / "Assets/_Scripts/Entity's/Player/InventoryPlayerGraphic.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/InventoryRules.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/InventorySlot.cs"),

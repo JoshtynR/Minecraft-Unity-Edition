@@ -5,7 +5,7 @@ using Mirror;
 using Steamworks;
 using UnityEngine;
 
-public class WorldServer : NetworkBehaviour
+public partial class WorldServer : NetworkBehaviour
 {
     public static WorldServer instance;
 
@@ -21,6 +21,7 @@ public class WorldServer : NetworkBehaviour
         NetworkServer.RegisterHandler<SavePlayerMessage>(SavePlayerMessageHandler, false);
         NetworkServer.RegisterHandler<SpawnPlayerMessage>(SpawnPlayerMessageHandler, false);
         NetworkServer.RegisterHandler<StartPlayerMessage>(StartPlayerMessageHandler, false);
+        NetworkServer.RegisterHandler<ChestRequest>(ReceiveChestRequest);
 
         StartCoroutine(SaveLoop());
     }
@@ -31,6 +32,7 @@ public class WorldServer : NetworkBehaviour
     {
         // Survival removal is authorized by Player's timed mining commands.
         if (message.blockType == BlockType.Air || message.blockType == BlockType.Nothing) return;
+        if(!World.Instance.CanReplaceChest(message.position,message.blockType))return;
         World.Instance.SetBlock(message.position, message.blockType, message.stairFacing);
         RpcSetBlock(message.position, message.blockType, message.stairFacing);
     }

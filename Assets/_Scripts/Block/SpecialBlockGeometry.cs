@@ -60,12 +60,13 @@ public static class SpecialBlockGeometry
     public static bool FlatShading(BlockType t)=>IsTorch(t)||IsRail(t)||t==BlockType.RedstoneWire||t==BlockType.Ladder||t==BlockType.Fire||t==BlockType.Cobweb;
     public static bool IsDoor(BlockType t) => t==BlockType.WoodenDoor||t==BlockType.IronDoor;
     public static bool NoCollision(BlockType t) => IsTorch(t)||IsRail(t)||t==BlockType.RedstoneWire||t==BlockType.Lever||t==BlockType.StoneButton||t==BlockType.StandingSign||t==BlockType.WallSign||t==BlockType.Fire||t==BlockType.NetherPortal||t==BlockType.Cobweb||t==BlockType.MovingPiston||t==BlockType.RedstoneRepeater||t==BlockType.PoweredRepeater;
-    public static bool NonOccluding(BlockType t) => Handles(t) && t!=BlockType.Piston && t!=BlockType.StickyPiston && t!=BlockType.Furnace && t!=BlockType.LitFurnace && t!=BlockType.Dispenser && t!=BlockType.Chest && t!=BlockType.LockedChest && t!=BlockType.Pumpkin && t!=BlockType.JackOLantern;
+    public static bool NonOccluding(BlockType t) => Handles(t) && t!=BlockType.Piston && t!=BlockType.StickyPiston && t!=BlockType.Furnace && t!=BlockType.LitFurnace && t!=BlockType.Dispenser && t!=BlockType.LockedChest && t!=BlockType.Pumpkin && t!=BlockType.JackOLantern;
     public static BlockShape Selection(BlockType t, byte s)
     {
         s=(byte)(s&15);
         var cached=Bounds[(int)t,s]; if(cached!=null)return cached;
         BlockShape b=BlockShapesList.FullBlock;
+        if(t==BlockType.Chest)return Bounds[(int)t,s]=Box(1,0,1,15,14,15);
         if(IsTorch(t))
         {
             b=s==1?Box(0,3.2f,5.6f,4.8f,12.8f,10.4f):s==2?Box(11.2f,3.2f,5.6f,16,12.8f,10.4f):

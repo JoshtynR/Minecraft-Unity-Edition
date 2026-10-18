@@ -32,6 +32,11 @@ public partial class World
             return;
         }
 
+        chests.SaveWorld(worldName);
+        // Capture player stacks before yielding, at the same point as chest contents.
+        // A transfer during chunk IO must not be saved on just one side.
+        var chestPlayerSnapshots=GameManager.Instance==null?new WorldServer.SavePlayerMessage[0]:
+            GameManager.Instance.players.Where(player=>player!=null).Select(player=>player.SavePlayer()).ToArray();
         isSaving = true;
         var stopwatch = Stopwatch.StartNew();
         var saveWatch = Stopwatch.StartNew();
@@ -87,13 +92,7 @@ public partial class World
         
         Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/"+worldSaveData.worldName+"/playerdata"));
 
-        if (GameManager.Instance != null)
-        {
-            foreach (var player in GameManager.Instance.players)
-            {
-                SavePlayer(player.SavePlayer());
-            }
-        }
+        foreach(var playerSnapshot in chestPlayerSnapshots)SavePlayer(playerSnapshot);
 
         Debug.Log("Saved world in " + stopwatch.ElapsedMilliseconds + "ms");
         isSaving = false;
