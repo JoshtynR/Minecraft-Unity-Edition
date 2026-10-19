@@ -72,6 +72,7 @@ public partial class World : IWaterWorld
         if (p.y < 0 || p.y >= worldHeight) return WaterSimulation.Solid;
         if (!TryGetWaterBlock(BlockPos(p), out var block)) return WaterSimulation.Unloaded;
         if (block.type == BlockType.Water) return block.waterLevel;
+        if (block.type == BlockType.Lava) return WaterSimulation.Lava;
         return FluidCanReplace(block.type) ? WaterSimulation.Air : WaterSimulation.Solid;
     }
 
@@ -89,6 +90,12 @@ public partial class World : IWaterWorld
         if(block.type==BlockType.Lava)return block.waterLevel;
         if(block.type==BlockType.Water)return WaterSimulation.Water;
         return FluidCanReplace(block.type)?WaterSimulation.Air:WaterSimulation.Solid;
+    }
+
+    public static bool FluidHasSolidMaterial(BlockType type)
+    {
+        // Reeds explicitly block displacement despite their non-solid material.
+        return type != BlockType.SugarCane && type != BlockType.Water && type != BlockType.Lava && !FluidCanReplace(type);
     }
 
     private static bool FluidCanReplace(BlockType type)

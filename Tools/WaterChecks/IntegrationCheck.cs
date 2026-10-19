@@ -41,6 +41,12 @@ namespace Mirror
 }
 public class SlabBlock : Block { public SlabBlock(Block b):base(b) {} }
 public class BlockTypeData { public byte opacity,lightEmission; }
+public enum BlockTexturePart { FluidStill,FluidFlow }
+public class TextureData
+{
+    public int PartIndex(BlockTexturePart part,int fallback=0) { return part==BlockTexturePart.FluidStill?10:20; }
+    public int FaceIndex(Direction d) { return d==Direction.up?10:20; }
+}
 public static class BlockDataManager
 {
     public static Dictionary<int,BlockTypeData> blockTypeDataDictionary = new Dictionary<int,BlockTypeData>();
@@ -99,6 +105,9 @@ public class ChunkData
 }
 public partial class World
 {
+    public bool CanReplaceChest(Vector3Int p,BlockType t) { return true; }
+    public class ChestStub { public void Removed(Vector3Int p) {} }
+    public ChestStub chests=new ChestStub();
     public static World Instance;
     public long betaWorldSeed;
     public int chunkSize=2,worldHeight=4,playerEdits,meshRequests;
@@ -222,6 +231,20 @@ public static partial class IntegrationCheck
         mesh=new MeshData(false);shape.SetFaceVertices(Direction.down,V(0,1,0),mesh);
         WaterMeshCheck.SetWaterFaceHeight(V(0,1,0),mesh,c);
         WaterCheck.Assert(Math.Abs(mesh.vertices[0].y-1.0005f)<0.00001f,"water adjustment changed bottom face");
+        mesh=new MeshData(false);shape.SetFaceVertices(Direction.right,V(0,1,0),mesh);
+        WaterMeshCheck.SetWaterFaceHeight(V(0,1,0),mesh,c);
+        WaterMeshCheck.AddFluidUVs(Direction.right,V(0,1,0),mesh,c,new TextureData());
+        WaterCheck.Assert(mesh.uv.Count==4&&mesh.uv[0].z==20,"fluid sides must use flow layer");
+        WaterCheck.Assert(Math.Abs(mesh.uv[1].y-(.5f+1/18f))<.00001f,"shallow fluid sides must crop instead of stretch");
+        WaterCheck.Assert(Math.Abs(mesh.uv[0].y-.5f)<.00001f&&Math.Abs(mesh.uv[2].x-.4996875f)<.00001f,"flow sheet two-block scale");
+        mesh=new MeshData(false);shape.SetFaceVertices(Direction.up,V(0,1,0),mesh);
+        WaterMeshCheck.AddFluidUVs(Direction.up,V(0,1,0),mesh,c,new TextureData());
+        WaterCheck.Assert(mesh.uv[0].z==10,"level fluid top uses still sheet");
+        c.GetBlock(V(0,1,0)).waterLevel=0;c.GetBlock(V(1,1,0)).waterLevel=1;
+        c.GetBlock(V(0,1,1)).waterLevel=0;
+        mesh=new MeshData(false);shape.SetFaceVertices(Direction.up,V(0,1,0),mesh);
+        WaterMeshCheck.AddFluidUVs(Direction.up,V(0,1,0),mesh,c,new TextureData());
+        WaterCheck.Assert(mesh.uv[0].z==20&&Math.Abs(mesh.uv[0].x-.25f)<.00001f&&Math.Abs(mesh.uv[0].y-.75f)<.00001f,"flowing top uses rotated flow sheet");
         WorldServer.instance=new WorldServer();
         w.SetWaterCell(new WaterPosition(1,2,0),5);w.TestUpdate();
         WaterCheck.Assert(c.GetBlock(V(1,2,0)).waterLevel==5 && c.modifiedAfterSave && w.meshRequests>0,"world adapter failed to save/mesh flow state");

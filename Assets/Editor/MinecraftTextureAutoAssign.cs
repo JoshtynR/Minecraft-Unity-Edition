@@ -361,6 +361,48 @@ public static class MinecraftTextureAutoAssign
         }
     }
 
+    [InitializeOnLoadMethod]
+    private static void QueueFluidBinding() { EditorApplication.delayCall += BindMissingFluidTextures; }
+
+    [MenuItem("Minecraft/Textures/Bind Missing Fluid Textures")]
+    public static void BindMissingFluidTextures()
+    {
+        if(EditorApplication.isPlayingOrWillChangePlaymode)return;
+        if(EditorApplication.isCompiling||EditorApplication.isUpdating)
+        {EditorApplication.delayCall+=BindMissingFluidTextures;return;}
+        if(!AssetDatabase.IsValidFolder(Root))return;
+        var blocks=AssetDatabase.LoadAssetAtPath<BlockDataSO>("Assets/Block Data.asset");
+        if(blocks==null||blocks.textureDataList==null)return;
+        var paths=new List<string>();
+        foreach(string guid in AssetDatabase.FindAssets("t:Texture2D",new[]{Root}))paths.Add(AssetDatabase.GUIDToAssetPath(guid));
+        var run=new Run{lookup=new MinecraftTextureLookup(Root,paths)};
+        bool changed=false;
+        foreach(var block in blocks.textureDataList)
+        {
+            if(block==null||(block.blockType!=BlockType.Water&&block.blockType!=BlockType.Lava))continue;
+            foreach(var part in new[]{BlockTexturePart.FluidStill,BlockTexturePart.FluidFlow})
+            {
+                var texture=block.textureData;
+                var slot=texture==null||texture.specialTextures==null?null:texture.specialTextures.Find(p=>p!=null&&p.part==part);
+                if(slot!=null&&slot.image!=null)continue;
+                var image=run.Find(MinecraftTextureKind.Block,MinecraftTextureNames.Part(block.blockType,part),block.blockType+"."+part,true);
+                if(image==null)continue;
+                if(texture==null)block.textureData=texture=new TextureData();
+                if(texture.specialTextures==null)texture.specialTextures=new List<SpecialBlockTexture>();
+                if(slot==null){slot=new SpecialBlockTexture{part=part};texture.specialTextures.Add(slot);}
+                slot.image=image;slot.overrideAnimation=true;slot.animate=Animated(image);
+                slot.columns=1;slot.rows=0;slot.frameCount=0;slot.framesPerSecond=Fps(image);
+                changed=true;
+            }
+        }
+        if(changed)
+        {
+            EditorUtility.SetDirty(blocks);AssetDatabase.SaveAssetIfDirty(blocks);
+            AnimatedBlockTextureImports.RepairAssignedSheets();
+            Debug.Log("Bound missing water/lava sheets from "+Root+". Existing texture links were preserved.");
+        }
+    }
+
     [MenuItem("Minecraft/Textures/Assign From Minecraft Folder")]
     public static void Assign()
     {

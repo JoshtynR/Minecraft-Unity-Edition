@@ -14,12 +14,27 @@ lowering the existing BlockMapping switch expression; the branches are unchanged
 Checks cover five-tick scheduling, deduplication, seven horizontal flow levels,
 falling water and draining, supported two-source regeneration, shortest downhill
 paths and ties, obstacles, unavailable chunks, weighted corner heights, actual
-mesh vertices, flow-level RLE, old saves, server deltas, deferred client updates,
+mesh vertices and fluid UVs, flow-level RLE, old saves, server deltas, deferred client updates,
 and applying a host's player edit once.
 
 These are regression scenarios, not an exhaustive comparison with a running
 Minecraft Beta 1.7.3 instance. Unity Editor compilation, Mirror weaving, visual
 rendering, and multiplayer transport still need a play-mode check.
+
+The current rendering pass selects still or flow images from the local texture
+folder, rotates flowing tops using Beta's effective-decay vector, and maps sides
+at two-block scale cropped to corner height. Ice hides adjacent fluid faces;
+fluid top faces remain visible beneath non-fluid blocks as in Beta. Material
+solidity drives corner sampling, independent of collision/opacity settings.
+Missing special fluid slots bind automatically on editor startup from
+Assets/Textures/Minecraft; existing image links and animation overrides survive.
+The binding can also be rerun with Minecraft > Textures > Bind Missing Fluid Textures.
+
+Slope searches treat existing fluid below a neighbor as a downhill route, while
+displacement still prevents water replacing lava. Two-source regeneration needs
+a solid floor: Beta's source-water-below branch tests the current flowing cell's
+metadata, so it does not regenerate there. Decaying orphan flow still executes
+Beta's downward branch before returning. No per-update slope-cost array is allocated.
 
 ## Play-mode check
 
@@ -93,5 +108,6 @@ water index offsets, repeat uploads, and removing water on a dry mesh rebuild.
 Shader compilation and above/below-water views need verification in Unity. The
 rendering uses Unity's normal transparent renderer sorting; intersecting or
 layered waterfalls can still require finer face sorting. Underwater fog,
-and refraction are not included. Animation sheets are supported separately through
-Block Data's Animate face sheets settings; no texture assignments are changed here.
+and refraction are not included. Animation sheets use Block Data's existing
+animation settings and special fluid slots; the missing-slot binder preserves
+all existing assignments.

@@ -23,8 +23,9 @@ public struct WaterPosition : IEquatable<WaterPosition>
 public sealed class WaterSimulation
 {
     public const int Air = -1, Solid = -2, Unloaded = -3;
-    // Only lava's world view exposes Water. Hardening outputs are not levels.
-    public const int Water = -4, Obsidian = -5, Cobblestone = -6;
+    // Other liquids remain non-solid for routing but have distinct displacement
+    // rules. Hardening outputs are not levels.
+    public const int Water = -4, Obsidian = -5, Cobblestone = -6, Lava = -7;
     public const int TickDelay = 5;
     public const int LavaTickDelay = 30;
     private static readonly int[] Dx = { -1, 1, 0, 0 };
@@ -35,6 +36,7 @@ public sealed class WaterSimulation
     private readonly Func<int> nextFour;
     private readonly Queue<ScheduledCell> pending = new Queue<ScheduledCell>();
     private readonly HashSet<WaterPosition> scheduled = new HashSet<WaterPosition>();
+    private readonly int[] costs = new int[4];
     public long CurrentTick { get; private set; }
     public int PendingCount { get { return pending.Count; } }
 
@@ -137,7 +139,10 @@ public sealed class WaterSimulation
             int above = world.GetWaterCell(p.Offset(0, 1, 0));
             if (above >= 0) next = above >= 8 ? above : above + 8;
             int below = world.GetWaterCell(p.Offset(0, -1, 0));
-            if (!lava && sources >= 2 && (below == Solid || below == 0)) next = 0;
+            // Beta tests THIS cell's metadata in its below-water branch, not
+            // the cell below. This branch runs only for level>0, so source
+            // regeneration here requires a solid floor (unlike later games).
+            if (!lava && sources >= 2 && below == Solid) next = 0;
             // Beta lava sometimes waits another tick cycle before increasing
             // its horizontal decay; do not create infinite lava sources.
             if(lava && level<8 && next<8 && next>level && nextFour()!=0)
@@ -147,7 +152,8 @@ public sealed class WaterSimulation
             }
             if (next != level) Change(p, next);
             level = next;
-            if (level < 0) return;
+            // Beta still executes the downward branch after removing an
+            // orphaned flow: -1+8 becomes level 7 in an open cell below.
         }
 
         var down = p.Offset(0, -1, 0);
@@ -156,21 +162,23 @@ public sealed class WaterSimulation
             Change(down, level >= 8 ? level : level + 8);
             return;
         }
+        if (level < 0) return;
         // Sources spread even above water. Flowing water spreads at the bottom
         // of a waterfall only when the block below actually blocks its path.
         if (level != 0 && world.GetWaterCell(down) != Solid) return;
         int spreadLevel = level >= 8 ? 1 : level + decay;
         if (spreadLevel >= 8) return;
 
-        int[] costs = new int[4];
         int best = 1000;
         for (int d = 0; d < 4; d++)
         {
             var adjacent = p.Offset(Dx[d], 0, Dz[d]);
             int cell = world.GetWaterCell(adjacent);
             costs[d] = 1000;
-            if (!CanDisplace(cell) && cell <= 0) continue;
-            costs[d] = CanDisplace(world.GetWaterCell(adjacent.Offset(0, -1, 0)))
+            if (BlocksFlow(cell) || cell == 0) continue;
+            // Route finding tests material solidity, not displacement. Existing
+            // fluid below a neighbor is still a downhill route in Beta.
+            costs[d] = !BlocksFlow(world.GetWaterCell(adjacent.Offset(0, -1, 0)))
                 ? 0 : DownhillCost(adjacent, 1, d);
             best = Math.Min(best, costs[d]);
         }
@@ -185,6 +193,7 @@ public sealed class WaterSimulation
     }
 
     private bool CanDisplace(int cell) { return cell == Air || (lava && cell == Water); }
+    private static bool BlocksFlow(int cell) { return cell == Solid || cell == Unloaded; }
 
     private int DownhillCost(WaterPosition p, int distance, int previousDirection)
     {
@@ -194,8 +203,8 @@ public sealed class WaterSimulation
             if (d == (previousDirection ^ 1)) continue;
             var next = p.Offset(Dx[d], 0, Dz[d]);
             int cell = world.GetWaterCell(next);
-            if (!CanDisplace(cell) && cell <= 0) continue;
-            if (CanDisplace(world.GetWaterCell(next.Offset(0, -1, 0)))) return distance;
+            if (BlocksFlow(cell) || cell == 0) continue;
+            if (!BlocksFlow(world.GetWaterCell(next.Offset(0, -1, 0)))) return distance;
             if (distance < 4) best = Math.Min(best, DownhillCost(next, distance + 1, d));
         }
         return best;

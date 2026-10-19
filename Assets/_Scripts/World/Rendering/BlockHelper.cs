@@ -78,7 +78,7 @@ public static class BlockHelper
                     !(StairGeometry.IsStair(neighbourBlockType) ? StairGeometry.CoversFace(StairGeometry.Facing(neighbourBlock.blockShape), shape, dir.GetOpposite()) : neighborShape.CoversBoundaryFace(shape, dir.GetOpposite()));
                 if (blockType == BlockType.Water || blockType == BlockType.Lava)
                 {
-                    if (neighbourBlockType != blockType && visible)
+                    if (neighbourBlockType != blockType && neighbourBlockType != BlockType.Ice && (dir == Direction.up || visible))
                         GetFaceDataIn(dir, pos, blockType==BlockType.Water?meshData.waterMesh:meshData, block, blockTypeData, chunk);
                 }
                 else if (visible)
@@ -173,7 +173,9 @@ public static class BlockHelper
         var shape = block.blockShape.GetShape();
         // Cactus uses the complete face artwork on its inset sides/top, as in
         // Beta's special cactus renderer. Generic partial cuboids crop by bounds.
-        meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(block.type, dir), block.type == BlockType.Cactus ? new Vector4(1,1,0,0) : shape.FaceUVTransform(dir));
+        if ((block.type == BlockType.Water || block.type == BlockType.Lava) && chunk != null)
+            AddFluidUVs(dir, pos, meshData, chunk, blockTypeData.textureData);
+        else meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(block.type, dir), block.type == BlockType.Cactus ? new Vector4(1,1,0,0) : shape.FaceUVTransform(dir));
 
         // Add tint from block data
         meshData.AddQuadColor(blockTypeData.albedoTint);
@@ -210,11 +212,40 @@ public static class BlockHelper
             {
                 var sample = chunk.GetBlock(new Vector3Int(p.x, p.y, p.z));
                 if (sample.type == liquid) return sample.waterLevel;
-                if (sample.type == BlockType.Air || sample.type==BlockType.Water || sample.type==BlockType.Lava) return WaterSimulation.Air;
+                if (!World.FluidHasSolidMaterial(sample.type)) return WaterSimulation.Air;
                 return WaterSimulation.Solid;
             }, new WaterPosition(cornerX, pos.y, cornerZ));
             vertex.y = pos.y + height + 0.0005f;
             meshData.vertices[i] = vertex;
+        }
+    }
+
+    private static void AddFluidUVs(Direction dir, Vector3Int pos, MeshData meshData, ChunkData chunk, TextureData textures)
+    {
+        var liquid = chunk.GetBlock(pos).type;
+        double angle = WaterSurface.FlowAngle(p =>
+        {
+            var b = chunk.GetBlock(new Vector3Int(p.x, p.y, p.z));
+            if (b.type == liquid) return b.waterLevel;
+            return World.FluidHasSolidMaterial(b.type) ? WaterSimulation.Solid : WaterSimulation.Air;
+        }, new WaterPosition(pos.x, pos.y, pos.z));
+        bool flowing = dir != Direction.down && (dir != Direction.up || angle > -999);
+        int layer = textures.PartIndex(flowing ? BlockTexturePart.FluidFlow : BlockTexturePart.FluidStill,
+            textures.FaceIndex(flowing ? Direction.left : Direction.up));
+        int first = meshData.vertices.Count - 4;
+        for (int i = 0; i < 4; i++)
+        {
+            var vertex = meshData.vertices[first + i];
+            float u, v;
+            if (dir == Direction.up)
+                WaterSurface.TopUV(angle, vertex.x > pos.x + .5f, vertex.z > pos.z + .5f, out u, out v);
+            else if (dir == Direction.down) { u = i == 1 || i == 2 ? 1 : 0; v = i >= 2 ? 1 : 0; }
+            else
+            {
+                u = i >= 2 ? .4996875f : 0;
+                v = .5f + (vertex.y - pos.y - .0005f) * .5f;
+            }
+            meshData.uv.Add(new Vector3(u, v, layer));
         }
     }
     

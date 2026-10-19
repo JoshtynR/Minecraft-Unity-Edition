@@ -36,6 +36,7 @@ namespace UnityEngine
 namespace UnityEditor
 {
  public class InitializeOnLoadAttribute:Attribute {}
+ public class InitializeOnLoadMethodAttribute:Attribute {}
  public class MenuItem:Attribute {public MenuItem(string name){}}
  public static class EditorApplication {public static Action delayCall;public static bool isPlayingOrWillChangePlaymode,isCompiling,isUpdating;}
  public class AssetPostprocessor {public string assetPath;public AssetImporter assetImporter;}
@@ -169,6 +170,16 @@ public static class AssignmentCheck
    Check(steve.height==64&&clock.height==512&&!steve.destroyed&&!clock.destroyed,"source textures are never cropped or destroyed in place");
    int imported=UnityEditor.AssetDatabase.imports;MinecraftTextureAutoAssign.Assign();
    Check(imported==UnityEditor.AssetDatabase.imports,"repeat assignment reuses stable generated images");
+   var still=Image(root+"/block/water_still.png",16,512);
+   var flowing=Image(root+"/block/water_flow.png",32,1024);
+   var water=new BlockTypeData{blockType=BlockType.Water};blocks.textureDataList.Add(water);
+   MinecraftTextureAutoAssign.BindMissingFluidTextures();
+   Check(water.textureData.specialTextures.Count==2,"missing fluid sheets automatically bound");
+   Check(water.textureData.specialTextures[0].image==still&&water.textureData.specialTextures[1].image==flowing,"fluid binder uses still and flow sheets");
+   var overrideSlot=water.textureData.specialTextures[0];overrideSlot.image=original;overrideSlot.framesPerSecond=7;
+   MinecraftTextureAutoAssign.BindMissingFluidTextures();
+   Check(overrideSlot.image==original&&overrideSlot.framesPerSecond==7&&water.textureData.specialTextures.Count==2,"fluid binder preserves assigned images and animation overrides");
+   Check(untouched.textureData.top==original&&untouched.opacity==7,"fluid binder preserves unrelated block data");
    int records=UnityEditor.Undo.records;UnityEditor.AssetDatabase.rootExists=false;MinecraftTextureAutoAssign.Assign();
    Check(records==UnityEditor.Undo.records,"missing local folder cannot mutate either catalogue");
    Check(RenderTexture.allocated==0,"texture extraction releases temporary render targets");

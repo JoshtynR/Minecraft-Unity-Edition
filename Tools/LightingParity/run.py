@@ -8,7 +8,9 @@ def main():
   t=Path(t);helper=(ROOT/'Assets/_Scripts/World/Rendering/BlockHelper.cs').read_text()
   pipeline=helper[helper.index('    public static MeshData GetMeshData'):helper.index('    public static void GetFaceLightingAndAO')]
   method=pipeline+helper[helper.index('    public static void GetFaceLightingAndAO'):helper.index('    public static int GetLightIndex')]
-  (t/'BlockHelper.cs').write_text('using System;using UnityEngine;public static class BlockHelper{public static readonly Direction[] directions=(Direction[])Enum.GetValues(typeof(Direction));'+method+'}')
+  fluid=(ROOT/'Assets/_Scripts/World/World_Water.cs').read_text()
+  materials=fluid[fluid.index('    public static bool FluidHasSolidMaterial'):fluid.index('    public void SetLavaCell')]
+  (t/'BlockHelper.cs').write_text('using System;using UnityEngine;public static class BlockHelper{public static readonly Direction[] directions=(Direction[])Enum.GetValues(typeof(Direction));'+method+'}public partial class World{'+materials+'}')
   section=(ROOT/'Assets/_Scripts/World/ChunkSection.cs').read_text();axes=section[section.index('    public static void ChooseFaceAxes'):]
   (t/'ChunkSection.cs').write_text('using UnityEngine;public class ChunkSection{'+axes)
   sources=['Assets/_Scripts/WorldGeneration/Beta/Beta173Lighting.cs','Assets/_Scripts/Block/BlockType.cs','Assets/_Scripts/Block/StairGeometry.cs','Assets/_Scripts/Block/SpecialBlockGeometry.cs','Assets/_Scripts/World/Rendering/SpecialBlockMesh.cs','Assets/_Scripts/SpecialBlockTextures.cs','Assets/_Scripts/Block/BetaBlockCatalog.cs','Assets/_Scripts/Block/BlockShape.cs','Assets/_Scripts/Block/BlockShapes.cs','Assets/_Scripts/World/Rendering/PlantMesh.cs','Tools/LightingParity/PlantCheck.cs','Tools/LightingParity/StairCheck.cs','Assets/_Scripts/World/Rendering/MeshData.cs','Assets/_Scripts/World/Lighting.cs','Assets/_Scripts/World/WaterSurface.cs','Assets/_Scripts/World/WaterSimulation.cs','Tools/LightingParity/LightingCheck.cs']

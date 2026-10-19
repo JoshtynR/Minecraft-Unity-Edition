@@ -50,7 +50,7 @@ public static partial class WaterCheck
         Assert(g.GetWaterCell(P(0)) == 0, "two sources did not regenerate over solid floor");
         g = new Grid(); g.cells[P(-1)] = 0; g.cells[P(1)] = 0; g.cells[P(0)] = 1; g.cells[P(0, 0)] = 0;
         sim = new WaterSimulation(g); sim.Schedule(P(0)); Ticks(sim, 5);
-        Assert(g.GetWaterCell(P(0)) == 0, "two sources did not regenerate over source water");
+        Assert(g.GetWaterCell(P(0)) == 1, "Beta must not regenerate a flowing cell over source water");
         g = new Grid(); g.cells[P(-1)] = 0; g.cells[P(1)] = 0; g.cells[P(0)] = 1; g.cells[P(0, 0)] = -1;
         sim = new WaterSimulation(g); sim.Schedule(P(0)); Ticks(sim, 5);
         Assert(g.GetWaterCell(P(0)) == 1, "unsupported water became a source");
@@ -81,6 +81,30 @@ public static partial class WaterCheck
         float weighted = WaterSurface.CornerHeight(p => p.y != 1 ? -1 : p.x == 0 && p.z == 0 ? 0 : -1, P(0));
         Assert(Math.Abs(weighted - (1 - (11 / 9f + 3) / 14f)) < 0.00001f, "source weighted surface corner");
         IntegrationCheck.Run();
+        // The downhill route may already contain fluid below the ledge.
+        g = new Grid(); g.cells[P(0)] = 0; g.cells[P(1,0)] = 4;
+        sim = new WaterSimulation(g); sim.Schedule(P(0)); Ticks(sim,5);
+        Assert(g.GetWaterCell(P(1))==1&&g.GetWaterCell(P(-1))==WaterSimulation.Air,
+            "existing stream below ledge was ignored by route finding");
+        g = new Grid();g.cells[P(0,3)]=1;
+        sim=new WaterSimulation(g);sim.Schedule(P(0,3));Ticks(sim,5);
+        Assert(g.GetWaterCell(P(0,3))==WaterSimulation.Air&&g.GetWaterCell(P(0,2))==7,
+            "Beta orphan decay must run the downward branch after removal");
+        g = new Grid();g.cells[P(0)]=0;g.cells[P(1,0)]=WaterSimulation.Lava;
+        sim=new WaterSimulation(g);sim.Schedule(P(0));Ticks(sim,5);
+        Assert(g.GetWaterCell(P(1))==1&&g.GetWaterCell(P(-1))==WaterSimulation.Air&&g.GetWaterCell(P(1,0))==WaterSimulation.Lava,
+            "lava is non-solid for slope routing but cannot be displaced by water");
+        Assert(WaterSurface.FlowAngle(p=>p.y==1?0:-1,P(0))==-1000,"level pool should use still sheet");
+        double angle=WaterSurface.FlowAngle(p=>p.Equals(P(0))?0:p.Equals(P(1))?1:WaterSimulation.Solid,P(0));
+        Assert(Math.Abs(angle+Math.PI/2)<1e-8,"eastward current direction");
+        angle=WaterSurface.FlowAngle(p=>p.Equals(P(0))?8:p.Equals(P(1))?1:WaterSimulation.Solid,P(0));
+        Assert(Math.Abs(angle+Math.PI/2)<1e-8,"falling metadata should use source decay for direction");
+        angle=WaterSurface.FlowAngle(p=>p.Equals(P(0))?0:p.Equals(P(1))?-1:p.Equals(P(1,0))?3:WaterSimulation.Solid,P(0));
+        Assert(Math.Abs(angle+Math.PI/2)<1e-8,"current should point over a ledge");
+        float u,v;WaterSurface.TopUV(-1000,false,false,out u,out v);
+        Assert(u==0&&v==1,"still UV northwest");
+        WaterSurface.TopUV(-Math.PI/2,false,false,out u,out v);
+        Assert(Math.Abs(u-.75f)<1e-6&&Math.Abs(v-.75f)<1e-6,"east flow rotated half-scale UV");
         CheckLava();
         Console.WriteLine("PASS: " + checks + " fluid checks, including production block, save, and world adapter integration.");
     }
