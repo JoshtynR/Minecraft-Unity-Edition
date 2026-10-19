@@ -30,8 +30,8 @@ namespace UnityEngine
  {
   public int vertexCount=4;public static int created;public int uploads;public int subMeshCount;public Rendering.IndexFormat indexFormat;
   public List<Vector3> vertices;public List<Vector2> faceUVs;public List<Vector2> lightUVs;public List<Vector4> cornerUVs;public Dictionary<int,List<int>> indices=new Dictionary<int,List<int>>();
-  public Mesh(){created++;}public void Clear(){}public void MarkDynamic(){}public void SetVertices(List<Vector3> list){vertices=new List<Vector3>(list);uploads++;}
-  public void SetUVs<T>(int channel,List<T> data){if(channel==4)faceUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==1)lightUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==3)cornerUVs=new List<Vector4>((IEnumerable<Vector4>)(object)data);}public void SetColors(List<Color> data){}
+  public Mesh(){created++;}public void Clear(){}public void MarkDynamic(){}public void SetVertices(List<Vector3> list){vertices=new List<Vector3>(list);vertexCount=list.Count;uploads++;}
+  public void SetUVs<T>(int channel,List<T> data){if(channel==4&&data.Count!=vertexCount)throw new Exception("UV5 count does not match mesh vertices");if(channel==4)faceUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==1)lightUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==3)cornerUVs=new List<Vector4>((IEnumerable<Vector4>)(object)data);}public void SetColors(List<Color> data){}
   public void SetTriangles(List<int> data,int submesh){indices[submesh]=new List<int>(data);}public void RecalculateNormals(){}public void RecalculateBounds(){}
  }
  namespace Rendering { public enum IndexFormat{UInt32} }

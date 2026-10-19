@@ -24,7 +24,9 @@ public static class ChestModelGeometry
             if(direction==Direction.down){sy=v;sh=depth;}
             if(direction==Direction.left){sx=u;sw=depth;}
             if(direction==Direction.right){sx=u+depth+width;sw=depth;}
-            if(direction==Direction.forwards)sx=u+2*depth+width;
+            // Modern chest front is the local -Z face with the latch. The
+            // opposite atlas strip carries the rear hinge artwork.
+            if(direction==Direction.backwards)sx=u+2*depth+width;
             float left=sx/64f,right=(sx+sw)/64f,top=1-sy/64f,bottom=1-(sy+sh)/64f;
             // Chest entity sides run from model Y-min at the atlas top to Y-max
             // at the atlas bottom. Block-face UVs have the reverse V direction.

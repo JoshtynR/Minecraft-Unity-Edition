@@ -247,6 +247,7 @@ public static class BlockHelper
             }
             meshData.uv.Add(new Vector3(u, v, layer));
         }
+        meshData.AddQuadFaceCoordinates();
     }
     
     public static void GetFaceLightingAndAO(Direction direction, Vector3Int pos, MeshData meshData, ChunkData chunk, BlockShape faceShape = null)

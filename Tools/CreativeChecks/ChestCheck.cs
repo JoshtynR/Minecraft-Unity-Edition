@@ -44,14 +44,16 @@ public partial class PlayerInventory
   // the body's dark interior belongs on top, while its wood base faces down.
   CheckChestFaceUV(0,Direction.up,28,19,42,19,42,33,28,33);
   CheckChestFaceUV(0,Direction.down,14,33,28,33,28,19,14,19);
-  CheckChestFaceUV(0,Direction.backwards,14,33,14,43,28,43,28,33);
-  CheckChestFaceUV(0,Direction.forwards,42,33,42,43,56,43,56,33);
+  CheckChestFaceUV(0,Direction.backwards,42,33,42,43,56,43,56,33);
+  CheckChestFaceUV(0,Direction.forwards,14,33,14,43,28,43,28,33);
   CheckChestFaceUV(0,Direction.left,0,33,0,43,14,43,14,33);
   CheckChestFaceUV(0,Direction.right,28,33,28,43,42,43,42,33);
   CheckChestFaceUV(1,Direction.up,28,0,42,0,42,14,28,14);
   CheckChestFaceUV(1,Direction.down,14,14,28,14,28,0,14,0);
-  CheckChestFaceUV(1,Direction.backwards,14,14,14,19,28,19,28,14);
-  CheckChestFaceUV(2,Direction.backwards,1,1,1,5,3,5,3,1);
+  CheckChestFaceUV(1,Direction.backwards,42,14,42,19,56,19,56,14);
+  CheckChestFaceUV(1,Direction.forwards,14,14,14,19,28,19,28,14);
+  CheckChestFaceUV(2,Direction.backwards,4,1,4,5,6,5,6,1);
+  CheckChestFaceUV(2,Direction.forwards,1,1,1,5,3,5,3,1);
   for(int part=0;part<3;part++)
   {
    var mesh=ChestModelGeometry.Build(part);

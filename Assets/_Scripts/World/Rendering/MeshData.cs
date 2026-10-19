@@ -67,6 +67,11 @@ public class MeshData
         uv.Add(new Vector3(mapping.z, mapping.w+mapping.y, layer));
         uv.Add(new Vector3(mapping.z+mapping.x, mapping.w+mapping.y, layer));
         uv.Add(new Vector3(mapping.z+mapping.x, mapping.w, layer));
+        AddQuadFaceCoordinates();
+    }
+
+    public void AddQuadFaceCoordinates()
+    {
         faceCoordinates.Add(new Vector2(0,0));
         faceCoordinates.Add(new Vector2(0,1));
         faceCoordinates.Add(new Vector2(1,1));

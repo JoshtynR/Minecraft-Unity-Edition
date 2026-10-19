@@ -237,11 +237,13 @@ public static partial class IntegrationCheck
         WaterMeshCheck.SetWaterFaceHeight(V(0,1,0),mesh,c);
         WaterMeshCheck.AddFluidUVs(Direction.right,V(0,1,0),mesh,c,new TextureData());
         WaterCheck.Assert(mesh.uv.Count==4&&mesh.uv[0].z==20,"fluid sides must use flow layer");
+        WaterCheck.Assert(mesh.faceCoordinates.Count==mesh.vertices.Count,"fluid side UV5 coordinates match every emitted vertex");
         WaterCheck.Assert(Math.Abs(mesh.uv[1].y-(.5f+1/18f))<.00001f,"shallow fluid sides must crop instead of stretch");
         WaterCheck.Assert(Math.Abs(mesh.uv[0].y-.5f)<.00001f&&Math.Abs(mesh.uv[2].x-.4996875f)<.00001f,"flow sheet two-block scale");
         mesh=new MeshData(false);shape.SetFaceVertices(Direction.up,V(0,1,0),mesh);
         WaterMeshCheck.AddFluidUVs(Direction.up,V(0,1,0),mesh,c,new TextureData());
         WaterCheck.Assert(mesh.uv[0].z==10,"level fluid top uses still sheet");
+        WaterCheck.Assert(mesh.faceCoordinates.Count==mesh.vertices.Count,"fluid top UV5 coordinates match every emitted vertex");
         c.GetBlock(V(0,1,0)).waterLevel=0;c.GetBlock(V(1,1,0)).waterLevel=1;
         c.GetBlock(V(0,1,1)).waterLevel=0;
         mesh=new MeshData(false);shape.SetFaceVertices(Direction.up,V(0,1,0),mesh);

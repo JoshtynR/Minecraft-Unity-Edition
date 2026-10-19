@@ -104,6 +104,13 @@ public static partial class LightingCheck
   // still emit the terrain seen through it. Leaves/glass keep cutout geometry.
   for(int i=0;i<133;i++)BlockDataManager.blockTypeDataDictionary[i]=new BlockTypeData{isTransparent=true};
   BlockDataManager.blockTypeDataDictionary[(int)BlockType.Stone].isTransparent=false;
+  foreach(var liquid in new[]{BlockType.Water,BlockType.Lava})
+  {
+   var liquidChunk=new ChunkData();var liquidPos=new Vector3Int(0,65,0);Add(liquidChunk,liquidPos,liquid);
+   var upload=BlockHelper.GetMeshData(liquidChunk,liquidPos,new MeshData(true),liquid);upload.PrepareForRendering();
+   Check(upload.vertices.Count==24&&upload.faceCoordinates.Count==24&&upload.uv.Count==24&&upload.lightingUVs.Count==24,
+    "all six "+liquid+" faces retain matching UV0/UV5/lighting vertex counts after upload preparation");
+  }
   var renderChunk=new ChunkData();var renderPos=new Vector3Int(0,65,0);Add(renderChunk,renderPos,BlockType.Water);
   var renderMesh=BlockHelper.GetMeshData(renderChunk,renderPos,new MeshData(true),BlockType.Water);
   Check(renderMesh.waterMesh.vertices.Count==24&&renderMesh.transparentMesh.vertices.Count==0&&renderMesh.vertices.Count==0,"water has dedicated blended submesh");
