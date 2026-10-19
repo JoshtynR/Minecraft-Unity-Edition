@@ -36,6 +36,7 @@ public partial class PlayerInventory : MonoBehaviour
         canvasRect = GameObject.Find("PlayerCanvas").GetComponent<RectTransform>();
         inventoryCanvas = canvasRect.GetComponent<Canvas>();
         var gameUI = canvasRect.Find("GameUI");
+        PlayerSurvivalHUD.EnsureOn(gameUI);
         hotbarRect = gameUI.Find("Hotbar").GetComponent<RectTransform>();
         selectedSlotRect = hotbarRect.GetChild(0).GetComponent<RectTransform>();
         var previous = gameUI.Find("Inventory");

@@ -159,6 +159,7 @@ public class ChunkData
  public Block GetBlock(Vector3Int local)=>worldRef.GetBlock(worldPos+local);
 }
 public class Player:MonoBehaviour {public bool escapeMenuOpen;public float reach=4.5f;public int health=20;}
+public static class PlayerSurvivalHUD {public static int attaches;public static void EnsureOn(Transform parent){attaches++;}}
 public class Block {public BlockType type;public object blockShape;public Block(BlockType type,Vector3Int p,object section){this.type=type;}public int GetSkyLight()=>15;public int GetBlockLight()=>0;}
 public static class BlockMapping {public static Block MapTypeToBlock(BlockType t,Block b)=>b;}
 public class TextureData {public Texture2D top,bottom,side,front,back,left,right;}

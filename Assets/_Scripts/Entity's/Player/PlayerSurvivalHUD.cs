@@ -4,6 +4,15 @@ using UnityEngine.UI;
 
 public class PlayerSurvivalHUD : MonoBehaviour
 {
+    // Keep the HUD available in existing/user-edited scenes without requiring
+    // a scene YAML merge. Local inventory startup already locates this parent.
+    public static void EnsureOn(Transform gameUI)
+    {
+        if(gameUI==null)return;
+        var hud=gameUI.GetComponent<PlayerSurvivalHUD>();
+        if(hud==null)hud=gameUI.gameObject.AddComponent<PlayerSurvivalHUD>();
+        hud.enabled=true;
+    }
     [SerializeField] private RectTransform hotbar;
     private PlayerHudAssets assets;
     private RectTransform root;
@@ -24,7 +33,11 @@ public class PlayerSurvivalHUD : MonoBehaviour
 
     private void TryBuild()
     {
-        if (root != null) return;
+        if (Ready()) return;
+        // Unity's script reload can retain the RectTransform while readonly
+        // runtime arrays are recreated. Never reuse a partially initialized HUD.
+        if(root!=null){root.gameObject.SetActive(false);Destroy(root.gameObject);root=null;}
+        if(assets==null)assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         if (assets == null || assets.icons == null)
         {
             if (!warned) Debug.LogWarning("Survival HUD needs Assets/Textures/Minecraft/gui/icons.png. Import that file; the editor will bind it automatically.", this);
@@ -66,6 +79,14 @@ public class PlayerSurvivalHUD : MonoBehaviour
         shadow.effectColor = Color.black;
         shadow.effectDistance = new Vector2(1, -1);
         root.gameObject.SetActive(false);
+        lastPlayer=null;lastHealth=lastHunger=lastLevel=lastXpPixels=-1;
+    }
+
+    private bool Ready()
+    {
+        if(root==null||hotbar==null||xpFill==null||levelText==null)return false;
+        for(int i=0;i<10;i++)if(hearts[i]==null||food[i]==null||bubbles[i]==null)return false;
+        return true;
     }
 
     private RectTransform NewRect(string name, Transform parent, float x, float y, float width, float height)
@@ -99,10 +120,10 @@ public class PlayerSurvivalHUD : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (root == null)
+        if (!Ready())
         {
             TryBuild();
-            return;
+            if(!Ready())return;
         }
         // Match any moved hotbar and inherit the existing CanvasScaler setting.
         root.anchoredPosition = hotbar.anchoredPosition;

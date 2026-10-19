@@ -5,10 +5,10 @@ using UnityEngine;
 using UnityEngine.UI;
 namespace UnityEngine
 {
- public class Object {public bool destroyed;public static void Destroy(Object o){o.destroyed=true;} }
+ public class Object {public bool destroyed;public static void Destroy(Object o){o.destroyed=true;var go=o as GameObject;if(go!=null&&go.transform.parent!=null)go.transform.parent.children.Remove(go.transform);} }
  public class ScriptableObject:Object {}
- public class Component:Object {public GameObject gameObject;public Transform transform=>gameObject.transform;}
- public class MonoBehaviour:Component {}
+ public class Component:Object {public GameObject gameObject;public Transform transform=>gameObject.transform;public T GetComponent<T>() where T:Component{return gameObject.GetComponent<T>();}}
+ public class MonoBehaviour:Component {public bool enabled=true;}
  public class SerializeField:Attribute {}
  public class Tooltip:Attribute {public Tooltip(string value){}}
  public class Material:Object {}
@@ -30,6 +30,7 @@ namespace UnityEngine
   public RectTransform transform;public List<Component> components=new List<Component>();
   public GameObject(string name,params Type[] types){this.name=name;transform=new RectTransform{gameObject=this};components.Add(transform);}
   public T AddComponent<T>() where T:Component,new(){var c=new T{gameObject=this};components.Add(c);return c;}
+  public T GetComponent<T>() where T:Component{return (T)components.Find(c=>c is T);}
   public void SetActive(bool value){activeSelf=value;}
  }
  public class Texture2D:Object {public int width=256,height=256;}
@@ -65,7 +66,11 @@ public static class HudCheck
   Check(SurvivalHudValues.ExperiencePixels(0.5f)==91&&SurvivalHudValues.ExperiencePixels(1)==182&&SurvivalHudValues.ExperiencePixels(float.PositiveInfinity)==182,"XP pixel clipping");
   var ui=new GameObject("GameUI");var hotbar=new GameObject("Hotbar");hotbar.transform.SetParent(ui.transform,false);hotbar.transform.anchoredPosition=new Vector2(3,4);
   Resources.asset=new PlayerHudAssets{icons=new Texture2D(),levelFont=new TMPro.TMP_FontAsset()};
-  var hud=ui.AddComponent<PlayerSurvivalHUD>();Call(hud,"Start");var root=Child(ui,"SurvivalHUD");
+  PlayerSurvivalHUD.EnsureOn(ui.transform);var hud=ui.GetComponent<PlayerSurvivalHUD>();
+  Check(hud!=null&&hud.enabled,"inventory startup repairs a scene with no survival HUD component");
+  hud.enabled=false;PlayerSurvivalHUD.EnsureOn(ui.transform);
+  Check(hud.enabled&&ui.components.FindAll(c=>c is PlayerSurvivalHUD).Count==1,"HUD attachment is idempotent and restores a disabled component");
+  Call(hud,"Start");var root=Child(ui,"SurvivalHUD");
   Check(root.transform.pivot.x==0.5f,"HUD centered relative to hotbar");
   Check(!root.activeSelf,"HUD hidden before local player exists");
   GameManager.Instance=new GameManager{localPlayer=new Player{health=19,hunger=5,experienceLevel=7,experienceProgress=0.5f}};Call(hud,"LateUpdate");
@@ -80,8 +85,19 @@ public static class HudCheck
   Check(Child(root,"Air0").activeSelf&&Child(root,"Air4").activeSelf&&!Child(root,"Air5").activeSelf,"half air supply displays five bubbles");
   GameManager.Instance.localPlayer.airSupply=300;Call(hud,"LateUpdate");Check(!Child(root,"Air0").activeSelf,"air HUD hides when breath refills");
   GameManager.Instance.localPlayer=new Player();Call(hud,"LateUpdate");Check(Get<RawImage>(Child(root,"Heart9")).uvRect.x==52/256f&&!fill.enabled,"new player resets health and XP display");
+  var air=(RawImage[])typeof(PlayerSurvivalHUD).GetField("bubbles",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(hud);
+  air[0]=null;Call(hud,"LateUpdate");var repaired=Child(ui,"SurvivalHUD");
+  Check(root.destroyed&&repaired!=root&&repaired.activeSelf,"script reload with retained root and missing runtime references rebuilds HUD");
+  Check(ui.transform.children.FindAll(t=>t.gameObject.name=="SurvivalHUD").Count==1,"repair does not leave duplicate visible HUD roots");
+  root=repaired;
   hotbar.SetActive(false);Call(hud,"LateUpdate");Check(!root.activeSelf,"hidden hotbar hides HUD");
   Call(hud,"OnDestroy");Check(root.destroyed,"runtime UI owner destroys root");
+  var lateUI=new GameObject("GameUI");var lateBar=new GameObject("Hotbar");lateBar.transform.SetParent(lateUI.transform,false);
+  var loadedAssets=Resources.asset;Resources.asset=null;PlayerSurvivalHUD.EnsureOn(lateUI.transform);
+  var lateHud=lateUI.GetComponent<PlayerSurvivalHUD>();Call(lateHud,"Start");
+  Check(lateUI.transform.Find("SurvivalHUD")==null,"missing resources defer HUD creation safely");
+  Resources.asset=loadedAssets;Call(lateHud,"LateUpdate");
+  Check(Child(lateUI,"SurvivalHUD").activeSelf,"late-loaded HUD assets recover without a scene reload");
   Console.WriteLine(checks+" production HUD state/crop/layout/lifecycle checks passed (Unity UI mocked).");
  }
 }
