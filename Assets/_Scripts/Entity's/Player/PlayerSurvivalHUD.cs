@@ -9,6 +9,7 @@ public class PlayerSurvivalHUD : MonoBehaviour
     private RectTransform root;
     private readonly RawImage[] hearts = new RawImage[10];
     private readonly RawImage[] food = new RawImage[10];
+    private readonly RawImage[] bubbles = new RawImage[10];
     private RawImage xpFill;
     private TextMeshProUGUI levelText;
     private Player lastPlayer;
@@ -48,6 +49,8 @@ public class PlayerSurvivalHUD : MonoBehaviour
             hearts[i] = CreateImage("Heart" + i, heartX, 30, 9, 9, 52, 0);
             CreateImage("FoodBackground" + i, foodX, 30, 9, 9, 16, 27);
             food[i] = CreateImage("Food" + i, foodX, 30, 9, 9, 52, 27);
+            bubbles[i]=CreateImage("Air"+i,82-i*8,40,9,9,16,18);
+            bubbles[i].gameObject.SetActive(false);
         }
         CreateImage("XPBackground", -91, 24, 182, 5, 0, 64);
         xpFill = CreateImage("XPFill", -91, 24, 182, 5, 0, 69);
@@ -107,6 +110,13 @@ public class PlayerSurvivalHUD : MonoBehaviour
         bool visible = player != null && hotbar.gameObject.activeInHierarchy;
         if (root.gameObject.activeSelf != visible) root.gameObject.SetActive(visible);
         if (player == null) return;
+        int air=Mathf.Clamp(player.airSupply,0,300);
+        int fullAir=Mathf.CeilToInt((air-2)*10/300f),totalAir=Mathf.CeilToInt(air*10/300f);
+        for(int i=0;i<10;i++)
+        {
+            bubbles[i].gameObject.SetActive(player.airSupply<300&&i<totalAir);
+            bubbles[i].uvRect=SheetRect(i<fullAir?16:25,18,9,9);
+        }
         if (player != lastPlayer)
         {
             lastPlayer = player;

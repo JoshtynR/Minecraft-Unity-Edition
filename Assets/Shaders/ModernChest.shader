@@ -10,17 +10,17 @@ Shader "Voxel/ModernChest"
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
-            sampler2D _MainTex;float _Brightness;
+            sampler2D _MainTex;float _Brightness;float4 _FluidFog;
             struct appdata {float4 vertex:POSITION;float2 uv:TEXCOORD0;float3 normal:NORMAL;};
-            struct v2f {float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float light:TEXCOORD1;};
+            struct v2f {float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float light:TEXCOORD1;float distance:TEXCOORD2;};
             v2f vert(appdata v)
             {
-                v2f o;o.pos=UnityObjectToClipPos(v.vertex);o.uv=v.uv;
+                v2f o;o.pos=UnityObjectToClipPos(v.vertex);o.uv=v.uv;o.distance=length(UnityObjectToViewPos(v.vertex));
                 float3 n=abs(UnityObjectToWorldNormal(v.normal));
                 float shade=n.y>.5?(UnityObjectToWorldNormal(v.normal).y<0?.5:1):n.x>.5?.6:.8;
                 o.light=_Brightness*shade;return o;
             }
-            fixed4 frag(v2f i):SV_Target {fixed4 c=tex2D(_MainTex,i.uv);clip(c.a-.1);return fixed4(c.rgb*i.light,1);}
+            fixed4 frag(v2f i):SV_Target {fixed4 c=tex2D(_MainTex,i.uv);clip(c.a-.1);return fixed4(lerp(c.rgb*i.light,_FluidFog.rgb,1-exp(-_FluidFog.w*i.distance)),1);}
             ENDCG
         }
     }

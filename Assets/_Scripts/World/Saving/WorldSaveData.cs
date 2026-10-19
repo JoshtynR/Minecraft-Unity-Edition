@@ -10,6 +10,7 @@ public class WorldSaveData
     
     public Vector3Int seedOffset;
     public long betaWorldSeed;
+    public FluidTickSave fluidTicks;
     
     [NonSerialized]
     public ChunkSaveData[] chunks;

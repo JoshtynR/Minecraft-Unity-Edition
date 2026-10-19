@@ -106,6 +106,7 @@ public static partial class WaterCheck
         WaterSurface.TopUV(-Math.PI/2,false,false,out u,out v);
         Assert(Math.Abs(u-.75f)<1e-6&&Math.Abs(v-.75f)<1e-6,"east flow rotated half-scale UV");
         CheckLava();
+        CheckFluidFeatures();
         Console.WriteLine("PASS: " + checks + " fluid checks, including production block, save, and world adapter integration.");
     }
 }

@@ -9,6 +9,8 @@ public class WorldSettingsManager : MonoBehaviour
     public Vector3Int seedOffset;
     public long betaWorldSeed;
     public string worldName;
+    private FluidTickSave fluidTicks;
+    private string fluidWorldName;
     
     private void Awake()
     {
@@ -34,6 +36,8 @@ public class WorldSettingsManager : MonoBehaviour
             worldName = worldSaveData.worldName;
             seedOffset = worldSaveData.seedOffset;
             betaWorldSeed = worldSaveData.betaWorldSeed;
+            fluidTicks=worldSaveData.fluidTicks;
+            fluidWorldName=worldSaveData.worldName;
         });
     }
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -43,6 +47,7 @@ public class WorldSettingsManager : MonoBehaviour
             World.Instance.mapSeedOffset = seedOffset;
             World.Instance.betaWorldSeed = betaWorldSeed;
             World.Instance.worldName = worldName;
+            World.Instance.RestoreFluidTicks(fluidWorldName==worldName?fluidTicks:null);
         }
     }
 

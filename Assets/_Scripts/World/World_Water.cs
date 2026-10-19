@@ -8,6 +8,12 @@ public partial class World : IWaterWorld
 {
     private WaterSimulation waterSimulation;
     private WaterSimulation lavaSimulation;
+    private FluidTickScheduler fluidTicks;
+    private JavaRandom fluidRandom;
+    private int fluidRandomTickState;
+    private FluidTickSave fluidRestore;
+    public void RestoreFluidTicks(FluidTickSave save){fluidRestore=save;}
+    public FluidTickSave CaptureFluidTicks()=>fluidTicks==null?fluidRestore:fluidTicks.Capture(fluidRandom.State,fluidRandomTickState);
     private sealed class LavaWorld : IWaterWorld
     {
         private readonly World world;
@@ -36,6 +42,7 @@ public partial class World : IWaterWorld
     {
         waterSimulation = null;
         lavaSimulation = null;
+        fluidTicks=null;fluidRandom=null;ResetFluidRuntime();
         waterSession++;
         waterMeshBuildInProgress = false;
         waterTickTime = 0;
@@ -124,14 +131,15 @@ public partial class World : IWaterWorld
     }
 
     // Legacy water batch wire format: 0..15 water, 32..47 lava, 64 obsidian,
-    // 65 cobblestone, 255 air. Clients never run authoritative fluid ticks.
-    private static bool ValidFluidCode(byte code) => code<=15 || (code>=32&&code<=47) || code==64 || code==65 || code==255;
+    // 65 cobblestone, 80..95 fire age, 255 air. Clients never run authoritative ticks.
+    private static bool ValidFluidCode(byte code) => code<=15 || (code>=32&&code<=47) || code==64 || code==65 || (code>=80&&code<=95) || code==255;
     private bool ApplyFluidCode(Vector3Int p,byte code)
     {
         if(code<=15)return ApplyFluidState(p,BlockType.Water,code);
         if(code>=32&&code<=47)return ApplyFluidState(p,BlockType.Lava,code-32);
         if(code==64)return ApplyFluidState(p,BlockType.Obsidian,0);
         if(code==65)return ApplyFluidState(p,BlockType.Cobblestone,0);
+        if(code>=80&&code<=95)return ApplyFluidState(p,BlockType.Fire,code-80);
         return code==255&&ApplyFluidState(p,BlockType.Air,0);
     }
 
@@ -155,12 +163,14 @@ public partial class World : IWaterWorld
     private bool ApplyFluidState(Vector3Int position,BlockType type,int level)
     {
         if (!TryGetWaterBlock(position, out var block)) return false;
-        bool liquid=type==BlockType.Water||type==BlockType.Lava;
+        bool liquid=type==BlockType.Water||type==BlockType.Lava||type==BlockType.Fire;
         if (block.type == type && (!liquid || block.waterLevel == level)) return false;
+        bool hardening=block.type==BlockType.Lava&&(type==BlockType.Obsidian||type==BlockType.Cobblestone);
         var chunk = block.chunkData;
         if (block.type != type) WorldDataHelper.SetBlock(this,position,type);
         chunk.GetBlock(position - chunk.worldPos).waterLevel = liquid ? (byte)(level&15) : (byte)0;
         chunk.modifiedAfterSave = true;
+        if(hardening)EmitFluidEffect(position,0);
         // Corner heights sample diagonal cells too, including across chunk edges.
         for (int dx = -1; dx <= 1; dx++)
             for (int dz = -1; dz <= 1; dz++)
@@ -181,10 +191,12 @@ public partial class World : IWaterWorld
             if(states.Count==0)pendingWaterStates.Remove(chunk.worldPos);
         }
         if (!NetworkServer.active) return;
+        RegisterFluidRuntimeChunk(chunk);
         foreach (var section in chunk.sections)
             foreach (var block in section.blocks)
             {
                 var p = block.globalWorldPosition;
+                if(block.type==BlockType.Fire)fluidTicks.Schedule(WaterPos(p),2,40);
                 if (block.type == BlockType.Water || block.type == BlockType.Lava)
                 {
                     bool lava=block.type==BlockType.Lava;
@@ -225,18 +237,25 @@ public partial class World : IWaterWorld
     private void UpdateWater()
     {
         if (!Application.isPlaying || !IsWorldCreated || disabled || System.Threading.Volatile.Read(ref betaPopulationJobs) > 0) return;
-        if (waterSimulation == null) waterSimulation = new WaterSimulation(this);
-        if(lavaSimulation==null)
+        if (waterSimulation == null)
         {
             // Runtime hesitation has its own RNG; never consume the terrain or
             // population streams whose seed parity has already been verified.
-            var random=new JavaRandom(betaWorldSeed);
-            lavaSimulation=new WaterSimulation(new LavaWorld(this),true,false,()=>random.NextInt(4));
+            fluidTicks=new FluidTickScheduler();fluidRandom=new JavaRandom(betaWorldSeed);
+            fluidRandomTickState=unchecked((int)betaWorldSeed);
+            waterSimulation=new WaterSimulation(this,scheduler:fluidTicks);
+            lavaSimulation=new WaterSimulation(new LavaWorld(this),true,false,()=>fluidRandom.NextInt(4),fluidTicks);
+            InitializeFluidRuntime();
+            if(fluidRestore!=null)
+            {
+                fluidTicks.Restore(fluidRestore);fluidRandom.RestoreState(fluidRestore.randomState);
+                fluidRandomTickState=fluidRestore.randomTickState;fluidRestore=null;
+            }
         }
         for (int i = 0; i < 2 && waterChunksToActivate.Count > 0; i++)
             ActivateWaterChunk(waterChunksToActivate.Dequeue());
         while (waterNotifications.TryDequeue(out var p))
-            if (NetworkServer.active) { waterSimulation.NotifyChanged(WaterPos(p));lavaSimulation.NotifyChanged(WaterPos(p)); }
+            if (NetworkServer.active) { waterSimulation.NotifyChanged(WaterPos(p));lavaSimulation.NotifyChanged(WaterPos(p));NotifyFireChange(WaterPos(p)); }
 
         if (NetworkServer.active)
         {
@@ -246,8 +265,8 @@ public partial class World : IWaterWorld
             while (waterTickTime >= 0.05f && ticks++ < 5)
             {
                 waterTickTime -= 0.05f;
-                waterSimulation.AdvanceTick();
-                lavaSimulation.AdvanceTick();
+                fluidTicks.Advance();
+                RandomFluidTicks();
             }
             // Bound catch-up after a pause while preserving normal tick spacing.
             waterTickTime = Mathf.Min(waterTickTime, 0.25f);

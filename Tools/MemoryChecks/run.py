@@ -10,7 +10,7 @@ def main():
   method=player[player.index('    public void SetMeshLight'):player.index('    // Name plate name')]
   cleanup=player[player.index('    private void OnDestroy()'):].replace('private void OnDestroy()', 'public void DestroyForTest()')
   stub=Path(tmp)/'Player.cs'
-  stub.write_text('using System.Collections.Generic;using UnityEngine; public class Player : MonoBehaviour { public MeshFilter[] meshFilters; private readonly Dictionary<MeshFilter,Mesh> ownedLightingMeshes=new Dictionary<MeshFilter,Mesh>();private readonly List<Vector2> meshLightingUVs=new List<Vector2>();private void DisposeMining(){}'+method+cleanup+' public class GameManager {public static GameManager Instance;public List<Player> players=new List<Player>();}')
+  stub.write_text('using System.Collections.Generic;using UnityEngine; public class Player : MonoBehaviour { public MeshFilter[] meshFilters; private readonly Dictionary<MeshFilter,Mesh> ownedLightingMeshes=new Dictionary<MeshFilter,Mesh>();private readonly List<Vector2> meshLightingUVs=new List<Vector2>();private void DisposeMining(){}private void DisposeFluidView(){}'+method+cleanup+' public class GameManager {public static GameManager Instance;public List<Player> players=new List<Player>();}')
   chunk=(ROOT/'Assets/_Scripts/World/ChunkData.cs').read_text()
   prop=chunk[chunk.index('    public bool HasPendingLighting'):chunk.index('    public void UpdateLight()')]
   dirty=Path(tmp)/'ChunkDirty.cs'

@@ -9,6 +9,7 @@ using MinecraftTextureLookup = MinecraftTextureAutoAssign.MinecraftTextureLookup
 namespace TMPro {public class TMP_FontAsset:UnityEngine.Object {}}
 namespace UnityEngine
 {
+ public class AudioClip:Object {}
  public partial class Object {public static void DestroyImmediate(Object value){Destroy(value);}}
  public static partial class Application {public static string dataPath;}
  public enum RuntimeInitializeLoadType {SubsystemRegistration}
@@ -135,6 +136,9 @@ public static class AssignmentCheck
    var chestSkin=Image(root+"/block/normal.png",64,64);
    var chestContainer=Image(root+"/gui/container/generic_54.png",256,256);
    var steve=Image(root+"/entity/steve.png",64,64,10);
+   var fireOverlay=Image(root+"/fire_0.png",16,512);
+   var bubbleParticle=Image(root+"/particle/bubble.png");
+   var smokeParticle=Image(root+"/particle/generic_0.png");
    for(int i=0;i<steve.pixels.Length/2;i++)steve.pixels[i]=new Color32(11,0,0,255);
    for(int i=0;i<10;i++)Image(root+"/block/destroy_stage_"+i+".png",color:(byte)(20+i));
    var untouched=new BlockTypeData{blockType=BlockType.Grass,textureData=new TextureData{top=original},opacity=7,lightEmission=9};
@@ -157,6 +161,8 @@ public static class AssignmentCheck
    var guiImporter=UnityEditor.AssetImporter.all[PlayerHudAssetSetup.InventoryPath];
    guiImporter.mipmapEnabled=true;guiImporter.npotScale=UnityEditor.TextureImporterNPOTScale.ToNearest;
    PlayerHudAssetSetup.Bind();
+   Check(hud.fireOverlay==fireOverlay&&hud.bubbleParticle==bubbleParticle&&hud.smokeParticle==smokeParticle,"fluid effects bind the actual root fire sheet and particle folder");
+   hud.bubbleParticle=original;PlayerHudAssetSetup.Bind();Check(hud.bubbleParticle==original,"fluid effects preserve user particle overrides");
    Check(ReferenceEquals(hud.chestSkin,chestSkin)&&ReferenceEquals(hud.chestContainer,chestContainer),"editor binds user's modern chest sheet and container GUI without modifying block catalog");
    Check(hud.inventoryPlayerSkin!=null,"editor binds a direct player skin for the inventory preview");
    var explicitPreview=original;hud.inventoryPlayerSkin=explicitPreview;PlayerHudAssetSetup.Bind();

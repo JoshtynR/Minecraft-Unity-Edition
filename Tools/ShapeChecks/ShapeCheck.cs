@@ -8,9 +8,12 @@ namespace UnityEngine
  {
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
   public float magnitude=>(float)Math.Sqrt(x*x+y*y+z*z);
+  public float sqrMagnitude=>x*x+y*y+z*z;
+  public static Vector3 zero=>new Vector3();
   public static Vector3 up=>new Vector3(0,1,0);
   public static Vector3 operator *(Vector3 a,float f)=>new Vector3(a.x*f,a.y*f,a.z*f);
   public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
+  public static Vector3 operator -(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
  }
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;} }
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
@@ -20,7 +23,7 @@ namespace UnityEngine
 public enum Direction {down,up,backwards,forwards,left,right}
 public class ChunkData {}
 public class BlockData {public bool generateCollider=true;}
-public class Block {public Vector3Int globalWorldPosition;public BlockType type;public BlockData BlockData=new BlockData();public BlockShapes blockShape;public Block(BlockType t){type=t;blockShape=BlockShapesExtensions.ForBlock(t);} }
+public class Block {public byte waterLevel;public Vector3Int globalWorldPosition;public BlockType type;public BlockData BlockData=new BlockData();public BlockShapes blockShape;public Block(BlockType t){type=t;blockShape=BlockShapesExtensions.ForBlock(t);} }
 public partial class World {public int worldHeight=12;public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block(BlockType.Air);} }
 public class TestTransform {public Vector3 position;public Vector3 forward=new Vector3(0,0,1),right=new Vector3(1,0,0);}
 namespace UnityEngine {public static class Time {public static float deltaTime=0.02f,fixedDeltaTime=0.02f;}}
@@ -40,6 +43,7 @@ public static partial class ShapeCheck
  public static void Main()
  {
   CheckStairs();
+  CheckFluidController();
   CheckSpecial();
   CheckSpecialTextures();
   CheckJumpInput();

@@ -242,6 +242,7 @@ public partial class Player : BaseEntity
         // replicated food/health. Offline preview also works without a server.
         if (isServer || !networkStarted)
         {
+            AdvanceFluidHazards(Time.fixedDeltaTime);
             AdvanceSurvival(Time.fixedDeltaTime);
             AdvanceMining(Time.fixedDeltaTime);
         }
@@ -459,6 +460,7 @@ public partial class Player : BaseEntity
         
         if (!Application.isPlaying || !isLocalPlayer && networkStarted) return;
         GetPlayerInput();
+        UpdateFluidView();
         UpdateMining();
         var vel = new Vector3(velocity.x, 0, velocity.z);
         animator.SetFloat(Speed, (vel.magnitude/Time.fixedDeltaTime)/walkSpeed);
@@ -572,6 +574,7 @@ public partial class Player : BaseEntity
 
             isCrouching = false;
             jumpRequest = false;
+            swimJumpHeld = false;
 
             return;
         }
@@ -687,12 +690,14 @@ public partial class Player : BaseEntity
             }
         }
 
+        swimJumpHeld=Input.GetButton("Jump");
         RequestJump(Input.GetButtonDown("Jump"));
     }
 
 
     private void OnDestroy()
     {
+        DisposeFluidView();
         DisposeMining();
         foreach (var mesh in ownedLightingMeshes.Values)
             if (mesh != null) Destroy(mesh);

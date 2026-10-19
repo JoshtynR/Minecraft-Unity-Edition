@@ -74,22 +74,65 @@ Hardening runs on change notifications/activation, without waiting thirty ticks.
 Fluid displacement follows canonical materials, not user collider/opacity flags.
 Flowers, crops, torches, dust, rails, repeaters, fire, portal and snow
 layers wash away. Reeds, ladders, signs, doors, webs, pressure plates and partial solid blocks stop
-flow. Dropped items for washed-away blocks, fizz/smoke, fire spread, burning
-entities, swimming and currents are not implemented by this pass.
+flow. Dropped item entities for washed-away blocks are still outside this system.
 
 Lava levels use the existing waterLevel field for backwards-compatible save data;
 RLE separates different levels for both fluids. Lava uses the weighted corner
 heights but stays in the solid rendering pass; its changing emission uses normal
 lighting updates. All changes are server-authoritative. The legacy water delta
-batch now encodes water 0..15, lava 32..47, obsidian 64, cobblestone 65, air 255.
+batch encodes water 0..15, lava 32..47, obsidian 64, cobblestone 65,
+fire age 80..95, and air 255.
 Clients defer deltas until chunk/population readiness and never simulate reactions.
 Both host and joining clients must use the updated build.
 
-The gameplay RNG for lava hesitation is independent of generation/population RNG
-and restarts on world load. Live vanilla tick order/RNG parity is **not certified**;
-tests are controlled regression scenarios, not a full Java-world oracle. Scheduled
-pending ticks are not serialized. This does not port generation-time immediate
+Water, lava and fire now share a time/insertion-ordered scheduler with one global
+1000-update budget. SaveWorld captures pending positions/materials, due times,
+ordering, game tick, Java gameplay RNG state and random-tick LCG state in world.json
+alongside the chunk snapshot. Old saves have no queue and activate normally.
+Unloaded fluid positions retry until available instead of losing a saved update.
+WorldSettingsManager transfers this state only to its matching saved world.
+
+Runtime RNG stays independent of generation/population RNG. Live vanilla-world
+RNG/tick parity is **not certified**: our active chunk set and other world systems
+differ, and this project still represents flowing/stationary liquids with one
+block type per material. These tests do not port generation-time immediate
 liquid physics into the population oracle.
+
+## Movement, hazards and effects
+
+BaseEntity uses a separate 20 Hz liquid motion accumulator, independent of Unity's
+fixed step. Production checks cover both .02 and .05 second fixed intervals.
+Water/lava acceleration is .02 per tick, drag .8/.5, gravity -.02 and held jump
+buoyancy +.04. Water currents add .014 along the normalized aggregate flow vector,
+including the falling-wall downward component. Solid collision and the .3 rim
+escape impulse are retained; fluids do not act as collision cubes even when an
+asset's collider toggle is enabled. Flight continues through the existing path.
+
+Player hazards run only offline/on the server and replicate air/burning via
+SyncVars. Air lasts 300 ticks, drowning deals 2 points after each subsequent
+20 ticks, lava attempts 4 points per tick through Beta's damage-resistance rule,
+and lava/fire refresh 600/300 burn ticks. Water extinguishes; flight is immune.
+The HUD displays classic air bubbles. Existing hunger/sprint rules are retained.
+
+BetaFireSimulation ports dry-weather lava ignition, fire age/support rules and
+the original encouragement/burn table. Random ticks use the Beta 80-samples-per-
+active-chunk LCG; fire age survives RLE saves and server deltas. Filled chests
+retain their existing removal protection. Rain extinguishing and TNT explosions
+need the corresponding weather/explosion systems and are not simulated here.
+
+FluidCameraEffects scopes underwater (.02,.02,.2; density .1) and lava
+(.6,.1,0; density 2) fog to the local player's camera, restoring global state,
+skybox/clear settings and background afterward. Voxel, water, chest and particle
+shaders consume it. Water-overlay artwork is optional; fire uses the existing
+fire_0.png sheet from the texture folder. Missing particle references bind from
+the existing particle folder without replacing user assignments.
+
+Four reusable emitters cap particles at 256 each. Effects cover entry splashes,
+bubbles, hardening smoke/fizz, lava pops and fire smoke. Materials, generated
+audio clips, child emitters and audio objects have explicit owners/cleanup.
+PlayerHudAssets accepts original fizz/splash/flow AudioClips; when none are
+assigned, generated noise provides fallback audio, not original Minecraft audio.
+Particle appearance/timing and Unity shader output still need in-game comparison.
 
 
 ## Transparent water rendering
@@ -107,7 +150,7 @@ and submerged terrain). MemoryChecks verifies three-way vertex/light merging,
 water index offsets, repeat uploads, and removing water on a dry mesh rebuild.
 Shader compilation and above/below-water views need verification in Unity. The
 rendering uses Unity's normal transparent renderer sorting; intersecting or
-layered waterfalls can still require finer face sorting. Underwater fog,
-and refraction are not included. Animation sheets use Block Data's existing
+layered waterfalls can still require finer face sorting. Underwater fog is now
+implemented; refraction is not a Beta feature. Animation sheets use Block Data's existing
 animation settings and special fluid slots; the missing-slot binder preserves
 all existing assignments.

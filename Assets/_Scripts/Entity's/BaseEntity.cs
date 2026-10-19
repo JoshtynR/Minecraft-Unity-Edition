@@ -6,7 +6,7 @@ using UnityEngine;
 using Gizmos = Popcron.Gizmos;
 
 [ExecuteAlways]
-public abstract class BaseEntity : NetworkBehaviour
+public abstract partial class BaseEntity : NetworkBehaviour
 {
     public float crouchSpeed = 1.31f;
     public float walkSpeed = 4.317f;
@@ -67,11 +67,12 @@ public abstract class BaseEntity : NetworkBehaviour
 
     public virtual void FixedUpdate()
     {
+        RefreshFluidContact();
         // A press belongs to one physics tick. Never retain an airborne request
         // until a timer expires or the player lands.
         bool requested = jumpRequest;
         jumpRequest = false;
-        if (requested && isGrounded && !isFlying) Jump();
+        if (requested && isGrounded && !isFlying && !InWater && !InLava) Jump();
         CalculateVelocity();
 
         if (Mathf.Abs(velocity.x) <= 0 && Mathf.Abs(velocity.z) <= 0)
@@ -139,6 +140,7 @@ public abstract class BaseEntity : NetworkBehaviour
     
     public virtual void CalculateVelocity()
     {
+        if(CalculateFluidVelocity())return;
         // Apply gravity
         if (!isGrounded && !isFlying)
         {

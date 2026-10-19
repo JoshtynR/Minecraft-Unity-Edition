@@ -31,17 +31,36 @@ public static class PlayerHudAssetSetup
         var chestSkin = Prepare("Assets/Textures/Minecraft/entity/chest/normal.png");
         if(chestSkin==null)chestSkin=Prepare("Assets/Textures/Minecraft/block/normal.png");
         var chestContainer=Prepare("Assets/Textures/Minecraft/gui/container/generic_54.png");
+        var waterOverlay=config.waterOverlay!=null?config.waterOverlay:Prepare("Assets/Textures/Minecraft/misc/underwater.png");
+        var fireOverlay=config.fireOverlay!=null?config.fireOverlay:Prepare("Assets/Textures/Minecraft/block/fire_0.png");
+        if(fireOverlay==null)fireOverlay=Prepare("Assets/Textures/Minecraft/fire_0.png");
+        var smokeParticle=config.smokeParticle!=null?config.smokeParticle:Prepare("Assets/Textures/Minecraft/particle/generic_0.png");
+        var splashParticle=config.splashParticle!=null?config.splashParticle:Prepare("Assets/Textures/Minecraft/particle/splash_0.png");
+        var lavaParticle=config.lavaParticle!=null?config.lavaParticle:Prepare("Assets/Textures/Minecraft/particle/lava.png");
+        var bubbleParticle=config.bubbleParticle!=null?config.bubbleParticle:Prepare("Assets/Textures/Minecraft/particle/bubble.png");
         if ((icons == null || config.icons == icons) && (cracks == null || config.blockBreak == cracks) &&
             (inventory == null || config.inventory == inventory) &&
             (playerSkin == null || config.inventoryPlayerSkin == playerSkin) &&
             (chestSkin == null || config.chestSkin == chestSkin) &&
-            (chestContainer == null || config.chestContainer == chestContainer)) return;
+            (chestContainer == null || config.chestContainer == chestContainer) &&
+            (waterOverlay == null || config.waterOverlay == waterOverlay) &&
+            (fireOverlay == null || config.fireOverlay == fireOverlay)&&
+            (smokeParticle == null || config.smokeParticle == smokeParticle)&&
+            (splashParticle == null || config.splashParticle == splashParticle)&&
+            (lavaParticle == null || config.lavaParticle == lavaParticle)&&
+            (bubbleParticle == null || config.bubbleParticle == bubbleParticle)) return;
         if (icons != null) config.icons = icons;
         if (cracks != null) config.blockBreak = cracks;
         if (inventory != null) config.inventory = inventory;
         if (playerSkin != null) config.inventoryPlayerSkin = playerSkin;
         if (chestSkin != null) config.chestSkin = chestSkin;
         if (chestContainer != null) config.chestContainer = chestContainer;
+        if (waterOverlay != null) config.waterOverlay=waterOverlay;
+        if (fireOverlay != null) config.fireOverlay=fireOverlay;
+        if (smokeParticle != null) config.smokeParticle=smokeParticle;
+        if (splashParticle != null) config.splashParticle=splashParticle;
+        if (lavaParticle != null) config.lavaParticle=lavaParticle;
+        if (bubbleParticle != null) config.bubbleParticle=bubbleParticle;
         EditorUtility.SetDirty(config);
         AssetDatabase.SaveAssetIfDirty(config);
     }

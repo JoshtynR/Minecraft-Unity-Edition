@@ -4,6 +4,7 @@
             float _TextureOn, _LightingOn, _AOOn, _FaceShadeOn;
             float _ShadeUp, _ShadeSideNS, _ShadeSideEW, _ShadeDown, _Debug;
             float _BetaSkyDarkness, _BetaBrightnessBoost;
+            float4 _FluidFog;
             #ifdef VOXEL_WATER
                 float _WaterOpacity;
             #endif
@@ -29,6 +30,7 @@
                 float4 corners : TEXCOORD4;
                 float samplingMode : TEXCOORD5;
                 float2 faceUV : TEXCOORD6;
+                float fogDistance : TEXCOORD7;
             };
             float BetaBrightness(float sky, float block)
             {
@@ -40,6 +42,7 @@
             {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
+                o.fogDistance = length(UnityObjectToViewPos(v.vertex));
                 o.uv = AnimatedBlockFaceUV(v.uv);
                 o.faceUV = v.faceUV;
                 o.skyBlock = v.light;
@@ -83,6 +86,7 @@
                 if (_Debug > 0.5 && _Debug < 1.5) col.rgb = (i.skyBlock.x / 15).xxx;
                 if (_Debug > 1.5 && _Debug < 2.5) col.rgb = (i.skyBlock.y / 15).xxx;
                 if (_Debug > 2.5) col.rgb = brightness.xxx;
+                col.rgb = lerp(col.rgb,_FluidFog.rgb,1-exp(-_FluidFog.w*i.fogDistance));
                 #ifndef UNITY_COLORSPACE_GAMMA
                     col.rgb = GammaToLinearSpace(col.rgb);
                 #endif

@@ -18,6 +18,7 @@ public sealed class JavaRandom
     {
         seed = (value ^ Multiplier) & Mask;
     }
+    public void RestoreState(long value) { seed=value&Mask; }
 
     private int NextBits(int bits)
     {

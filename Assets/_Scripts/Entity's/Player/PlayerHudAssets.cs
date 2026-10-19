@@ -12,6 +12,9 @@ public class PlayerHudAssets : ScriptableObject
     public Texture2D inventoryPlayerSkin;
     public Texture2D chestSkin;
     public Texture2D chestContainer;
+    public Texture2D waterOverlay,fireOverlay;
+    public Texture2D smokeParticle,splashParticle,lavaParticle,bubbleParticle;
+    public AudioClip fluidFizz,fluidSplash,fluidFlow;
     public TMP_FontAsset levelFont;
     public Texture2D blockBreak;
     public Material blockBreakMaterial;

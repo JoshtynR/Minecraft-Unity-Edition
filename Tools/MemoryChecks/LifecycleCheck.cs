@@ -6,13 +6,15 @@ using UnityEngine;
 namespace UnityEngine
 {
  public class Object { public bool destroyed; public static void Destroy(Object o){if(o!=null)o.destroyed=true;} }
- public class MonoBehaviour:Object { public MeshFilter filter=new MeshFilter(); public T GetComponent<T>() where T:new(){if(typeof(T)==typeof(MeshFilter))return (T)(object)filter;return new T();} }
+ public class MonoBehaviour:Object {public GameObject gameObject=new GameObject();public Transform transform=>gameObject.transform; public MeshFilter filter=new MeshFilter(); public T GetComponent<T>() where T:new(){if(typeof(T)==typeof(MeshFilter))return (T)(object)filter;return new T();} }
+ public class GameObject:Object {public int layer;public Transform transform=new Transform();public GameObject(string name=""){}public void SetActive(bool active){}public T AddComponent<T>() where T:new()=>new T();}
+ public class Transform {public Vector3 localPosition;public void SetParent(Transform parent,bool stays){}}
  public class RequireComponent:Attribute { public RequireComponent(Type a,Type b){} }
  public class HideInInspector:Attribute { }
  public struct Vector4 { public float x,y,z,w; public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
  public struct Vector2 { public float x,y; public Vector2(float x,float y){this.x=x;this.y=y;} }
- public struct Vector3 { public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;} }
- public struct Vector3Int { public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;} }
+ public struct Vector3 { public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z); }
+ public struct Vector3Int { public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static implicit operator Vector3(Vector3Int p)=>new Vector3(p.x,p.y,p.z);public static Vector3Int operator +(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z); }
  public struct Color { public static Color Lerp(Color a,Color b,float t)=>a; }
  public static class Application { public static bool isPlaying=true; }
  public class Camera:Object { public static Camera main=new Camera();public Color backgroundColor; }
@@ -34,8 +36,11 @@ namespace UnityEngine
  }
  namespace Rendering { public enum IndexFormat{UInt32} }
 }
-public partial class ChunkData { public bool modifiedByPlayer;public Vector3Int worldPos; }
-public class Block { public void OnBlockUpdate(){} }
+public partial class ChunkData { public bool modifiedByPlayer;public Vector3Int worldPos;public World worldRef;public Block GetBlock(Vector3Int p)=>new Block(); }
+public enum BlockType {Chest}
+public static class SpecialBlockGeometry {public static byte State(BlockType t,int shape)=>0;}
+public class ModernChestVisual:MonoBehaviour {public void Initialize(World w,Vector3Int p,byte state){}}
+public class Block {public BlockType type;public int blockShape; public void OnBlockUpdate(){} }
 public partial class World
 {
  public static World Instance;public bool disabled,IsWorldCreated=true;public byte chunksPerFrame=1;

@@ -34,17 +34,17 @@ public sealed class WaterSimulation
     private readonly bool lava;
     private readonly int delay, decay;
     private readonly Func<int> nextFour;
-    private readonly Queue<ScheduledCell> pending = new Queue<ScheduledCell>();
-    private readonly HashSet<WaterPosition> scheduled = new HashSet<WaterPosition>();
+    private readonly FluidTickScheduler scheduler;
     private readonly int[] costs = new int[4];
-    public long CurrentTick { get; private set; }
-    public int PendingCount { get { return pending.Count; } }
+    public long CurrentTick => scheduler.Tick;
+    public int PendingCount => scheduler.Count(lava?1:0);
 
-    private struct ScheduledCell { public WaterPosition position; public long tick; }
-    public WaterSimulation(IWaterWorld world, bool lava = false, bool hellWorld = false, Func<int> nextFour = null)
+    public WaterSimulation(IWaterWorld world, bool lava = false, bool hellWorld = false, Func<int> nextFour = null, FluidTickScheduler scheduler = null)
     {
         this.world = world;
         this.lava = lava;
+        this.scheduler=scheduler??new FluidTickScheduler();
+        this.scheduler.Bind(lava?1:0,Update);
         delay = lava ? LavaTickDelay : TickDelay;
         decay = lava && !hellWorld ? 2 : 1;
         if (lava && nextFour == null)
@@ -57,8 +57,7 @@ public sealed class WaterSimulation
 
     public void Schedule(WaterPosition position)
     {
-        if (world.GetWaterCell(position) >= 0 && scheduled.Add(position))
-            pending.Enqueue(new ScheduledCell { position = position, tick = CurrentTick + delay });
+        if (world.GetWaterCell(position) >= 0) scheduler.Schedule(position,lava?1:0,delay);
     }
 
     public void NotifyChanged(WaterPosition position)
@@ -97,13 +96,7 @@ public sealed class WaterSimulation
     // The budget delays excess work without shortening any scheduled delay.
     public void AdvanceTick(int budget = 1000)
     {
-        CurrentTick++;
-        while (budget-- > 0 && pending.Count > 0 && pending.Peek().tick <= CurrentTick)
-        {
-            var cell = pending.Dequeue();
-            scheduled.Remove(cell.position);
-            Update(cell.position);
-        }
+        scheduler.Advance(budget);
     }
 
     private void Change(WaterPosition position, int level)
@@ -116,13 +109,14 @@ public sealed class WaterSimulation
     private void Update(WaterPosition p)
     {
         int level = world.GetWaterCell(p);
+        if(level==Unloaded){scheduler.Schedule(p,lava?1:0,1);return;}
         if (level < 0) return;
         if (lava && Harden(p)) return;
         // A missing chunk is not air. Its load notification will wake this cell.
         if (world.GetWaterCell(p.Offset(0, 1, 0)) == Unloaded ||
-            world.GetWaterCell(p.Offset(0, -1, 0)) == Unloaded) return;
+            world.GetWaterCell(p.Offset(0, -1, 0)) == Unloaded) {Schedule(p);return;}
         for (int d = 0; d < 4; d++)
-            if (world.GetWaterCell(p.Offset(Dx[d], 0, Dz[d])) == Unloaded) return;
+            if (world.GetWaterCell(p.Offset(Dx[d], 0, Dz[d])) == Unloaded) {Schedule(p);return;}
 
         if (level > 0)
         {

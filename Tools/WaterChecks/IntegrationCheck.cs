@@ -105,6 +105,8 @@ public class ChunkData
 }
 public partial class World
 {
+    public void EmitFluidEffect(Vector3Int p,byte kind) {}
+    private void DisposeFluidEffects() {}
     public bool CanReplaceChest(Vector3Int p,BlockType t) { return true; }
     public class ChestStub { public void Removed(Vector3Int p) {} }
     public ChestStub chests=new ChestStub();
@@ -285,6 +287,15 @@ public static partial class IntegrationCheck
         WorldDataHelper.SetBlock(populationWorld,V(0,4,0),BlockType.Stone);
         WaterCheck.Assert(recordChunk.GetBlock(recordPosition).type==BlockType.Air,"metadata cleanup preserves out-of-height placement guard");
         var server=new WorldServer();
+        var fireWorld=new World();var fireChunk=AddChunk(fireWorld,V(0,0,0));
+        fireWorld.ReceiveWaterState(V(0,1,0),87);
+        WaterCheck.Assert(fireChunk.GetBlock(V(0,1,0)).type==BlockType.Fire&&fireChunk.GetBlock(V(0,1,0)).waterLevel==7,"fire age arrives through authoritative delta");
+        fireWorld.ReceiveWaterState(V(1,1,0),89);
+        var fireSave=new ChunkSectionSaveData(fireChunk.sections[0]);var fireLoaded=ChunkSection.Deserialize(fireSave,fireChunk);
+        WaterCheck.Assert(fireLoaded.blocks[0,1,0].waterLevel==7&&fireLoaded.blocks[1,1,0].waterLevel==9,"RLE fire metadata survives save/load");
+        var pendingWorld=new World();pendingWorld.ReceiveWaterState(V(0,1,0),93);var pendingChunk=AddChunk(pendingWorld,V(0,0,0));
+        Mirror.NetworkServer.active=false;pendingWorld.TestActivate(pendingChunk);pendingWorld.TestUpdate();Mirror.NetworkServer.active=true;
+        WaterCheck.Assert(pendingChunk.GetBlock(V(0,1,0)).type==BlockType.Fire&&pendingChunk.GetBlock(V(0,1,0)).waterLevel==13,"joining client defers fire delta until its chunk is available");
         foreach(var method in typeof(WorldServer).GetMethods(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance))
             if(Attribute.IsDefined(method,typeof(Mirror.ClientRpcAttribute)))
                 foreach(var parameter in method.GetParameters())

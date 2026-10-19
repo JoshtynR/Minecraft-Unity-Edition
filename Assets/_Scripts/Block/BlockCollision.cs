@@ -22,7 +22,7 @@ public static class BlockCollision
         for (int z = Mathf.FloorToInt(sweepMin.z); z <= Mathf.FloorToInt(sweepMax.z); z++)
         {
             var block = world.GetBlock(new Vector3Int(x,y,z));
-            if (block == null || block.type == BlockType.Nothing || block.type == BlockType.Air || BlockShapesExtensions.IsPlant(block.type) || SpecialBlockGeometry.NoCollision(block.type) || !block.BlockData.generateCollider) continue;
+            if (block == null || block.type == BlockType.Nothing || block.type == BlockType.Air || block.type == BlockType.Water || block.type == BlockType.Lava || BlockShapesExtensions.IsPlant(block.type) || SpecialBlockGeometry.NoCollision(block.type) || !block.BlockData.generateCollider) continue;
             int parts = SpecialBlockGeometry.CollisionCount(block.type);
             for (int part = 0; part < parts; part++)
             {
