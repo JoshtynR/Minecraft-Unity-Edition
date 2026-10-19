@@ -31,8 +31,27 @@ public static class DirectionExtensions
 public partial class PlayerInventory
 {
  static int ChestTotal(ChestReply reply)=>reply.chest.Sum(x=>x.count)+reply.inventory.Sum(x=>x.count)+reply.cursor.count;
+ static void CheckChestFaceUV(int part,Direction face,params int[] pixels)
+ {
+  var data=ChestModelGeometry.Build(part);int start=Array.IndexOf(BlockHelper.directions,face)*4;
+  for(int i=0;i<4;i++)
+   Check(Math.Abs(data.uv[start+i].x*64-pixels[i*2])<.0001f&&Math.Abs((1-data.uv[start+i].y)*64-pixels[i*2+1])<.0001f,
+    "entity atlas pixel corner follows native box face order: part "+part+" "+face+" corner "+i);
+ }
  static void CheckChests(PlayerInventory menu)
  {
+  // Explicit native box atlas corners, in BlockShape vertex order. In particular,
+  // the body's dark interior belongs on top, while its wood base faces down.
+  CheckChestFaceUV(0,Direction.up,28,19,42,19,42,33,28,33);
+  CheckChestFaceUV(0,Direction.down,14,33,28,33,28,19,14,19);
+  CheckChestFaceUV(0,Direction.backwards,14,33,14,43,28,43,28,33);
+  CheckChestFaceUV(0,Direction.forwards,42,33,42,43,56,43,56,33);
+  CheckChestFaceUV(0,Direction.left,0,33,0,43,14,43,14,33);
+  CheckChestFaceUV(0,Direction.right,28,33,28,43,42,43,42,33);
+  CheckChestFaceUV(1,Direction.up,28,0,42,0,42,14,28,14);
+  CheckChestFaceUV(1,Direction.down,14,14,28,14,28,0,14,0);
+  CheckChestFaceUV(1,Direction.backwards,14,14,14,19,28,19,28,14);
+  CheckChestFaceUV(2,Direction.backwards,1,1,1,5,3,5,3,1);
   for(int part=0;part<3;part++)
   {
    var mesh=ChestModelGeometry.Build(part);

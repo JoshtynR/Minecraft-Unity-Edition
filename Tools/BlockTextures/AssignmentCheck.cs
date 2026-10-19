@@ -157,6 +157,9 @@ public static class AssignmentCheck
    guiImporter.mipmapEnabled=true;guiImporter.npotScale=UnityEditor.TextureImporterNPOTScale.ToNearest;
    PlayerHudAssetSetup.Bind();
    Check(ReferenceEquals(hud.chestSkin,chestSkin)&&ReferenceEquals(hud.chestContainer,chestContainer),"editor binds user's modern chest sheet and container GUI without modifying block catalog");
+   Check(hud.inventoryPlayerSkin!=null,"editor binds a direct player skin for the inventory preview");
+   var explicitPreview=original;hud.inventoryPlayerSkin=explicitPreview;PlayerHudAssetSetup.Bind();
+   Check(ReferenceEquals(hud.inventoryPlayerSkin,explicitPreview),"automatic GUI binding preserves explicitly assigned preview skin");
    Check(ReferenceEquals(hud.inventory,inventory)&&!guiImporter.mipmapEnabled&&guiImporter.npotScale==UnityEditor.TextureImporterNPOTScale.None,"editor startup binds inventory and preserves pixel layout");
    UnityEditor.AssetDatabase.assets.Remove(PlayerHudAssetSetup.InventoryPath);PlayerHudAssetSetup.Bind();
    Check(ReferenceEquals(hud.inventory,inventory),"missing inventory file preserves existing assignment");

@@ -18,12 +18,27 @@ public static class ChestModelGeometry
         {
             int start=data.vertices.Count;box.SetFaceVertices(direction,Vector3Int.zero,data);data.AddQuadTriangles();
             float sx=u+depth,sy=v+depth,sw=width,sh=height;
-            if(direction==Direction.up){sy=v;sh=depth;}
-            if(direction==Direction.down){sx=u+depth+width;sy=v;sh=depth;}
+            // Entity box caps use the opposite atlas rectangles to terrain cubes.
+            // The right cap is the body's dark interior; the left cap is its base.
+            if(direction==Direction.up){sx=u+depth+width;sy=v;sh=depth;}
+            if(direction==Direction.down){sy=v;sh=depth;}
             if(direction==Direction.left){sx=u;sw=depth;}
             if(direction==Direction.right){sx=u+depth+width;sw=depth;}
             if(direction==Direction.forwards)sx=u+2*depth+width;
-            data.AddFaceUVs(0,new Vector4(sw/64f,sh/64f,sx/64f,1-(sy+sh)/64f));
+            float left=sx/64f,right=(sx+sw)/64f,top=1-sy/64f,bottom=1-(sy+sh)/64f;
+            // Chest entity sides run from model Y-min at the atlas top to Y-max
+            // at the atlas bottom. Block-face UVs have the reverse V direction.
+            data.AddFaceUVs(0,new Vector4(sw/64f,-sh/64f,left,top));
+            if(direction==Direction.up)
+            {
+                data.uv[start]=new Vector3(left,top,0);data.uv[start+1]=new Vector3(right,top,0);
+                data.uv[start+2]=new Vector3(right,bottom,0);data.uv[start+3]=new Vector3(left,bottom,0);
+            }
+            else if(direction==Direction.down)
+            {
+                data.uv[start]=new Vector3(left,bottom,0);data.uv[start+1]=new Vector3(right,bottom,0);
+                data.uv[start+2]=new Vector3(right,top,0);data.uv[start+3]=new Vector3(left,top,0);
+            }
             for(int i=start;i<data.vertices.Count;i++)
             {
                 var p=data.vertices[i];

@@ -12,6 +12,8 @@ public static class InventoryPreviewDiagnostics
         var report=new StringBuilder("Inventory preview report v1\n");
         report.AppendLine("Play mode: "+Application.isPlaying);
         Canvas.ForceUpdateCanvases();
+        var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
+        report.AppendLine("Configured preview skin: "+Describe(assets!=null?assets.inventoryPlayerSkin:null));
         var material=Resources.Load<Material>("InventoryPlayerMaterial");
         report.AppendLine("Resources skin material: "+Describe(material));
         if(material!=null)

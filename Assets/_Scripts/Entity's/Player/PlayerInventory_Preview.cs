@@ -11,10 +11,18 @@ public partial class PlayerInventory
 
     private void BuildInventoryPreview(Transform parent,PlayerHudAssets assets)
     {
-        var template=Resources.Load<Material>("InventoryPlayerMaterial");
-        if(template==null||template.mainTexture==null)
-        {Debug.LogWarning("Inventory preview needs a skin on Resources/InventoryPlayerMaterial.");return;}
-        inventoryPreviewSkin=template.mainTexture;
+        inventoryPreviewSkin=assets!=null?assets.inventoryPlayerSkin:null;
+        if(inventoryPreviewSkin==null)
+        {
+            var template=Resources.Load<Material>("InventoryPlayerMaterial");
+            if(template!=null)inventoryPreviewSkin=template.mainTexture;
+        }
+        if(inventoryPreviewSkin==null)
+        {
+            // A missing optional asset must not leave an entirely empty preview window.
+            inventoryPreviewSkin=Texture2D.whiteTexture;
+            Debug.LogWarning("Inventory player skin is missing. Assign Inventory Player Skin on Resources/PlayerHudAssets, or run Minecraft > Textures > Refresh GUI and Chest Assets.");
+        }
         inventoryPreviewRect=parent.GetComponent<RectTransform>();
         var rect=CreativeRect("InventoryPlayer",parent,0,0,50,70);
         inventoryPreview=rect.gameObject;

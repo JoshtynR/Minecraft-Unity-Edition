@@ -130,6 +130,14 @@ The custom graphic explicitly requires CanvasRenderer; MaskableGraphic/Graphic
 do not add that component automatically. The harness models RequireComponent and
 checks that the player and every helmet face receive a renderer when constructed.
 
+PlayerHudAssets.inventoryPlayerSkin is a direct texture reference, populated by
+the editor from the player's material or an existing Steve image when empty.
+Explicit assignments are preserved; the full texture auto-assigner updates this
+field when changing the player skin. The legacy inventory material is optional.
+A missing material never skips model creation: missing artwork uses the shared
+white texture with an actionable warning. Tests build and populate the preview
+with a direct HD skin and with both the skin and material absent.
+
 If a preview remains invisible in Unity, open the inventory in Play Mode and run
 Minecraft > Diagnostics > Copy Inventory Preview Report. It copies live setup,
 skin references, populate/vertex counts, canvas renderer culling/alpha/depth,

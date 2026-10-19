@@ -28,6 +28,10 @@ ChunkRenderer creates/reuses/removes separate animated models with chunk lifetim
 The selection/collision bounds are 1/16..15/16 wide and 14/16 high. Nearby block
 faces are exposed around the inset body. Model lighting uses nearby voxel light;
 it is flat per face, not terrain corner AO. Owned meshes/materials are destroyed.
+UVs follow the entity-box corner order, including reversed side V direction and
+separately oriented caps. The body's dark interior uses the upper face; its wood
+base uses the lower face. Explicit pixel-corner fixtures cover these faces rather
+than merely checking that UV coordinates remain inside the atlas.
 Inventory block icons retain their existing block-face rendering.
 
 The server checks chest type, distance, opaque line of sight, lid obstruction,

@@ -489,6 +489,7 @@ public static class MinecraftTextureAutoAssign
         var skin=run.Find(MinecraftTextureKind.Entity,"steve","Player skin",true);
         if(skin==null)return;
         skin=run.images.Skin(skin);if(skin==null){run.report.AppendLine("UNSUPPORTED Steve skin aspect ratio; player materials preserved.");return;}
+        if(hud!=null&&hud.inventoryPlayerSkin!=skin){hud.inventoryPlayerSkin=skin;run.assigned++;}
         foreach(string path in new[]{"Assets/Textures/Player/player.mat","Assets/Resources/InventoryPlayerMaterial.mat"})
         {
             var material=AssetDatabase.LoadAssetAtPath<Material>(path);

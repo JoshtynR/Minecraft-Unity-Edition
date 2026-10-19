@@ -31,7 +31,7 @@ namespace UnityEngine
  public enum RuntimeInitializeLoadType {SubsystemRegistration}
  public class RuntimeInitializeOnLoadMethodAttribute:Attribute {public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType type){}}
  public class Texture:Object {public int width=64,height=32;}
- public class Texture2D:Texture {}
+ public class Texture2D:Texture {public static readonly Texture2D whiteTexture=new Texture2D{width=1,height=1};}
  public static class Debug {public static void LogWarning(string value){}}
  public struct UIVertex {public Vector3 position;public Vector2 uv0;public Color color;public static UIVertex simpleVert=>new UIVertex();}
  public class Material:Object {public Texture2D mainTexture=new Texture2D();public Material(){}public Material(Material value){mainTexture=value.mainTexture;}}
@@ -101,7 +101,15 @@ namespace UnityEngine
   public T AddComponent<T>()where T:Component,new()=>(T)Add(typeof(T));public T GetComponent<T>()where T:Component=>typeof(T)==typeof(RectTransform)?(T)(Component)transform:(T)components.Find(c=>c is T);
   public void SetActive(bool value){activeSelf=value;}public static GameObject Find(string name)=>all.Find(o=>o.name==name&&o.activeSelf&&!o.destroyed);
  }
- public static class Resources {public static PlayerHudAssets hud;public static T Load<T>(string name)where T:Object=>name=="InventoryPlayerMaterial"||name=="ModernChestMaterial"?(T)(Object)new Material():name=="PlayerHudAssets"?(T)(Object)hud:null;}
+ public static class Resources
+ {
+  public static PlayerHudAssets hud;public static bool omitPreviewMaterial;
+  public static T Load<T>(string name)where T:Object
+  {
+   if(name=="InventoryPlayerMaterial"&&omitPreviewMaterial)return null;
+   return name=="InventoryPlayerMaterial"||name=="ModernChestMaterial"?(T)(Object)new Material():name=="PlayerHudAssets"?(T)(Object)hud:null;
+  }
+ }
  public enum KeyCode {Alpha1=49,E=69,LeftShift=304,RightShift=303}
  public static class Input {public static Vector3 mousePosition;public static bool GetKeyDown(KeyCode k)=>false;public static bool GetKey(KeyCode k)=>false;public static float GetAxis(string n)=>0;}
  public enum RenderMode {ScreenSpaceOverlay,ScreenSpaceCamera}
@@ -234,6 +242,16 @@ public partial class PlayerInventory
    menu.OnDestroy();Check(!sheet.destroyed,"inventory cleanup preserves source sheet");
   }
   Resources.hud=null;
+  Resources.omitPreviewMaterial=true;
+  var directSkin=new Texture2D{width=128,height=128};Resources.hud=new PlayerHudAssets{inventoryPlayerSkin=directSkin};
+  var directMenu=BuildMenu();
+  Check(directMenu.inventoryPreview!=null&&ReferenceEquals(directMenu.inventoryPreviewGraphic.mainTexture,directSkin),"direct skin creates a preview even when the optional material cannot be loaded");
+  CheckCanvasPreview(directMenu);directMenu.OnDestroy();
+  Check(!directSkin.destroyed,"direct skin remains shared after inventory closes/destroys");
+  Resources.hud=null;
+  var missingSkinMenu=BuildMenu();
+  Check(missingSkinMenu.inventoryPreview!=null&&ReferenceEquals(missingSkinMenu.inventoryPreviewGraphic.mainTexture,Texture2D.whiteTexture),"missing skin and missing material still construct a visible fallback model");
+  CheckCanvasPreview(missingSkinMenu);missingSkinMenu.OnDestroy();Resources.omitPreviewMaterial=false;
  }
  public static void Main()
  {
