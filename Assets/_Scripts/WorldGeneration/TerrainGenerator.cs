@@ -2,30 +2,19 @@
 
 public class TerrainGenerator : MonoBehaviour
 {
-    public BiomeGenerator biomeGenerator;
     [Header("Beta 1.7.3")]
-    [Tooltip("Run the full ordered Beta population pipeline for newly generated chunks.")]
-    public bool useCompleteBetaPopulation = true;
-    [Tooltip("Legacy lake-only toggle, used only when Complete Beta Population is disabled.")]
-    public bool enableBetaPopulation = false;
-    [HideInInspector] // Retain the old field so existing serialized data/local edits remain readable.
-    public bool enableBetaTreePreview = false;
-    [Tooltip("Legacy isolated tree preview, used only when Complete Beta Population is disabled.")]
-    public bool enableBetaTrees = true;
     [Tooltip("Write terrain stages and the final population snapshot for Beta chunk (0,0).")]
     public bool dumpBetaParity = false;
 
-    private Beta173Terrain betaTerrain;
-    private Beta173Caves betaCaves;
-    private Beta173Population betaPopulation;
-    private long betaTerrainSeed = long.MinValue;
+    private readonly object generatorLock = new object();
+    private Generators generators;
 
-    public ChunkData GenerateChunkData(ChunkData data, Vector3Int mapSeedOffset)
+    public ChunkData GenerateChunkData(ChunkData data)
     {
         if (data.chunkSize != 16 || data.worldRef.worldHeight < Beta173Terrain.TerrainHeight)
             throw new System.InvalidOperationException("Beta terrain requires 16-block chunks and a world height of at least 128.");
         long betaSeed = data.worldRef.betaWorldSeed;
-        EnsureBetaGenerators(betaSeed);
+        var generation = GetGenerators(betaSeed);
 
         int unityChunkX = FloorDiv(data.worldPos.x, data.chunkSize);
         int unityChunkZ = FloorDiv(data.worldPos.z, data.chunkSize);
@@ -37,14 +26,14 @@ public class TerrainGenerator : MonoBehaviour
         System.Action<string, double[]> observe = null;
         if (dumpBetaParity && betaChunkX == 0 && betaChunkZ == 0)
             observe = (stage, values) => BetaParityDump.DumpNoiseChunk00(stage, values, betaSeed);
-        BlockType[,,] rawTerrain = betaTerrain.GenerateRawTerrain(betaWorldX, betaWorldZ, observe);
+        BlockType[,,] rawTerrain = generation.terrain.GenerateRawTerrain(betaWorldX, betaWorldZ, observe);
         if (dumpBetaParity) BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ);
 
         // Complete all chunk-local passes in canonical Beta coordinates, then
         // reflect X exactly once at the boundary to the Unity chunk storage.
-        BetaSurfaceDecorator.DecorateChunk(rawTerrain, betaTerrain, betaChunkX, betaChunkZ, observe);
+        BetaSurfaceDecorator.DecorateChunk(rawTerrain, generation.terrain, betaChunkX, betaChunkZ, observe);
         if (dumpBetaParity) BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ, "surface");
-        betaCaves.Generate(rawTerrain, betaChunkX, betaChunkZ);
+        generation.caves.Generate(rawTerrain, betaChunkX, betaChunkZ);
         if (dumpBetaParity) BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ, "caves");
 
         for (int betaLocalX = 0; betaLocalX < data.chunkSize; betaLocalX++)
@@ -52,58 +41,29 @@ public class TerrainGenerator : MonoBehaviour
         {
             int unityLocalX = BetaCoordinateSpace.BetaLocalToUnityLocalX(betaLocalX);
             int unityLocalZ = BetaCoordinateSpace.BetaLocalToUnityLocalZ(betaLocalZ);
-            data = biomeGenerator.ProcessBetaTerrainColumn(
-                data, unityLocalX, unityLocalZ, rawTerrain, betaLocalX, betaLocalZ);
+            var localPos = new Vector3Int(unityLocalX, 0, unityLocalZ);
+            for (int y = 0; y < data.worldRef.worldHeight; y++)
+            {
+                localPos.y = y;
+                data.SetBlock(localPos, y < Beta173Terrain.TerrainHeight
+                    ? rawTerrain[betaLocalX, y, betaLocalZ] : BlockType.Air);
+            }
         }
 
-        data.treeData = new TreeData();
         return data;
     }
 
-    public void GenerateFeatures(ChunkData data, Vector3Int mapSeedOffset)
+    /// <summary>Populate once the full raw-terrain halo is available. Call in canonical chunk order.</summary>
+    public void PopulateChunk(ChunkData data)
     {
-        if (useCompleteBetaPopulation)
-        {
-            GenerateBetaTrees(data);
-            return;
-        }
-        if (!enableBetaPopulation && !enableBetaTrees)
-            return;
+        if (data.betaPopulationDone) return;
+        int bx = BetaCoordinateSpace.UnityChunkToBetaChunkX(FloorDiv(data.worldPos.x, data.chunkSize));
+        int bz = BetaCoordinateSpace.UnityChunkToBetaChunkZ(FloorDiv(data.worldPos.z, data.chunkSize));
+        if (!Beta173Population.HasCompleteNeighborhood(data, bx, bz)) return;
 
-        long betaSeed = data.worldRef.betaWorldSeed;
-        EnsureBetaGenerators(betaSeed);
-
-        int unityChunkX = FloorDiv(data.worldPos.x, data.chunkSize);
-        int unityChunkZ = FloorDiv(data.worldPos.z, data.chunkSize);
-        int betaChunkX = BetaCoordinateSpace.UnityChunkToBetaChunkX(unityChunkX);
-        int betaChunkZ = BetaCoordinateSpace.UnityChunkToBetaChunkZ(unityChunkZ);
-
-        if (enableBetaPopulation)
-            betaPopulation.Populate(data, betaChunkX, betaChunkZ);
-        GenerateBetaTrees(data);
-    }
-
-    public void GenerateBetaTrees(ChunkData data)
-    {
-        if (useCompleteBetaPopulation)
-        {
-            if (data.betaPopulationDone) return;
-            EnsureBetaGenerators(data.worldRef.betaWorldSeed);
-            int bx = BetaCoordinateSpace.UnityChunkToBetaChunkX(FloorDiv(data.worldPos.x, data.chunkSize));
-            int bz = BetaCoordinateSpace.UnityChunkToBetaChunkZ(FloorDiv(data.worldPos.z, data.chunkSize));
-            if (!Beta173Population.HasCompleteNeighborhood(data, bx, bz)) return;
-            betaPopulation.PopulateComplete(data, betaTerrain, bx, bz);
-            data.betaPopulationDone = data.betaTreePopulationDone = true;
-            data.modifiedAfterSave = true;
-            return;
-        }
-        if (!enableBetaTrees || data.betaTreePopulationDone) return;
-        EnsureBetaGenerators(data.worldRef.betaWorldSeed);
-        int betaChunkX = BetaCoordinateSpace.UnityChunkToBetaChunkX(FloorDiv(data.worldPos.x, data.chunkSize));
-        int betaChunkZ = BetaCoordinateSpace.UnityChunkToBetaChunkZ(FloorDiv(data.worldPos.z, data.chunkSize));
-        if (!Beta173Population.HasTreeNeighborhood(data, betaChunkX, betaChunkZ)) return;
-        betaPopulation.PopulateTreePreview(data, betaTerrain, betaChunkX, betaChunkZ);
-        data.betaTreePopulationDone = true;
+        var generation = GetGenerators(data.worldRef.betaWorldSeed);
+        generation.population.PopulateComplete(data, generation.terrain, bx, bz);
+        data.betaPopulationDone = true;
         data.modifiedAfterSave = true;
     }
 
@@ -115,17 +75,32 @@ public class TerrainGenerator : MonoBehaviour
         BetaParityDump.DumpDataChunk00(data, bx, bz, "population");
     }
 
-    public void GenerateBiomePoints(Vector3 playerPos, int renderDistance, int chunkSize, Vector3Int mapSeedOffset)
+    private Generators GetGenerators(long seed)
     {
+        // Chunk terrain runs in parallel. Publish the complete immutable set together,
+        // and retain a local reference so a later world seed cannot mix generators.
+        lock (generatorLock)
+        {
+            if (generators == null || generators.seed != seed)
+                generators = new Generators(seed);
+            return generators;
+        }
     }
 
-    private void EnsureBetaGenerators(long seed)
+    private sealed class Generators
     {
-        if (betaTerrain != null && betaTerrainSeed == seed) return;
-        betaTerrain = new Beta173Terrain(seed);
-        betaCaves = new Beta173Caves(seed);
-        betaPopulation = new Beta173Population(seed);
-        betaTerrainSeed = seed;
+        public readonly long seed;
+        public readonly Beta173Terrain terrain;
+        public readonly Beta173Caves caves;
+        public readonly Beta173Population population;
+
+        public Generators(long seed)
+        {
+            this.seed = seed;
+            terrain = new Beta173Terrain(seed);
+            caves = new Beta173Caves(seed);
+            population = new Beta173Population(seed);
+        }
     }
 
     private static int FloorDiv(int value, int divisor)

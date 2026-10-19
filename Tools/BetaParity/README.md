@@ -1,6 +1,6 @@
 # Beta 1.7.3 generation parity
 
-The chunk-local pipeline matches the pinned Java reference in **56 cases and 1064 exact stage checks**. Full populated-world parity is **not implemented**.
+The chunk-local pipeline matches the pinned Java reference in **56 cases and 1064 exact stage checks**. The complete population pipeline is active; its independent feature and RNG fixtures are documented in [PopulationParity](../PopulationParity/README.md). Full live-world parity with vanilla's world services is not certified.
 
 ## Run the checks
 
@@ -12,7 +12,7 @@ Alternatively, install Mono and run from the repository root:
 python Tools/BetaParity/run.py
 ```
 
-The CLI compiles the production C# sources with overflow checking enabled. It also checks all 56 production TerrainGenerator outputs against the cave fixtures using mocked Unity storage and the actual chunk-column copy method; the air ceiling above Y=127 is checked too. All double arrays are checked by SHA-256 of their little-endian IEEE754 representations; block arrays use Beta IDs in `(x*16+z)*128+y` order. There are no numeric tolerances. `--output <directory>` exports every stage for element-by-element diagnosis:
+The CLI compiles the production C# sources with overflow checking enabled. It checks all 56 production TerrainGenerator outputs against the cave fixtures using mocked Unity storage, including the air ceiling above Y=127. It repeats those fixtures with a shared generator under parallel startup and seed switching, rejects unsupported world geometry, and checks population deferral, resumption, and idempotence. All double arrays are checked by SHA-256 of their little-endian IEEE754 representations; block arrays use Beta IDs in `(x*16+z)*128+y` order. There are no numeric tolerances. `--output <directory>` exports every stage for element-by-element diagnosis:
 
 ```bash
 python Tools/BetaParity/run.py --output /tmp/csharp-parity
@@ -60,13 +60,14 @@ Compare the generated manifest with `fixtures.tsv` before intentionally replacin
 
 At seed `-1446162294`, chunk `(0,0)`, the raw terrain is unchanged from the supplied raw dump. The supplied region's chunk is marked populated. Comparing unpopulated cave-stage output against that populated chunk is **not a same-stage parity test**, but it corroborates the fixes: mismatching block IDs fell from **6951 to 1343**. Most remaining pairs involve population additions such as dirt/gravel deposits and ores. The region file does not itself encode the world seed, so this comparison assumes it belongs to the seed recorded in the supplied dumps.
 
-## Remaining full-world blockers
+## Runtime pipeline and remaining limits
 
-- `Beta173Population.Populate` only runs water/lava lakes. It omits dungeons, clay, dirt/gravel veins, ores, Beta tree counts and biome-specific tree generators, plants, reeds, pumpkins, cactus, springs, and snow.
-- The separate tree preview is deliberately non-parity. Leave it disabled for comparisons.
-- Lake grass replacement lacks the original skylight condition; material classifications and out-of-world reads must follow Beta rather than treating every non-air block as solid. The Java port's lake routine also removes the skylight condition, so it is not an oracle for fixing that behavior.
-- Population currently runs concurrently across chunks and reads/writes neighbors. Exact population needs a defined, repeatable chunk visitation order, ready neighboring base chunks, and no racing writes. Simply advancing RNG for omitted features will not work: their success/failure and RNG use depend on world contents.
+`TerrainGenerator.GenerateChunkData` runs density, surface, and caves, then copies into Unity coordinates. `PopulateChunk` runs the full population pipeline exactly once after its 4×4 raw-data neighborhood is ready. World generation visits all ready owners, including data-only halo chunks, in canonical X/Z order. Population writes remain serial; chunk-local terrain generation runs in parallel using an atomically published set of generators for each seed.
+
+The original noise settings, domain warping, chained block layers, biome objects, experimental density generator, and isolated tree/lake previews have been removed along with their assets and scene objects. The inspector retains only the parity dump toggle. Old tree-completion fields remain solely in the save schema for compatibility; active generation uses one population-completion flag.
+
+- Generation-time immediate fluid updates and exact vanilla light-update timing remain outside the fixture guarantees. See the population suite for the mocked world services and coverage.
 - Existing saves do not contain a recoverable Beta world seed. New saves persist it. For an old save, set its `betaWorldSeed` in `world.json` to the original known seed before extending terrain; otherwise the absent field defaults to zero. The old spatial `seedOffset` cannot reconstruct the original long.
 - These standalone checks cover the actual C# algorithms under Mono, not Unity scene integration, Mirror-generated serialization, an IL2CPP build, or every possible seed/coordinate. Run the Unity menu check and regenerate test chunks after pulling. Existing saved chunks are not rewritten by the generator fixes.
 
-Keep `enableBetaPopulation` and `enableBetaTreePreview` disabled when validating the chunk-local passes. Extend the reference tests stage-by-stage when population is ported, using the original Beta world/block/lighting behavior.
+Existing saves and block/item texture assignments are preserved. The generator does not rewrite existing saved terrain.

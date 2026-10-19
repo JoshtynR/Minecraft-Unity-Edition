@@ -29,7 +29,8 @@ public static class WorldDataHelper
 
     public static List<Vector3Int> GetDataPositionsInRenderDistance(World world, Vector3Int playerPos)
     {
-        int halo = world.terrainGenerator != null && world.terrainGenerator.useCompleteBetaPopulation ? 2 : 1;
+        // Full Beta population needs raw terrain two chunks beyond the visible area.
+        const int halo = 2;
         var startX = playerPos.x - (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
         var startZ = playerPos.z - (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
         var endX = playerPos.x +   (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;

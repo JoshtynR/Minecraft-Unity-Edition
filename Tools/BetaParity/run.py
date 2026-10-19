@@ -23,14 +23,9 @@ def main():
         cmd = [args.mono, str(binary), str(args.manifest.resolve())]
         if args.output: cmd.append(str(args.output.resolve()))
         subprocess.run(cmd, check=True)
-        # Use the production chunk-column copier, with only world/Unity storage mocked.
-        biome = (ROOT / 'Assets/_Scripts/WorldGeneration/BiomeGenerator.cs').read_text(encoding='utf-8-sig')
-        start = biome.index('    public ChunkData ProcessBetaTerrainColumn(')
-        end = biome.index('    public void ProcessFeatures', start)
-        adapter = Path(tmp) / 'BiomeIntegration.cs'
-        adapter.write_text('using UnityEngine; public class BiomeGenerator {\n' + biome[start:end] + '}\n')
+        # Compile the complete production adapter against mocked Unity storage.
         integration = Path(tmp) / 'integration.exe'
-        extra = [ROOT / 'Tools/BetaParity/IntegrationCheck.cs', adapter,
+        extra = [ROOT / 'Tools/BetaParity/IntegrationCheck.cs',
                  ROOT / 'Assets/_Scripts/WorldGeneration/TerrainGenerator.cs',
                  ROOT / 'Assets/_Scripts/WorldGeneration/Beta/Beta173Population.cs',
                  ROOT / 'Assets/_Scripts/Block/BetaBlockCatalog.cs',

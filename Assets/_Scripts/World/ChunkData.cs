@@ -15,12 +15,10 @@ public class ChunkData
     public bool modifiedByPlayer = false;
     public bool isGenerated = false;
     public bool lightingInitialized;
-    public bool betaTreePopulationDone;
     public bool betaPopulationDone;
     public List<BetaPopulationRecord> betaPopulationRecords = new List<BetaPopulationRecord>();
     public bool modifiedAfterSave = true;
     
-    public TreeData treeData = new TreeData();
     [CanBeNull] public ChunkRenderer renderer => WorldDataHelper.GetChunk(worldRef, worldPos);
     
     public readonly Queue<BlockLightNode> blockLightUpdateQueue = new(); 
@@ -59,7 +57,6 @@ public class ChunkData
         // Preserve legacy saved terrain; newly saved deferred edge chunks resume.
         chunkData.betaPopulationDone = saveData.betaPopulationVersion == 0 || saveData.betaPopulationDone;
         chunkData.betaPopulationRecords = new List<BetaPopulationRecord>(saveData.betaPopulationRecords ?? new BetaPopulationRecord[0]);
-        chunkData.betaTreePopulationDone = saveData.betaTreePopulationVersion == 0 || saveData.betaTreePopulationDone;
         
         return chunkData;
     } 

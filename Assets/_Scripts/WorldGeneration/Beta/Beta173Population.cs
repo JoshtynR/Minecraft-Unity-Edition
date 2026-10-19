@@ -15,12 +15,6 @@ public sealed partial class Beta173Population
         this.worldSeed = worldSeed;
     }
 
-    public void Populate(ChunkData owner, int betaChunkX, int betaChunkZ)
-    {
-        var world = new TreeWorld(owner);
-        PopulateLakes(world, PopulationRandom(betaChunkX, betaChunkZ), betaChunkX*16, betaChunkZ*16);
-        world.MarkDirtyChunks();
-    }
     private JavaRandom PopulationRandom(int x, int z)
     {
         var random = new JavaRandom(worldSeed);
@@ -48,19 +42,6 @@ public sealed partial class Beta173Population
         }
     }
 
-    // Tree-only preview while the earlier Beta population stages (dungeons/ores/etc.)
-    // are still being ported. It deliberately uses a separate deterministic stream so
-    // it cannot disturb the exact population RNG sequence later.
-    public static bool HasTreeNeighborhood(ChunkData owner, int betaChunkX, int betaChunkZ)
-    {
-        // The +8 population window and large-oak canopy fit within this 2x2 area.
-        for (int dx = 0; dx <= 1; dx++)
-        for (int dz = 0; dz <= 1; dz++)
-            if (Get(owner, betaChunkX * 16 + dx * 31, 0, betaChunkZ * 16 + dz * 31) == BlockType.Nothing)
-                return false;
-        return true;
-    }
-
     public static bool HasCompleteNeighborhood(ChunkData owner, int chunkX, int chunkZ)
     {
         // Feature writes occupy 2x2; plant/lake light queries can reach a
@@ -68,27 +49,6 @@ public sealed partial class Beta173Population
         for (int dx=-1;dx<=2;dx++) for (int dz=-1;dz<=2;dz++)
             if (Get(owner,(chunkX+dx)*16,0,(chunkZ+dz)*16)==BlockType.Nothing) return false;
         return true;
-    }
-
-    public void PopulateTreePreview(ChunkData owner, Beta173Terrain terrain, int betaChunkX, int betaChunkZ)
-    {
-        BetaBiomeType biome = terrain.GetBiome(betaChunkX * 16 + 16, betaChunkZ * 16 + 16);
-        // This is explicitly a tree-only stage. Its RNG is isolated until all
-        // preceding population generators are ported; shapes/selection use Beta rules.
-        long seed = unchecked(worldSeed ^ ((long)betaChunkX * 341873128712L) ^ ((long)betaChunkZ * 132897987541L) ^ 0x54A32D192ED03L);
-        var random = new JavaRandom(seed);
-        int originX = betaChunkX * 16, originZ = betaChunkZ * 16;
-        int attempts = Beta173Trees.AttemptCount(biome, terrain.GetTreeCountNoise(originX, originZ), random);
-        var world = new TreeWorld(owner);
-        for (int i = 0; i < attempts; i++)
-        {
-            int x = originX + random.NextInt(16) + 8;
-            int z = originZ + random.NextInt(16) + 8;
-            var kind = Beta173Trees.Select(biome, random);
-            int y = world.Height(x, z);
-            Beta173Trees.Generate(world, random, kind, x, y, z);
-        }
-        world.MarkDirtyChunks();
     }
 
     private sealed partial class TreeWorld : IBetaPopulationWorld
@@ -214,7 +174,6 @@ public sealed partial class Beta173Population
 
     private static bool IsLiquid(BlockType b) => b == BlockType.Water || b == BlockType.Lava;
     private static bool IsSolid(BlockType b) => BetaPopulationFeatures.Solid(b);
-    private static bool IsAir(ChunkData owner, int x, int y, int z) => Get(owner, x, y, z) == BlockType.Air;
 
     private static BlockType Get(ChunkData owner, int betaWorldX, int y, int betaWorldZ)
     {

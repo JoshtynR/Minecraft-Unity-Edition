@@ -11,8 +11,8 @@ for feature in ['ore','clay','lake','lava','dungeon','mushroom','reeds','cactus'
 with tempfile.TemporaryDirectory() as tmp:
  tmp=Path(tmp)
  source=(beta/'Beta173Population.cs').read_text()
- methods=source[source.index('    private JavaRandom PopulationRandom'):source.index('    // Tree-only preview')]
- methods+=source[source.index('    private static long MakeOdd'):source.index('    private static bool IsAir')]
+ methods=source[source.index('    private JavaRandom PopulationRandom'):source.index('    public static bool HasCompleteNeighborhood')]
+ methods+=source[source.index('    private static long MakeOdd'):source.index('    private static BlockType Get')]
  (tmp/'Population.cs').write_text('public sealed partial class Beta173Population{private readonly long worldSeed;public Beta173Population(long seed){worldSeed=seed;}'+methods+'}')
  source=(beta/'BetaPopulationPipeline.cs').read_text()
  (tmp/'Pipeline.cs').write_text('using System;public sealed partial class Beta173Population{'+source[source.index('    public void PopulateComplete(IBetaPopulationWorld'):])

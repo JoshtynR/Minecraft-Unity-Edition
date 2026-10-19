@@ -5,6 +5,7 @@ using UnityEngine;
 public class ChunkSaveData
 {
     public Vector3Int position;
+    // Retained for compatibility with existing serialized worlds.
     public int betaTreePopulationVersion;
     public bool betaTreePopulationDone;
     public int betaPopulationVersion;
@@ -37,7 +38,7 @@ public class ChunkSaveData
         lock (chunk.betaPopulationRecords)
             chunkSaveData.betaPopulationRecords = chunk.betaPopulationRecords.ToArray();
         chunkSaveData.betaTreePopulationVersion = 1;
-        chunkSaveData.betaTreePopulationDone = chunk.betaTreePopulationDone;
+        chunkSaveData.betaTreePopulationDone = chunk.betaPopulationDone;
         chunk.modifiedAfterSave = false;
         
         return chunkSaveData;

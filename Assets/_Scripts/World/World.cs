@@ -60,7 +60,6 @@ public partial class World : MonoBehaviour
     
     private Stopwatch fullStopwatch = new Stopwatch();
     
-    public Dictionary<Vector3Int, BlockType> blocksToPlaceAfterGeneration = new Dictionary<Vector3Int, BlockType>();
 
     public bool validateDone;
     [HideInInspector] public bool isInPlayMode;
@@ -394,8 +393,6 @@ public partial class World : MonoBehaviour
         
         ResetChunkUpdates();
         
-        MyNoise.noiseStopwatch.Reset();
-        MyNoise.noise3DStopwatch.Reset();
 
         foreach (var chunk in FindObjectsOfType<ChunkRenderer>())
         {

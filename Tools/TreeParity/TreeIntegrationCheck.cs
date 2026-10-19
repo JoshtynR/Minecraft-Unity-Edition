@@ -28,7 +28,7 @@ public class World
         return new Block(p.y==63?BlockType.Grass:p.y<63?BlockType.Stone:BlockType.Air){chunkData=recordOwner};
     }
 }
-public class ChunkData { public World worldRef; public UnityEngine.Vector3Int worldPos; public bool betaTreePopulationDone,betaPopulationDone,modifiedAfterSave;public List<BetaPopulationRecord> betaPopulationRecords=new List<BetaPopulationRecord>(); public ChunkSection[] sections=new ChunkSection[0]; }
+public class ChunkData { public World worldRef; public UnityEngine.Vector3Int worldPos; public bool betaPopulationDone,modifiedAfterSave;public List<BetaPopulationRecord> betaPopulationRecords=new List<BetaPopulationRecord>(); public ChunkSection[] sections=new ChunkSection[0]; }
 public class ChunkSection {}
 public class ChunkSectionSaveData { public ChunkSectionSaveData(ChunkSection s) {} }
 public static class WorldDataHelper
@@ -73,16 +73,15 @@ public class TreeIntegrationCheck
             checks++;
         }
         var edge=new World();var edgeOwner=new ChunkData{worldRef=edge};
-        if(!Beta173Population.HasTreeNeighborhood(edgeOwner,0,0))throw new Exception("available tree neighborhood rejected");checks++;
+        if(!Beta173Population.HasCompleteNeighborhood(edgeOwner,0,0))throw new Exception("available tree neighborhood rejected");checks++;
         edge.unavailable.Add(new UnityEngine.Vector3Int(-32,0,0));
-        if(Beta173Population.HasTreeNeighborhood(edgeOwner,0,0))throw new Exception("missing canopy neighbor accepted");checks++;
+        if(Beta173Population.HasCompleteNeighborhood(edgeOwner,0,0))throw new Exception("missing canopy neighbor accepted");checks++;
         edge.unavailable.Clear();
-        if(!Beta173Population.HasTreeNeighborhood(edgeOwner,0,0))throw new Exception("tree neighborhood did not resume");checks++;
+        if(!Beta173Population.HasCompleteNeighborhood(edgeOwner,0,0))throw new Exception("tree neighborhood did not resume");checks++;
         var saved=ChunkSaveData.Serialize(edgeOwner);
         if(saved.betaTreePopulationVersion!=1 || saved.betaTreePopulationDone)throw new Exception("deferred tree state not saved");checks++;
-        edgeOwner.betaTreePopulationDone=true;saved=ChunkSaveData.Serialize(edgeOwner);
+        edgeOwner.betaPopulationDone=true;saved=ChunkSaveData.Serialize(edgeOwner);
         if(!saved.betaTreePopulationDone)throw new Exception("completed tree state not saved");checks++;
-        edgeOwner.betaPopulationDone=true;
         edgeOwner.betaPopulationRecords.Add(new BetaPopulationRecord{kind="spawner",mob="Zombie",position=new UnityEngine.Vector3Int(-1,40,0)});
         saved=ChunkSaveData.Serialize(edgeOwner);
         if(saved.betaPopulationVersion!=1||!saved.betaPopulationDone||saved.betaPopulationRecords.Length!=1||saved.betaPopulationRecords[0].mob!="Zombie")throw new Exception("population completion/dungeon records not saved");checks++;
