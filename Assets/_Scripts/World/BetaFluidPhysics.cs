@@ -63,6 +63,7 @@ public sealed class FluidHazards
 {
     public int air=300,fireTicks;
     private int resistance,lastDamage;
+    public void Reset(){air=300;fireTicks=resistance=lastDamage=0;}
     private int Hit(int amount)
     {
         if(resistance>10){if(amount<=lastDamage)return 0;int delta=amount-lastDamage;lastDamage=amount;return delta;}

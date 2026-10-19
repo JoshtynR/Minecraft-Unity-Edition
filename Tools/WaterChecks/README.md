@@ -134,6 +134,18 @@ PlayerHudAssets accepts original fizz/splash/flow AudioClips; when none are
 assigned, generated noise provides fallback audio, not original Minecraft audio.
 Particle appearance/timing and Unity shader output still need in-game comparison.
 
+Lethal damage now shows a cursor-accessible death/respawn panel instead of leaving
+the health-zero movement lock unexplained. Server-authorized respawn checks the
+last safe standing position, then searches loaded terrain near spawn if needed.
+It restores health/food/air and clears burn, damage resistance and liquid motion;
+inventory stays intact because this project does not yet implement death drops.
+
+Named modern fluid sheets repair the old 20fps default at runtime: water_still
+and lava_still use 10fps, lava_flow 20/3fps, and water_flow 20fps. Existing custom
+speeds and explicit playback overrides remain supported. Modern lava_still's
+0..19..1 sequence uses ping-pong; lava_flow loops. Editor assignment reads
+frametime from .mcmeta when present and uses these defaults when absent.
+
 
 ## Transparent water rendering
 

@@ -42,6 +42,15 @@ public sealed class FluidCameraEffects : MonoBehaviour
     }
     private void OnGUI()
     {
+        if(player!=null&&player.health<=0)
+        {
+            int previousDepth=GUI.depth;GUI.depth=-100;
+            float x=Screen.width*.5f-160,y=Screen.height*.5f-70;
+            GUI.Box(new Rect(x,y,320,140),"You died");
+            GUI.Label(new Rect(x+20,y+35,280,35),player.fluidRespawnUnavailable?"No safe loaded spawn yet. Try again shortly.":"Respawn at your last safe position.");
+            if(GUI.Button(new Rect(x+60,y+85,200,35),"Respawn"))player.RequestFluidRespawn();
+            GUI.depth=previousDepth;return;
+        }
         if(player==null||assets==null||Event.current.type!=EventType.Repaint)return;
         var old=GUI.color;int depth=GUI.depth;GUI.depth=100;
         if(medium==BlockType.Water&&assets.waterOverlay!=null)

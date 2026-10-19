@@ -546,7 +546,7 @@ public static class MinecraftTextureAutoAssign
     private static float Fps(Texture2D image)
     {
         string path=Path.Combine(Path.GetDirectoryName(Application.dataPath),AssetDatabase.GetAssetPath(image)+".mcmeta");
-        if(!File.Exists(path))return 20;
+        if(!File.Exists(path))return ModernFluidTextures.FramesPerSecond(image.name);
         var match=Regex.Match(File.ReadAllText(path),"\"frametime\"\\s*:\\s*(\\d+)");
         int ticks;return match.Success&&int.TryParse(match.Groups[1].Value,out ticks)?20f/Math.Max(1,ticks):20;
     }

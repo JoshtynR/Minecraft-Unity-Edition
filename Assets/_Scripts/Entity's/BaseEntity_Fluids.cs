@@ -8,6 +8,12 @@ public abstract partial class BaseEntity
     private FluidVector fluidMotion,fluidCurrent;
     private float fluidMovementTime;
     private bool wasInFluid;
+    protected void ResetFluidMovement()
+    {
+        fluidMotion=new FluidVector();fluidMovementTime=0;wasInFluid=false;
+        velocity=extraForce=Vector3.zero;verticalMomentum=0;jumpRequest=swimJumpHeld=false;
+        RefreshFluidContact();
+    }
 
     private void RefreshFluidContact()
     {

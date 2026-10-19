@@ -29,6 +29,22 @@ public class SpecialBlockTexture
 
 public enum SheetPlayback { Automatic, Loop, PingPong }
 
+public static class ModernFluidTextures
+{
+    // Vanilla PNG strip timings, in game ticks: water still/lava still 2,
+    // lava flow 3, water flow 1. Still lava's existing ping-pong path matches
+    // the modern metadata sequence 0..19..1.
+    public static float FramesPerSecond(string name)
+    {
+        switch(name)
+        {
+            case "water_still":case "lava_still":return 10;
+            case "lava_flow":return 20f/3;
+            default:return 20;
+        }
+    }
+}
+
 // Every slot in these layouts has a matching runtime mesh/face route.
 // Standard cuboids, stairs and slabs continue using their existing face images.
 public static class SpecialTextureLayout

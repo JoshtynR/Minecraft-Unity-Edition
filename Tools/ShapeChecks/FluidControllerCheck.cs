@@ -40,6 +40,16 @@ public static partial class ShapeCheck
         for(int i=0;i<30;i++)wall.FixedUpdate();
         Check(wall.transform.position.z+wall.entityWidth<=1.0001f,"swimming cannot tunnel through a solid wall");
         Check(FluidWorldQueries.AtEye(wall.world,V(-.5f,4.5f,-.5f))==BlockType.Water,"negative-coordinate eye lookup");
+        Time.fixedDeltaTime=Time.deltaTime=.02f;
+        var shore=new World();
+        for(int x=-2;x<=2;x++)for(int z=-2;z<=8;z++)
+        {Put(shore,x,0,z,BlockType.Stone);if(z>=2)for(int y=1;y<=2;y++)Put(shore,x,y,z,BlockType.Lava);}
+        var entering=new FluidController{world=shore,isGrounded=true,transform=new TestTransform{position=V(.5f,1,.5f)}};
+        entering.Input(false,1);for(int i=0;i<100;i++)entering.FixedUpdate();
+        float enteredZ=entering.transform.position.z;
+        Check(entering.InLava&&enteredZ>2.2f,"walking from shore into lava keeps accepting movement at 50Hz");
+        entering.Input(false,-1);for(int i=0;i<150;i++)entering.FixedUpdate();
+        Check(!entering.InLava&&entering.transform.position.z<2,"reversing out of lava returns to ordinary land movement");
         Time.fixedDeltaTime=Time.deltaTime=step;
     }
 }

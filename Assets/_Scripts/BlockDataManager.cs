@@ -113,6 +113,11 @@ public class BlockDataManager : MonoBehaviour
             requestedRows=0;requestedCount=0;
         }
         if(part!=null&&part.playback!=SheetPlayback.Automatic)pingPong=part.playback==SheetPlayback.PingPong;
+        // Repair legacy 20fps defaults for the actual modern fluid filenames at
+        // runtime, including already-assigned slots. Custom speeds/playback stay
+        // explicit overrides; no Block Data asset links need to be rewritten.
+        if(fluid&&requestedFps==20&&(part==null||part.playback==SheetPlayback.Automatic))
+            requestedFps=ModernFluidTextures.FramesPerSecond(image.name);
         if(animate)
         {
             columns=Mathf.Clamp(requestedColumns,1,64);

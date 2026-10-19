@@ -30,6 +30,7 @@ namespace UnityEngine {public static class Time {public static float deltaTime=0
 public partial class Controller
 {
  public bool jumpRequest;public float jumpForce=10.15f;
+ protected Vector3 extraForce;
  public void Move(){transform.position+=velocity;}
  public void MoveForces(){}
  public World world;public TestTransform transform=new TestTransform(),direction=new TestTransform();public bool isGrounded,isFlying,isCrouching,isSprinting;public float verticalMomentum,gravity=-32,walkSpeed=4.317f,crouchSpeed=1.31f,sprintSpeed=5.612f,flySpeed=10.92f,flySprintSpeed=21.6f,entityWidth=0.3f,entityHeight=1.8f,horizontal,vertical;public Vector3 velocity;

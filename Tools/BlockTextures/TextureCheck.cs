@@ -179,6 +179,10 @@ public static class TextureCheck
         for(int i=0;i<32;i++)Check(Shader.bound.layers[21+i][0].r==90+i,"flow lava extracts each 32x32 frame without truncation");
         Check(Shader.animations.colors[1].a==1&&Shader.animations.colors[21].a==0,"automatic playback reverses still lava but loops flow");
         Invoke(manager,"OnDisable");
+        still.name="lava_still";flow.name="lava_flow";Invoke(manager,"OnEnable");
+        Check(Shader.animations.colors[1].b==10&&Math.Abs(Shader.animations.colors[21].b-20f/3)<.00001f,"already-assigned modern lava strips use metadata timing rather than legacy 20fps");
+        Check(ModernFluidTextures.FramesPerSecond("water_still")==10&&ModernFluidTextures.FramesPerSecond("water_flow")==20,"modern water sheets use their distinct still/flow timings");
+        Invoke(manager,"OnDisable");
         stillPart.playback=SheetPlayback.Loop;
         flowPart.overrideAnimation=true;flowPart.rows=16;flowPart.frameCount=8;flowPart.framesPerSecond=7.5f;
         Invoke(manager,"OnEnable");

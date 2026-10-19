@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
-namespace Mirror {public class SyncVarAttribute:Attribute {}}
+namespace Mirror {public class SyncVarAttribute:Attribute {}public class CommandAttribute:Attribute {}public class TargetRpcAttribute:Attribute {}public class NetworkConnection {}}
 namespace TMPro {public class TMP_FontAsset:UnityEngine.Object {}}
 namespace UnityEngine.Rendering {public enum ShadowCastingMode {Off}}
 namespace UnityEngine
@@ -39,7 +39,8 @@ namespace UnityEngine
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}public static Vector4 zero=>new Vector4();}
  public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}}
  public struct Rect {public Rect(float x,float y,float w,float h){}}
- public static class Mathf {public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int FloorToInt(float n)=>(int)Math.Floor(n);}
+ public static class Mathf {public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int FloorToInt(float n)=>(int)Math.Floor(n);}
+ public enum CursorLockMode {None,Locked}public static class Cursor {public static CursorLockMode lockState=CursorLockMode.Locked;public static bool visible;}
  public class Texture:Object {}
  public class Texture2D:Texture {public int width=16,height=16;}
  public class Material:Object {public Texture mainTexture;public Material(Material m){}}
@@ -66,13 +67,13 @@ namespace UnityEngine
  public static class Time {public static float time,deltaTime=.05f;}
  public enum EventType {Repaint}public class Event {public static Event current=new Event();public EventType type;}
  public static class Screen {public static int width=800,height=600;}
- public static class GUI {public static Color color;public static int depth;public static void DrawTextureWithTexCoords(Rect r,Texture t,Rect uv){}}
+ public static class GUI {public static Color color;public static int depth;public static void DrawTextureWithTexCoords(Rect r,Texture t,Rect uv){}public static void Box(Rect r,string s){}public static void Label(Rect r,string s){}public static bool Button(Rect r,string s)=>false;}
 }
 public class Block {public BlockType type;public byte waterLevel;}
 public static class SpecialBlockGeometry {public static bool NormalCube(BlockType t)=>t==BlockType.Stone;}
 public partial class World:MonoBehaviour
 {
- public static World Instance;public bool IsWorldCreated=true;
+ public static World Instance;public bool IsWorldCreated=true;public int worldHeight=12;
  public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();
  public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block{type=BlockType.Air};}
  public static bool FluidHasSolidMaterial(BlockType t)=>t!=BlockType.Air&&t!=BlockType.Water&&t!=BlockType.Lava;
@@ -80,6 +81,9 @@ public partial class World:MonoBehaviour
 public partial class Player:MonoBehaviour
 {
  public World world;public bool networkStarted,isLocalPlayer=true,isFlying,serverFlying,InWater;
+ public bool isServer;public Mirror.NetworkConnection connectionToClient;
+ public int hunger;public float saturation,exhaustion;public int movementResets;
+ private void ResetFluidMovement(){movementResets++;}
  public int health=20;public float entityWidth=.3f,entityHeight=1.8f,eyeHeight=1.578f;public Transform cam;
 }
 public class GameManager {public static GameManager Instance;public Player localPlayer;}
@@ -113,6 +117,14 @@ public static class FluidVisualCheck
   world.blocks[new Vector3Int(0,0,0)].type=BlockType.Water;world.blocks[new Vector3Int(0,1,0)].type=BlockType.Water;
   Call(player,"AdvanceFluidHazards",.05f);Check(!player.burning&&player.airSupply==299,"actual player adapter extinguishes and consumes air");
   player.isFlying=true;Call(player,"AdvanceFluidHazards",.05f);Check(player.airSupply==300&&!player.burning,"flight clears hazards");
+  player.isFlying=false;player.transform.position=new Vector3(2.5f,1,.5f);world.blocks[new Vector3Int(2,0,0)]=new Block{type=BlockType.Stone};
+  Call(player,"AdvanceFluidHazards",.05f);
+  player.transform.position=new Vector3(.5f,0,.5f);player.health=0;Call(player,"UpdateFluidView");
+  Check(Cursor.lockState==CursorLockMode.None&&Cursor.visible,"death releases the cursor for respawn");
+  player.RequestFluidRespawn();
+  Check(player.health==20&&player.airSupply==300&&!player.burning&&player.transform.position.x==2.5f&&player.transform.position.y==1,"lava death respawns at a verified safe position and clears damage state");
+  Check(player.movementResets==1&&Cursor.lockState==CursorLockMode.Locked&&!Cursor.visible,"respawn resets liquid motion and restores the cursor");
+  player.transform.position=new Vector3(4,1,4);player.RequestFluidRespawn();Check(player.transform.position.x==4,"alive clients cannot use respawn as a teleport");
   Console.WriteLine(count+" production player/camera/particle ownership and integration checks passed (Unity rendering mocked).");
  }
 }
