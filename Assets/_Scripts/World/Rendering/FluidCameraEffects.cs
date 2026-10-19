@@ -134,8 +134,9 @@ public sealed class FluidCameraEffects : MonoBehaviour
     }
     private static void DrawDeathText(Rect rect,string text,GUIStyle style,Color color)
     {
-        style.normal.textColor=Color.black;var shadow=rect;shadow.x+=style.fontSize>9?2:1;shadow.y+=style.fontSize>9?2:1;
-        GUI.Label(shadow,text,style);style.normal.textColor=color;GUI.Label(rect,text,style);
+        // One text pass: rich-text colors override a shadow style's textColor,
+        // making the score appear as two offset yellow glyphs at GUI scale.
+        style.normal.textColor=color;GUI.Label(rect,text,style);
     }
     private void OnDestroy(){Restore();if(deathGradient!=null)Destroy(deathGradient);}
 }

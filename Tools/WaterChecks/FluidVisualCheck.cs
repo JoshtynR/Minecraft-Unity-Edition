@@ -141,8 +141,9 @@ public static class FluidVisualCheck
   player.transform.position=new Vector3(.5f,0,.5f);player.health=0;Call(player,"UpdateFluidView");
   Check(Cursor.lockState==CursorLockMode.None&&Cursor.visible,"death releases the cursor for respawn");
   assets.guiFont=new Font();assets.guiWidgets=new Texture2D{width=256,height=256};
-  GUI.buttons=0;GUI.clickButton=0;Call(effect,"OnGUI");
+  GUI.labels.Clear();GUI.buttons=0;GUI.clickButton=0;Call(effect,"OnGUI");
   Check(player.health==0&&GUI.labels.Contains("You died!")&&GUI.labels.Contains("Score: <color=#ffff55>0</color>"),"Minecraft death screen draws title/score and blocks immediate respawn clicks");
+  Check(GUI.labels.FindAll(s=>s=="You died!").Count==1&&GUI.labels.FindAll(s=>s=="Score: <color=#ffff55>0</color>").Count==1&&GUI.labels.FindAll(s=>s=="Respawn").Count==1&&GUI.labels.FindAll(s=>s=="Title screen").Count==1,"death screen text and colored score each draw once without offset duplicates");
   var gradient=(Texture2D)typeof(FluidCameraEffects).GetField("deathGradient",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(effect);
   Check(gradient.pixels.Length==2&&Math.Abs(gradient.pixels[1].a-96/255f)<.00001f&&Math.Abs(gradient.pixels[0].a-160/255f)<.00001f,"death screen uses native red gradient opacity");
   var style=(GUIStyle)typeof(FluidCameraEffects).GetField("deathTextStyle",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(effect);
