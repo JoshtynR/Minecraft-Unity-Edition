@@ -10,6 +10,7 @@ namespace TMPro {public class TMP_FontAsset:UnityEngine.Object {}}
 namespace UnityEngine
 {
  public class AudioClip:Object {}
+ public class Font:Object {}
  public partial class Object {public static void DestroyImmediate(Object value){Destroy(value);}}
  public static partial class Application {public static string dataPath;}
  public enum RuntimeInitializeLoadType {SubsystemRegistration}
@@ -138,6 +139,8 @@ public static class AssignmentCheck
    var steve=Image(root+"/entity/steve.png",64,64,10);
    var fireOverlay=Image(root+"/fire_0.png",16,512);
    var bubbleParticle=Image(root+"/particle/bubble.png");
+   var widgets=Image(root+"/gui/widgets.png",256,256);
+   var guiFont=new Font();UnityEditor.AssetDatabase.assets["Assets/UI/Font/MinecraftRegular.otf"]=guiFont;
    var smokeParticle=Image(root+"/particle/generic_0.png");
    for(int i=0;i<steve.pixels.Length/2;i++)steve.pixels[i]=new Color32(11,0,0,255);
    for(int i=0;i<10;i++)Image(root+"/block/destroy_stage_"+i+".png",color:(byte)(20+i));
@@ -162,6 +165,7 @@ public static class AssignmentCheck
    guiImporter.mipmapEnabled=true;guiImporter.npotScale=UnityEditor.TextureImporterNPOTScale.ToNearest;
    PlayerHudAssetSetup.Bind();
    Check(hud.fireOverlay==fireOverlay&&hud.bubbleParticle==bubbleParticle&&hud.smokeParticle==smokeParticle,"fluid effects bind the actual root fire sheet and particle folder");
+   Check(hud.guiFont==guiFont&&hud.guiWidgets==widgets,"death screen binds Minecraft font and GUI button artwork");
    hud.bubbleParticle=original;PlayerHudAssetSetup.Bind();Check(hud.bubbleParticle==original,"fluid effects preserve user particle overrides");
    Check(ReferenceEquals(hud.chestSkin,chestSkin)&&ReferenceEquals(hud.chestContainer,chestContainer),"editor binds user's modern chest sheet and container GUI without modifying block catalog");
    Check(hud.inventoryPlayerSkin!=null,"editor binds a direct player skin for the inventory preview");

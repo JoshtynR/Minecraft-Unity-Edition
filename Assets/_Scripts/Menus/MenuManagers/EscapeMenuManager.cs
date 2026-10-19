@@ -1,6 +1,7 @@
 ﻿using Mirror;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class EscapeMenuManager : MonoBehaviour
 {
@@ -11,10 +12,15 @@ public class EscapeMenuManager : MonoBehaviour
     }
     
     private void Quit()
+    {ExitToTitle();}
+
+    public static void ExitToTitle()
     {
         if(LobbyManager.currentLobby.HasValue)  LobbyManager.currentLobby.Value.Leave();
-        NetworkManager.singleton.StopHost();
-        NetworkManager.singleton.StopClient();
+        Cursor.lockState=CursorLockMode.None;Cursor.visible=true;
+        if(NetworkManager.singleton!=null&&NetworkServer.active)NetworkManager.singleton.StopHost();
+        else if(NetworkManager.singleton!=null&&NetworkClient.active)NetworkManager.singleton.StopClient();
+        else SceneManager.LoadScene("MainMenu");
     }
     
     private void Return()

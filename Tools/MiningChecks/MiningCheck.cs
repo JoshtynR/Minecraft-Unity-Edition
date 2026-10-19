@@ -4,6 +4,7 @@ using UnityEngine;
 namespace UnityEngine
 {
  public class AudioClip:Object {}
+ public class Font:Object {}
  public class Object {public bool destroyed;public static void Destroy(Object o){if(o!=null)o.destroyed=true;} }
  public class Tooltip:Attribute {public Tooltip(string s){}}
  public struct Vector3Int

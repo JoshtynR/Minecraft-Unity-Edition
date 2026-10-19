@@ -13,6 +13,11 @@ public sealed class FluidCameraEffects : MonoBehaviour
     private FogMode previousMode;
     private CameraClearFlags previousClearFlags;
     private BlockType medium;
+    private Texture2D deathGradient;
+    private GUIStyle deathTitleStyle,deathTextStyle;
+    private float deathShownAt=-1;
+    private bool confirmTitle;
+    private float deathGuiScale=1;
     private void Awake(){view=GetComponent<Camera>();assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");}
     private void OnPreCull()
     {
@@ -44,13 +49,9 @@ public sealed class FluidCameraEffects : MonoBehaviour
     {
         if(player!=null&&player.health<=0)
         {
-            int previousDepth=GUI.depth;GUI.depth=-100;
-            float x=Screen.width*.5f-160,y=Screen.height*.5f-70;
-            GUI.Box(new Rect(x,y,320,140),"You died");
-            GUI.Label(new Rect(x+20,y+35,280,35),player.fluidRespawnUnavailable?"No safe loaded spawn yet. Try again shortly.":"Respawn at your last safe position.");
-            if(GUI.Button(new Rect(x+60,y+85,200,35),"Respawn"))player.RequestFluidRespawn();
-            GUI.depth=previousDepth;return;
+            DrawDeathScreen();return;
         }
+        deathShownAt=-1;confirmTitle=false;
         if(player==null||assets==null||Event.current.type!=EventType.Repaint)return;
         var old=GUI.color;int depth=GUI.depth;GUI.depth=100;
         if(medium==BlockType.Water&&assets.waterOverlay!=null)
@@ -68,4 +69,73 @@ public sealed class FluidCameraEffects : MonoBehaviour
         }
         GUI.color=old;GUI.depth=depth;
     }
+
+    private void DrawDeathScreen()
+    {
+        if(deathShownAt<0)deathShownAt=Time.unscaledTime;
+        if(deathGradient==null)
+        {
+            deathGradient=new Texture2D(1,2,TextureFormat.RGBA32,false);
+            deathGradient.SetPixels(new[]{new Color(128/255f,48/255f,48/255f,160/255f),new Color(80/255f,0,0,96/255f)});
+            deathGradient.filterMode=FilterMode.Bilinear;deathGradient.wrapMode=TextureWrapMode.Clamp;deathGradient.Apply();
+            deathTextStyle=new GUIStyle(GUI.skin.label){fontSize=9,alignment=TextAnchor.MiddleCenter,richText=true};
+            if(assets!=null&&assets.guiFont!=null)deathTextStyle.font=assets.guiFont;
+            deathTitleStyle=new GUIStyle(deathTextStyle){fontSize=18};
+        }
+        int oldDepth=GUI.depth;var oldMatrix=GUI.matrix;var oldColor=GUI.color;
+        try
+        {
+            GUI.depth=-100;GUI.color=Color.white;
+            int scale=Mathf.Max(1,Mathf.Min(Screen.width/320,Screen.height/240));
+            deathGuiScale=scale;
+            float width=Screen.width/(float)scale,height=Screen.height/(float)scale;
+            GUI.matrix=Matrix4x4.Scale(Vector3.one*scale);
+            GUI.DrawTexture(new Rect(0,0,width,height),deathGradient);
+            bool ready=Time.unscaledTime-deathShownAt>=1;
+            if(confirmTitle)
+            {
+                DrawDeathText(new Rect(0,height/6+50,width,20),"Are you sure you want to quit?",deathTextStyle,Color.white);
+                if(DeathButton(new Rect(width/2-155,height/6+96,150,20),"Title screen",ready))EscapeMenuManager.ExitToTitle();
+                if(DeathButton(new Rect(width/2+5,height/6+96,150,20),"Respawn",ready))player.RequestFluidRespawn();
+                return;
+            }
+            DrawDeathText(new Rect(0,60,width,20),"You died!",deathTitleStyle,Color.white);
+            // The project does not yet award vanilla score points.
+            DrawDeathText(new Rect(0,100,width,12),"Score: <color=#ffff55>0</color>",deathTextStyle,Color.white);
+            if(player.fluidRespawnUnavailable)DrawDeathText(new Rect(0,115,width,12),"No safe loaded spawn. Try again shortly.",deathTextStyle,new Color(1,.4f,.4f,1));
+            if(DeathButton(new Rect(width/2-100,height/4+72,200,20),"Respawn",ready))player.RequestFluidRespawn();
+            if(DeathButton(new Rect(width/2-100,height/4+96,200,20),"Title screen",ready))
+            {confirmTitle=true;deathShownAt=Time.unscaledTime;}
+        }
+        finally{GUI.matrix=oldMatrix;GUI.color=oldColor;GUI.depth=oldDepth;}
+    }
+    private bool DeathButton(Rect rect,string text,bool enabled)
+    {
+        var mouse=Input.mousePosition;
+        bool hover=enabled&&rect.Contains(new Vector2(mouse.x/deathGuiScale,(Screen.height-mouse.y)/deathGuiScale));
+        int row=!enabled?46:hover?86:66;
+        var widgets=assets!=null?assets.guiWidgets:null;
+        if(widgets==null)widgets=Resources.Load<Texture2D>("Sprites/UI/widgets");
+        if(widgets!=null)
+        {
+            // Native buttons preserve both 100px end caps when resized.
+            var left=new Rect(rect.x,rect.y,rect.width/2,rect.height);
+            var right=new Rect(rect.x+rect.width/2,rect.y,rect.width/2,rect.height);
+            GUI.DrawTextureWithTexCoords(left,widgets,new Rect(0,1-(row+20)/256f,left.width/256f,20/256f));
+            GUI.DrawTextureWithTexCoords(right,widgets,new Rect((200-right.width)/256f,1-(row+20)/256f,right.width/256f,20/256f));
+        }
+        else
+        {
+            var old=GUI.color;GUI.color=!enabled?new Color(.25f,.25f,.25f,1):hover?new Color(.45f,.45f,.6f,1):new Color(.4f,.4f,.4f,1);
+            GUI.DrawTexture(rect,Texture2D.whiteTexture);GUI.color=old;
+        }
+        DrawDeathText(rect,text,deathTextStyle,!enabled?new Color(.63f,.63f,.63f,1):hover?new Color(1,1,.63f,1):Color.white);
+        return GUI.Button(rect,"",GUIStyle.none)&&enabled;
+    }
+    private static void DrawDeathText(Rect rect,string text,GUIStyle style,Color color)
+    {
+        style.normal.textColor=Color.black;var shadow=rect;shadow.x+=style.fontSize>9?2:1;shadow.y+=style.fontSize>9?2:1;
+        GUI.Label(shadow,text,style);style.normal.textColor=color;GUI.Label(rect,text,style);
+    }
+    private void OnDestroy(){Restore();if(deathGradient!=null)Destroy(deathGradient);}
 }

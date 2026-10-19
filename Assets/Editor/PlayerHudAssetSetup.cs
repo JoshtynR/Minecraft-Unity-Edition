@@ -22,6 +22,9 @@ public static class PlayerHudAssetSetup
         var icons = Prepare(IconsPath);
         var cracks = Prepare(BreakPath);
         var inventory = Prepare(InventoryPath);
+        var guiWidgets=config.guiWidgets!=null?config.guiWidgets:Prepare("Assets/Textures/Minecraft/gui/widgets.png");
+        if(guiWidgets==null)guiWidgets=Prepare("Assets/Resources/Sprites/UI/widgets.png");
+        var guiFont=config.guiFont!=null?config.guiFont:AssetDatabase.LoadAssetAtPath<Font>("Assets/UI/Font/MinecraftRegular.otf");
         var playerSkin=config.inventoryPlayerSkin;
         var playerMaterial=AssetDatabase.LoadAssetAtPath<Material>("Assets/Textures/Player/player.mat");
         if(playerSkin==null&&playerMaterial!=null)playerSkin=playerMaterial.mainTexture as Texture2D;
@@ -48,10 +51,14 @@ public static class PlayerHudAssetSetup
             (smokeParticle == null || config.smokeParticle == smokeParticle)&&
             (splashParticle == null || config.splashParticle == splashParticle)&&
             (lavaParticle == null || config.lavaParticle == lavaParticle)&&
-            (bubbleParticle == null || config.bubbleParticle == bubbleParticle)) return;
+            (bubbleParticle == null || config.bubbleParticle == bubbleParticle)&&
+            (guiWidgets == null || config.guiWidgets == guiWidgets)&&
+            (guiFont == null || config.guiFont == guiFont)) return;
         if (icons != null) config.icons = icons;
         if (cracks != null) config.blockBreak = cracks;
         if (inventory != null) config.inventory = inventory;
+        if(guiWidgets!=null)config.guiWidgets=guiWidgets;
+        if(guiFont!=null)config.guiFont=guiFont;
         if (playerSkin != null) config.inventoryPlayerSkin = playerSkin;
         if (chestSkin != null) config.chestSkin = chestSkin;
         if (chestContainer != null) config.chestContainer = chestContainer;

@@ -14,6 +14,7 @@ namespace Mirror
 namespace UnityEngine
 {
  public class AudioClip:Object {}
+ public class Font:Object {}
  public class Object
  {
   public string name;public bool destroyed;

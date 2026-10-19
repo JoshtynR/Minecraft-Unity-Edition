@@ -140,6 +140,21 @@ last safe standing position, then searches loaded terrain near spawn if needed.
 It restores health/food/air and clears burn, damage resistance and liquid motion;
 inventory stays intact because this project does not yet implement death drops.
 
+The death presenter now uses the hearts/hunger-era Minecraft layout: native red
+gradient, MinecraftRegular font, doubled title, yellow score line and textured
+200x20 Respawn/Title screen buttons. It scales in whole logical pixels, enables
+buttons after 20 ticks and confirms before quitting. Title screen uses the same
+lobby/network exit path as the pause menu. Score remains zero until a gameplay
+score system is implemented; it is not derived incorrectly from XP level.
+
+Survival HUD presentation retains previous health for damage flashes, uses the
+white full/half-heart sprites and highlighted containers, shakes at <=4 health,
+and shakes food icons when saturation is exhausted at the native food-dependent
+interval. The clock is 20 Hz regardless of render rate and uses a separate
+deterministic cosmetic hash, leaving world RNG untouched. Respawn/player changes
+reset flashes, and recovery resets jitter offsets. No health/food values are
+changed by these animations.
+
 Named modern fluid sheets repair the old 20fps default at runtime: water_still
 and lava_still use 10fps, lava_flow 20/3fps, and water_flow 20fps. Existing custom
 speeds and explicit playback overrides remain supported. Modern lava_still's

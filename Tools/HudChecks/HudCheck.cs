@@ -13,6 +13,7 @@ namespace UnityEngine
  public class Tooltip:Attribute {public Tooltip(string value){}}
  public class Material:Object {}
  public class AudioClip:Object {}
+ public class Font:Object {}
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}public static Vector2 zero=>new Vector2();}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;this.width=w;this.height=h;} }
  public struct Color {public static Color black=>new Color();public static implicit operator Color(Color32 c)=>new Color();}
@@ -35,7 +36,8 @@ namespace UnityEngine
  }
  public class Texture2D:Object {public int width=256,height=256;}
  public static class Resources {public static Object asset;public static T Load<T>(string name) where T:Object{return (T)asset;} }
- public static class Mathf {public static int Max(int a,int b)=>Math.Max(a,b);public static int Clamp(int n,int min,int max)=>Math.Max(min,Math.Min(n,max));public static int CeilToInt(float n)=>(int)Math.Ceiling(n);}
+ public static class Mathf {public static int FloorToInt(float n)=>(int)Math.Floor(n);public static int Max(int a,int b)=>Math.Max(a,b);public static int Clamp(int n,int min,int max)=>Math.Max(min,Math.Min(n,max));public static int CeilToInt(float n)=>(int)Math.Ceiling(n);}
+ public static class Time {public static float unscaledTime;}
  public static class Debug {public static void LogWarning(string message,Object o){}public static void LogError(string message,Object o){} }
 }
 namespace UnityEngine.UI
@@ -49,7 +51,7 @@ namespace TMPro
  public enum TextAlignmentOptions {Center}
  public class TextMeshProUGUI:Component {public TMP_FontAsset font;public float fontSize;public TextAlignmentOptions alignment;public Color color;public bool raycastTarget;public string text;}
 }
-public class Player {public int health=20,hunger=20,experienceLevel,airSupply=300;public float experienceProgress;}
+public class Player {public int health=20,hunger=20,experienceLevel,airSupply=300;public float experienceProgress,saturation=5;}
 public class GameManager {public static GameManager Instance;public Player localPlayer;}
 public static class HudCheck
 {
@@ -81,6 +83,20 @@ public static class HudCheck
   Check(Get<TMPro.TextMeshProUGUI>(Child(root,"XPLevel")).text=="7","level displayed");
   foreach(var child in root.transform.children) foreach(var c in child.gameObject.components) if(c is RawImage)Check(!((RawImage)c).raycastTarget,"HUD images do not block input");
   var oldCount=root.transform.children.Count;Call(hud,"LateUpdate");Check(root.transform.children.Count==oldCount,"unchanged refresh does not create UI objects");
+  Time.unscaledTime=.05f;GameManager.Instance.localPlayer.health=17;Call(hud,"LateUpdate");
+  Time.unscaledTime=.2f;Call(hud,"LateUpdate");
+  Check(Get<RawImage>(Child(root,"DamageHeart9")).enabled&&Get<RawImage>(Child(root,"DamageHeart9")).uvRect.x==79/256f,"damage flash retains the previous half heart in white");
+  Check(Get<RawImage>(Child(root,"HeartBackground0")).uvRect.x==25/256f,"damage flash uses the highlighted heart container");
+  Time.unscaledTime=1.3f;Call(hud,"LateUpdate");Check(!Get<RawImage>(Child(root,"DamageHeart9")).enabled,"damage flash ends on the presentation clock");
+  GameManager.Instance.localPlayer.health=4;GameManager.Instance.localPlayer.hunger=0;GameManager.Instance.localPlayer.saturation=0;Time.unscaledTime=1.4f;Call(hud,"LateUpdate");
+  bool heartMoved=false,foodMoved=false;
+  for(int i=0;i<10;i++){heartMoved|=Child(root,"Heart"+i).transform.anchoredPosition.y!=30;foodMoved|=Child(root,"FoodBackground"+i).transform.anchoredPosition.y!=30;}
+  Check(heartMoved&&foodMoved,"critical health and exhausted hunger animate complete icon stacks");
+  GameManager.Instance.localPlayer.health=19;GameManager.Instance.localPlayer.hunger=5;GameManager.Instance.localPlayer.saturation=5;Time.unscaledTime=1.45f;Call(hud,"LateUpdate");
+  Check(Child(root,"Heart0").transform.anchoredPosition.y==30&&Child(root,"FoodBackground0").transform.anchoredPosition.y==30,"recovery clears jitter offsets");
+  var anim=new SurvivalHudAnimation();anim.Reset(20,0);anim.Observe(16,1);anim.Observe(12,5);Check(anim.PreviousHealth==20,"repeated hits retain the original previous health during the damage window");
+  anim.Observe(12,26);Check(anim.PreviousHealth==12&&!anim.Flash(26),"old health settles after the one-second delay");
+  anim.Reset(0,30);anim.Observe(20,31);Check(!anim.Flash(31)&&anim.PreviousHealth==20,"respawn cannot carry a death flash into the new life");
   GameManager.Instance.localPlayer.airSupply=150;Call(hud,"LateUpdate");
   Check(Child(root,"Air0").activeSelf&&Child(root,"Air4").activeSelf&&!Child(root,"Air5").activeSelf,"half air supply displays five bubbles");
   GameManager.Instance.localPlayer.airSupply=300;Call(hud,"LateUpdate");Check(!Child(root,"Air0").activeSelf,"air HUD hides when breath refills");

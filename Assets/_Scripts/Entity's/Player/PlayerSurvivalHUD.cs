@@ -19,6 +19,9 @@ public class PlayerSurvivalHUD : MonoBehaviour
     private readonly RawImage[] hearts = new RawImage[10];
     private readonly RawImage[] food = new RawImage[10];
     private readonly RawImage[] bubbles = new RawImage[10];
+    private readonly RawImage[] heartBackgrounds=new RawImage[10],damageHearts=new RawImage[10],foodBackgrounds=new RawImage[10];
+    private readonly SurvivalHudAnimation animation=new SurvivalHudAnimation();
+    private int lastAnimationTick=-1;
     private RawImage xpFill;
     private TextMeshProUGUI levelText;
     private Player lastPlayer;
@@ -58,9 +61,11 @@ public class PlayerSurvivalHUD : MonoBehaviour
         {
             float heartX = -91 + i * 8;
             float foodX = 82 - i * 8;
-            CreateImage("HeartBackground" + i, heartX, 30, 9, 9, 16, 0);
+            heartBackgrounds[i]=CreateImage("HeartBackground" + i, heartX, 30, 9, 9, 16, 0);
+            damageHearts[i]=CreateImage("DamageHeart"+i,heartX,30,9,9,70,0);
+            damageHearts[i].enabled=false;
             hearts[i] = CreateImage("Heart" + i, heartX, 30, 9, 9, 52, 0);
-            CreateImage("FoodBackground" + i, foodX, 30, 9, 9, 16, 27);
+            foodBackgrounds[i]=CreateImage("FoodBackground" + i, foodX, 30, 9, 9, 16, 27);
             food[i] = CreateImage("Food" + i, foodX, 30, 9, 9, 52, 27);
             bubbles[i]=CreateImage("Air"+i,82-i*8,40,9,9,16,18);
             bubbles[i].gameObject.SetActive(false);
@@ -85,7 +90,7 @@ public class PlayerSurvivalHUD : MonoBehaviour
     private bool Ready()
     {
         if(root==null||hotbar==null||xpFill==null||levelText==null)return false;
-        for(int i=0;i<10;i++)if(hearts[i]==null||food[i]==null||bubbles[i]==null)return false;
+        for(int i=0;i<10;i++)if(hearts[i]==null||food[i]==null||bubbles[i]==null||heartBackgrounds[i]==null||damageHearts[i]==null||foodBackgrounds[i]==null)return false;
         return true;
     }
 
@@ -142,9 +147,29 @@ public class PlayerSurvivalHUD : MonoBehaviour
         {
             lastPlayer = player;
             lastHealth = lastHunger = lastLevel = lastXpPixels = -1;
+            animation.Reset(SurvivalHudValues.ClampPoints(player.health),Mathf.FloorToInt(Time.unscaledTime*20));
+            lastAnimationTick=-1;
         }
         int health = SurvivalHudValues.ClampPoints(player.health);
         int hunger = SurvivalHudValues.ClampPoints(player.hunger);
+        int tick=Mathf.FloorToInt(Time.unscaledTime*20);
+        animation.Observe(health,tick);
+        if(tick!=lastAnimationTick||health!=lastHealth||hunger!=lastHunger)
+        {
+            bool flash=animation.Flash(tick);
+            for(int i=0;i<10;i++)
+            {
+                float heartY=30+SurvivalHudAnimation.HeartOffset(health,tick,i);
+                SetIconY(heartBackgrounds[i],heartY);SetIconY(hearts[i],heartY);SetIconY(damageHearts[i],heartY);
+                heartBackgrounds[i].uvRect=SheetRect(flash?25:16,0,9,9);
+                int oldFill=SurvivalHudValues.IconFill(animation.PreviousHealth,i);
+                damageHearts[i].enabled=flash&&oldFill>0;
+                damageHearts[i].uvRect=SheetRect(oldFill==1?79:70,0,9,9);
+                float foodY=30+SurvivalHudAnimation.FoodOffset(hunger,player.saturation,tick,i);
+                SetIconY(foodBackgrounds[i],foodY);SetIconY(food[i],foodY);
+            }
+            lastAnimationTick=tick;
+        }
         if (health != lastHealth) { RefreshRow(hearts, health, 0); lastHealth = health; }
         if (hunger != lastHunger) { RefreshRow(food, hunger, 27); lastHunger = hunger; }
         int pixels = SurvivalHudValues.ExperiencePixels(player.experienceProgress);
@@ -172,6 +197,8 @@ public class PlayerSurvivalHUD : MonoBehaviour
             images[i].uvRect = SheetRect(fill == 1 ? 61 : 52, sheetY, 9, 9);
         }
     }
+    private static void SetIconY(RawImage image,float y)
+    {var pos=image.rectTransform.anchoredPosition;pos.y=y;image.rectTransform.anchoredPosition=pos;}
 
     private void OnDestroy()
     {

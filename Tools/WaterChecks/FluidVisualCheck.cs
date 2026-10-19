@@ -3,7 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
-namespace Mirror {public class SyncVarAttribute:Attribute {}public class CommandAttribute:Attribute {}public class TargetRpcAttribute:Attribute {}public class NetworkConnection {}}
+namespace Mirror
+{
+ public class SyncVarAttribute:Attribute {}public class CommandAttribute:Attribute {}public class TargetRpcAttribute:Attribute {}public class NetworkConnection {}
+ public static class NetworkServer {public static bool active;}public static class NetworkClient {public static bool active;}
+ public class NetworkManager {public static NetworkManager singleton;public int hostStops,clientStops;public void StopHost(){hostStops++;NetworkServer.active=false;NetworkClient.active=false;}public void StopClient(){clientStops++;NetworkClient.active=false;}}
+}
+namespace UnityEngine.SceneManagement {public static class SceneManager {public static string loaded;public static void LoadScene(string name){loaded=name;}}}
+namespace UnityEngine.UI {public class Button:UnityEngine.Component {public class Click {public void AddListener(Action action){}}public Click onClick=new Click();}}
 namespace TMPro {public class TMP_FontAsset:UnityEngine.Object {}}
 namespace UnityEngine.Rendering {public enum ShadowCastingMode {Off}}
 namespace UnityEngine
@@ -21,7 +28,7 @@ namespace UnityEngine
   public T AddComponent<T>() where T:Component,new(){var c=new T{gameObject=this};components[typeof(T)]=c;typeof(T).GetMethod("Awake",BindingFlags.Instance|BindingFlags.NonPublic)?.Invoke(c,null);return c;}
   public T GetComponent<T>() where T:Component {Component c;return components.TryGetValue(typeof(T),out c)?(T)c:null;}
  }
- public class Transform:Component {public Vector3 position,eulerAngles;public Transform parent;public void SetParent(Transform t,bool world){parent=t;}}
+ public class Transform:Component {public Vector3 position,eulerAngles;public Transform parent;public Transform Find(string path)=>this;public void SetParent(Transform t,bool world){parent=t;}}
  public struct Vector3
  {
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
@@ -37,12 +44,16 @@ namespace UnityEngine
   public static implicit operator Vector3(Vector3Int p)=>new Vector3(p.x,p.y,p.z);
  }
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}public static Vector4 zero=>new Vector4();}
- public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}}
- public struct Rect {public Rect(float x,float y,float w,float h){}}
- public static class Mathf {public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int FloorToInt(float n)=>(int)Math.Floor(n);}
+ public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color white=>new Color(1,1,1,1);public static Color black=>new Color(0,0,0,1);}
+ public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
+ public static class Input {public static Vector3 mousePosition;}
+ public struct Rect {public float x,y,width,height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;width=w;height=h;}public bool Contains(Vector2 p)=>p.x>=x&&p.x<x+width&&p.y>=y&&p.y<y+height;}
+ public static class Mathf {public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int FloorToInt(float n)=>(int)Math.Floor(n);}
  public enum CursorLockMode {None,Locked}public static class Cursor {public static CursorLockMode lockState=CursorLockMode.Locked;public static bool visible;}
  public class Texture:Object {}
- public class Texture2D:Texture {public int width=16,height=16;}
+ public enum TextureFormat {RGBA32}public enum FilterMode {Bilinear}public enum TextureWrapMode {Clamp}
+ public class Font:Object {}
+ public class Texture2D:Texture {public int width=16,height=16;public Color[] pixels;public FilterMode filterMode;public TextureWrapMode wrapMode;public Texture2D(){}public Texture2D(int w,int h,TextureFormat format,bool mip){width=w;height=h;}public void SetPixels(Color[] colors){pixels=colors;}public void Apply(){}public static Texture2D whiteTexture=new Texture2D();}
  public class Material:Object {public Texture mainTexture;public Material(Material m){}}
  public static class Resources {public static Dictionary<string,Object> items=new Dictionary<string,Object>();public static T Load<T>(string key) where T:Object {Object o;return items.TryGetValue(key,out o)?(T)o:null;}}
  public class AudioClip:Object {public static AudioClip Create(string name,int a,int b,int c,bool d)=>new AudioClip{name=name};public void SetData(float[] v,int start){}}
@@ -64,10 +75,15 @@ namespace UnityEngine
  public static class RenderSettings {public static bool fog;public static Color fogColor;public static float fogDensity;public static FogMode fogMode;}
  public static class Shader {static Vector4 fog;public static Vector4 GetGlobalVector(string key)=>fog;public static void SetGlobalVector(string key,Vector4 value){fog=value;}}
  public static class Application {public static bool isBatchMode,isPlaying=true;}
- public static class Time {public static float time,deltaTime=.05f;}
- public enum EventType {Repaint}public class Event {public static Event current=new Event();public EventType type;}
+ public static class Time {public static float time,unscaledTime,deltaTime=.05f;}
+ public enum EventType {Repaint}public class Event {public static Event current=new Event();public EventType type;public Vector2 mousePosition;}
  public static class Screen {public static int width=800,height=600;}
- public static class GUI {public static Color color;public static int depth;public static void DrawTextureWithTexCoords(Rect r,Texture t,Rect uv){}public static void Box(Rect r,string s){}public static void Label(Rect r,string s){}public static bool Button(Rect r,string s)=>false;}
+ public struct Matrix4x4 {public static Matrix4x4 Scale(Vector3 v)=>new Matrix4x4();}
+ public enum TextAnchor {MiddleCenter}
+ public class GUIStyleState {public Color textColor;}
+ public class GUIStyle {public Font font;public int fontSize;public bool richText;public TextAnchor alignment;public GUIStyleState normal=new GUIStyleState();public GUIStyle(){}public GUIStyle(GUIStyle other){font=other.font;fontSize=other.fontSize;}public static GUIStyle none=new GUIStyle();}
+ public class GUISkin {public GUIStyle label=new GUIStyle();}
+ public static class GUI {public static Color color;public static int depth;public static Matrix4x4 matrix;public static GUISkin skin=new GUISkin();public static List<string> labels=new List<string>();public static int clickButton=-1,buttons;public static void DrawTextureWithTexCoords(Rect r,Texture t,Rect uv){}public static void DrawTexture(Rect r,Texture t){}public static void Box(Rect r,string s){}public static void Label(Rect r,string s){}public static void Label(Rect r,string s,GUIStyle style){labels.Add(s);}public static bool Button(Rect r,string s,GUIStyle style)=>buttons++==clickButton;}
 }
 public class Block {public BlockType type;public byte waterLevel;}
 public static class SpecialBlockGeometry {public static bool NormalCube(BlockType t)=>t==BlockType.Stone;}
@@ -82,11 +98,14 @@ public partial class Player:MonoBehaviour
 {
  public World world;public bool networkStarted,isLocalPlayer=true,isFlying,serverFlying,InWater;
  public bool isServer;public Mirror.NetworkConnection connectionToClient;
+ public bool escapeMenuOpen;
  public int hunger;public float saturation,exhaustion;public int movementResets;
  private void ResetFluidMovement(){movementResets++;}
  public int health=20;public float entityWidth=.3f,entityHeight=1.8f,eyeHeight=1.578f;public Transform cam;
 }
 public class GameManager {public static GameManager Instance;public Player localPlayer;}
+public struct TestLobby {public void Leave(){LobbyManager.leaves++;}}
+public static class LobbyManager {public static TestLobby? currentLobby;public static int leaves;}
 public static class FluidVisualCheck
 {
  static int count;
@@ -121,10 +140,24 @@ public static class FluidVisualCheck
   Call(player,"AdvanceFluidHazards",.05f);
   player.transform.position=new Vector3(.5f,0,.5f);player.health=0;Call(player,"UpdateFluidView");
   Check(Cursor.lockState==CursorLockMode.None&&Cursor.visible,"death releases the cursor for respawn");
+  assets.guiFont=new Font();assets.guiWidgets=new Texture2D{width=256,height=256};
+  GUI.buttons=0;GUI.clickButton=0;Call(effect,"OnGUI");
+  Check(player.health==0&&GUI.labels.Contains("You died!")&&GUI.labels.Contains("Score: <color=#ffff55>0</color>"),"Minecraft death screen draws title/score and blocks immediate respawn clicks");
+  var gradient=(Texture2D)typeof(FluidCameraEffects).GetField("deathGradient",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(effect);
+  Check(gradient.pixels.Length==2&&Math.Abs(gradient.pixels[1].a-96/255f)<.00001f&&Math.Abs(gradient.pixels[0].a-160/255f)<.00001f,"death screen uses native red gradient opacity");
+  var style=(GUIStyle)typeof(FluidCameraEffects).GetField("deathTextStyle",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(effect);
+  Check(style.font==assets.guiFont&&style.fontSize==9,"death screen uses the Minecraft font at logical pixel size");
+  Time.unscaledTime=1.1f;GUI.buttons=0;GUI.clickButton=1;Call(effect,"OnGUI");
+  Mirror.NetworkManager.singleton=new Mirror.NetworkManager();Mirror.NetworkServer.active=Mirror.NetworkClient.active=true;LobbyManager.currentLobby=new TestLobby();
+  Time.unscaledTime=2.2f;GUI.buttons=0;GUI.clickButton=0;Call(effect,"OnGUI");
+  Check(Mirror.NetworkManager.singleton.hostStops==1&&LobbyManager.leaves==1,"title confirmation leaves the lobby and stops the host once");
+  EscapeMenuManager.ExitToTitle();Check(UnityEngine.SceneManagement.SceneManager.loaded=="MainMenu","offline title action returns to the main menu scene");
+  GUI.clickButton=-1;
   player.RequestFluidRespawn();
   Check(player.health==20&&player.airSupply==300&&!player.burning&&player.transform.position.x==2.5f&&player.transform.position.y==1,"lava death respawns at a verified safe position and clears damage state");
   Check(player.movementResets==1&&Cursor.lockState==CursorLockMode.Locked&&!Cursor.visible,"respawn resets liquid motion and restores the cursor");
   player.transform.position=new Vector3(4,1,4);player.RequestFluidRespawn();Check(player.transform.position.x==4,"alive clients cannot use respawn as a teleport");
+  Call(effect,"OnDestroy");Check(gradient.destroyed&&!assets.guiWidgets.destroyed,"death screen releases its gradient and preserves source artwork");
   Console.WriteLine(count+" production player/camera/particle ownership and integration checks passed (Unity rendering mocked).");
  }
 }
