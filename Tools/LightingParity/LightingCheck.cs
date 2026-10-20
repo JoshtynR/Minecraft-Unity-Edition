@@ -19,6 +19,7 @@ namespace UnityEngine
  public struct Vector4 { public float x,y,z,w; public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}}
+ public struct Color32 {public byte r,g,b,a;public Color32(byte r,byte g,byte b,byte a){this.r=r;this.g=g;this.b=b;this.a=a;}}
  public static class Mathf {public static int Max(int a,int b)=>Math.Max(a,b);public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));}
 }
 public enum Direction {down,up,backwards,forwards,left,right}
@@ -41,10 +42,11 @@ public class Block
 }
 public class BlockLightNode {public Block block;public byte lightLevel;public BlockLightNode(Block b,byte l){block=b;lightLevel=l;}}
 public class ChunkRenderer {}
-public partial class World {public int worldHeight=128,betaSkylightSubtracted,updates;public bool fullSmoothLighting=true;public void AddChunkToUpdate(ChunkRenderer c,bool first){updates++;}}
+public partial class World {public long betaWorldSeed;public int worldHeight=128,betaSkylightSubtracted,updates;public bool fullSmoothLighting=true;public void AddChunkToUpdate(ChunkRenderer c,bool first){updates++;}}
 public static class ModernChestVisual {public static bool Enabled;}
 public class ChunkData
 {
+ internal volatile BiomeBlockColors.ChunkColors biomeColors;
  public Vector3Int worldPos;public Vector3Int GetGlobalBlockCoords(Vector3Int p)=>worldPos+p;
  public bool lightingInitialized;
  public bool HasPendingLighting=>skyLightRemoveQueue.Count+skyLightUpdateQueue.Count+blockLightRemoveQueue.Count+blockLightUpdateQueue.Count+skyRemoveList.Count+skyExtendList.Count+chunkToUpdateAfterLighting.Count>0;
@@ -200,6 +202,7 @@ public static partial class LightingCheck
   Check(Beta173Lighting.InterpolateCorners(0,1,0,0,0,1)==1,"UV corner winding");
   Check(Beta173Lighting.InterpolateCorners(0,1,0,0,-1,2)==1,"partial coordinate clamping");
   CheckPlants();
+  CheckBiomeColors(args[1]);
   CheckStairMeshes();
   CheckSpecialMeshes();
   Console.WriteLine(aoCases+" Java six-face AO cases, "+orderedVertices+" positioned vertices; "+checks+" brightness/adapter/transport checks passed (Unity storage mocked).");

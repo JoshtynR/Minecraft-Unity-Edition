@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse,subprocess,tempfile,gzip
+from PIL import Image
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 def main():
@@ -17,11 +18,15 @@ def main():
   binary=t/'lighting.exe'
   sources.append('Tools/LightingParity/SpecialMeshCheck.cs')
   sources.append('Assets/_Scripts/World/FluidTickScheduler.cs')
+  sources.extend(['Assets/_Scripts/World/Rendering/BiomeColorPalette.cs','Assets/_Scripts/World/Rendering/BiomeBlockColors.cs','Assets/_Scripts/WorldGeneration/Beta/BetaClimate.cs','Assets/_Scripts/WorldGeneration/Beta/JavaRandom.cs','Tools/LightingParity/BiomeColorCheck.cs'])
+  sources.append('Assets/_Scripts/WorldGeneration/Beta/BetaMathHelper.cs')
   if a.stair_check:
    sources.remove('Tools/LightingParity/StairCheck.cs');sources.append(str(a.stair_check.resolve()))
   subprocess.run([a.mcs,'-langversion:latest','-out:'+str(binary),*[str(ROOT/s) for s in sources],str(t/'BlockHelper.cs'),str(t/'ChunkSection.cs')],check=True)
   fixture=t/'fixtures.tsv';fixture.write_bytes(gzip.decompress((ROOT/'Tools/LightingParity/fixtures.tsv.gz').read_bytes()))
-  subprocess.run([a.mono,str(binary),str(fixture)],check=True)
+  maps=t/'colormaps.rgba'
+  maps.write_bytes(b''.join(Image.open(ROOT/('Assets/Textures/Minecraft/'+name+'.png')).convert('RGBA').transpose(Image.Transpose.FLIP_TOP_BOTTOM).tobytes() for name in ['grass','foliage']))
+  subprocess.run([a.mono,str(binary),str(fixture),str(maps)],check=True)
   boot=t/'boot.exe'
   subprocess.run([a.mcs,'-out:'+str(boot),str(ROOT/'Assets/_Scripts/World/LightTexBoot.cs'),str(ROOT/'Tools/LightingParity/BootCheck.cs')],check=True)
   subprocess.run([a.mono,str(boot)],check=True)

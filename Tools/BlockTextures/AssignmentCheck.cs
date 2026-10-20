@@ -119,6 +119,9 @@ public static class AssignmentCheck
   Check(lookup.Find(MinecraftTextureKind.Block,"stone",out ambiguous).Contains("/block/"),"GUI names cannot overwrite block textures");
   Check(lookup.Find(MinecraftTextureKind.Item,"diamond",out ambiguous).Contains("/items/"),"legacy plural item directory works");
   Check(lookup.Find(MinecraftTextureKind.Block,"dirt",out ambiguous)==null,"lookup stays inside selected folder");
+  lookup=new MinecraftTextureLookup("Assets/Textures/Minecraft",new[]{"Assets/Textures/Minecraft/grass.png","Assets/Textures/Minecraft/foliage.png"});
+  Check(lookup.Find(MinecraftTextureKind.Block,"grass",out ambiguous)==null,"root grass colour map cannot become a tall-grass face image");
+  Check(lookup.Find(MinecraftTextureKind.Colormap,"grass",out ambiguous)=="Assets/Textures/Minecraft/grass.png","root climate maps have their own lookup category");
   lookup=new MinecraftTextureLookup("Assets/Textures/Minecraft",new[]{"Assets/Textures/Minecraft/a/blocks/stone.png","Assets/Textures/Minecraft/b/block/stone.png"});
   Check(lookup.Find(MinecraftTextureKind.Block,"stone",out ambiguous)==null&&ambiguous,"duplicate pack names are reported rather than chosen arbitrarily");
   Check(!MinecraftTextureNames.DedicatedItemIcon(ItemType.Dirt)&&!MinecraftTextureNames.FlatBlockIcon(ItemType.Dirt),"ordinary block icons keep their 3D mesh");

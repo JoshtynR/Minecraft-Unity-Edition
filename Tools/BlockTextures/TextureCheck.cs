@@ -84,9 +84,10 @@ public static class TextureCheck
         var uniform=new BlockTypeData{blockType=BlockType.Dirt,textureData=new TextureData{top=side,bottom=side,side=side}};
         var missing=new BlockTypeData{blockType=BlockType.Air};
         var asset=new BlockDataSO{faceTextureResolution=32,textureDataList=new List<BlockTypeData>{data,uniform,missing}};
-        var manager=new BlockDataManager{textureData=asset};
+        var manager=new BlockDataManager{textureData=asset,grassColorMap=Image(256,111),foliageColorMap=Image(256,123)};
         var previous=new RenderTexture();RenderTexture.active=previous;GL.sRGBWrite=false;
         Invoke(manager,"OnEnable");
+        Check(BiomeColorPalette.Current.Grass(1,1)==(111<<16|13<<8|21)&&BiomeColorPalette.Current.Foliage(1,1)==(123<<16|13<<8|21),"manager initializes assigned biome maps before meshing");
         foreach(BlockType type in Enum.GetValues(typeof(BlockType)))
             Check(BlockDataManager.blockTypeDataDictionary[(int)type]!=null&&BlockDataManager.blockTypeDataDictionary[(int)type].textureData!=null,"sparse asset has safe complete runtime lookup");
         foreach(BlockType type in Enum.GetValues(typeof(BlockType)))

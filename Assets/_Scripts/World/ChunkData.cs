@@ -15,6 +15,7 @@ public class ChunkData
     public bool modifiedByPlayer = false;
     public bool isGenerated = false;
     public bool lightingInitialized;
+    internal volatile BiomeBlockColors.ChunkColors biomeColors;
     public bool betaPopulationDone;
     public List<BetaPopulationRecord> betaPopulationRecords = new List<BetaPopulationRecord>();
     public bool modifiedAfterSave = true;

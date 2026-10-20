@@ -91,6 +91,7 @@ public static class BlockHelper
 
     public static MeshData GetFaceDataIn(Direction dir, Vector3Int pos, MeshData meshData, Block block, BlockTypeData blockTypeData, ChunkData chunk)
     {
+        Color tint = BiomeBlockColors.ForFace(block.type, dir, chunk, pos, blockTypeData.albedoTint);
         if (SpecialBlockGeometry.Handles(block.type))
         {
             if (dir != Direction.forwards) return meshData;
@@ -128,7 +129,7 @@ public static class BlockHelper
             if (dir != Direction.forwards) return meshData;
             int first = meshData.vertices.Count;
             PlantMesh.Append(block.type, pos, chunk == null ? pos : chunk.GetGlobalBlockCoords(pos),
-                chunk != null, blockTypeData.textureData.FaceIndex(Direction.backwards), blockTypeData.albedoTint, meshData);
+                chunk != null, blockTypeData.textureData.FaceIndex(Direction.backwards), tint, meshData);
             if (chunk != null)
             {
                 float brightness = SampleBrightness(chunk, pos, chunk.worldRef.betaSkylightSubtracted, block.BlockData.lightEmission);
@@ -177,8 +178,8 @@ public static class BlockHelper
             AddFluidUVs(dir, pos, meshData, chunk, blockTypeData.textureData);
         else meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(block.type, dir), block.type == BlockType.Cactus ? new Vector4(1,1,0,0) : shape.FaceUVTransform(dir));
 
-        // Add tint from block data
-        meshData.AddQuadColor(blockTypeData.albedoTint);
+        // Grass dirt/base sides stay neutral; only the top and overlay use the map.
+        meshData.AddQuadColor(tint);
 
         int overlay=block.type==BlockType.Grass&&dir!=Direction.up&&dir!=Direction.down?
             blockTypeData.textureData.PartIndex(BlockTexturePart.GrassSideOverlay):0;
@@ -193,7 +194,7 @@ public static class BlockHelper
             }
             if(chunk!=null)GetFaceLightingAndAO(dir,pos,meshData,chunk);
             meshData.AddQuadTriangles();meshData.AddFaceUVs(overlay);
-            meshData.AddQuadColor(blockTypeData.albedoTint);
+            meshData.AddQuadColor(BiomeBlockColors.ForFace(block.type, dir, chunk, pos, blockTypeData.albedoTint, true));
         }
 
         return meshData;

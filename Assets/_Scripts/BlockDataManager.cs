@@ -9,6 +9,10 @@ public class BlockDataManager : MonoBehaviour
 {
     public static BlockTypeData[] blockTypeDataDictionary = BlockDataDefaults.CreateLookup();
     public BlockDataSO textureData;
+    [Tooltip("256x256 Minecraft temperature/humidity grass colour map.")]
+    public Texture2D grassColorMap;
+    [Tooltip("256x256 Minecraft temperature/humidity foliage colour map.")]
+    public Texture2D foliageColorMap;
     private Texture2DArray faceTextures;
     private Texture2D faceAnimations;
     private static BlockDataManager activeManager;
@@ -16,6 +20,7 @@ public class BlockDataManager : MonoBehaviour
     private void OnEnable()
     {
         var images = InitializeData();
+        BiomeColorPalette.Initialize(ReadColorMap(grassColorMap), ReadColorMap(foliageColorMap));
         if (!Application.isPlaying) return;
         activeManager = this;
 #if !UNITY_SERVER
@@ -208,6 +213,17 @@ public class BlockDataManager : MonoBehaviour
         Shader.SetGlobalTexture("_BlockFaceTextures", faceTextures);
         Shader.SetGlobalTexture("_BlockFaceAnimations", faceAnimations);
         Shader.SetGlobalFloat("_BlockFaceAnimationWidth",depth);
+    }
+
+    private static Color32[] ReadColorMap(Texture2D image)
+    {
+        if (image == null) return null;
+        if (image.width != 256 || image.height != 256)
+        {
+            Debug.LogWarning("Biome colour map '" + image.name + "' must be 256x256. Using its default colour.", image);
+            return null;
+        }
+        return ReadFacePixels(image, 256, 256);
     }
 
     private static Color32[] ReadFacePixels(Texture2D image, int width, int height)

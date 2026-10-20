@@ -314,7 +314,7 @@ public static class MinecraftTextureAutoAssign
                 var kind=lower.Contains("/block/")||lower.Contains("/blocks/")?MinecraftTextureKind.Block:
                     lower.Contains("/item/")||lower.Contains("/items/")?MinecraftTextureKind.Item:
                     lower.Contains("/gui/")?MinecraftTextureKind.Gui:lower.Contains("/entity/")?MinecraftTextureKind.Entity:
-                    lower.Contains("/colormap/")?MinecraftTextureKind.Colormap:MinecraftTextureKind.Flat;
+                    lower.Contains("/colormap/")||lower=="/grass.png"||lower=="/foliage.png"||lower=="/grasscolor.png"||lower=="/foliagecolor.png"?MinecraftTextureKind.Colormap:MinecraftTextureKind.Flat;
                 string key=Key(kind,Path.GetFileNameWithoutExtension(path));
                 List<string> matches;
                 if(!files.TryGetValue(key,out matches))files.Add(key,matches=new List<string>());

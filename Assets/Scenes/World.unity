@@ -2038,6 +2038,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   textureData: {fileID: 11400000, guid: de8e984242c84024c8f54fc4e925e27d, type: 2}
+  grassColorMap: {fileID: 2800000, guid: e9107554c39e4e26bd504b0f94239a51, type: 3}
+  foliageColorMap: {fileID: 2800000, guid: 2cda2e59522b493da9fd342af77800cc, type: 3}
 --- !u!4 &870774958
 Transform:
   m_ObjectHideFlags: 0
