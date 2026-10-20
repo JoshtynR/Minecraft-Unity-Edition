@@ -39,7 +39,7 @@ namespace UnityEngine
  public class Texture2D:Texture {public static readonly Texture2D whiteTexture=new Texture2D{width=1,height=1};}
  public static class Debug {public static void LogWarning(string value){}}
  public struct UIVertex {public Vector3 position;public Vector2 uv0;public Color color;public static UIVertex simpleVert=>new UIVertex();}
- public class Material:Object {public Texture2D mainTexture=new Texture2D();public Material(){}public Material(Material value){mainTexture=value.mainTexture;}}
+ public class Material:Object {public Texture2D mainTexture=new Texture2D();public Dictionary<string,float> floats=new Dictionary<string,float>();public Dictionary<string,Color> colors=new Dictionary<string,Color>();public HashSet<string> keywords=new HashSet<string>();public Material(){}public Material(Material value){mainTexture=value.mainTexture;floats=new Dictionary<string,float>(value.floats);colors=new Dictionary<string,Color>(value.colors);keywords=new HashSet<string>(value.keywords);}public void SetFloat(string n,float v){floats[n]=v;}public float GetFloat(string n)=>floats.ContainsKey(n)?floats[n]:1;public void SetColor(string n,Color v){colors[n]=v;}public void EnableKeyword(string n){keywords.Add(n);}public void DisableKeyword(string n){keywords.Remove(n);}}
  public class Mesh:Object
  {
   public UnityEngine.Rendering.IndexFormat indexFormat;public int subMeshCount;public void Clear(){vertices=new List<Vector3>();}public void MarkDynamic(){}
@@ -54,7 +54,7 @@ namespace UnityEngine
  public class TooltipAttribute:Attribute {public TooltipAttribute(string s){}}
  public class HideInInspector:Attribute {}
  public class RangeAttribute:Attribute {public RangeAttribute(int a,int b){}}
- public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color white=>new Color(1,1,1,1);public static Color clear=>new Color(0,0,0,0);}
+ public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color black=>new Color(0,0,0,1);public static Color white=>new Color(1,1,1,1);public static Color clear=>new Color(0,0,0,0);}
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  [Serializable] public struct Vector3
  {
@@ -76,7 +76,7 @@ namespace UnityEngine
   public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));
   public static bool operator==(Vector3Int a,Vector3Int b)=>a.x==b.x&&a.y==b.y&&a.z==b.z;public static bool operator!=(Vector3Int a,Vector3Int b)=>!(a==b);public override bool Equals(object value)=>value is Vector3Int&&(Vector3Int)value==this;public override int GetHashCode()=>x*31+y*17+z;
  }
- public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}}
+ public struct Vector4 {public static Vector4 zero=>new Vector4();public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}}
  public struct Quaternion {public static Quaternion Euler(float x,float y,float z)=>new Quaternion();}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float width,float height){this.x=x;this.y=y;this.width=width;this.height=height;}}
  public static class Mathf {public const float PI=(float)Math.PI;public const float Rad2Deg=180f/PI;public static float Atan2(float y,float x)=>(float)Math.Atan2(y,x);public static float Max(float a,float b)=>Math.Max(a,b);public static int CeilToInt(float x)=>(int)Math.Ceiling(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float MoveTowards(float a,float b,float step)=>a<b?Math.Min(b,a+step):Math.Max(b,a-step);public static float Clamp01(float x)=>Clamp(x,0,1);public static float Pow(float x,float y)=>(float)Math.Pow(x,y);public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v));}
@@ -150,9 +150,9 @@ namespace UnityEngine.UI
 }
 namespace TMPro
 {
- public class TMP_FontAsset:UnityEngine.Object {}
+ public class TMP_FontAsset:UnityEngine.Object {public Material material=new Material();public FaceInfo faceInfo=new FaceInfo();public class FaceInfo {public float pointSize=8;}}
  public enum TextAlignmentOptions {Center,BottomRight,Left}
- public class TextMeshProUGUI:Component {public TMP_FontAsset font;public float fontSize;public string text;public Color color;public TextAlignmentOptions alignment;public bool raycastTarget,enableWordWrapping;public RectTransform rectTransform=>(RectTransform)transform;}
+ public class TextMeshProUGUI:Component {public TMP_FontAsset font=new TMP_FontAsset();public Material fontSharedMaterial;public Vector4 margin;public float fontSize;public string text;public Color color;public TextAlignmentOptions alignment;public bool raycastTarget,enableWordWrapping,enableExtraPadding,enableAutoSizing;public RectTransform rectTransform=>(RectTransform)transform;}
 }
 namespace UnityEngine.EventSystems
 {
@@ -292,6 +292,12 @@ public partial class PlayerInventory
    Check(inv.creativeCells[i].GetChild(0).gameObject.layer==5,"catalogue meshes inherit the UI camera layer");
   }
   inv.GiveCatalogItem(0,false);var first=inv.creativeBlocks[0];Check(inv.slots[0].type==first&&inv.slots[0].count==64,"catalogue click grants full stack into inventory");
+  foreach(var count in new[]{inv.slots[0].countText,inv.slots[0].hotbarCountText})
+  {
+   Check(count.transform.parent.GetChild(count.transform.parent.childCount-1)==count.transform,"stack counts draw after replacement item icons");
+   Check(count.fontSize==8&&count.color.r==1&&count.color.g==1&&count.color.b==1&&count.rectTransform.localPosition.y==-5,"inventory and hotbar share white pixel-sized count placement");
+   Check(count.fontSharedMaterial.keywords.Contains("UNDERLAY_ON")&&count.fontSharedMaterial.GetFloat("unity_GUIZTestMode")==8,"count shadows use TMP underlay and cannot fail icon depth tests");
+  }
   inv.GiveCatalogItem(1,true);Check(inv.slots[0].type==first&&inv.slots[1].type==inv.creativeBlocks[1]&&inv.slots[1].count==1,"right-click gives one without replacing selected stack");
   inv.LoadInventory(null);Check(inv.slots.All(s=>s.type==ItemType.Nothing&&s.count==0),"missing save inventory loads empty");
   inv.SetCursor(new InventoryStack(ItemType.Stone,1));inv.ClickInventorySlot(0,true,false);
@@ -330,7 +336,8 @@ public partial class PlayerInventory
   var seen=new HashSet<ItemType>();int pages=(inv.creativeBlocks.Count+inv.creativePageSize-1)/inv.creativePageSize;
   for(int p=0;p<pages;p++){for(int i=0;i<inv.creativePageSize;i++){int n=p*inv.creativePageSize+i;if(n<inv.creativeBlocks.Count)seen.Add(inv.creativeBlocks[n]);}inv.ChangeCreativePage(1);}
   Check(seen.Count==inv.creativeBlocks.Count&&!inv.nextPage.interactable,"all blocks remain reachable on smaller windows");
-  var meshes=inv.iconMeshes.Values.ToArray();var skin=inv.inventoryPreviewSkin;inv.OnDestroy();
+  var meshes=inv.iconMeshes.Values.ToArray();var skin=inv.inventoryPreviewSkin;var textMaterial=inv.inventoryTextMaterial;var labelMaterial=inv.inventoryLabelMaterial;var sharedFont=inv.creativeFont.material;inv.OnDestroy();
+  Check(textMaterial.destroyed&&labelMaterial.destroyed&&!sharedFont.destroyed,"owned text materials are released without changing shared font resources");
   Check(meshes.All(m=>m.destroyed)&&inv.inventoryPreviewData==null&&!skin.destroyed,"owned meshes released and shared preview skin preserved");
   Console.WriteLine(checks+" inventory arithmetic/layout/crafting/migration/lifecycle checks passed (Unity UI/transport mocked).");
  }

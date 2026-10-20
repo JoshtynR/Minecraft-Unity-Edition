@@ -27,6 +27,8 @@ public partial class PlayerInventory : MonoBehaviour
         ReleaseFurnace();
         DisposeInventoryPreview();
         if (creativeRoot != null) Destroy(creativeRoot.gameObject);
+        if(inventoryTextMaterial!=null)Destroy(inventoryTextMaterial);
+        if(inventoryLabelMaterial!=null)Destroy(inventoryLabelMaterial);
         foreach (var mesh in iconMeshes.Values) if (mesh != null) Destroy(mesh);
         iconMeshes.Clear();
     }
@@ -45,7 +47,13 @@ public partial class PlayerInventory : MonoBehaviour
         InitializeSlotData();
         BuildCreativeInventory(gameUI);
         for (int i=0;i<9;i++)
-            slots[i].hotbarCountText = hotbarRect.GetChild(i+1).GetChild(0).GetComponent<TextMeshProUGUI>();
+        {
+            var cell=hotbarRect.GetChild(i+1);
+            var count=cell.Find("Count");if(count==null&&cell.childCount>0)count=cell.GetChild(0);
+            slots[i].hotbarCountText=count!=null?count.GetComponent<TextMeshProUGUI>():null;
+            if(slots[i].hotbarCountText==null)slots[i].hotbarCountText=SlotCount(cell.GetComponent<RectTransform>());
+            ConfigureCountText(slots[i].hotbarCountText);
+        }
         for(int i=0;i<36;i++){SetSlotItemType(i,slots[i].type);slots[i].SetCount(slots[i].count);}
         for(int i=0;i<4;i++){CreateItemIcon(craftingSlots[i].type,craftingRects[i]);craftingSlots[i].SetCount(craftingSlots[i].count);}
         for(int i=0;i<4;i++){CreateItemIcon(equipmentSlots[i].type,equipmentRects[i]);equipmentGhosts[i].gameObject.SetActive(equipmentSlots[i].count<=0);}
@@ -147,7 +155,7 @@ public partial class PlayerInventory : MonoBehaviour
     {
         if(pickedUpItemRect==null)return;
         ClearSlotIcon(pickedUpItemRect);
-        var text=pickedUpItemRect.GetChild(0).GetComponent<TextMeshProUGUI>();
+        var text=pickedUpItemRect.Find("Count").GetComponent<TextMeshProUGUI>();
         text.text="";
         if (pickedUpSlot==null) return;
         pickedUpSlot.countText=text;
@@ -160,7 +168,7 @@ public partial class PlayerInventory : MonoBehaviour
     {
         var item=ItemCatalog.Get(type);if(item==null)return;
         BlockType block;
-        if(item.icon==null&&ItemCatalog.TryPlacedBlock(type,out block)){CreateBlockMesh(block,parent);return;}
+        if(item.icon==null&&ItemCatalog.TryPlacedBlock(type,out block)){CreateBlockMesh(block,parent);RaiseSlotCount(parent);return;}
         var rect=CreativeRect("ItemIcon",parent,0,0,16,16);
         rect.localPosition=new Vector3(0,0,-20);
         if(item.icon!=null)
@@ -173,6 +181,7 @@ public partial class PlayerInventory : MonoBehaviour
             var text=CreativeText("MissingImage",rect,0,0,16,16,type.ToString().Substring(0,Math.Min(2,type.ToString().Length)),7,Color.white);
             text.raycastTarget=false;
         }
+        RaiseSlotCount(parent);
     }
 
     private void CreateBlockMesh(BlockType type, Transform parent)

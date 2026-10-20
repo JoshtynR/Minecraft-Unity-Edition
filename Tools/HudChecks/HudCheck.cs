@@ -11,12 +11,12 @@ namespace UnityEngine
  public class MonoBehaviour:Component {public bool enabled=true;}
  public class SerializeField:Attribute {}
  public class Tooltip:Attribute {public Tooltip(string value){}}
- public class Material:Object {}
+ public class Material:Object {public Material(){}public Material(Material source){}public void DisableKeyword(string n){}public void EnableKeyword(string n){}public void SetColor(string n,Color c){}public void SetFloat(string n,float f){}public float GetFloat(string n)=>1;}
  public class AudioClip:Object {}
  public class Font:Object {}
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}public static Vector2 zero=>new Vector2();}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;this.width=w;this.height=h;} }
- public struct Color {public static Color black=>new Color();public static implicit operator Color(Color32 c)=>new Color();}
+ public struct Color {public static Color white=>new Color();public static Color black=>new Color();public static implicit operator Color(Color32 c)=>new Color();}
  public struct Color32 {public Color32(byte r,byte g,byte b,byte a){} }
  public class Transform:Component
  {
@@ -36,7 +36,7 @@ namespace UnityEngine
  }
  public class Texture2D:Object {public int width=256,height=256;}
  public static class Resources {public static Object asset;public static T Load<T>(string name) where T:Object{return (T)asset;} }
- public static class Mathf {public static int FloorToInt(float n)=>(int)Math.Floor(n);public static int Max(int a,int b)=>Math.Max(a,b);public static int Clamp(int n,int min,int max)=>Math.Max(min,Math.Min(n,max));public static int CeilToInt(float n)=>(int)Math.Ceiling(n);}
+ public static class Mathf {public static float Max(float a,float b)=>Math.Max(a,b);public static int FloorToInt(float n)=>(int)Math.Floor(n);public static int Max(int a,int b)=>Math.Max(a,b);public static int Clamp(int n,int min,int max)=>Math.Max(min,Math.Min(n,max));public static int CeilToInt(float n)=>(int)Math.Ceiling(n);}
  public static class Time {public static float unscaledTime;}
  public static class Debug {public static void LogWarning(string message,Object o){}public static void LogError(string message,Object o){} }
 }
@@ -47,9 +47,9 @@ namespace UnityEngine.UI
 }
 namespace TMPro
 {
- public class TMP_FontAsset:UnityEngine.Object {}
+ public class TMP_FontAsset:UnityEngine.Object {public Material material=new Material();public FaceInfo faceInfo=new FaceInfo();public class FaceInfo {public float pointSize=8;}}
  public enum TextAlignmentOptions {Center}
- public class TextMeshProUGUI:Component {public TMP_FontAsset font;public float fontSize;public TextAlignmentOptions alignment;public Color color;public bool raycastTarget;public string text;}
+ public class TextMeshProUGUI:Component {public TMP_FontAsset font;public Material fontSharedMaterial;public float fontSize;public TextAlignmentOptions alignment;public Color color;public bool raycastTarget,enableExtraPadding;public string text;}
 }
 public class Player {public int health=20,hunger=20,experienceLevel,airSupply=300;public float experienceProgress,saturation=5;}
 public class GameManager {public static GameManager Instance;public Player localPlayer;}
@@ -81,6 +81,8 @@ public static class HudCheck
   Check(Get<RawImage>(Child(root,"Food2")).uvRect.x==61/256f&&!Get<RawImage>(Child(root,"Food3")).enabled,"five hunger shows half third food icon");
   var fill=Get<RawImage>(Child(root,"XPFill"));Check(fill.rectTransform.sizeDelta.x==91&&fill.uvRect.width==91/256f,"half XP crops fill and UV equally");
   Check(Get<TMPro.TextMeshProUGUI>(Child(root,"XPLevel")).text=="7","level displayed");
+  var textMaterial=Get<TMPro.TextMeshProUGUI>(Child(root,"XPLevel")).fontSharedMaterial;
+  Check(textMaterial!=null&&!ReferenceEquals(textMaterial,((PlayerHudAssets)Resources.asset).levelFont.material),"XP owns its TMP shadow material without modifying the shared font");
   foreach(var child in root.transform.children) foreach(var c in child.gameObject.components) if(c is RawImage)Check(!((RawImage)c).raycastTarget,"HUD images do not block input");
   var oldCount=root.transform.children.Count;Call(hud,"LateUpdate");Check(root.transform.children.Count==oldCount,"unchanged refresh does not create UI objects");
   Time.unscaledTime=.05f;GameManager.Instance.localPlayer.health=17;Call(hud,"LateUpdate");
@@ -107,7 +109,7 @@ public static class HudCheck
   Check(ui.transform.children.FindAll(t=>t.gameObject.name=="SurvivalHUD").Count==1,"repair does not leave duplicate visible HUD roots");
   root=repaired;
   hotbar.SetActive(false);Call(hud,"LateUpdate");Check(!root.activeSelf,"hidden hotbar hides HUD");
-  Call(hud,"OnDestroy");Check(root.destroyed,"runtime UI owner destroys root");
+  Call(hud,"OnDestroy");Check(root.destroyed&&textMaterial.destroyed&&!((PlayerHudAssets)Resources.asset).levelFont.material.destroyed,"runtime UI owner releases its text material and preserves the source font");
   var lateUI=new GameObject("GameUI");var lateBar=new GameObject("Hotbar");lateBar.transform.SetParent(lateUI.transform,false);
   var loadedAssets=Resources.asset;Resources.asset=null;PlayerSurvivalHUD.EnsureOn(lateUI.transform);
   var lateHud=lateUI.GetComponent<PlayerSurvivalHUD>();Call(lateHud,"Start");

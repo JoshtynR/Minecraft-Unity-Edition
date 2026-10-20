@@ -14,6 +14,7 @@ public partial class PlayerInventory
     private RectTransform creativeRoot, creativePanel, craftResultRect, tooltipRect;
     private TextMeshProUGUI creativePageText, creativeNameText;
     private TMP_FontAsset creativeFont;
+    private Material inventoryTextMaterial,inventoryLabelMaterial;
     private Button previousPage, nextPage, recoveryButton;
     private TextMeshProUGUI recoveryText;
     private int creativePage, creativePageSize;
@@ -31,6 +32,7 @@ public partial class PlayerInventory
         creativeBlocks.Sort((a,b)=>((int)a).CompareTo((int)b));
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         creativeFont=assets!=null&&assets.levelFont!=null?assets.levelFont:SlotTextPrefab.GetComponent<TextMeshProUGUI>().font;
+        BuildInventoryTextMaterials();
         creativeRoot=CreativeRect("InventoryMenu",parent,0,0,640,360);
         creativeRoot.localPosition=new Vector3(0,0,-35);
         var backdrop=CreativeRect("DimBackground",creativeRoot,0,0,640,360);
@@ -217,10 +219,30 @@ public partial class PlayerInventory
     }
     private TextMeshProUGUI SlotCount(RectTransform parent)
     {
-        var text=CreativeText("Count",parent,0,-1,16,16,"",10,Color.white);
-        text.alignment=TextAlignmentOptions.BottomRight;
-        text.rectTransform.localPosition=new Vector3(0,-1,-30);
+        var text=CreativeText("Count",parent,0,-5,18,8,"",8,Color.white);
+        ConfigureCountText(text);
         return text;
+    }
+    private void ConfigureCountText(TextMeshProUGUI text)
+    {
+        text.gameObject.name="Count";
+        text.font=creativeFont;text.fontSize=8;text.color=Color.white;
+        if(inventoryTextMaterial!=null)text.fontSharedMaterial=inventoryTextMaterial;
+        text.enableWordWrapping=false;text.enableAutoSizing=false;text.enableExtraPadding=true;
+        text.margin=Vector4.zero;text.raycastTarget=false;
+        text.alignment=TextAlignmentOptions.BottomRight;
+        text.rectTransform.sizeDelta=new Vector2(18,8);
+        text.rectTransform.localPosition=new Vector3(0,-5,-30);
+        text.transform.SetAsLastSibling();
+    }
+    private static void RaiseSlotCount(Transform parent)
+    {
+        var count=parent.Find("Count");if(count!=null)count.SetAsLastSibling();
+    }
+    private void BuildInventoryTextMaterials()
+    {
+        inventoryLabelMaterial=MinecraftUIText.CreateMaterial(creativeFont,8,false);
+        inventoryTextMaterial=MinecraftUIText.CreateMaterial(creativeFont,8,true);
     }
     private void SlotBackground(RectTransform rect)
     {
@@ -265,6 +287,9 @@ public partial class PlayerInventory
     {
         var rect=CreativeRect(name,parent,x,y,width,height);
         var text=rect.gameObject.AddComponent<TextMeshProUGUI>();text.font=creativeFont;text.fontSize=size;text.text=value;
+        var material=color.r+color.g+color.b>1?inventoryTextMaterial:inventoryLabelMaterial;
+        if(material!=null)text.fontSharedMaterial=material;
+        text.enableExtraPadding=true;
         text.color=color;text.alignment=TextAlignmentOptions.Center;text.raycastTarget=false;text.enableWordWrapping=false;return text;
     }
     private Button CreativeButton(string label,Transform parent,float x,float y,float width,float height,UnityEngine.Events.UnityAction action)

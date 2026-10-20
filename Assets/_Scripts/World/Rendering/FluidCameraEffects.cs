@@ -78,9 +78,10 @@ public sealed class FluidCameraEffects : MonoBehaviour
             deathGradient=new Texture2D(1,2,TextureFormat.RGBA32,false);
             deathGradient.SetPixels(new[]{new Color(128/255f,48/255f,48/255f,160/255f),new Color(80/255f,0,0,96/255f)});
             deathGradient.filterMode=FilterMode.Bilinear;deathGradient.wrapMode=TextureWrapMode.Clamp;deathGradient.Apply();
-            deathTextStyle=new GUIStyle(GUI.skin.label){fontSize=9,alignment=TextAnchor.MiddleCenter,richText=true};
+            deathTextStyle=new GUIStyle(GUI.skin.label){fontSize=8,alignment=TextAnchor.UpperCenter,richText=true,
+                padding=new RectOffset(),margin=new RectOffset(),contentOffset=Vector2.zero};
             if(assets!=null&&assets.guiFont!=null)deathTextStyle.font=assets.guiFont;
-            deathTitleStyle=new GUIStyle(deathTextStyle){fontSize=18};
+            deathTitleStyle=new GUIStyle(deathTextStyle){fontSize=16};
         }
         int oldDepth=GUI.depth;var oldMatrix=GUI.matrix;var oldColor=GUI.color;
         try
@@ -129,14 +130,24 @@ public sealed class FluidCameraEffects : MonoBehaviour
             var old=GUI.color;GUI.color=!enabled?new Color(.25f,.25f,.25f,1):hover?new Color(.45f,.45f,.6f,1):new Color(.4f,.4f,.4f,1);
             GUI.DrawTexture(rect,Texture2D.whiteTexture);GUI.color=old;
         }
-        DrawDeathText(rect,text,deathTextStyle,!enabled?new Color(.63f,.63f,.63f,1):hover?new Color(1,1,.63f,1):Color.white);
+        var label=new Rect(rect.x,rect.y+6,rect.width,8);
+        DrawDeathText(label,text,deathTextStyle,!enabled?new Color(160/255f,160/255f,160/255f,1):hover?new Color(1,1,160/255f,1):new Color(224/255f,224/255f,224/255f,1));
         return GUI.Button(rect,"",GUIStyle.none)&&enabled;
     }
     private static void DrawDeathText(Rect rect,string text,GUIStyle style,Color color)
     {
-        // One text pass: rich-text colors override a shadow style's textColor,
-        // making the score appear as two offset yellow glyphs at GUI scale.
-        style.normal.textColor=color;GUI.Label(rect,text,style);
+        // Strip inline colors only for the shadow, otherwise the score draws
+        // a second yellow number instead of a black lower-right pixel edge.
+        bool rich=style.richText;var previous=style.normal.textColor;
+        try
+        {
+            string plain=text.IndexOf('<')<0?text:System.Text.RegularExpressions.Regex.Replace(text,"<[^>]*>","");
+            float offset=style.fontSize>=16?2:1;
+            style.richText=false;style.normal.textColor=new Color(0,0,0,color.a);
+            GUI.Label(new Rect(rect.x+offset,rect.y+offset,rect.width,rect.height),plain,style);
+            style.richText=rich;style.normal.textColor=color;GUI.Label(rect,text,style);
+        }
+        finally{style.richText=rich;style.normal.textColor=previous;}
     }
     private void OnDestroy(){Restore();if(deathGradient!=null)Destroy(deathGradient);}
 }

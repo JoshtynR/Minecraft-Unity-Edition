@@ -55,6 +55,7 @@ with tempfile.TemporaryDirectory() as tmp:
         str(root / 'Assets/_Scripts/ChestTransactions.cs'),
         str(root / 'Assets/_Scripts/BetaSmelting.cs'),
         str(root / 'Assets/_Scripts/WheatCropRules.cs'),
+        str(root / 'Assets/_Scripts/MinecraftUIText.cs'),
         str(root / 'Assets/_Scripts/World/CowState.cs'),
         str(root / 'Assets/_Scripts/World/Rendering/CowModelGeometry.cs'),
         str(root / 'Tools/CreativeChecks/CowCheck.cs'),

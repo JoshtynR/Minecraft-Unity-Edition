@@ -24,6 +24,7 @@ public class PlayerSurvivalHUD : MonoBehaviour
     private int lastAnimationTick=-1;
     private RawImage xpFill;
     private TextMeshProUGUI levelText;
+    private Material levelTextMaterial;
     private Player lastPlayer;
     private int lastHealth = -1, lastHunger = -1, lastLevel = -1, lastXpPixels = -1;
     private bool warned;
@@ -40,6 +41,7 @@ public class PlayerSurvivalHUD : MonoBehaviour
         // Unity's script reload can retain the RectTransform while readonly
         // runtime arrays are recreated. Never reuse a partially initialized HUD.
         if(root!=null){root.gameObject.SetActive(false);Destroy(root.gameObject);root=null;}
+        if(levelTextMaterial!=null){Destroy(levelTextMaterial);levelTextMaterial=null;}
         if(assets==null)assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         if (assets == null || assets.icons == null)
         {
@@ -79,10 +81,11 @@ public class PlayerSurvivalHUD : MonoBehaviour
         levelText.alignment = TextAlignmentOptions.Center;
         levelText.color = new Color32(128, 255, 32, 255);
         levelText.raycastTarget = false;
-        // One shared font/material; shadow adds no per-refresh allocations.
-        var shadow = textRect.gameObject.AddComponent<Shadow>();
-        shadow.effectColor = Color.black;
-        shadow.effectDistance = new Vector2(1, -1);
+        // TMP draws its own mesh, so use its shader underlay rather than a UI
+        // Shadow modifier. Keep the font's white face for the green vertex tint.
+        levelTextMaterial=MinecraftUIText.CreateMaterial(levelText.font,8,true);
+        if(levelTextMaterial!=null)levelText.fontSharedMaterial=levelTextMaterial;
+        levelText.enableExtraPadding=true;
         root.gameObject.SetActive(false);
         lastPlayer=null;lastHealth=lastHunger=lastLevel=lastXpPixels=-1;
     }
@@ -203,5 +206,6 @@ public class PlayerSurvivalHUD : MonoBehaviour
     private void OnDestroy()
     {
         if (root != null) Destroy(root.gameObject);
+        if(levelTextMaterial!=null)Destroy(levelTextMaterial);
     }
 }

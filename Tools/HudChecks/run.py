@@ -5,5 +5,5 @@ ap=argparse.ArgumentParser();ap.add_argument('--mcs',default='mcs');ap.add_argum
 with tempfile.TemporaryDirectory() as tmp:
  binary=Path(tmp)/'hud.exe'
  base=ROOT/"Assets/_Scripts/Entity's/Player"
- subprocess.run([args.mcs,'-out:'+str(binary),str(base/'SurvivalHudValues.cs'),str(base/'PlayerHudAssets.cs'),str(base/'PlayerSurvivalHUD.cs'),str(ROOT/'Tools/HudChecks/HudCheck.cs')],check=True)
+ subprocess.run([args.mcs,'-out:'+str(binary),str(base/'SurvivalHudValues.cs'),str(base/'PlayerHudAssets.cs'),str(base/'PlayerSurvivalHUD.cs'),str(ROOT/'Assets/_Scripts/MinecraftUIText.cs'),str(ROOT/'Tools/HudChecks/HudCheck.cs')],check=True)
  subprocess.run([args.mono,str(binary)],check=True)
