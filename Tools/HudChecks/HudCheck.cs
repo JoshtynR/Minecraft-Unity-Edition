@@ -49,7 +49,7 @@ namespace TMPro
 {
  public class TMP_FontAsset:UnityEngine.Object {public Material material=new Material();public FaceInfo faceInfo=new FaceInfo();public class FaceInfo {public float pointSize=8;}}
  public enum TextAlignmentOptions {Center}
- public class TextMeshProUGUI:Component {public TMP_FontAsset font;public Material fontSharedMaterial;public float fontSize;public TextAlignmentOptions alignment;public Color color;public bool raycastTarget,enableExtraPadding;public string text;}
+ public class TextMeshProUGUI:Component {public TMP_FontAsset font;public Material fontSharedMaterial;public float fontSize;public TextAlignmentOptions alignment;public Color color;public bool raycastTarget,extraPadding;public string text;}
 }
 public class Player {public int health=20,hunger=20,experienceLevel,airSupply=300;public float experienceProgress,saturation=5;}
 public class GameManager {public static GameManager Instance;public Player localPlayer;}

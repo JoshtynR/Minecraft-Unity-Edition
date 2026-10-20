@@ -85,7 +85,7 @@ public class PlayerSurvivalHUD : MonoBehaviour
         // Shadow modifier. Keep the font's white face for the green vertex tint.
         levelTextMaterial=MinecraftUIText.CreateMaterial(levelText.font,8,true);
         if(levelTextMaterial!=null)levelText.fontSharedMaterial=levelTextMaterial;
-        levelText.enableExtraPadding=true;
+        levelText.extraPadding=true;
         root.gameObject.SetActive(false);
         lastPlayer=null;lastHealth=lastHunger=lastLevel=lastXpPixels=-1;
     }
