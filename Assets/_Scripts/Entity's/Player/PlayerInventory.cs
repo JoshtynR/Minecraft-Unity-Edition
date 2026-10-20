@@ -29,6 +29,7 @@ public partial class PlayerInventory : MonoBehaviour
         if (creativeRoot != null) Destroy(creativeRoot.gameObject);
         if(inventoryTextMaterial!=null)Destroy(inventoryTextMaterial);
         if(inventoryLabelMaterial!=null)Destroy(inventoryLabelMaterial);
+        if(containerLabelMaterial!=null)Destroy(containerLabelMaterial);
         foreach (var mesh in iconMeshes.Values) if (mesh != null) Destroy(mesh);
         iconMeshes.Clear();
     }
@@ -74,6 +75,7 @@ public partial class PlayerInventory : MonoBehaviour
             if (isOpen) CloseInventory();
             else if (player == null || !player.escapeMenuOpen) OpenInventory();
         }
+        if (isOpen && Input.GetKeyDown(KeyCode.F1)) ToggleTooManyItems();
         if (isOpen) UpdateInventoryLayout();
         bool carried = isOpen && pickedUpSlot != null;
         pickedUpItemRect.gameObject.SetActive(carried);

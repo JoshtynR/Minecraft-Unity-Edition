@@ -81,8 +81,8 @@ public partial class PlayerInventory
             var input=rect.gameObject.AddComponent<InventorySlot>();input.playerInventory=this;input.slotIndex=100+i;
             chestRects[i]=rect;chestSlots[i]=new Slot(100+i){countText=SlotCount(rect)};
         }
-        CreativeText("ChestTitle",chestPanel,-48,73,64,12,"Chest",8,new Color(.25f,.25f,.25f,1));
-        CreativeText("PlayerTitle",chestPanel,-48,10,64,12,"Inventory",8,new Color(.25f,.25f,.25f,1));
+        ContainerLabel("ChestTitle",chestPanel,8,6,"Chest");
+        ContainerLabel("PlayerTitle",chestPanel,8,74,"Inventory");
         inventorySlotsRect.SetParent(chestPanel,false);
         inventoryRect.gameObject.SetActive(false);creativePanel.gameObject.SetActive(false);
         inventoryHighlightRect.SetAsLastSibling();pickedUpItemRect.SetAsLastSibling();tooltipRect.SetAsLastSibling();
@@ -104,7 +104,7 @@ public partial class PlayerInventory
     {
         chestOpen=false;HideSlotHover();
         inventorySlotsRect.SetParent(inventoryRect,false);
-        inventoryRect.gameObject.SetActive(true);creativePanel.gameObject.SetActive(true);
+        inventoryRect.gameObject.SetActive(true);
         if(chestPanel!=null){chestPanel.gameObject.SetActive(false);Destroy(chestPanel.gameObject);chestPanel=null;}
     }
     private void UpdateChestPanel()

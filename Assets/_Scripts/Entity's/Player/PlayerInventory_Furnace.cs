@@ -71,9 +71,8 @@ public partial class PlayerInventory
             var input = rect.gameObject.AddComponent<InventorySlot>(); input.playerInventory = this; input.slotIndex = 300 + i;
             furnaceRects[i] = rect; furnaceSlots[i] = new Slot(300 + i) { countText = SlotCount(rect) };
         }
-        var label = CreativeText("FurnaceTitle", furnacePanel, 0, 73, 90, 12, "Furnace", 8, new Color(.25f, .25f, .25f, 1));
-        label.alignment = TMPro.TextAlignmentOptions.Center;
-        label = CreativeText("InventoryTitle", furnacePanel, -47, 9, 66, 12, "Inventory", 8, new Color(.25f, .25f, .25f, 1)); label.alignment = TMPro.TextAlignmentOptions.Left;
+        ContainerLabel("FurnaceTitle", furnacePanel, 60, 6, "Furnace");
+        ContainerLabel("InventoryTitle", furnacePanel, 8, 72, "Inventory");
         furnaceFlame = ProgressImage("FuelFlame", 56, 36, 14, 14, sheet, true);
         furnaceArrow = ProgressImage("CookArrow", 79, 34, 24, 17, sheet, false);
         inventorySlotsRect.SetParent(furnacePanel, false);
@@ -111,7 +110,7 @@ public partial class PlayerInventory
     private void EndFurnacePanel()
     {
         furnaceOpen = false; HideSlotHover(); inventorySlotsRect.SetParent(inventoryRect, false);
-        inventoryRect.gameObject.SetActive(true); creativePanel.gameObject.SetActive(true);
+        inventoryRect.gameObject.SetActive(true);
         if (furnacePanel != null) { furnacePanel.gameObject.SetActive(false); Destroy(furnacePanel.gameObject); furnacePanel = null; }
     }
     private void UpdateFurnacePanel()
