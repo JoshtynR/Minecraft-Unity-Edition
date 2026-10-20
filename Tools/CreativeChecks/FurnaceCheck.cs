@@ -92,6 +92,9 @@ public partial class PlayerInventory
   Check(menu.furnaceOpen&&menu.isOpen&&menu.furnacePanel.GetComponent<UnityEngine.UI.RawImage>().texture==assets.furnace,"right click opens texture-backed furnace UI");
   Check(menu.inventorySlotsRect.parent==menu.furnacePanel&&menu.furnaceRects[2].GetComponent<InventorySlot>().slotIndex==302,"player inventory and three furnace slots are clickable");
   Check(menu.furnaceRects[0].anchoredPosition.x==-24&&menu.furnaceRects[0].anchoredPosition.y==58&&menu.furnaceRects[2].anchoredPosition.x==36,"slots use native sheet coordinates");
+  Check(menu.furnacePanel.anchoredPosition.x==0&&!menu.creativePanel.gameObject.activeSelf,"furnace opens centered without catalogue");
+  CheckContainerLabel(menu,menu.furnacePanel,"FurnaceTitle",60,6);
+  CheckContainerLabel(menu,menu.furnacePanel,"InventoryTitle",8,72);
   menu.ClickInventorySlot(0,false,true);menu.ClickInventorySlot(1,false,true);
   Check(menu.furnaceSlots[0].count==2&&menu.furnaceSlots[1].count==1&&menu.slots[0].count==0,"UI shift transfers pass through furnace authority");
   World.Instance.StepFurnaces(.05f);menu.UpdateFurnacePanel();

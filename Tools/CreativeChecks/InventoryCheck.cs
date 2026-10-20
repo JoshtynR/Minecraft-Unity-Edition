@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -54,7 +55,9 @@ namespace UnityEngine
  public class TooltipAttribute:Attribute {public TooltipAttribute(string s){}}
  public class HideInInspector:Attribute {}
  public class RangeAttribute:Attribute {public RangeAttribute(int a,int b){}}
- public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color black=>new Color(0,0,0,1);public static Color white=>new Color(1,1,1,1);public static Color clear=>new Color(0,0,0,0);}
+ public enum ColorSpace {Gamma,Linear}
+ public static class QualitySettings {public static ColorSpace activeColorSpace=ColorSpace.Linear;}
+ public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}public Color linear=>new Color(Decode(r),Decode(g),Decode(b),a);static float Decode(float v)=>(float)(v<=.04045?v/12.92:Math.Pow((v+.055)/1.055,2.4));public static Color black=>new Color(0,0,0,1);public static Color white=>new Color(1,1,1,1);public static Color clear=>new Color(0,0,0,0);}
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  [Serializable] public struct Vector3
  {
@@ -120,8 +123,8 @@ namespace UnityEngine
    return name=="InventoryPlayerMaterial"||name=="ModernChestMaterial"?(T)(Object)new Material():name=="PlayerHudAssets"?(T)(Object)hud:null;
   }
  }
- public enum KeyCode {Alpha1=49,E=69,Q=81,LeftShift=304,RightShift=303}
- public static class Input {public static Vector3 mousePosition;public static bool GetKeyDown(KeyCode k)=>false;public static bool GetKey(KeyCode k)=>false;public static float GetAxis(string n)=>0;}
+ public enum KeyCode {Alpha1=49,E=69,Q=81,F1=282,LeftShift=304,RightShift=303}
+ public static class Input {public static KeyCode? down;public static Vector3 mousePosition;public static bool GetKeyDown(KeyCode k)=>down==k;public static bool GetKey(KeyCode k)=>false;public static float GetAxis(string n)=>0;}
  public enum RenderMode {ScreenSpaceOverlay,ScreenSpaceCamera}
  public class Camera:Component {public static Camera main;}
  public class Canvas:Component {public RenderMode renderMode;public Camera worldCamera;}
@@ -151,7 +154,7 @@ namespace UnityEngine.UI
 namespace TMPro
 {
  public class TMP_FontAsset:UnityEngine.Object {public Material material=new Material();public FaceInfo faceInfo=new FaceInfo();public class FaceInfo {public float pointSize=8;}}
- public enum TextAlignmentOptions {Center,BottomRight,Left}
+ public enum TextAlignmentOptions {Center,BottomRight,Left,TopLeft}
  public class TextMeshProUGUI:Component {public TMP_FontAsset font=new TMP_FontAsset();public Material fontSharedMaterial;public Vector4 margin;public float fontSize;public string text;public Color color;public TextAlignmentOptions alignment;public bool raycastTarget,enableWordWrapping,enableExtraPadding,enableAutoSizing;public RectTransform rectTransform=>(RectTransform)transform;}
 }
 namespace UnityEngine.EventSystems
@@ -254,12 +257,16 @@ public partial class PlayerInventory
    }
    for(int i=0;i<4;i++)Check(menu.craftingRects[i].anchoredPosition.x==18+i%2*18&&menu.craftingRects[i].anchoredPosition.y==57-i/2*18,"craft controls align with atlas pixel centers");
    Check(menu.craftResultRect.anchoredPosition.x==74&&menu.craftResultRect.anchoredPosition.y==47,"result control aligns with atlas output slot");
+   CheckContainerLabel(menu,menu.inventoryRect,"CraftingLabel",86,16);
    var window=menu.inventoryRect.Find("PlayerPreview");
    Check(window.localPosition.x==-37&&window.localPosition.y==40&&window.GetComponent<UnityEngine.UI.Image>()==null,"preview sits in existing black sheet window");
    CheckCanvasPreview(menu);
    menu.OnDestroy();Check(!sheet.destroyed,"inventory cleanup preserves source sheet");
   }
   Resources.hud=null;
+  QualitySettings.activeColorSpace=ColorSpace.Gamma;
+  var gammaMenu=BuildMenu();CheckContainerLabel(gammaMenu,gammaMenu.inventoryRect,"CraftingLabel",86,16);gammaMenu.OnDestroy();
+  QualitySettings.activeColorSpace=ColorSpace.Linear;
   Resources.omitPreviewMaterial=true;
   var directSkin=new Texture2D{width=128,height=128};Resources.hud=new PlayerHudAssets{inventoryPlayerSkin=directSkin};
   var directMenu=BuildMenu();
@@ -270,6 +277,14 @@ public partial class PlayerInventory
   var missingSkinMenu=BuildMenu();
   Check(missingSkinMenu.inventoryPreview!=null&&ReferenceEquals(missingSkinMenu.inventoryPreviewGraphic.mainTexture,Texture2D.whiteTexture),"missing skin and missing material still construct a visible fallback model");
   CheckCanvasPreview(missingSkinMenu);missingSkinMenu.OnDestroy();Resources.omitPreviewMaterial=false;
+ }
+ static void CheckContainerLabel(PlayerInventory menu,RectTransform panel,string name,float x,float y)
+ {
+  var label=panel.Find(name).GetComponent<TextMeshProUGUI>();var rect=label.rectTransform;
+  Check(rect.anchoredPosition.x-rect.sizeDelta.x/2+panel.sizeDelta.x/2==x&&panel.sizeDelta.y/2-rect.anchoredPosition.y-rect.sizeDelta.y/2==y,"container label uses native sheet origin: "+name);
+  Check(label.alignment==TextAlignmentOptions.TopLeft&&label.fontSize==8&&label.color.r==1&&label.fontSharedMaterial==menu.containerLabelMaterial,"container label has consistent alignment and untinted vertices: "+name);
+  float gray=label.fontSharedMaterial.colors["_FaceColor"].r;
+  Check(Math.Abs(gray-(QualitySettings.activeColorSpace==ColorSpace.Linear?.05126946f:64/255f))<.00001f&&!label.fontSharedMaterial.keywords.Contains("UNDERLAY_ON"),"container title renders #404040 without a shadow: "+name);
  }
  public static void Main(string[] args)
  {
@@ -282,7 +297,15 @@ public partial class PlayerInventory
   Check(inv.slots.Length==36&&inv.inventorySlotsRect.childCount==36,"survival capacity is 27 backpack plus nine hotbar");
   Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewData.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
   CheckInventoryArtwork();
-  inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival panel and catalogue open together");
+  inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&!inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival inventory opens with TooManyItems disabled");
+  Check(inv.inventoryRect.anchoredPosition.x==0,"normal survival inventory is centered without sidebar space");
+  inv.GiveCatalogItem(0,false);Check(inv.slots.All(s=>s.count==0),"hidden catalogue cannot grant items");
+  Input.down=KeyCode.F1;inv.Update();Input.down=null;
+  Check(inv.tooManyItemsEnabled&&inv.creativePanel.gameObject.activeSelf&&inv.isOpen,"F1 reveals catalogue without closing survival inventory");
+  Input.down=KeyCode.F1;inv.Update();Input.down=null;
+  Check(!inv.creativePanel.gameObject.activeSelf&&inv.inventoryRect.anchoredPosition.x==0,"second F1 hides catalogue and recenters without resize");
+  inv.CloseInventory();inv.OpenInventory();Check(!inv.creativePanel.gameObject.activeSelf,"reopening inventory preserves disabled catalogue");
+  Input.down=KeyCode.F1;inv.Update();Input.down=null;
   Check(inv.creativeBlocks.Count==239&&inv.creativePageSize<inv.creativeBlocks.Count&&inv.nextPage.interactable,"complete item catalogue pages on a normal 1080p GUI screen");
   Check(inv.inventoryRect.anchoredPosition.x+88<=inv.creativePanel.anchoredPosition.x-inv.creativePanel.sizeDelta.x/2-8,"sidebar does not overlap survival panel");
   for(int i=0;i<131;i++)
@@ -336,8 +359,8 @@ public partial class PlayerInventory
   var seen=new HashSet<ItemType>();int pages=(inv.creativeBlocks.Count+inv.creativePageSize-1)/inv.creativePageSize;
   for(int p=0;p<pages;p++){for(int i=0;i<inv.creativePageSize;i++){int n=p*inv.creativePageSize+i;if(n<inv.creativeBlocks.Count)seen.Add(inv.creativeBlocks[n]);}inv.ChangeCreativePage(1);}
   Check(seen.Count==inv.creativeBlocks.Count&&!inv.nextPage.interactable,"all blocks remain reachable on smaller windows");
-  var meshes=inv.iconMeshes.Values.ToArray();var skin=inv.inventoryPreviewSkin;var textMaterial=inv.inventoryTextMaterial;var labelMaterial=inv.inventoryLabelMaterial;var sharedFont=inv.creativeFont.material;inv.OnDestroy();
-  Check(textMaterial.destroyed&&labelMaterial.destroyed&&!sharedFont.destroyed,"owned text materials are released without changing shared font resources");
+  var meshes=inv.iconMeshes.Values.ToArray();var skin=inv.inventoryPreviewSkin;var textMaterial=inv.inventoryTextMaterial;var labelMaterial=inv.inventoryLabelMaterial;var containerMaterial=inv.containerLabelMaterial;var sharedFont=inv.creativeFont.material;inv.OnDestroy();
+  Check(textMaterial.destroyed&&labelMaterial.destroyed&&containerMaterial.destroyed&&!sharedFont.destroyed,"owned text materials are released without changing shared font resources");
   Check(meshes.All(m=>m.destroyed)&&inv.inventoryPreviewData==null&&!skin.destroyed,"owned meshes released and shared preview skin preserved");
   Console.WriteLine(checks+" inventory arithmetic/layout/crafting/migration/lifecycle checks passed (Unity UI/transport mocked).");
  }

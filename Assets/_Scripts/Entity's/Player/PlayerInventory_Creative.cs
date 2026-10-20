@@ -14,7 +14,7 @@ public partial class PlayerInventory
     private RectTransform creativeRoot, creativePanel, craftResultRect, tooltipRect;
     private TextMeshProUGUI creativePageText, creativeNameText;
     private TMP_FontAsset creativeFont;
-    private Material inventoryTextMaterial,inventoryLabelMaterial;
+    private Material inventoryTextMaterial,inventoryLabelMaterial,containerLabelMaterial;
     private Button previousPage, nextPage, recoveryButton;
     private TextMeshProUGUI recoveryText;
     private int creativePage, creativePageSize;
@@ -24,6 +24,8 @@ public partial class PlayerInventory
     private RectTransform hoveredRect;
     private ItemType tooltipType=ItemType.Nothing;
     private bool texturedInventory;
+    private bool tooManyItemsEnabled; // Opt in with F1; never change the survival inventory itself.
+    private bool lastSidebarVisible;
 
     private void BuildCreativeInventory(Transform parent)
     {
@@ -59,8 +61,7 @@ public partial class PlayerInventory
         }
         craftedOutput.countText=InventoryCell("CraftResult",inventoryRect,74,47,40);
         craftResultRect=craftedOutput.countText.transform.parent.GetComponent<RectTransform>();
-        var craftingLabel=CreativeText("CraftingLabel",inventoryRect,42,73,66,12,"Crafting",8,new Color(.25f,.25f,.25f,1));
-        craftingLabel.alignment=TextAlignmentOptions.Left;
+        ContainerLabel("CraftingLabel",inventoryRect,86,16,"Crafting");
         if(!texturedInventory)CreativeText("CraftArrow",inventoryRect,55,47,18,16,">",13,new Color(.45f,.45f,.45f,1));
         var preview=CreativeRect("PlayerPreview",inventoryRect,-37,40,50,70);
         if(!texturedInventory)preview.gameObject.AddComponent<Image>().color=new Color(.05f,.05f,.05f,1);
@@ -76,6 +77,7 @@ public partial class PlayerInventory
         recoveryText=recoveryButton.transform.Find("Label").GetComponent<TextMeshProUGUI>();
         recoveryButton.gameObject.SetActive(false);
         creativePanel=CreativeRect("TooManyItemsSidebar",creativeRoot,225,0,162,360);
+        creativePanel.gameObject.SetActive(false);
         previousPage=CreativeButton("<",creativePanel,-65,170,16,16,()=>ChangeCreativePage(-1));
         nextPage=CreativeButton(">",creativePanel,65,170,16,16,()=>ChangeCreativePage(1));
         creativePageText=CreativeText("Page",creativePanel,0,170,100,16,"",8,Color.white);
@@ -97,14 +99,16 @@ public partial class PlayerInventory
     private void UpdateInventoryLayout()
     {
         float width=canvasRect.rect.width,height=canvasRect.rect.height;
-        if(width!=lastMenuWidth||height!=lastMenuHeight)
+        bool sidebarVisible=tooManyItemsEnabled&&!chestOpen&&!furnaceOpen;
+        creativePanel.gameObject.SetActive(sidebarVisible);
+        if(width!=lastMenuWidth||height!=lastMenuHeight||sidebarVisible!=lastSidebarVisible)
         {
-            lastMenuWidth=width;lastMenuHeight=height;
+            lastMenuWidth=width;lastMenuHeight=height;lastSidebarVisible=sidebarVisible;
             var layout=TmiLayout.Calculate(width,height);
             creativeRoot.sizeDelta=new Vector2(layout.width,layout.height);
             creativeRoot.localScale=Vector3.one*layout.scale;
             creativeRoot.GetChild(0).GetComponent<RectTransform>().sizeDelta=creativeRoot.sizeDelta;
-            inventoryRect.anchoredPosition=new Vector2(layout.inventoryX,0);
+            inventoryRect.anchoredPosition=new Vector2(sidebarVisible?layout.inventoryX:0,0);
             creativePanel.anchoredPosition=new Vector2(layout.sidebarX,0);
             creativePanel.sizeDelta=new Vector2(layout.columns*18,layout.height);
             previousPage.GetComponent<RectTransform>().anchoredPosition=new Vector2(-layout.columns*9+9,layout.height/2-10);
@@ -134,6 +138,13 @@ public partial class PlayerInventory
         UpdateFurnacePanel();
     }
 
+    private void ToggleTooManyItems()
+    {
+        tooManyItemsEnabled=!tooManyItemsEnabled;
+        HideSlotHover();
+        UpdateInventoryLayout();
+    }
+
     private void ChangeCreativePage(int delta)
     {
         creativePage=Math.Max(0,Math.Min(Math.Max(0,(creativeBlocks.Count-1)/creativePageSize),creativePage+delta));
@@ -156,7 +167,7 @@ public partial class PlayerInventory
     }
     public void GiveCatalogItem(int cell,bool single)
     {
-        if(chestPending||chestOpen||furnacePending||furnaceOpen)return;
+        if(!tooManyItemsEnabled||chestPending||chestOpen||furnacePending||furnaceOpen)return;
         int index=creativePage*creativePageSize+cell;
         if(cell<0||cell>=creativePageSize||index>=creativeBlocks.Count)return;
         AddUpTo(creativeBlocks[index],single?1:ItemCatalog.StackLimit(creativeBlocks[index]));
@@ -243,6 +254,12 @@ public partial class PlayerInventory
     {
         inventoryLabelMaterial=MinecraftUIText.CreateMaterial(creativeFont,8,false);
         inventoryTextMaterial=MinecraftUIText.CreateMaterial(creativeFont,8,true);
+        containerLabelMaterial=MinecraftUIText.CreateMaterial(creativeFont,8,false);
+        if(containerLabelMaterial!=null)
+        {
+            var gray=new Color(64/255f,64/255f,64/255f,1);
+            containerLabelMaterial.SetColor("_FaceColor",QualitySettings.activeColorSpace==ColorSpace.Linear?gray.linear:gray);
+        }
     }
     private void SlotBackground(RectTransform rect)
     {
@@ -276,6 +293,18 @@ public partial class PlayerInventory
         var image=light.gameObject.AddComponent<Image>();image.color=Color.white;image.raycastTarget=false;
         var fill=CreativeRect("Face",rect,0,0,Math.Max(1,rect.sizeDelta.x-6),Math.Max(1,rect.sizeDelta.y-6));
         image=fill.gameObject.AddComponent<Image>();image.color=new Color(.776f,.776f,.776f,1);image.raycastTarget=false;
+    }
+    private TextMeshProUGUI ContainerLabel(string name,RectTransform parent,float x,float y,string value)
+    {
+        const float width=80,height=10;
+        var text=CreativeText(name,parent,x-parent.sizeDelta.x/2+width/2,parent.sizeDelta.y/2-y-height/2,
+            width,height,value,8,Color.white);
+        // Keep vertices white and supply #404040 through the SDF face material.
+        // This avoids washed-out text in linear rendering and Canvas tint conversion differences.
+        if(containerLabelMaterial!=null)text.fontSharedMaterial=containerLabelMaterial;
+        text.alignment=TextAlignmentOptions.TopLeft;
+        text.margin=Vector4.zero;
+        return text;
     }
     private RectTransform CreativeRect(string name,Transform parent,float x,float y,float width,float height)
     {

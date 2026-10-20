@@ -75,6 +75,11 @@ public partial class PlayerInventory
             inv.OpenCraftingTable(tablePosition);
             Check(inv.tableOpen&&inv.isOpen&&!inv.inventoryRect.gameObject.activeSelf,"right-click table opens a separate 3x3 menu");
             Check(inv.inventorySlotsRect.parent==inv.tablePanel&&inv.craftResultRect.parent==inv.tablePanel,"table reuses the player's inventory and output");
+            Check(inv.tablePanel.anchoredPosition.x==0&&!inv.creativePanel.gameObject.activeSelf,"crafting table opens centered by default");
+            CheckContainerLabel(inv,inv.tablePanel,"CraftingTitle",28,6);
+            CheckContainerLabel(inv,inv.tablePanel,"InventoryTitle",8,72);
+            inv.ToggleTooManyItems();Check(inv.creativePanel.gameObject.activeSelf&&inv.tablePanel.anchoredPosition.x==inv.inventoryRect.anchoredPosition.x,"F1 reflows open crafting table with catalogue");
+            inv.ToggleTooManyItems();Check(inv.tablePanel.anchoredPosition.x==0,"hiding catalogue recenters open crafting table");
             if(textured)
             {
                 var bg=inv.tablePanel.GetComponent<UnityEngine.UI.RawImage>();

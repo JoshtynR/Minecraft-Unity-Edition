@@ -58,10 +58,8 @@ public partial class PlayerInventory
             tableRects[i]=rect;tableSlots[i].countText=SlotCount(rect);
             CreateItemIcon(tableSlots[i].type,rect);tableSlots[i].SetCount(tableSlots[i].count);
         }
-        var label=CreativeText("CraftingTitle",tablePanel,-27,73,66,12,"Crafting",8,new Color(.25f,.25f,.25f,1));
-        label.alignment=TMPro.TextAlignmentOptions.Left;
-        label=CreativeText("InventoryTitle",tablePanel,-47,9,66,12,"Inventory",8,new Color(.25f,.25f,.25f,1));
-        label.alignment=TMPro.TextAlignmentOptions.Left;
+        ContainerLabel("CraftingTitle",tablePanel,28,6,"Crafting");
+        ContainerLabel("InventoryTitle",tablePanel,8,72,"Inventory");
         inventorySlotsRect.SetParent(tablePanel,false);
         survivalCraftResultRect=craftResultRect;
         craftResultRect=CreativeRect("TableResult",tablePanel,44,40,18,18);
