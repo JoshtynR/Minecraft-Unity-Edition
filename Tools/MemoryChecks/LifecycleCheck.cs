@@ -48,6 +48,8 @@ public partial class World
  public Data worldData=new Data();public class Data { public Dictionary<Vector3Int,ChunkRenderer> chunkDict=new Dictionary<Vector3Int,ChunkRenderer>(); }
  public int jobs;public TaskCompletionSource<Dictionary<ChunkRenderer,MeshData>> pending;
  private void UpdateWater(){}
+ private void UpdateFurnaces(){}
+ private void UpdateDroppedItems(){}
  private void UpdateBetaLightingSettings(){}
  private Task<Dictionary<ChunkRenderer,MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> chunks,bool markModifiedByPlayer)
  {

@@ -31,6 +31,7 @@ public partial class PlayerInventory
     public Slot GetSlot(int index)
     {
         if(chestOpen&&index>=100&&index<127)return chestSlots[index-100];
+        if(furnaceOpen&&index>=300&&index<303)return furnaceSlots[index-300];
         if(tableOpen&&index>=200&&index<209)return tableSlots[index-200];
         InitializeSlotData();return index>=0&&index<36 ? slots[index] : index>=36&&index<40 ? craftingSlots[index-36] : index==40 ? craftedOutput : index>=41&&index<45 ? equipmentSlots[index-41] : null;
     }
@@ -72,7 +73,8 @@ public partial class PlayerInventory
     }
     public void ClickInventorySlot(int index,bool right,bool shift)
     {
-        if(chestPending||DropRequestPending)return;
+        if(chestPending||furnacePending||DropRequestPending)return;
+        if(furnaceOpen){ClickFurnace(index,right,shift);return;}
         if(chestOpen){ClickChest(index,right,shift);return;}
         if(tableOpen&&!TableAccessible()){CloseInventory();return;}
         if(tableOpen&&((index>=36&&index<40)||(index>=41&&index<45)))return;

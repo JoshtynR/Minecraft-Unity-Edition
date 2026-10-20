@@ -79,6 +79,11 @@ public partial class World : MonoBehaviour
         OnValidate();
         Clear();
         InitializeDroppedItems();
+        NetworkClient.RegisterHandler<FurnaceReply>(message =>
+        {
+            if(GameManager.Instance!=null&&GameManager.Instance.localPlayer!=null)
+                GameManager.Instance.localPlayer.GetComponent<PlayerInventory>().ReceiveFurnaceReply(message);
+        });
         NetworkClient.RegisterHandler<ChestReply>(message =>
         {
             if(GameManager.Instance!=null&&GameManager.Instance.localPlayer!=null)
@@ -244,6 +249,7 @@ public partial class World : MonoBehaviour
             if(pos.y<0||pos.y>=worldHeight)continue;
             var previous = GetBlock(pos);
             bool removingChest=previous!=null&&previous.type==BlockType.Chest&&blockType!=BlockType.Chest;
+            bool removingFurnace=previous!=null&&IsFurnace(previous.type)&&!IsFurnace(blockType);
             if(!CanReplaceChest(pos,blockType))continue;
             if(previous.type==BlockType.Nothing)continue;
             bool pair = SpecialBlockGeometry.IsDoor(blockType) || blockType == BlockType.Bed;
@@ -281,6 +287,8 @@ public partial class World : MonoBehaviour
                 WorldDataHelper.SetBlock(chunk.ChunkData.worldRef, pos, blockType);
                 GetBlock(pos).blockShape = SpecialBlockGeometry.Shape(blockType, stairFacing);
                 if(removingChest)chests.Removed(pos);
+                if(removingFurnace)RemoveFurnace(pos);
+                if(IsFurnace(blockType))TrackFurnace(pos);
                 // Track is stateful, unlike purely visual fence/dust joins. Update
                 // its saved selection bounds and neighboring slopes before meshing.
                 for (int rx=-1;rx<=1;rx++) for(int ry=-1;ry<=1;ry++) for(int rz=-1;rz<=1;rz++)
@@ -381,6 +389,7 @@ public partial class World : MonoBehaviour
     {
         ResetWater();
         ResetDroppedItems();
+        furnaceClock=0;
         ResetTreeMeshChanges();
         worldData = new WorldData
         {
@@ -418,6 +427,7 @@ public partial class World : MonoBehaviour
         {
             NetworkClient.UnregisterHandler<StartWorldMessage>();
             NetworkClient.UnregisterHandler<ChestReply>();
+            NetworkClient.UnregisterHandler<FurnaceReply>();
             NetworkClient.UnregisterHandler<DropStateMessage>();
             Instance = null;
         }

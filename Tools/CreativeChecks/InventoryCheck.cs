@@ -9,9 +9,9 @@ namespace Mirror
  public class NetworkConnection {}
  public interface NetworkMessage {}
  public class ClientRpcAttribute:Attribute {}
- public class NetworkConnectionToClient {public GameObject identity;public int connectionId;public ChestReply last;public void Send(ChestReply reply){last=reply;}}
+ public class NetworkConnectionToClient {public GameObject identity;public int connectionId;public ChestReply last;public FurnaceReply lastFurnace;public void Send(ChestReply reply){last=reply;}public void Send(FurnaceReply reply){lastFurnace=reply;}}
  public static class NetworkServer {public static void SendToAll<T>(T message){}public static bool active;public static Dictionary<int,NetworkConnectionToClient> connections=new Dictionary<int,NetworkConnectionToClient>();}
- public static class NetworkClient {public static void RegisterHandler<T>(Action<T> callback){}public static bool ready=true;public static bool active;public static ChestRequest last;public static void Send(DropSyncRequest request){}public static void Send(ChestRequest request){last=request;}}
+ public static class NetworkClient {public static void RegisterHandler<T>(Action<T> callback){}public static bool ready=true;public static bool active;public static ChestRequest last;public static FurnaceRequest lastFurnace;public static void Send(FurnaceRequest request){lastFurnace=request;}public static void Send(DropSyncRequest request){}public static void Send(ChestRequest request){last=request;}}
 }
 namespace UnityEngine
 {
@@ -271,7 +271,7 @@ public partial class PlayerInventory
  }
  public static void Main(string[] args)
  {
-  CheckRules();CheckDurability();CheckDrops();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
+  CheckRules();CheckDurability();CheckDrops();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckFurnaces();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
   var headless=new GameObject("DedicatedInventory").AddComponent<PlayerInventory>();
   Check(headless.AddItem(ItemType.Stone,64)&&headless.slots[0].count==64,"storage logic works without a canvas on nonlocal/server players");
   headless.LoadInventory(null);headless.AddItem(ItemType.Stone,63);headless.AddItem(ItemType.Dirt,35*64);

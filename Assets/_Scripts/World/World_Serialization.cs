@@ -33,6 +33,7 @@ public partial class World
         }
 
         chests.SaveWorld(worldName);
+        furnaces.SaveWorld(worldName);
         // Capture player stacks before yielding, at the same point as chest contents.
         // A transfer during chunk IO must not be saved on just one side.
         var chestPlayerSnapshots=GameManager.Instance==null?new WorldServer.SavePlayerMessage[0]:

@@ -129,6 +129,7 @@ public partial class PlayerInventory
         UpdateSlotTooltip();
         UpdateChestPanel();
         UpdateCraftingTable();
+        UpdateFurnacePanel();
     }
 
     private void ChangeCreativePage(int delta)
@@ -153,7 +154,7 @@ public partial class PlayerInventory
     }
     public void GiveCatalogItem(int cell,bool single)
     {
-        if(chestPending||chestOpen)return;
+        if(chestPending||chestOpen||furnacePending||furnaceOpen)return;
         int index=creativePage*creativePageSize+cell;
         if(cell<0||cell>=creativePageSize||index>=creativeBlocks.Count)return;
         AddUpTo(creativeBlocks[index],single?1:ItemCatalog.StackLimit(creativeBlocks[index]));

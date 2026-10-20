@@ -52,6 +52,7 @@ public class MinecraftNetworkManager : NetworkManager
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
         WorldServer.instance.CloseChestForDisconnect(conn);
+        WorldServer.instance.CloseFurnaceForDisconnect(conn);
         WorldServer.instance.SavePlayerMessageHandler(conn, conn.identity.GetComponent<Player>().SavePlayer());
         
         base.OnServerDisconnect(conn);

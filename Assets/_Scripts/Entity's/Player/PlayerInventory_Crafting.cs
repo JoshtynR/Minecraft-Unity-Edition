@@ -12,7 +12,7 @@ public partial class PlayerInventory
 
     public void OpenCraftingTable(Vector3Int position)
     {
-        if(DropRequestPending||creativeRoot==null||isOpen||chestOpen||chestPending||(player!=null&&player.health<=0))return;
+        if(DropRequestPending||creativeRoot==null||isOpen||chestOpen||chestPending||furnacePending||furnaceOpen||(player!=null&&player.health<=0))return;
         tablePosition=position;
         if(!TableAccessible())return;
         InitializeSlotData();

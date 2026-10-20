@@ -21,7 +21,7 @@ public partial class World
  public void SetBlock(Vector3Int pos,BlockType type,byte facing=0){blocks[pos]=new Block(type){globalWorldPosition=pos,blockShape=SpecialBlockGeometry.Shape(type,facing)};}
 }
 public static class BlockDataManager {public static BlockData[] blockTypeDataDictionary=new BlockData[133];}
-public class Inventory {public bool DropRequestPending;public Vector3Int tablePosition;public void OpenCraftingTable(Vector3Int position){tablePosition=position;}public class Slot {public ItemType type;public int count=64;}public Slot[] slots={new Slot()};public int selectedSlotIndex;public void RemoveHeldItem(){slots[0].count--;}public void RequestChest(Vector3Int position){}}
+public class Inventory {public bool DropRequestPending;public Vector3Int tablePosition;public void RequestFurnace(Vector3Int position){}public void OpenCraftingTable(Vector3Int position){tablePosition=position;}public class Slot {public ItemType type;public int count=64;}public Slot[] slots={new Slot()};public int selectedSlotIndex;public void RemoveHeldItem(){slots[0].count--;}public void RequestChest(Vector3Int position){}}
 public partial class Player
 {
  public class Objects {public Transform body=new Transform();}

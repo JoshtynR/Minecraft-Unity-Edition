@@ -12,7 +12,7 @@ public partial class PlayerInventory
     private readonly RectTransform[] chestRects=new RectTransform[27];
     public void RequestChest(Vector3Int position)
     {
-        if(DropRequestPending||chestPending||chestOpen||isOpen)return;
+        if(DropRequestPending||chestPending||chestOpen||furnacePending||furnaceOpen||isOpen)return;
         ReadStorage();chestPosition=position;
         chestNetworkSession=NetworkClient.active;OpenInventory();
         SendChest(new ChestRequest{action=0,position=position,inventory=(InventoryStack[])storageBuffer.Clone(),cursor=Stack(pickedUpSlot),itemWearRevision=player!=null?player.ItemWearRevision:0});

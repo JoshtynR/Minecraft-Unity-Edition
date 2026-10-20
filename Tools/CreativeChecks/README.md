@@ -1,5 +1,40 @@
 # Survival inventory with Too Many Items sidebar
 
+## Furnace smelting
+
+Right-click either furnace state to open the native 176x166 panel from
+`Assets/Textures/Minecraft/gui/container/furnace.png`. The input, fuel and
+take-only output slots share the survival inventory and cursor. Shift-click
+routes smeltable inventory items to input, fuel to fuel, and output back to
+storage; ordinary left/right clicks retain stack arithmetic and durability.
+The flame and arrow show remaining fuel and cook progress.
+
+The authoritative world ticks furnaces at 20 Hz, including with the menu closed.
+Each recipe cooks for 200 ticks. Iron/gold/diamond ore, sand, pork, fish,
+cobblestone, clay balls, cactus and all three log variants produce the Beta
+results. Coal/charcoal burn for 1600 ticks, wood-material block items for 300,
+sticks/saplings for 100 and lava buckets for 20000. Wooden tools are not Beta
+fuel, and Beta consumes the lava bucket itself. No smelting XP is awarded.
+Invalid/full output prevents consuming new fuel; already-lit fuel keeps burning.
+Cooking progress resets when the furnace cannot cook. Lit/unlit swaps retain
+facing and use existing block lighting and mesh updates.
+
+`furnaces.json` stores slots and timers next to the world's existing chest save.
+Player and furnace snapshots are captured before chunk IO yields. Chunk data
+streaming pauses absent furnaces instead of advancing offline time. Open
+sessions are exclusive, reject replayed/stale clicks and close on death,
+disconnect or leaving reach. Breaking a closed furnace spills its stored stacks
+through the item-drop system; furnace state swaps do not spill or recreate them.
+Block Data and Item Data assignments are preserved.
+
+`FurnaceCheck.cs` exercises production recipes/timing, blocked output, random
+item-conserving transfers, partial-fuel persistence, menu textures/slot positions,
+closed-menu cooking, authority, close-during-open, death and inventory drops.
+World storage, Unity UI/JSON and Mirror transport are mocked. Unity rendering,
+Mirror weaving and a live multiplayer furnace playtest still require the editor.
+Reference: `FurnaceRecipes`, `TileEntityFurnace` and `ContainerFurnace` in the
+pinned Beta checkout linked below.
+
 E opens one menu: the 176x166 Beta survival panel and the right-hand block grid
 are always visible together. Layout follows the original ContainerPlayer slot
 coordinates (27 backpack cells and nine hotbar cells, with 18-pixel pitch).

@@ -108,6 +108,9 @@ public partial class World
     public void EmitFluidEffect(Vector3Int p,byte kind) {}
     private void DisposeFluidEffects() {}
     public bool CanReplaceChest(Vector3Int p,BlockType t) { return true; }
+    public static bool IsFurnace(BlockType t)=>t==BlockType.Furnace||t==BlockType.LitFurnace;
+    private void RemoveFurnace(Vector3Int p){}
+    private void TrackFurnace(Vector3Int p){}
     public class ChestStub { public void Removed(Vector3Int p) {} }
     public ChestStub chests=new ChestStub();
     public static World Instance;

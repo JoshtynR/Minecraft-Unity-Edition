@@ -21,6 +21,7 @@ public partial class World
     {
         if(NetworkClient.active&&!NetworkServer.active)return true;
         var block=GetBlock(position);
+        if(block!=null&&IsFurnace(block.type)&&!IsFurnace(next))return furnaces.CanRemove(worldName,position);
         return block==null||block.type!=BlockType.Chest||next==BlockType.Chest||chests.CanRemove(worldName,position);
     }
     public bool ChestAccessible(Vector3 eye,Vector3Int position,float reach)
@@ -49,6 +50,8 @@ public partial class WorldServer
         if(connection.identity==null||World.Instance==null)return;
         var player=connection.identity.GetComponent<Player>();if(player==null)return;
         var world=World.Instance;
+        if(request.action==0&&world.furnaces.HasOwner(connection.connectionId))
+        {connection.Send(new ChestReply{error="Close the furnace first."});return;}
         if(request.action==0&&!player.AcceptsItemRevision(request.itemWearRevision))
         {connection.Send(new ChestReply{error="Inventory update pending; open the chest again."});return;}
         if(world.isSaving&&request.action!=2)
@@ -74,6 +77,7 @@ public partial class WorldServer
     {
         if(!isServer||World.Instance==null||Time.unscaledTime<chestCheckTime)return;
         chestCheckTime=Time.unscaledTime+.25f;
+        CheckFurnaceSessions();
         foreach(int owner in World.Instance.chests.Owners())
         {
             NetworkConnectionToClient connection;

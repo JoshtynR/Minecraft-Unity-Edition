@@ -71,6 +71,7 @@ public partial class World
     {
         UpdateWater();
         UpdateDroppedItems();
+        UpdateFurnaces();
         UpdateBetaLightingSettings();
         if (Application.isPlaying) UpdateChunks();
         if (backgroundCamera == null) backgroundCamera = Camera.main;
