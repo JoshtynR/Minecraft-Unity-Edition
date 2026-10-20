@@ -16,6 +16,15 @@ MonoBehaviour:
   textureDataList:
   - blockType: 0
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 0}
       bottom: {fileID: 0}
       side: {fileID: 0}
@@ -36,6 +45,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 1
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 0}
       bottom: {fileID: 0}
       side: {fileID: 0}
@@ -56,6 +74,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 3
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 40fc4fc7f6d47504bb3567d4ef4dae30, type: 3}
       bottom: {fileID: 2800000, guid: 90d41248989b6b7488848c667ff25981, type: 3}
       side: {fileID: 2800000, guid: 95d219a0dcb71ae4095fbc2adc576049, type: 3}
@@ -76,6 +103,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 2
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 90d41248989b6b7488848c667ff25981, type: 3}
       bottom: {fileID: 2800000, guid: 90d41248989b6b7488848c667ff25981, type: 3}
       side: {fileID: 2800000, guid: 90d41248989b6b7488848c667ff25981, type: 3}
@@ -96,6 +132,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 8
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 595e29b4516a6e949bd318a2a77e07f0, type: 3}
       bottom: {fileID: 2800000, guid: 595e29b4516a6e949bd318a2a77e07f0, type: 3}
       side: {fileID: 2800000, guid: 595e29b4516a6e949bd318a2a77e07f0, type: 3}
@@ -106,8 +151,22 @@ MonoBehaviour:
       specialTextures:
       - part: 35
         image: {fileID: 2800000, guid: 595e29b4516a6e949bd318a2a77e07f0, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       - part: 36
         image: {fileID: 2800000, guid: bf4cd0ac17bf4d549a0046ba291e15e4, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       animateFaces: 1
       animationColumns: 1
       animationRows: 32
@@ -120,6 +179,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 7
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: e80db0f167603234abfd4cb8abf78e70, type: 3}
       bottom: {fileID: 2800000, guid: e80db0f167603234abfd4cb8abf78e70, type: 3}
       side: {fileID: 2800000, guid: e80db0f167603234abfd4cb8abf78e70, type: 3}
@@ -140,6 +208,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 4
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 9ce36742834cb7947b2e6cc79f280db9, type: 3}
       bottom: {fileID: 2800000, guid: 9ce36742834cb7947b2e6cc79f280db9, type: 3}
       side: {fileID: 2800000, guid: 9ce36742834cb7947b2e6cc79f280db9, type: 3}
@@ -160,6 +237,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 5
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: d4f0cecbedcd7e341822326e013b73c7, type: 3}
       bottom: {fileID: 2800000, guid: d4f0cecbedcd7e341822326e013b73c7, type: 3}
       side: {fileID: 2800000, guid: 96c66ceeaff44974fa68a6303ee382cb, type: 3}
@@ -180,6 +266,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 6
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 77737ec02f3d3b34883fc19da523ef03, type: 3}
       bottom: {fileID: 2800000, guid: 77737ec02f3d3b34883fc19da523ef03, type: 3}
       side: {fileID: 2800000, guid: 77737ec02f3d3b34883fc19da523ef03, type: 3}
@@ -200,6 +295,15 @@ MonoBehaviour:
     albedoTint: {r: 0.27979448, g: 0.49019608, b: 0, a: 1}
   - blockType: 10
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 8f27b4215b4a5bb4db4e9c78c6cf8210, type: 3}
       bottom: {fileID: 2800000, guid: 8f27b4215b4a5bb4db4e9c78c6cf8210, type: 3}
       side: {fileID: 2800000, guid: 8f27b4215b4a5bb4db4e9c78c6cf8210, type: 3}
@@ -220,6 +324,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 11
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       bottom: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       side: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
@@ -240,6 +353,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 12
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 963f1c593de935444bc2c997ce5df6b6, type: 3}
       bottom: {fileID: 2800000, guid: 963f1c593de935444bc2c997ce5df6b6, type: 3}
       side: {fileID: 2800000, guid: 963f1c593de935444bc2c997ce5df6b6, type: 3}
@@ -260,6 +382,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 13
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 621b145beba2a56468f4e91161657b66, type: 3}
       bottom: {fileID: 2800000, guid: 621b145beba2a56468f4e91161657b66, type: 3}
       side: {fileID: 2800000, guid: 621b145beba2a56468f4e91161657b66, type: 3}
@@ -280,6 +411,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 14
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 68f2a36c1cb556f42a402c07016855e3, type: 3}
       bottom: {fileID: 2800000, guid: f1b6dbb711f996c4784e51e67635b40c, type: 3}
       side: {fileID: 2800000, guid: d6d0792e317996b459e6052161caf0dd, type: 3}
@@ -300,6 +440,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 15
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 222abdd2f54fa9e4cb827d94ef5652ef, type: 3}
       bottom: {fileID: 2800000, guid: 222abdd2f54fa9e4cb827d94ef5652ef, type: 3}
       side: {fileID: 2800000, guid: 222abdd2f54fa9e4cb827d94ef5652ef, type: 3}
@@ -310,8 +459,22 @@ MonoBehaviour:
       specialTextures:
       - part: 36
         image: {fileID: 2800000, guid: f34284c747b82684da9083f4a64f00f6, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       - part: 35
         image: {fileID: 2800000, guid: 222abdd2f54fa9e4cb827d94ef5652ef, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       animateFaces: 1
       animationColumns: 1
       animationRows: 20
@@ -324,6 +487,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 16
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 53567762e935c3148b631ec6959963e5, type: 3}
       bottom: {fileID: 2800000, guid: 53567762e935c3148b631ec6959963e5, type: 3}
       side: {fileID: 2800000, guid: 53567762e935c3148b631ec6959963e5, type: 3}
@@ -344,6 +516,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 17
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 0c1cb40c66c2dba4fa6c8cf377c017f3, type: 3}
       bottom: {fileID: 2800000, guid: 0c1cb40c66c2dba4fa6c8cf377c017f3, type: 3}
       side: {fileID: 2800000, guid: 89ed863ca51ba854491a5dbe5a12a1b0, type: 3}
@@ -364,6 +545,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 18
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: d31d4dfc05a1c3340b8486672786442e, type: 3}
       bottom: {fileID: 2800000, guid: d31d4dfc05a1c3340b8486672786442e, type: 3}
       side: {fileID: 2800000, guid: d31d4dfc05a1c3340b8486672786442e, type: 3}
@@ -384,6 +574,15 @@ MonoBehaviour:
     albedoTint: {r: 0.20345317, g: 0.33962262, b: 0.20345317, a: 1}
   - blockType: 19
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 539195f1eb88bf04c89282de26c35f7c, type: 3}
       bottom: {fileID: 2800000, guid: 539195f1eb88bf04c89282de26c35f7c, type: 3}
       side: {fileID: 2800000, guid: 3595e545ce267bc43b420335459a233e, type: 3}
@@ -404,6 +603,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 20
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 16c8a1c202a127644bda176a1ac91537, type: 3}
       bottom: {fileID: 2800000, guid: 16c8a1c202a127644bda176a1ac91537, type: 3}
       side: {fileID: 2800000, guid: 16c8a1c202a127644bda176a1ac91537, type: 3}
@@ -424,6 +632,15 @@ MonoBehaviour:
     albedoTint: {r: 0.27960485, g: 0.3679245, b: 0.18222676, a: 1}
   - blockType: 9
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 17364fef8ac4c5a4bb238093b91e5519, type: 3}
       bottom: {fileID: 2800000, guid: 17364fef8ac4c5a4bb238093b91e5519, type: 3}
       side: {fileID: 2800000, guid: 17364fef8ac4c5a4bb238093b91e5519, type: 3}
@@ -444,6 +661,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 21
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
       bottom: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
       side: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
@@ -464,6 +690,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 22
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       bottom: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       side: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
@@ -484,6 +719,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 23
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: f0ac4f2e5d6044f4cb4580f1902c9c23, type: 3}
       bottom: {fileID: 2800000, guid: f0ac4f2e5d6044f4cb4580f1902c9c23, type: 3}
       side: {fileID: 2800000, guid: f0ac4f2e5d6044f4cb4580f1902c9c23, type: 3}
@@ -504,6 +748,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 24
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3d27e54f520df1f44b4d68099613513e, type: 3}
       bottom: {fileID: 2800000, guid: 3d27e54f520df1f44b4d68099613513e, type: 3}
       side: {fileID: 2800000, guid: 3d27e54f520df1f44b4d68099613513e, type: 3}
@@ -524,6 +777,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 25
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 9ab5bc61ecdf35342aaff386ddc21857, type: 3}
       bottom: {fileID: 2800000, guid: 9ab5bc61ecdf35342aaff386ddc21857, type: 3}
       side: {fileID: 2800000, guid: 9ab5bc61ecdf35342aaff386ddc21857, type: 3}
@@ -544,6 +806,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 26
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 8417db850c9922c4ba191aaef14f485a, type: 3}
       bottom: {fileID: 2800000, guid: 8417db850c9922c4ba191aaef14f485a, type: 3}
       side: {fileID: 2800000, guid: 8417db850c9922c4ba191aaef14f485a, type: 3}
@@ -564,6 +835,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 27
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: f4a07a3f83cadab4f80d705daf54cab1, type: 3}
       bottom: {fileID: 2800000, guid: f4a07a3f83cadab4f80d705daf54cab1, type: 3}
       side: {fileID: 2800000, guid: f4a07a3f83cadab4f80d705daf54cab1, type: 3}
@@ -584,6 +864,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 28
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: dcd55ab6769e9944fabdabd4421bee7c, type: 3}
       bottom: {fileID: 2800000, guid: dcd55ab6769e9944fabdabd4421bee7c, type: 3}
       side: {fileID: 2800000, guid: dcd55ab6769e9944fabdabd4421bee7c, type: 3}
@@ -604,6 +893,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 29
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 4381d99aa837ab84ba79776825c69811, type: 3}
       bottom: {fileID: 2800000, guid: 4381d99aa837ab84ba79776825c69811, type: 3}
       side: {fileID: 2800000, guid: 4381d99aa837ab84ba79776825c69811, type: 3}
@@ -624,6 +922,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 30
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: cac947873b089464a8feb96467e41e6c, type: 3}
       bottom: {fileID: 2800000, guid: 50db1a2baf1cf7a48a6e7d1f589dc032, type: 3}
       side: {fileID: 2800000, guid: dec87773492f0a849833d4a790cb8a06, type: 3}
@@ -644,6 +951,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 31
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: f375c462233dcc04fa17a42962032e5d, type: 3}
       bottom: {fileID: 2800000, guid: f375c462233dcc04fa17a42962032e5d, type: 3}
       side: {fileID: 2800000, guid: f375c462233dcc04fa17a42962032e5d, type: 3}
@@ -664,6 +980,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 32
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 0}
       bottom: {fileID: 0}
       side: {fileID: 0}
@@ -674,18 +999,67 @@ MonoBehaviour:
       specialTextures:
       - part: 3
         image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       - part: 4
         image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       - part: 5
         image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       - part: 6
         image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       - part: 7
         image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       - part: 8
         image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       - part: 9
         image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       animateFaces: 0
       animationColumns: 1
       animationRows: 0
@@ -698,6 +1072,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 33
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: c29f960bacfd5cb4694a02e10c71aa64, type: 3}
       bottom: {fileID: 2800000, guid: c29f960bacfd5cb4694a02e10c71aa64, type: 3}
       side: {fileID: 2800000, guid: c29f960bacfd5cb4694a02e10c71aa64, type: 3}
@@ -718,6 +1101,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 34
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 93f6d56bf4a9afd45a99c8218ebf9e41, type: 3}
       bottom: {fileID: 2800000, guid: 93f6d56bf4a9afd45a99c8218ebf9e41, type: 3}
       side: {fileID: 2800000, guid: 93f6d56bf4a9afd45a99c8218ebf9e41, type: 3}
@@ -738,6 +1130,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 35
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 2cce0912e31d63548b888c040d558b36, type: 3}
       bottom: {fileID: 2800000, guid: 3d3583c9b86b04e4393c0ae8c1b5681d, type: 3}
       side: {fileID: 2800000, guid: 7c2c007363ac3d8439c3835afbb42945, type: 3}
@@ -758,6 +1159,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 36
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: ac01a00bd4277154ca1935cf97470c15, type: 3}
       bottom: {fileID: 2800000, guid: ac01a00bd4277154ca1935cf97470c15, type: 3}
       side: {fileID: 2800000, guid: ac01a00bd4277154ca1935cf97470c15, type: 3}
@@ -778,6 +1188,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 37
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: f4b80d4ff1343424bab671e415ac8e20, type: 3}
       bottom: {fileID: 2800000, guid: f4b80d4ff1343424bab671e415ac8e20, type: 3}
       side: {fileID: 2800000, guid: f4b80d4ff1343424bab671e415ac8e20, type: 3}
@@ -798,6 +1217,15 @@ MonoBehaviour:
     albedoTint: {r: 0.38039216, g: 0.5764706, b: 0.1764706, a: 1}
   - blockType: 38
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: cdb817d2011de8c4a939dcc701c84a39, type: 3}
       bottom: {fileID: 2800000, guid: cdb817d2011de8c4a939dcc701c84a39, type: 3}
       side: {fileID: 2800000, guid: cdb817d2011de8c4a939dcc701c84a39, type: 3}
@@ -818,6 +1246,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 39
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: d61373a514e79014a9c0af9c00830a23, type: 3}
       bottom: {fileID: 2800000, guid: 3d3583c9b86b04e4393c0ae8c1b5681d, type: 3}
       side: {fileID: 2800000, guid: 7c2c007363ac3d8439c3835afbb42945, type: 3}
@@ -838,6 +1275,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 40
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 10cb966e69a4be242a7ecad74a587c17, type: 3}
       bottom: {fileID: 2800000, guid: 10cb966e69a4be242a7ecad74a587c17, type: 3}
       side: {fileID: 2800000, guid: 10cb966e69a4be242a7ecad74a587c17, type: 3}
@@ -858,6 +1304,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 41
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3b80b3adac4c8454b910423185ea05cb, type: 3}
       bottom: {fileID: 2800000, guid: 3b80b3adac4c8454b910423185ea05cb, type: 3}
       side: {fileID: 2800000, guid: 3b80b3adac4c8454b910423185ea05cb, type: 3}
@@ -878,6 +1333,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 42
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       bottom: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       side: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
@@ -898,6 +1362,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 43
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: b03f14c91eb770e4a8023cc85bdd86f7, type: 3}
       bottom: {fileID: 2800000, guid: b03f14c91eb770e4a8023cc85bdd86f7, type: 3}
       side: {fileID: 2800000, guid: b03f14c91eb770e4a8023cc85bdd86f7, type: 3}
@@ -918,6 +1391,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 44
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 158f6a9119022314289d818b87e1dc0f, type: 3}
       bottom: {fileID: 2800000, guid: 158f6a9119022314289d818b87e1dc0f, type: 3}
       side: {fileID: 2800000, guid: 158f6a9119022314289d818b87e1dc0f, type: 3}
@@ -938,6 +1420,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 45
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: a8a64c17be966fa4da1ed9de309c2465, type: 3}
       bottom: {fileID: 2800000, guid: a8a64c17be966fa4da1ed9de309c2465, type: 3}
       side: {fileID: 2800000, guid: a8a64c17be966fa4da1ed9de309c2465, type: 3}
@@ -958,6 +1449,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 46
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: e62e930ba6f623e4fabb7f98d7c23dfa, type: 3}
       bottom: {fileID: 2800000, guid: e62e930ba6f623e4fabb7f98d7c23dfa, type: 3}
       side: {fileID: 2800000, guid: e62e930ba6f623e4fabb7f98d7c23dfa, type: 3}
@@ -978,6 +1478,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 47
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 47eaf59dfe9e519438e9fcb8d7479fc4, type: 3}
       bottom: {fileID: 2800000, guid: 47eaf59dfe9e519438e9fcb8d7479fc4, type: 3}
       side: {fileID: 2800000, guid: 47eaf59dfe9e519438e9fcb8d7479fc4, type: 3}
@@ -998,6 +1507,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 48
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 7630551256e093b40a3731a1bfc9665d, type: 3}
       bottom: {fileID: 2800000, guid: 7630551256e093b40a3731a1bfc9665d, type: 3}
       side: {fileID: 2800000, guid: 7630551256e093b40a3731a1bfc9665d, type: 3}
@@ -1018,6 +1536,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 49
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: e4541cd58fe5884478da9007058dff3f, type: 3}
       bottom: {fileID: 2800000, guid: e4541cd58fe5884478da9007058dff3f, type: 3}
       side: {fileID: 2800000, guid: e68a1459a95800a46b74052b055e26d1, type: 3}
@@ -1038,6 +1565,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 50
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: e4541cd58fe5884478da9007058dff3f, type: 3}
       bottom: {fileID: 2800000, guid: e4541cd58fe5884478da9007058dff3f, type: 3}
       side: {fileID: 2800000, guid: e68a1459a95800a46b74052b055e26d1, type: 3}
@@ -1058,6 +1594,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 51
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: b9a3cf653e06e014d968ad84432befd8, type: 3}
       bottom: {fileID: 2800000, guid: b9a3cf653e06e014d968ad84432befd8, type: 3}
       side: {fileID: 2800000, guid: b9a3cf653e06e014d968ad84432befd8, type: 3}
@@ -1078,6 +1623,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 52
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: ce6f77f8e73d69f40980feadfce86bf7, type: 3}
       bottom: {fileID: 2800000, guid: 05e276d9121f1ef4aa717a66d929fd7a, type: 3}
       side: {fileID: 2800000, guid: 62b0bdb587151b542a568af1921b0b5e, type: 3}
@@ -1098,6 +1652,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 53
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       bottom: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       side: {fileID: 2800000, guid: e9f174cca56287b428c92ff3b5b963b9, type: 3}
@@ -1118,6 +1681,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 54
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 10a97a1d1d5084c4c94061c38bfeee6d, type: 3}
       bottom: {fileID: 2800000, guid: 10a97a1d1d5084c4c94061c38bfeee6d, type: 3}
       side: {fileID: 2800000, guid: 10a97a1d1d5084c4c94061c38bfeee6d, type: 3}
@@ -1138,6 +1710,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 55
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 86cf3b76115eef04d8a2cfe979df0061, type: 3}
       bottom: {fileID: 2800000, guid: 86cf3b76115eef04d8a2cfe979df0061, type: 3}
       side: {fileID: 2800000, guid: 86cf3b76115eef04d8a2cfe979df0061, type: 3}
@@ -1158,6 +1739,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 56
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: cbed4fd8150a536458c9d991d8879b95, type: 3}
       bottom: {fileID: 2800000, guid: cbed4fd8150a536458c9d991d8879b95, type: 3}
       side: {fileID: 2800000, guid: cbed4fd8150a536458c9d991d8879b95, type: 3}
@@ -1178,6 +1768,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 57
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       bottom: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       side: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
@@ -1188,8 +1787,22 @@ MonoBehaviour:
       specialTextures:
       - part: 33
         image: {fileID: 2800000, guid: 76354000a6578e04a840492828eb17fe, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       - part: 34
         image: {fileID: 2800000, guid: 5b5ed73cbc1c99a4ab65f2e474ee8227, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       animateFaces: 1
       animationColumns: 1
       animationRows: 32
@@ -1202,6 +1815,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 58
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: ed0d018122461d548bdf0cdfeeebb4ac, type: 3}
       bottom: {fileID: 2800000, guid: ed0d018122461d548bdf0cdfeeebb4ac, type: 3}
       side: {fileID: 2800000, guid: ed0d018122461d548bdf0cdfeeebb4ac, type: 3}
@@ -1222,6 +1844,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 59
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       bottom: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       side: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
@@ -1242,6 +1873,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 60
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       bottom: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       side: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
@@ -1262,6 +1902,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 61
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 20fe79444ada21540a5f3e85c45ec96f, type: 3}
       bottom: {fileID: 2800000, guid: 20fe79444ada21540a5f3e85c45ec96f, type: 3}
       side: {fileID: 2800000, guid: 20fe79444ada21540a5f3e85c45ec96f, type: 3}
@@ -1282,6 +1931,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 62
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: f33add03134db2e46b4a6457a10806f8, type: 3}
       bottom: {fileID: 2800000, guid: f33add03134db2e46b4a6457a10806f8, type: 3}
       side: {fileID: 2800000, guid: f33add03134db2e46b4a6457a10806f8, type: 3}
@@ -1302,6 +1960,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 63
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 7274bc9523e83eb428ec00114b9e8083, type: 3}
       bottom: {fileID: 2800000, guid: 7274bc9523e83eb428ec00114b9e8083, type: 3}
       side: {fileID: 2800000, guid: 7274bc9523e83eb428ec00114b9e8083, type: 3}
@@ -1322,6 +1989,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 64
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 8122cc6fcd54e6a489bcac6463fd57a0, type: 3}
       bottom: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       side: {fileID: 2800000, guid: 1f45efd5108e90f44a6bc6872a3f58ff, type: 3}
@@ -1371,6 +2047,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 66
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: b33d26da0c302d94690579b998121863, type: 3}
       bottom: {fileID: 2800000, guid: 90d41248989b6b7488848c667ff25981, type: 3}
       side: {fileID: 2800000, guid: 90d41248989b6b7488848c667ff25981, type: 3}
@@ -1391,10 +2076,19 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 67
     textureData:
-      top: {fileID: 2800000, guid: 3b839602e9a05614e97f364406c42265, type: 3}
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      top: {fileID: 2800000, guid: 50db1a2baf1cf7a48a6e7d1f589dc032, type: 3}
       bottom: {fileID: 2800000, guid: 50db1a2baf1cf7a48a6e7d1f589dc032, type: 3}
       side: {fileID: 2800000, guid: dec87773492f0a849833d4a790cb8a06, type: 3}
-      front: {fileID: 0}
+      front: {fileID: 2800000, guid: 3b839602e9a05614e97f364406c42265, type: 3}
       back: {fileID: 0}
       left: {fileID: 0}
       right: {fileID: 0}
@@ -1411,10 +2105,19 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 68
     textureData:
-      top: {fileID: 2800000, guid: b61f12d8873b49444a9f15a4ad5f3100, type: 3}
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      top: {fileID: 2800000, guid: 50db1a2baf1cf7a48a6e7d1f589dc032, type: 3}
       bottom: {fileID: 2800000, guid: 50db1a2baf1cf7a48a6e7d1f589dc032, type: 3}
       side: {fileID: 2800000, guid: dec87773492f0a849833d4a790cb8a06, type: 3}
-      front: {fileID: 0}
+      front: {fileID: 2800000, guid: b61f12d8873b49444a9f15a4ad5f3100, type: 3}
       back: {fileID: 0}
       left: {fileID: 0}
       right: {fileID: 0}
@@ -1431,6 +2134,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 69
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       bottom: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       side: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
@@ -1451,6 +2163,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 70
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 0}
       bottom: {fileID: 0}
       side: {fileID: 0}
@@ -1461,8 +2182,22 @@ MonoBehaviour:
       specialTextures:
       - part: 1
         image: {fileID: 2800000, guid: 14f1ca800c44b0645a2e217c11904d78, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       - part: 2
         image: {fileID: 2800000, guid: c10caa22896b4f14b828511994d37180, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       animateFaces: 0
       animationColumns: 1
       animationRows: 0
@@ -1475,6 +2210,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 71
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 2de97c1820c900c47a5a6d388fbabecb, type: 3}
       bottom: {fileID: 2800000, guid: 2de97c1820c900c47a5a6d388fbabecb, type: 3}
       side: {fileID: 2800000, guid: 2de97c1820c900c47a5a6d388fbabecb, type: 3}
@@ -1495,6 +2239,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 72
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 85fa75aa1888e97418b0d25bd0c63a23, type: 3}
       bottom: {fileID: 2800000, guid: 85fa75aa1888e97418b0d25bd0c63a23, type: 3}
       side: {fileID: 2800000, guid: 85fa75aa1888e97418b0d25bd0c63a23, type: 3}
@@ -1515,6 +2268,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 73
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
       bottom: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
       side: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
@@ -1535,6 +2297,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 74
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       bottom: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       side: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
@@ -1555,6 +2326,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 75
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       bottom: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       side: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
@@ -1575,6 +2355,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 76
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 9ce36742834cb7947b2e6cc79f280db9, type: 3}
       bottom: {fileID: 2800000, guid: 9ce36742834cb7947b2e6cc79f280db9, type: 3}
       side: {fileID: 2800000, guid: 9ce36742834cb7947b2e6cc79f280db9, type: 3}
@@ -1595,6 +2384,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 77
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       bottom: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       side: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
@@ -1615,6 +2413,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 78
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       bottom: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       side: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
@@ -1635,6 +2442,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 79
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3f8cf7dfeb074704ba4a5c8f06521363, type: 3}
       bottom: {fileID: 2800000, guid: 3f8cf7dfeb074704ba4a5c8f06521363, type: 3}
       side: {fileID: 2800000, guid: 3f8cf7dfeb074704ba4a5c8f06521363, type: 3}
@@ -1655,6 +2471,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 80
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3f8cf7dfeb074704ba4a5c8f06521363, type: 3}
       bottom: {fileID: 2800000, guid: 3f8cf7dfeb074704ba4a5c8f06521363, type: 3}
       side: {fileID: 2800000, guid: 3f8cf7dfeb074704ba4a5c8f06521363, type: 3}
@@ -1675,6 +2500,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 81
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 9f6bfbd3e41636d4bb1d9994e27a4a20, type: 3}
       bottom: {fileID: 2800000, guid: 9f6bfbd3e41636d4bb1d9994e27a4a20, type: 3}
       side: {fileID: 2800000, guid: 9f6bfbd3e41636d4bb1d9994e27a4a20, type: 3}
@@ -1695,6 +2529,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 82
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 4adffd5b62943f2479cf1ca8afb69f01, type: 3}
       bottom: {fileID: 2800000, guid: 4adffd5b62943f2479cf1ca8afb69f01, type: 3}
       side: {fileID: 2800000, guid: 4adffd5b62943f2479cf1ca8afb69f01, type: 3}
@@ -1715,6 +2558,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 83
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 9ce36742834cb7947b2e6cc79f280db9, type: 3}
       bottom: {fileID: 2800000, guid: 9ce36742834cb7947b2e6cc79f280db9, type: 3}
       side: {fileID: 2800000, guid: 9ce36742834cb7947b2e6cc79f280db9, type: 3}
@@ -1735,6 +2587,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 84
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: e25980f2d8c75674bad4c6013106ceae, type: 3}
       bottom: {fileID: 2800000, guid: e25980f2d8c75674bad4c6013106ceae, type: 3}
       side: {fileID: 2800000, guid: e25980f2d8c75674bad4c6013106ceae, type: 3}
@@ -1755,6 +2616,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 85
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: e25980f2d8c75674bad4c6013106ceae, type: 3}
       bottom: {fileID: 2800000, guid: e25980f2d8c75674bad4c6013106ceae, type: 3}
       side: {fileID: 2800000, guid: e25980f2d8c75674bad4c6013106ceae, type: 3}
@@ -1775,6 +2645,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 86
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 2b1feb7b71c89a24b9e369fb365263fc, type: 3}
       bottom: {fileID: 2800000, guid: e986cdeb8cd1c0643b93b990c214879c, type: 3}
       side: {fileID: 2800000, guid: ac3300d0fb6d4374a97d4273baf987d5, type: 3}
@@ -1795,6 +2674,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 87
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 386f2d7ac2acaed4691aa5dcc07a35fc, type: 3}
       bottom: {fileID: 2800000, guid: 386f2d7ac2acaed4691aa5dcc07a35fc, type: 3}
       side: {fileID: 2800000, guid: 386f2d7ac2acaed4691aa5dcc07a35fc, type: 3}
@@ -1815,6 +2703,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 88
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 25e76deecfc458c4e81b5f66c5589306, type: 3}
       bottom: {fileID: 2800000, guid: 25e76deecfc458c4e81b5f66c5589306, type: 3}
       side: {fileID: 2800000, guid: 25e76deecfc458c4e81b5f66c5589306, type: 3}
@@ -1835,6 +2732,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 89
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 19fcffcd467e0734cbdbd28e53c39318, type: 3}
       bottom: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       side: {fileID: 2800000, guid: 82c905d3d66c7af4e86d5abe90f58c10, type: 3}
@@ -1855,6 +2761,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 90
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       bottom: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       side: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
@@ -1875,6 +2790,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 91
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3e800ba46899dbb4f8fe3e2a5b3b14cf, type: 3}
       bottom: {fileID: 2800000, guid: 3e800ba46899dbb4f8fe3e2a5b3b14cf, type: 3}
       side: {fileID: 2800000, guid: 1ffccaa999ad69541a90ee444d55208f, type: 3}
@@ -1895,6 +2819,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 92
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: b89e3abe71bdcfe4183852f0ba1f7abe, type: 3}
       bottom: {fileID: 2800000, guid: b89e3abe71bdcfe4183852f0ba1f7abe, type: 3}
       side: {fileID: 2800000, guid: b89e3abe71bdcfe4183852f0ba1f7abe, type: 3}
@@ -1915,6 +2848,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 93
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 24a8b234baae20d4a8c27b08497536fb, type: 3}
       bottom: {fileID: 2800000, guid: 24a8b234baae20d4a8c27b08497536fb, type: 3}
       side: {fileID: 2800000, guid: 24a8b234baae20d4a8c27b08497536fb, type: 3}
@@ -1935,6 +2877,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 94
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: aad037f0edaab984b8b6d5dd9eccd965, type: 3}
       bottom: {fileID: 2800000, guid: aad037f0edaab984b8b6d5dd9eccd965, type: 3}
       side: {fileID: 2800000, guid: aad037f0edaab984b8b6d5dd9eccd965, type: 3}
@@ -1945,6 +2896,13 @@ MonoBehaviour:
       specialTextures:
       - part: 0
         image: {fileID: 2800000, guid: aad037f0edaab984b8b6d5dd9eccd965, type: 3}
+        overrideAnimation: 0
+        animate: 1
+        columns: 1
+        rows: 0
+        frameCount: 0
+        framesPerSecond: 20
+        playback: 0
       animateFaces: 1
       animationColumns: 1
       animationRows: 32
@@ -1957,6 +2915,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 95
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3e800ba46899dbb4f8fe3e2a5b3b14cf, type: 3}
       bottom: {fileID: 2800000, guid: 3e800ba46899dbb4f8fe3e2a5b3b14cf, type: 3}
       side: {fileID: 2800000, guid: 25eca55c14e27044c971b29cba2893ab, type: 3}
@@ -1977,6 +2944,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 96
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: f08d5ba361f71dd48a0443d12e5b2cc2, type: 3}
       bottom: {fileID: 2800000, guid: 64aa7d5ab3921764e8528f9f2213df89, type: 3}
       side: {fileID: 2800000, guid: f458972b5d8275244bd14cbd42822c1b, type: 3}
@@ -1997,6 +2973,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 97
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       bottom: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       side: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
@@ -2017,6 +3002,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 98
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       bottom: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       side: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
@@ -2037,6 +3031,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 99
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       bottom: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
       side: {fileID: 2800000, guid: 62df2ce211682d843a7e315d0d771ebc, type: 3}
@@ -2057,6 +3060,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 100
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: d822c1e2346de8c49abb7997a74864fe, type: 3}
       bottom: {fileID: 2800000, guid: d822c1e2346de8c49abb7997a74864fe, type: 3}
       side: {fileID: 2800000, guid: d822c1e2346de8c49abb7997a74864fe, type: 3}
@@ -2077,6 +3089,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 101
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 598f245b62de970469cdfccadb6e95ca, type: 3}
       bottom: {fileID: 2800000, guid: 598f245b62de970469cdfccadb6e95ca, type: 3}
       side: {fileID: 2800000, guid: 598f245b62de970469cdfccadb6e95ca, type: 3}
@@ -2097,6 +3118,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 102
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 1dc09476e8bba4e4d8fbe74ecb0faef7, type: 3}
       bottom: {fileID: 2800000, guid: 1dc09476e8bba4e4d8fbe74ecb0faef7, type: 3}
       side: {fileID: 2800000, guid: 1dc09476e8bba4e4d8fbe74ecb0faef7, type: 3}
@@ -2117,6 +3147,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 103
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 6a55405a872e6c44195641382cf7f7f2, type: 3}
       bottom: {fileID: 2800000, guid: ba111412729b746488e5cbff7ea7b1d6, type: 3}
       side: {fileID: 2800000, guid: ba111412729b746488e5cbff7ea7b1d6, type: 3}
@@ -2137,6 +3176,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 104
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 58a4e80f26eced948b71f38737ac2229, type: 3}
       bottom: {fileID: 2800000, guid: 58a4e80f26eced948b71f38737ac2229, type: 3}
       side: {fileID: 2800000, guid: 58a4e80f26eced948b71f38737ac2229, type: 3}
@@ -2157,6 +3205,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 105
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 68f2a36c1cb556f42a402c07016855e3, type: 3}
       bottom: {fileID: 2800000, guid: f1b6dbb711f996c4784e51e67635b40c, type: 3}
       side: {fileID: 2800000, guid: d6d0792e317996b459e6052161caf0dd, type: 3}
@@ -2177,6 +3234,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 106
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
       bottom: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
       side: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
@@ -2197,6 +3263,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 107
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 68f2a36c1cb556f42a402c07016855e3, type: 3}
       bottom: {fileID: 2800000, guid: f1b6dbb711f996c4784e51e67635b40c, type: 3}
       side: {fileID: 2800000, guid: d6d0792e317996b459e6052161caf0dd, type: 3}
@@ -2217,6 +3292,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 108
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       bottom: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
       side: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
@@ -2237,6 +3321,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 109
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
       bottom: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
       side: {fileID: 2800000, guid: 496478ddf4484304bb50556c544d3043, type: 3}
@@ -2257,6 +3350,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 110
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: b9e03c1e95548d44caaf6edd2b9d3da3, type: 3}
       bottom: {fileID: 2800000, guid: 90d41248989b6b7488848c667ff25981, type: 3}
       side: {fileID: 2800000, guid: 90d41248989b6b7488848c667ff25981, type: 3}
@@ -2277,6 +3379,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 111
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 711ef02ebdddaa54b84b5d4901c2f50d, type: 3}
       bottom: {fileID: 2800000, guid: 711ef02ebdddaa54b84b5d4901c2f50d, type: 3}
       side: {fileID: 2800000, guid: 711ef02ebdddaa54b84b5d4901c2f50d, type: 3}
@@ -2297,6 +3408,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 112
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: ae56b059b6508634bb1e1a7b2df61038, type: 3}
       bottom: {fileID: 2800000, guid: ae56b059b6508634bb1e1a7b2df61038, type: 3}
       side: {fileID: 2800000, guid: ae56b059b6508634bb1e1a7b2df61038, type: 3}
@@ -2317,6 +3437,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 113
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 54f68fd48451ffd4387188656be30f9f, type: 3}
       bottom: {fileID: 2800000, guid: 54f68fd48451ffd4387188656be30f9f, type: 3}
       side: {fileID: 2800000, guid: 54f68fd48451ffd4387188656be30f9f, type: 3}
@@ -2337,6 +3466,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 114
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: cda714a78862602448924cc3d121796a, type: 3}
       bottom: {fileID: 2800000, guid: cda714a78862602448924cc3d121796a, type: 3}
       side: {fileID: 2800000, guid: cda714a78862602448924cc3d121796a, type: 3}
@@ -2357,6 +3495,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 115
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 8c9e2c706d1e6864cad3d46f647ea5ea, type: 3}
       bottom: {fileID: 2800000, guid: 8c9e2c706d1e6864cad3d46f647ea5ea, type: 3}
       side: {fileID: 2800000, guid: 8c9e2c706d1e6864cad3d46f647ea5ea, type: 3}
@@ -2377,6 +3524,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 116
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: d7b698661a72b9d478b18ebe0f14d0bd, type: 3}
       bottom: {fileID: 2800000, guid: d7b698661a72b9d478b18ebe0f14d0bd, type: 3}
       side: {fileID: 2800000, guid: d7b698661a72b9d478b18ebe0f14d0bd, type: 3}
@@ -2397,6 +3553,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 117
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: b216561544fcf7e43bd5604024adb276, type: 3}
       bottom: {fileID: 2800000, guid: b216561544fcf7e43bd5604024adb276, type: 3}
       side: {fileID: 2800000, guid: b216561544fcf7e43bd5604024adb276, type: 3}
@@ -2417,6 +3582,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 118
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 7f7691cf105ea9948982326135745982, type: 3}
       bottom: {fileID: 2800000, guid: 7f7691cf105ea9948982326135745982, type: 3}
       side: {fileID: 2800000, guid: 7f7691cf105ea9948982326135745982, type: 3}
@@ -2437,6 +3611,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 119
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 36a2143ae2cf3a644b4f5507ff83dc34, type: 3}
       bottom: {fileID: 2800000, guid: 36a2143ae2cf3a644b4f5507ff83dc34, type: 3}
       side: {fileID: 2800000, guid: 36a2143ae2cf3a644b4f5507ff83dc34, type: 3}
@@ -2457,6 +3640,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 120
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 3d7476a80a19d9b4da95fdada143ac00, type: 3}
       bottom: {fileID: 2800000, guid: 3d7476a80a19d9b4da95fdada143ac00, type: 3}
       side: {fileID: 2800000, guid: 3d7476a80a19d9b4da95fdada143ac00, type: 3}
@@ -2477,6 +3669,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 121
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 7481d50b95ab9be43af86be120897a81, type: 3}
       bottom: {fileID: 2800000, guid: 7481d50b95ab9be43af86be120897a81, type: 3}
       side: {fileID: 2800000, guid: 7481d50b95ab9be43af86be120897a81, type: 3}
@@ -2497,6 +3698,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 122
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 75c89f14459450e4faacde33b347380d, type: 3}
       bottom: {fileID: 2800000, guid: 75c89f14459450e4faacde33b347380d, type: 3}
       side: {fileID: 2800000, guid: 75c89f14459450e4faacde33b347380d, type: 3}
@@ -2517,6 +3727,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 123
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: 44183682c36d17840a29ff7b09a86bd2, type: 3}
       bottom: {fileID: 2800000, guid: 44183682c36d17840a29ff7b09a86bd2, type: 3}
       side: {fileID: 2800000, guid: 44183682c36d17840a29ff7b09a86bd2, type: 3}
@@ -2537,6 +3756,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 124
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: c7de64676197b4941822d1034b890078, type: 3}
       bottom: {fileID: 2800000, guid: c7de64676197b4941822d1034b890078, type: 3}
       side: {fileID: 2800000, guid: c7de64676197b4941822d1034b890078, type: 3}
@@ -2557,6 +3785,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 125
     textureData:
+      growthStages:
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
+      - {fileID: 0}
       top: {fileID: 2800000, guid: a8303005344a7ca4789d69232628fc10, type: 3}
       bottom: {fileID: 2800000, guid: a8303005344a7ca4789d69232628fc10, type: 3}
       side: {fileID: 2800000, guid: a8303005344a7ca4789d69232628fc10, type: 3}

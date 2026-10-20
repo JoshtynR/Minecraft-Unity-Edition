@@ -1487,7 +1487,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &540753533
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2150,7 +2150,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1000545843
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3576,6 +3576,8 @@ MonoBehaviour:
         m_CallState: 2
   validateDone: 1
   isInPlayMode: 0
+  spawnCows: 1
+  maximumActiveCows: 24
   betaSkylightSubtracted: 0
   fullSmoothLighting: 0
   isSaving: 0
@@ -3594,7 +3596,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1658937129}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1448068880
@@ -4566,12 +4569,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1658937127}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1422854026}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1678958895
 GameObject:
@@ -5980,7 +5983,6 @@ SceneRoots:
   - {fileID: 402633447}
   - {fileID: 870774958}
   - {fileID: 1422854026}
-  - {fileID: 1658937129}
   - {fileID: 1493713240}
   - {fileID: 1269315925}
   - {fileID: 2019228125}

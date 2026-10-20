@@ -854,6 +854,10 @@ MonoBehaviour:
   isCrouching: 0
   isFlying: 0
   drawBounds: 0
+  health: 20
+  hunger: 20
+  experienceLevel: 0
+  experienceProgress: 0
   sensitivity: 5
   checkIncrement: 0.05
   reach: 4.5
@@ -865,6 +869,10 @@ MonoBehaviour:
   fovLerpSpeed: 8
   PlayerName: 
   SteamId: 0
+  airSupply: 300
+  burning: 0
+  saturation: 5
+  exhaustion: 0
 --- !u!114 &-873992875956742777
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -882,227 +890,300 @@ MonoBehaviour:
   SlotTextPrefab: {fileID: 3992299508821768992, guid: a222424fde0043148a65b49b909fca6e,
     type: 3}
   slots:
-  - type: 10
-    count: 64
+  - type: 0
+    count: 0
+    damage: 0
     index: 0
-  - type: 10
-    count: 64
+  - type: 0
+    count: 0
+    damage: 0
     index: 0
-  - type: 11
-    count: 64
+  - type: 0
+    count: 0
+    damage: 0
     index: 3
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
-  - type: 6
-    count: 64
+  - type: 0
+    count: 0
+    damage: 0
     index: 30
   - type: 0
     count: 0
-    index: 0
-  - type: 6
-    count: 64
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
     index: 0
   - type: 0
     count: 0
+    damage: 0
+    index: 0
+  - type: 0
+    count: 0
+    damage: 0
     index: 0
   - type: 12
     count: 64
+    damage: 0
     index: 71
-  isOpen: 0
   inventoryHighlightRect: {fileID: 0}
+  isOpen: 0
   pickedUpSlot:
     type: 0
     count: 0
+    damage: 0
     index: 0
   selectedSlotIndex: 0
 --- !u!114 &1296084350405261148

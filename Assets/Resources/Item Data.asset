@@ -141,7 +141,7 @@ MonoBehaviour:
     placedBlock: 22
   - id: 23
     displayName: Oak Sapling
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: f0ac4f2e5d6044f4cb4580f1902c9c23, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 23
@@ -195,19 +195,19 @@ MonoBehaviour:
     placedBlock: 31
   - id: 32
     displayName: Bed
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 49ed4e02eb3d7574f86510821ed3df61, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 32
   - id: 33
     displayName: Powered Rail
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: c29f960bacfd5cb4694a02e10c71aa64, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 33
   - id: 34
     displayName: Detector Rail
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 93f6d56bf4a9afd45a99c8218ebf9e41, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 34
@@ -219,19 +219,19 @@ MonoBehaviour:
     placedBlock: 35
   - id: 36
     displayName: Cobweb
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: ac01a00bd4277154ca1935cf97470c15, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 36
   - id: 37
     displayName: Tall Grass
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: f4b80d4ff1343424bab671e415ac8e20, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 37
   - id: 38
     displayName: Dead Bush
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: cdb817d2011de8c4a939dcc701c84a39, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 38
@@ -261,25 +261,25 @@ MonoBehaviour:
     placedBlock: 42
   - id: 43
     displayName: Dandelion
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: b03f14c91eb770e4a8023cc85bdd86f7, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 43
   - id: 44
     displayName: Rose
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 158f6a9119022314289d818b87e1dc0f, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 44
   - id: 45
     displayName: Brown Mushroom
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 66a2191cf9797094c99714795c002975, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 45
   - id: 46
     displayName: Red Mushroom
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 199569cc635a2194aa11ca6bc9328805, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 46
@@ -339,7 +339,7 @@ MonoBehaviour:
     placedBlock: 55
   - id: 56
     displayName: Torch
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: cbed4fd8150a536458c9d991d8879b95, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 56
@@ -393,7 +393,7 @@ MonoBehaviour:
     placedBlock: 64
   - id: 65
     displayName: Wheat Crop0
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: e08302f0c6fc0994cb853f155e93695c, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 65
@@ -417,7 +417,7 @@ MonoBehaviour:
     placedBlock: 68
   - id: 69
     displayName: Standing Sign
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 467ba383e657aeb42b3b532f626bd1ad, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 69
@@ -429,13 +429,13 @@ MonoBehaviour:
     placedBlock: 70
   - id: 71
     displayName: Ladder
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 2de97c1820c900c47a5a6d388fbabecb, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 71
   - id: 72
     displayName: Rail
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 85fa75aa1888e97418b0d25bd0c63a23, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 72
@@ -447,13 +447,13 @@ MonoBehaviour:
     placedBlock: 73
   - id: 74
     displayName: Wall Sign
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 467ba383e657aeb42b3b532f626bd1ad, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 74
   - id: 75
     displayName: Lever
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: a3070a2a756df4b4fb6dcd7324620be7, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 75
@@ -465,7 +465,7 @@ MonoBehaviour:
     placedBlock: 76
   - id: 77
     displayName: Iron Door
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 9b44e84fa5056934c925f49470894efd, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 77
@@ -489,13 +489,13 @@ MonoBehaviour:
     placedBlock: 80
   - id: 81
     displayName: Redstone Torch Off
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 9f6bfbd3e41636d4bb1d9994e27a4a20, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 81
   - id: 82
     displayName: Redstone Torch
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 4adffd5b62943f2479cf1ca8afb69f01, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 82
@@ -531,7 +531,7 @@ MonoBehaviour:
     placedBlock: 87
   - id: 88
     displayName: Sugar Cane
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: f27b0b19d7a175743a8149b9c8f23120, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 88
@@ -579,19 +579,19 @@ MonoBehaviour:
     placedBlock: 95
   - id: 96
     displayName: Cake
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: e4f45b5ab686afe4a82a945050842b8c, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 96
   - id: 97
     displayName: Redstone Repeater
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: f084ec8c9a0c00849a69e218504072f6, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 97
   - id: 98
     displayName: Powered Repeater
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: f084ec8c9a0c00849a69e218504072f6, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 98
@@ -609,25 +609,25 @@ MonoBehaviour:
     placedBlock: 100
   - id: 101
     displayName: Spruce Sapling
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 598f245b62de970469cdfccadb6e95ca, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 101
   - id: 102
     displayName: Birch Sapling
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 1dc09476e8bba4e4d8fbe74ecb0faef7, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 102
   - id: 103
     displayName: Dry Tall Grass
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: cdb817d2011de8c4a939dcc701c84a39, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 103
   - id: 104
     displayName: Fern
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 58a4e80f26eced948b71f38737ac2229, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 104
@@ -759,493 +759,493 @@ MonoBehaviour:
     placedBlock: 125
   - id: 126
     displayName: Wheat Crop1
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: ba95e4092ed2d79408d51dcec9f2108c, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 126
   - id: 127
     displayName: Wheat Crop2
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 25ec4d3ffd0a7044a89d5045ef4028ec, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 127
   - id: 128
     displayName: Wheat Crop3
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: def356bd8509ad1499a715c4be64d272, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 128
   - id: 129
     displayName: Wheat Crop4
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d7d62436b3112694cb269c5adb585c26, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 129
   - id: 130
     displayName: Wheat Crop5
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 0e57ac42863e8d943ab428005b987e9f, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 130
   - id: 131
     displayName: Wheat Crop6
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: c68f622a41b9ead43a17638b9c774cd7, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 131
   - id: 132
     displayName: Wheat Crop7
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: f14316afe160cc34d8775d0b7b33f451, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 132
   - id: 1000
     displayName: Stick
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: f9697a264db96e349aef42e4965eaf96, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1001
     displayName: Coal
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 4a21b3094ccbf8a45aeea3ef226348f0, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1002
     displayName: Charcoal
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 783023d72c1cc834a881753e68b2669a, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1003
     displayName: Iron Ingot
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d52081ed90999a74bb53aa9fba234ab2, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1004
     displayName: Gold Ingot
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 9eac145b33d302341a648580f17b91b0, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1005
     displayName: Diamond
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 8f68b6b0a819b2448954d8e20bfa587e, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1006
     displayName: Redstone Dust
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 42fe18c9d60a4954c81bde26e57e21e8, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1007
     displayName: Flint
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: a221e96fabcd9c3478f3fba3b71bb032, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1008
     displayName: Iron Shovel
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 636777b6483bdaf47a05571d1b788c00, type: 3}
     maxStack: 1
     maxDamage: 250
     placedBlock: 0
   - id: 1009
     displayName: Iron Pickaxe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 88b61883ae2761147bd35ee8f2bde366, type: 3}
     maxStack: 1
     maxDamage: 250
     placedBlock: 0
   - id: 1010
     displayName: Iron Axe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: b5d1e10977df8aa4880d2cd416e398ac, type: 3}
     maxStack: 1
     maxDamage: 250
     placedBlock: 0
   - id: 1011
     displayName: Flint And Steel
-    icon: {fileID: 0}
-    maxStack: 1
+    icon: {fileID: 2800000, guid: 7f3d37b7145bee2419fe4e5f0af3a85e, type: 3}
+    maxStack: 64
     maxDamage: 64
-    placedBlock: 0
+    placedBlock: 57
   - id: 1012
     displayName: Apple
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 6ee4460b9ccf3fb4db419081d783951a, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1013
     displayName: Bow
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 387688d0926af29458568dd82bbb22a6, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1014
     displayName: Arrow
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 3b063be2a628e604584e9ce0202ecc47, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1015
     displayName: Iron Sword
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: ae94b14726bbd694b983857af5c65fd7, type: 3}
     maxStack: 1
     maxDamage: 250
     placedBlock: 0
   - id: 1016
     displayName: Wooden Sword
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: cd6526e2e1aace6468d4ec233d0a3375, type: 3}
     maxStack: 1
     maxDamage: 59
     placedBlock: 0
   - id: 1017
     displayName: Wooden Shovel
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 4a93f1ff9c8bfc345b0f0c6e1f4d049a, type: 3}
     maxStack: 1
     maxDamage: 59
     placedBlock: 0
   - id: 1018
     displayName: Wooden Pickaxe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 77cde9a7369d5be43bc30c09ee080403, type: 3}
     maxStack: 1
     maxDamage: 59
     placedBlock: 0
   - id: 1019
     displayName: Wooden Axe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 7103e44409562ac4196c00e2aeb97cbf, type: 3}
     maxStack: 1
     maxDamage: 59
     placedBlock: 0
   - id: 1020
     displayName: Stone Sword
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: f3d88af2a0f4da346976bbc87fc65aef, type: 3}
     maxStack: 1
     maxDamage: 131
     placedBlock: 0
   - id: 1021
     displayName: Stone Shovel
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 93460b27f76c4544f9fbf26dadcc959e, type: 3}
     maxStack: 1
     maxDamage: 131
     placedBlock: 0
   - id: 1022
     displayName: Stone Pickaxe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d8922d50208f0ce46859296739eeb5fa, type: 3}
     maxStack: 1
     maxDamage: 131
     placedBlock: 0
   - id: 1023
     displayName: Stone Axe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: ac11f38b8492e0c45a4f6b486e885757, type: 3}
     maxStack: 1
     maxDamage: 131
     placedBlock: 0
   - id: 1024
     displayName: Diamond Sword
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 229a5ef02b0887f41b7c482e6d2e4e79, type: 3}
     maxStack: 1
     maxDamage: 1561
     placedBlock: 0
   - id: 1025
     displayName: Diamond Shovel
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: faf91b019824cbf4399de5cc3da14150, type: 3}
     maxStack: 1
     maxDamage: 1561
     placedBlock: 0
   - id: 1026
     displayName: Diamond Pickaxe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 3d9562f586a88ad4e87925ede22d5507, type: 3}
     maxStack: 1
     maxDamage: 1561
     placedBlock: 0
   - id: 1027
     displayName: Diamond Axe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 6dde25f11ee80c7468320087670fe748, type: 3}
     maxStack: 1
     maxDamage: 1561
     placedBlock: 0
   - id: 1028
     displayName: Bowl
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 7c352f3fb56891d458d359e09de6e8f7, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1029
     displayName: Mushroom Stew
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 3758f8ba0eef6f74eb9dd7ed757122c4, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1030
     displayName: Golden Sword
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: b018352d4bdf588498d6d4646908ea5b, type: 3}
     maxStack: 1
     maxDamage: 32
     placedBlock: 0
   - id: 1031
     displayName: Golden Shovel
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 372204dd4987b8941a802f51f6b4c116, type: 3}
     maxStack: 1
     maxDamage: 32
     placedBlock: 0
   - id: 1032
     displayName: Golden Pickaxe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: fb2257f32e35ed54898dec135350c16a, type: 3}
     maxStack: 1
     maxDamage: 32
     placedBlock: 0
   - id: 1033
     displayName: Golden Axe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 435b99a7b4339634d847e4016d20f683, type: 3}
     maxStack: 1
     maxDamage: 32
     placedBlock: 0
   - id: 1034
     displayName: String
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: ce813fe58d1df4a47bdece6f80714fba, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1035
     displayName: Feather
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: b9f67169b3d6c904a8ef444c7c8f6f5c, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1036
     displayName: Gunpowder
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: f711bfc92dc75344da3c333dfdf7ffb7, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1037
     displayName: Wooden Hoe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: aeea79049efa4244f8efc5156b895b85, type: 3}
     maxStack: 1
     maxDamage: 59
     placedBlock: 0
   - id: 1038
     displayName: Stone Hoe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 1fdf75a5d17e2ec49ae5779159eadeb2, type: 3}
     maxStack: 1
     maxDamage: 131
     placedBlock: 0
   - id: 1039
     displayName: Iron Hoe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: fd6d970233f92784692d71f8c3295714, type: 3}
     maxStack: 1
     maxDamage: 250
     placedBlock: 0
   - id: 1040
     displayName: Diamond Hoe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: daff470ee2dee224a86950693e5e3149, type: 3}
     maxStack: 1
     maxDamage: 1561
     placedBlock: 0
   - id: 1041
     displayName: Golden Hoe
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: e7a4e2c784820c84d84237a6dfc3ceb6, type: 3}
     maxStack: 1
     maxDamage: 32
     placedBlock: 0
   - id: 1042
     displayName: Seeds
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 0cbda521042851948832d655e40e0a32, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1043
     displayName: Wheat
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: c2268008adad7bb46ae08a4a9bb5e05b, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1044
     displayName: Bread
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 6bd4defb8e48c8740baa4259b4e25f02, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1045
     displayName: Leather Helmet
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 35e91695acf2b9e47bfbe51261f574aa, type: 3}
     maxStack: 1
     maxDamage: 33
     placedBlock: 0
   - id: 1046
     displayName: Leather Chestplate
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 43d2634d6daa31e4d85da4c5e62472ba, type: 3}
     maxStack: 1
     maxDamage: 48
     placedBlock: 0
   - id: 1047
     displayName: Leather Leggings
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 2d139f616cfd7294c82136952dd0be23, type: 3}
     maxStack: 1
     maxDamage: 45
     placedBlock: 0
   - id: 1048
     displayName: Leather Boots
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: e9aab27fd1fa56541abdd699ca371e8d, type: 3}
     maxStack: 1
     maxDamage: 39
     placedBlock: 0
   - id: 1049
     displayName: Chainmail Helmet
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: db777a7fafbe1a3499abd8ea4b353fa5, type: 3}
     maxStack: 1
     maxDamage: 66
     placedBlock: 0
   - id: 1050
     displayName: Chainmail Chestplate
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 82b5ddbc79deacb44870087fd48720bd, type: 3}
     maxStack: 1
     maxDamage: 96
     placedBlock: 0
   - id: 1051
     displayName: Chainmail Leggings
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 4180b4697e7b6ec4986371dd66b2c814, type: 3}
     maxStack: 1
     maxDamage: 90
     placedBlock: 0
   - id: 1052
     displayName: Chainmail Boots
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: e66c999948a2dfe489c82d59a92ed448, type: 3}
     maxStack: 1
     maxDamage: 78
     placedBlock: 0
   - id: 1053
     displayName: Iron Helmet
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 5fd89dc72c1bc5d4ebe7e07637817b6d, type: 3}
     maxStack: 1
     maxDamage: 132
     placedBlock: 0
   - id: 1054
     displayName: Iron Chestplate
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 66a1c490f3e019542add0e0e4af8be8c, type: 3}
     maxStack: 1
     maxDamage: 192
     placedBlock: 0
   - id: 1055
     displayName: Iron Leggings
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 85223a3cdeaee474b8bbac6828fce67a, type: 3}
     maxStack: 1
     maxDamage: 180
     placedBlock: 0
   - id: 1056
     displayName: Iron Boots
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 558782962bf218c49b75125c814a747c, type: 3}
     maxStack: 1
     maxDamage: 156
     placedBlock: 0
   - id: 1057
     displayName: Diamond Helmet
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 9d013ff6044a4664495bb9ef7abf0df3, type: 3}
     maxStack: 1
     maxDamage: 264
     placedBlock: 0
   - id: 1058
     displayName: Diamond Chestplate
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: aee0bb9cc2ea21a4d922d987d9d8df72, type: 3}
     maxStack: 1
     maxDamage: 384
     placedBlock: 0
   - id: 1059
     displayName: Diamond Leggings
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 9eb6197513f6eb4499a81868089eee1a, type: 3}
     maxStack: 1
     maxDamage: 360
     placedBlock: 0
   - id: 1060
     displayName: Diamond Boots
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: a084c012834b88b4492d6399513f1e75, type: 3}
     maxStack: 1
     maxDamage: 312
     placedBlock: 0
   - id: 1061
     displayName: Golden Helmet
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 87619338d502efd499873e3bf35c9b58, type: 3}
     maxStack: 1
     maxDamage: 66
     placedBlock: 0
   - id: 1062
     displayName: Golden Chestplate
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: bf1380d4eb2dfa84eac784aa785a1cc8, type: 3}
     maxStack: 1
     maxDamage: 96
     placedBlock: 0
   - id: 1063
     displayName: Golden Leggings
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d697ed48badb5df41a083f64e3a88cea, type: 3}
     maxStack: 1
     maxDamage: 90
     placedBlock: 0
   - id: 1064
     displayName: Golden Boots
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 74f4c0f2622908a4cb11f702be024720, type: 3}
     maxStack: 1
     maxDamage: 78
     placedBlock: 0
   - id: 1065
     displayName: Raw Porkchop
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 2e3643dec3641804bbc0ecbf80626447, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1066
     displayName: Cooked Porkchop
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d695e8c77d5cf844ba8cb0bb81030348, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1067
     displayName: Painting
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: da6505ac930ae4d43bbd05beb3d6ccac, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1068
     displayName: Golden Apple
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 4e909480b4452f449a585d49ced4d7f3, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1069
     displayName: Bucket
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: ac142cabba1635941895cca5202242c3, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1070
     displayName: Water Bucket
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 028bf751bbe998047ad0ad86cbda10bf, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1071
     displayName: Lava Bucket
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 869bed98d6390e84c8b1ad3f9f6fd600, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1072
     displayName: Minecart
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 4272c922afc611f4698db8a565095934, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1073
     displayName: Saddle
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 8af8cfd67d1dbbf41839f9bd5a813c7f, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1074
     displayName: Snowball
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 2b663eed223730a4abf0509b295e5332, type: 3}
     maxStack: 16
     maxDamage: 0
     placedBlock: 0
@@ -1257,37 +1257,37 @@ MonoBehaviour:
     placedBlock: 0
   - id: 1076
     displayName: Leather
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 9075df7ceb6236c449b7fd11081be2f8, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1077
     displayName: Milk Bucket
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: bce0b331a5f86fa439f274c33757873f, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1078
     displayName: Brick
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d18d2ce0008c1cd4182064e8903b2812, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1079
     displayName: Clay Ball
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 89ab76524609eb54099df4ac491da3f6, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1080
     displayName: Paper
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: c2fa78a11961dc74ea4766945474c786, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1081
     displayName: Book
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 703cc5b5c9b2f8f4285a2144350167aa, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
@@ -1299,193 +1299,193 @@ MonoBehaviour:
     placedBlock: 0
   - id: 1083
     displayName: Chest Minecart
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 69bd27cdccda6c345b5ca61961d4278a, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1084
     displayName: Furnace Minecart
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: e9f0a54d978770d45ad22a9a17387c7f, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1085
     displayName: Egg
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: c68d7492dd3c2344e96898c013c6f590, type: 3}
     maxStack: 16
     maxDamage: 0
     placedBlock: 0
   - id: 1086
     displayName: Compass
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 3a71a6eb3d340b34d99c7df8d8a35f19, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1087
     displayName: Fishing Rod
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 92f245e2806dbfc4789c8a2478386e30, type: 3}
     maxStack: 1
     maxDamage: 64
     placedBlock: 0
   - id: 1088
     displayName: Clock
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 5912a0af2573f5f4eb77210ae4b2b8d3, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1089
     displayName: Glowstone Dust
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 7ceea325a4585514a9a187024bcd075b, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1090
     displayName: Raw Fish
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 47b958dbe38cb9a488bf710a6fc89315, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1091
     displayName: Cooked Fish
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 344833a867a46ef4b833da2b8c2b6a46, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1092
     displayName: Ink Sac
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 8e331d90621436b4fb82a6f13c6ea08f, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1093
     displayName: Bone
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 61bbe5b56d04cb743b48b873828670d5, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1094
     displayName: Sugar
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 3abca8abcc131b24984c2b21a953232d, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1095
     displayName: Cookie
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 471306b4bcf45244aa856d11640524fa, type: 3}
     maxStack: 8
     maxDamage: 0
     placedBlock: 0
   - id: 1096
     displayName: Map
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: a38b3e893f96da946b82a341813bf463, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1097
     displayName: Shears
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 8f04512cda6568446a891acadbb50596, type: 3}
     maxStack: 1
     maxDamage: 238
     placedBlock: 0
   - id: 1098
     displayName: Music Disc13
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 50da3582725170e4b94b42c9c07abb04, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1099
     displayName: Music Disc Cat
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 48b1bb90a2c19ac429c25c2811c92d2e, type: 3}
     maxStack: 1
     maxDamage: 0
     placedBlock: 0
   - id: 1100
     displayName: Rose Red
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 88c218caeb2319b40b551d4d8b136a7c, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1101
     displayName: Cactus Green
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: ca6b9c8c6688832418d2b00463c1b97f, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1102
     displayName: Cocoa Beans
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 9c54167df1eb6e245be2ac393033336f, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1103
     displayName: Lapis Lazuli
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 37afa4ea664b34a40837b9dcba4b2de3, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1104
     displayName: Purple Dye
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: fef3e65812e7e5548bb44a003ba11ffa, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1105
     displayName: Cyan Dye
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: ae620eec93ca7de46a0da08507822923, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1106
     displayName: Light Gray Dye
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: af779197fa4ee4f4198896768be37bec, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1107
     displayName: Gray Dye
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: acfece8c8910d304e84d089f0ee41022, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1108
     displayName: Pink Dye
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 62c7ddfcb84d058499c89abb138eeaaf, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1109
     displayName: Lime Dye
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: e1e297b6a8f4d5f488e9c03d184a489e, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1110
     displayName: Dandelion Yellow
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: a4e5cafb9a426f743948a0f91cbd7355, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1111
     displayName: Light Blue Dye
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: dcea07cd1b570914ba6ac3b4bc34af7a, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1112
     displayName: Magenta Dye
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: 9f9a980538f7b5b41b39450364226b64, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1113
     displayName: Orange Dye
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: c2b9e6f811a87bf47a6c5ceadd1e50f0, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1114
     displayName: Bone Meal
-    icon: {fileID: 0}
+    icon: {fileID: 2800000, guid: d9cd7639e71e97c478c4df6dc53f93db, type: 3}
     maxStack: 64
     maxDamage: 0
     placedBlock: 0
