@@ -71,7 +71,7 @@ public partial class PlayerInventory
     }
     public void ClickInventorySlot(int index,bool right,bool shift)
     {
-        if(chestPending)return;
+        if(chestPending||DropRequestPending)return;
         if(chestOpen){ClickChest(index,right,shift);return;}
         if(tableOpen&&!TableAccessible()){CloseInventory();return;}
         if(tableOpen&&((index>=36&&index<40)||(index>=41&&index<45)))return;
@@ -133,7 +133,7 @@ public partial class PlayerInventory
 
     public bool AddItem(ItemType type,int count=1,bool onlyInventory=false,bool onlyHotbar=false,int damage=0)
     {
-        if(count<=0||damage<0||!ItemCatalog.Valid(type))return false;
+        if(DropRequestPending||count<=0||damage<0||!ItemCatalog.Valid(type))return false;
         ReadStorage();int start=onlyInventory?9:0,end=onlyHotbar?9:36;
         // The bool API is transactional: callers must never receive false after
         // some items were inserted and then retry/duplicate the original stack.
@@ -146,7 +146,7 @@ public partial class PlayerInventory
     }
     public void RemoveHeldItem(int count=1)
     {
-        if(selectedSlotIndex<0||selectedSlotIndex>=9||count<=0)return;
+        if(DropRequestPending||selectedSlotIndex<0||selectedSlotIndex>=9||count<=0)return;
         var stack=Stack(slots[selectedSlotIndex]);stack.count=Math.Max(0,stack.count-count);WriteStack(selectedSlotIndex,stack);
     }
     public void RemoveItem(int index) { if(index>=0&&index<36)WriteStack(index,new InventoryStack()); }
@@ -160,8 +160,8 @@ public partial class PlayerInventory
             var value=Stack(craftingSlots[i]);value.count=InventoryRules.Insert(storageBuffer,value.type,value.count,0,36,value.damage);WriteStack(36+i,value);
         }
         CommitStorage();SetCursor(cursor);RefreshCraftingOutput();
-        // There is no dropped-item entity system yet. When storage is full,
-        // keep remaining cursor/grid stacks safely persisted instead of deleting.
+        // Menu overflow remains persisted when storage is full. Mining and Q use
+        // world drops; closing a menu must not silently discard cursor/grid stacks.
     }
     public Slot[] SavedInventory() { InitializeSlotData();return CopySlots(slots); }
     public Slot[] SavedCrafting() => CopySlots(craftingSlots);

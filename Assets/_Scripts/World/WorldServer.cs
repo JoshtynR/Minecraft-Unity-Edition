@@ -22,6 +22,11 @@ public partial class WorldServer : NetworkBehaviour
         NetworkServer.RegisterHandler<SpawnPlayerMessage>(SpawnPlayerMessageHandler, false);
         NetworkServer.RegisterHandler<StartPlayerMessage>(StartPlayerMessageHandler, false);
         NetworkServer.RegisterHandler<ChestRequest>(ReceiveChestRequest);
+        NetworkServer.RegisterHandler<DropSyncRequest>((connection,request)=>
+        {
+            if(connection.identity==null||World.Instance==null)return;
+            foreach(var item in World.Instance.CaptureDroppedItems())connection.Send(new DropStateMessage{item=item});
+        });
 
         StartCoroutine(SaveLoop());
     }

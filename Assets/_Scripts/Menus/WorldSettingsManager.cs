@@ -10,6 +10,7 @@ public class WorldSettingsManager : MonoBehaviour
     public long betaWorldSeed;
     public string worldName;
     private FluidTickSave fluidTicks;
+    private DroppedItemState[] droppedItems;
     private string fluidWorldName;
     
     private void Awake()
@@ -37,6 +38,7 @@ public class WorldSettingsManager : MonoBehaviour
             seedOffset = worldSaveData.seedOffset;
             betaWorldSeed = worldSaveData.betaWorldSeed;
             fluidTicks=worldSaveData.fluidTicks;
+            droppedItems=worldSaveData.droppedItems;
             fluidWorldName=worldSaveData.worldName;
         });
     }
@@ -48,6 +50,7 @@ public class WorldSettingsManager : MonoBehaviour
             World.Instance.betaWorldSeed = betaWorldSeed;
             World.Instance.worldName = worldName;
             World.Instance.RestoreFluidTicks(fluidWorldName==worldName?fluidTicks:null);
+            World.Instance.RestoreDroppedItems(fluidWorldName==worldName?droppedItems:null);
         }
     }
 

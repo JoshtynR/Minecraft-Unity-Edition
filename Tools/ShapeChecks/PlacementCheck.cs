@@ -21,7 +21,7 @@ public partial class World
  public void SetBlock(Vector3Int pos,BlockType type,byte facing=0){blocks[pos]=new Block(type){globalWorldPosition=pos,blockShape=SpecialBlockGeometry.Shape(type,facing)};}
 }
 public static class BlockDataManager {public static BlockData[] blockTypeDataDictionary=new BlockData[133];}
-public class Inventory {public class Slot {public ItemType type;public int count=64;}public Slot[] slots={new Slot()};public int selectedSlotIndex;public void RemoveHeldItem(){slots[0].count--;}public void RequestChest(Vector3Int position){}}
+public class Inventory {public bool DropRequestPending;public Vector3Int tablePosition;public void OpenCraftingTable(Vector3Int position){tablePosition=position;}public class Slot {public ItemType type;public int count=64;}public Slot[] slots={new Slot()};public int selectedSlotIndex;public void RemoveHeldItem(){slots[0].count--;}public void RequestChest(Vector3Int position){}}
 public partial class Player
 {
  public class Objects {public Transform body=new Transform();}
@@ -65,6 +65,10 @@ public static class PlacementCheck
   Check(!material.PlaceBlock()&&material.inventory.slots[0].count==64,"standalone item cannot be interpreted as a world block");
   material.inventory.slots[0].type=ItemType.Stone;material.inventory.slots[0].count=0;
   Check(!material.PlaceBlock(),"empty stack cannot place a block");
-  Console.WriteLine("25 production stair/slab/torch/item/interaction placement checks passed (Unity/network mocked).");
+  material.inventory.DropRequestPending=true;material.inventory.slots[0].count=64;
+  Check(!material.PlaceBlock()&&material.inventory.slots[0].count==64,"placement cannot consume a slot while a drop transaction is in flight");
+  var crafter=new Player{aimed=new Vector3Int(3,2,4)};crafter.world.SetBlock(crafter.aimed,BlockType.CraftingTable);
+  Check(crafter.UseForCheck()&&crafter.inventory.tablePosition.Equals(crafter.aimed),"right-click dispatches crafting tables to the new inventory interface");
+  Console.WriteLine("27 production stair/slab/torch/item/interaction placement checks passed (Unity/network mocked).");
  }
 }

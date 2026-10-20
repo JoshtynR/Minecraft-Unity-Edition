@@ -16,6 +16,7 @@ public class PlayerHudAssets : ScriptableObject
     public Texture2D waterOverlay,fireOverlay;
     public Texture2D smokeParticle,splashParticle,lavaParticle,bubbleParticle;
     public AudioClip fluidFizz,fluidSplash,fluidFlow;
+    public AudioClip itemPickup;
     public TMP_FontAsset levelFont;
     public Font guiFont;
     public Texture2D guiWidgets;

@@ -270,6 +270,7 @@ public partial class Player : BaseEntity
 
     public bool PlaceBlock()
     {
+        if(inventory.DropRequestPending)return false;
         var held = inventory.slots[inventory.selectedSlotIndex];
         BlockType type;
         if (held.count <= 0 || !ItemCatalog.TryPlacedBlock(held.type, out type)) return false;
@@ -565,6 +566,7 @@ public partial class Player : BaseEntity
             }
         }
 
+        UpdateItemDrops();
         if (inventory.isOpen || escapeMenuOpen || health <= 0)
         {
             horizontal = 0;

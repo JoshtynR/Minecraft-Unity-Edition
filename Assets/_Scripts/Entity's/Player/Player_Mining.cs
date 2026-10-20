@@ -127,7 +127,7 @@ public partial class Player
             if (serverMineProgress < 1) continue;
             serverMining = false;
             nextServerMineTime = NetworkTime.time + 0.25;
-            var drop = HandMining.ExistingDrop(serverMineType, Random.Range(0, 10));
+            var drop = world.MiningItemDrop(serverMineType);
             var replacement = BlockType.Air;
             if (serverMineType == BlockType.Ice)
             {
@@ -140,15 +140,15 @@ public partial class Player
             // harvested blocks use the classic 0.025 exhaustion cost.
             if (HandMining.Harvestable(serverMineType))
             { LoadHungerState(); hungerSimulation.AddExhaustion(0.025f); StoreHungerState(); }
-            if (networkStarted) TargetMiningCompleted(connectionToClient, drop);
-            else ReceiveMiningCompleted(drop);
+            if(!drop.Empty)world.SpawnItemDrop(drop,(Vector3)serverMinePosition+Vector3.one*.5f);
+            if (networkStarted) TargetMiningCompleted(connectionToClient);
+            else ReceiveMiningCompleted();
         }
     }
 
-    [TargetRpc] private void TargetMiningCompleted(NetworkConnection target, BlockType drop) { ReceiveMiningCompleted(drop); }
-    private void ReceiveMiningCompleted(BlockType drop)
+    [TargetRpc] private void TargetMiningCompleted(NetworkConnection target) { ReceiveMiningCompleted(); }
+    private void ReceiveMiningCompleted()
     {
-        if (drop != BlockType.Nothing) inventory.AddItem(drop);
         localMining = false; localMineProgress = localMineClock = 0;
         nextLocalMineTime = Time.time + 0.25f;
         if (crackOverlay != null) crackOverlay.Hide();

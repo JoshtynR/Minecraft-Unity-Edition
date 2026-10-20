@@ -78,6 +78,7 @@ public partial class World : MonoBehaviour
     {
         OnValidate();
         Clear();
+        InitializeDroppedItems();
         NetworkClient.RegisterHandler<ChestReply>(message =>
         {
             if(GameManager.Instance!=null&&GameManager.Instance.localPlayer!=null)
@@ -379,6 +380,7 @@ public partial class World : MonoBehaviour
     private void Clear()
     {
         ResetWater();
+        ResetDroppedItems();
         ResetTreeMeshChanges();
         worldData = new WorldData
         {
@@ -411,10 +413,12 @@ public partial class World : MonoBehaviour
     {
         taskTokenSource.Cancel();
         taskTokenSource.Dispose();
+        ResetDroppedItems(true);
         if (Instance == this)
         {
             NetworkClient.UnregisterHandler<StartWorldMessage>();
             NetworkClient.UnregisterHandler<ChestReply>();
+            NetworkClient.UnregisterHandler<DropStateMessage>();
             Instance = null;
         }
     }

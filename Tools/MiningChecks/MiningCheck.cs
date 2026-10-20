@@ -56,8 +56,12 @@ public static class BlockHelper {public static Direction[] directions=(Direction
 public class ChunkData {}
 public class ShapeSlot {public BlockShapes orientation;public static implicit operator BlockShapes(ShapeSlot s)=>s.orientation;public BlockShape shape=new BlockShape(0,0,0,16,16,16);public BlockShape GetShape()=>shape;}
 public class Block {public BlockType type;public Vector3Int globalWorldPosition;public ShapeSlot blockShape=new ShapeSlot();}
+public struct MiningDropProbe {public BlockType type;public bool Empty=>type==BlockType.Nothing;}
 public class World
 {
+ public List<BlockType> drops=new List<BlockType>();
+ public MiningDropProbe MiningItemDrop(BlockType type)=>new MiningDropProbe{type=HandMining.ExistingDrop(type,1)};
+ public bool SpawnItemDrop(MiningDropProbe drop,Vector3 position){drops.Add(drop.type);return true;}
  public bool IsWorldCreated=true;public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();public int edits;
  public bool chestProtected;public bool CanReplaceChest(Vector3Int position,BlockType next)=>!chestProtected;
  public Block GetBlock(Vector3 p)=>GetBlock(new Vector3Int((int)Math.Floor(p.x),(int)Math.Floor(p.y),(int)Math.Floor(p.z)));
@@ -86,7 +90,7 @@ public static class MiningCheck
   Check(HandMining.ExistingDrop(BlockType.Grass,1)==BlockType.Dirt&&HandMining.ExistingDrop(BlockType.Stone,1)==BlockType.Nothing,"hand harvest/drop restrictions");
   Check(HandMining.ExistingDrop(BlockType.Gravel,0)==BlockType.Nothing&&HandMining.ExistingDrop(BlockType.Gravel,1)==BlockType.Gravel,"flint roll does not invent gravel");
   foreach(var t in new[]{BlockType.Dirt,BlockType.Log,BlockType.Stone,BlockType.Sandstone,BlockType.Glass,BlockType.WoodenSlab,BlockType.BirchLog})
-  {var p=Setup(t);p.Begin(p.aimed,t);float progress=0;int ticks=0;while(progress<1){progress+=HandMining.DamagePerTick(t,true,false);ticks++;}for(int i=0;i<ticks-1;i++)p.Step();Check(p.world.edits==0,"cannot remove before accumulated hand progress");p.Step();Check(p.world.edits==1&&p.world.GetBlock(p.aimed).type==BlockType.Air,"authoritative completion once");p.Step();Check(p.world.edits==1,"completion not duplicated");Check(p.inventory.drops.Count==(HandMining.ExistingDrop(t,1)==BlockType.Nothing?0:1),"only permitted hand drops awarded");}
+  {var p=Setup(t);p.Begin(p.aimed,t);float progress=0;int ticks=0;while(progress<1){progress+=HandMining.DamagePerTick(t,true,false);ticks++;}for(int i=0;i<ticks-1;i++)p.Step();Check(p.world.edits==0,"cannot remove before accumulated hand progress");p.Step();Check(p.world.edits==1&&p.world.GetBlock(p.aimed).type==BlockType.Air,"authoritative completion once");p.Step();Check(p.world.edits==1,"completion not duplicated");Check(p.world.drops.Count==(HandMining.ExistingDrop(t,1)==BlockType.Nothing?0:1)&&p.inventory.drops.Count==0,"only permitted hand drops spawn in the world instead of auto-inserting into inventory");}
   var cancel=Setup(BlockType.Log);cancel.Begin(cancel.aimed,BlockType.Log);cancel.Step();cancel.Cancel();for(int i=0;i<100;i++)cancel.Step();Check(cancel.world.edits==0,"release cancels server mining");
   var far=Setup(BlockType.Dirt);far.transform.position=new Vector3(100,0,0);far.Begin(far.aimed,BlockType.Dirt);for(int i=0;i<40;i++)far.Step();Check(far.world.edits==0,"out of reach rejected");
   var occluded=Setup(BlockType.Dirt);occluded.world.blocks[new Vector3Int(0,1,1)]=new Block{type=BlockType.Stone,globalWorldPosition=new Vector3Int(0,1,1)};occluded.Begin(occluded.aimed,BlockType.Dirt);for(int i=0;i<40;i++)occluded.Step();Check(occluded.world.edits==0,"occluded mining rejected");

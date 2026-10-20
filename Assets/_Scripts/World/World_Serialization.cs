@@ -47,7 +47,8 @@ public partial class World
             worldName = worldName,
             seedOffset = mapSeedOffset,
             betaWorldSeed = betaWorldSeed,
-            fluidTicks = CaptureFluidTicks()
+            fluidTicks = CaptureFluidTicks(),
+            droppedItems = CaptureDroppedItems()
         };
         saveWatch.Stop();
         Debug.Log($"Creating local save object took {saveWatch.ElapsedMilliseconds}ms");

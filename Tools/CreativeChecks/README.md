@@ -51,8 +51,8 @@ https://www.minecraftforum.net/forums/mapping-and-modding-java-edition/minecraft
   into recovery, preserving the existing four-slot save format without duplication.
 - Closing returns cursor and crafting inputs to free storage. If storage is full,
   they remain persisted and reappear on reopening; they are not destroyed. The
-  game does not yet have dropped-item entities, so vanilla outside-click drops
-  and crafting-grid drops on close are deliberately not simulated by deleting.
+  menu still retains overflow safely; outside-click drops and automatic grid
+  spilling on close are not implemented by deleting items.
 - New survival inventories start empty; starter cheat stacks and K-key grants
   were removed. The sidebar remains a deliberate item-giving tool.
 
@@ -186,3 +186,46 @@ cropped from the 256x256 atlas and uses the original ContainerWorkbench slot
 coordinates. Inventory/hotbar slots move into the table panel and return when it
 closes; the existing TMI sidebar remains available. No modern recipe book or
 outside-click item dropping is added.
+
+## Dropped items
+
+Mining now spawns world items instead of awarding inventory items directly.
+`World.SpawnItemDrop(InventoryStack, position, motion, delay)` is also available
+for future mob loot and other sources. Q throws one held item with a forty-tick
+pickup delay; mined items wait ten ticks. Quantities split at the item-specific
+stack limit. Gravel can drop flint and leaves can drop their species' sapling;
+other block drops retain the existing hand-harvest rules. This change does not
+implement tool harvesting, mob loot tables, death inventory spilling, outside-click
+GUI drops or crafting-grid spilling. Existing menu overflow recovery remains safe.
+
+`ItemVisualMesh.Build` is shared by inventory previews and block drops. Drops use
+matching item catalog image references or block geometry, with cached meshes and
+materials. Blocks rotate; item sprites face the player's camera. Both bob, show
+one/two/three/four copies at Beta's stack thresholds, and fly toward the collector
+for three ticks after pickup. The resources include both shader materials so
+builds retain their shaders. `PlayerHudAssets.itemPickup` accepts an optional
+pickup audio clip; no pop recording is bundled or guessed from unrelated audio.
+
+The server/offline world runs the simulation at 20 Hz: .04 gravity, .98 air drag,
+block slipperiness on ground, swept voxel collisions, water currents, lava/fire
+contact damage, and 6000-tick despawning. Unloaded chunks pause age and movement;
+world saves keep each item's type/count/damage, position, motion, age, health,
+pickup delay and hover phase. Deferred restore survives world startup clearing.
+Client replicas receive spawn/update/removal messages and a late-join snapshot.
+
+Pickup checks server-side entity IDs, proximity, delay and available capacity.
+Partial pickup leaves the remainder; competing or replayed requests cannot award
+the same item twice. Transfers update inventory and world state on the main
+thread, refuse saving boundaries, and briefly lock conflicting inventory edits.
+As with the existing chest system, player inventory uses the project's client
+snapshot protocol; this is not a new general inventory anti-cheat system. Pickup
+requests run while the inventory and pause menus are closed.
+
+The inventory runner compiles the production store, world loop, visuals, shared
+mesh builder, and player transaction code. Coverage includes save snapshots,
+partial/full storage, stale IDs, replay, durability, 20/50 Hz, unloaded chunks,
+despawn age, source-image sharing, collection lifetime and resource cleanup.
+The mining runner checks world spawning without direct inventory awards, and the
+shape suite checks the production swept collision code plus placement blocking
+during a pending drop transfer. Unity shader compilation, real pointer/rendering,
+audio, late joins and multiplayer transport still require a Play Mode check.

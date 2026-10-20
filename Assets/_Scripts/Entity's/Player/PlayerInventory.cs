@@ -78,6 +78,7 @@ public partial class PlayerInventory : MonoBehaviour
 
     public void OpenInventory()
     {
+        if(DropRequestPending)return;
         isOpen = true;
         creativeRoot.gameObject.SetActive(true);
         HideSlotHover();
@@ -179,36 +180,7 @@ public partial class PlayerInventory : MonoBehaviour
             blockItem.GetComponent<MeshFilter>().sharedMesh = cachedMesh;
             return;
         }
-        var meshData = new MeshData(true);
-        var block = new Block(type, Vector3Int.zero, null);
-        block = BlockMapping.MapTypeToBlock(type, block);
-        foreach (var direction in BlockHelper.directions)
-        {
-            int first = meshData.vertices.Count;
-            BlockHelper.GetFaceDataIn(direction, Vector3Int.zero, meshData, block, BlockDataManager.blockTypeDataDictionary[(int)type], null);
-            float light = direction == Direction.backwards ? 13 : direction == Direction.right ? 10 : 14;
-            bool plant = BlockShapesExtensions.IsPlant(type) || SpecialBlockGeometry.FlatShading(type);
-            for (int i = first; i < meshData.vertices.Count; i++)
-            {
-                meshData.skyLight.Add(light);
-                meshData.sides.Add(plant ? new Vector3(1, 1, 3) : Vector3.zero);
-            }
-        }
-        
-        var mesh = new Mesh();
-        mesh.SetVertices(meshData.vertices);
-        mesh.SetTriangles(meshData.triangles, 0);
-        mesh.SetUVs(0, meshData.uv);
-        mesh.SetColors(meshData.colors);
-        mesh.RecalculateNormals();
-        var lighArray = new Vector2[meshData.skyLight.Count];
-        for (int i = 0; i < meshData.skyLight.Count; i++)
-        {
-            lighArray[i] = new Vector2(meshData.skyLight[i], 0);
-        }
-
-        mesh.SetUVs(1, lighArray);
-        mesh.SetUVs(2, meshData.sides);
+        var mesh = ItemVisualMesh.Build(type);
         iconMeshes.Add(type, mesh);
         blockItem.GetComponent<MeshFilter>().sharedMesh = mesh;
     }

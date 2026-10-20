@@ -14,9 +14,10 @@ namespace UnityEngine
   public static T FromJson<T>(string text){using(var stream=new MemoryStream(Convert.FromBase64String(text)))return (T)new BinaryFormatter().Deserialize(stream);}
  }
 }
-namespace UnityEngine.Rendering {public enum IndexFormat {UInt32}}
-public partial class World
+namespace UnityEngine.Rendering {public enum IndexFormat {UInt32}public enum ShadowCastingMode {Off}}
+public partial class World:MonoBehaviour
 {
+ public bool IsWorldCreated=true,disabled;public int worldHeight=128;
  public static World Instance=new World();public string worldName="";public int betaSkylightSubtracted;public bool isSaving;public void SaveWorld(){}
  public System.Collections.Generic.Dictionary<Vector3Int,Block> blocks=new System.Collections.Generic.Dictionary<Vector3Int,Block>();
  public World(){InitializeChests();}
@@ -62,7 +63,7 @@ public partial class PlayerInventory
   }
   Check(ChestModelGeometry.LidAngle(0)==0&&ChestModelGeometry.LidAngle(1)==90&&ChestModelGeometry.LidAngle(.5f)>45,"hinged lid uses eased quarter-turn");
   Check(ChestModelGeometry.Facing(2)==0&&ChestModelGeometry.Facing(3)==180&&ChestModelGeometry.Facing(4)==90&&ChestModelGeometry.Facing(5)==-90,"all four block directions rotate modern chest consistently");
-  var random=new Random(42);
+  var random=new System.Random(42);
   for(int run=0;run<200;run++)
   {
    var chest=new InventoryStack[27];var inventory=new InventoryStack[36];var cursor=new InventoryStack();

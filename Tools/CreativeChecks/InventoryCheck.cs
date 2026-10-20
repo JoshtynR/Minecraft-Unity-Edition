@@ -5,15 +5,18 @@ using UnityEngine;
 namespace JetBrains.Annotations {public class CanBeNullAttribute:Attribute {}}
 namespace Mirror
 {
+ public class CommandAttribute:Attribute {}public class TargetRpcAttribute:Attribute {}
+ public class NetworkConnection {}
  public interface NetworkMessage {}
  public class ClientRpcAttribute:Attribute {}
  public class NetworkConnectionToClient {public GameObject identity;public int connectionId;public ChestReply last;public void Send(ChestReply reply){last=reply;}}
- public static class NetworkServer {public static bool active;public static Dictionary<int,NetworkConnectionToClient> connections=new Dictionary<int,NetworkConnectionToClient>();}
- public static class NetworkClient {public static bool active;public static ChestRequest last;public static void Send(ChestRequest request){last=request;}}
+ public static class NetworkServer {public static void SendToAll<T>(T message){}public static bool active;public static Dictionary<int,NetworkConnectionToClient> connections=new Dictionary<int,NetworkConnectionToClient>();}
+ public static class NetworkClient {public static void RegisterHandler<T>(Action<T> callback){}public static bool ready=true;public static bool active;public static ChestRequest last;public static void Send(DropSyncRequest request){}public static void Send(ChestRequest request){last=request;}}
 }
 namespace UnityEngine
 {
  public class AudioClip:Object {}
+ public class AudioSource {public static void PlayClipAtPoint(AudioClip clip,Vector3 position,float volume){}}
  public class Font:Object {}
  public class Object
  {
@@ -43,19 +46,21 @@ namespace UnityEngine
   public List<Vector3> vertices;public void SetVertices(List<Vector3> v){vertices=v;}public void SetUVs<T>(int channel,List<T> uv){}public void SetUVs(int channel,Vector2[] uv){}public void SetTriangles(List<int> t,int sub){}public void SetColors(List<Color> c){}public void RecalculateNormals(){}public void RecalculateBounds(){}
  }
  public class MeshFilter:Component {public Mesh sharedMesh;}
- public class MeshRenderer:Component {public Material sharedMaterial;public void SetPropertyBlock(MaterialPropertyBlock properties){}}
+ public class MeshRenderer:Component {public UnityEngine.Rendering.ShadowCastingMode shadowCastingMode;public Material sharedMaterial;public void SetPropertyBlock(MaterialPropertyBlock properties){}}
  public class MaterialPropertyBlock {public void SetFloat(string key,float value){}}
+ public static class Application {public static bool isPlaying=true;}
+ public static class Random {public static int Range(int a,int b)=>a;public static float Range(float a,float b)=>(a+b)/2;}
  public static class Time {public static float deltaTime=.05f,unscaledTime;}
  public class TooltipAttribute:Attribute {public TooltipAttribute(string s){}}
  public class HideInInspector:Attribute {}
  public class RangeAttribute:Attribute {public RangeAttribute(int a,int b){}}
  public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color white=>new Color(1,1,1,1);public static Color clear=>new Color(0,0,0,0);}
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
- public struct Vector3
+ [Serializable] public struct Vector3
  {
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
   public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 operator*(Vector3 v,float s)=>new Vector3(v.x*s,v.y*s,v.z*s);
-  public static Vector3 up=>new Vector3(0,1,0);
+  public static Vector3 up=>new Vector3(0,1,0);public static Vector3 down=>new Vector3(0,-1,0);
   public float sqrMagnitude=>x*x+y*y+z*z;public float magnitude=>(float)Math.Sqrt(sqrMagnitude);
   public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
   public static Vector3 Lerp(Vector3 a,Vector3 b,float t)=>a+(b-a)*t;
@@ -72,10 +77,10 @@ namespace UnityEngine
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}}
  public struct Quaternion {public static Quaternion Euler(float x,float y,float z)=>new Quaternion();}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float width,float height){this.x=x;this.y=y;this.width=width;this.height=height;}}
- public static class Mathf {public static int CeilToInt(float x)=>(int)Math.Ceiling(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float MoveTowards(float a,float b,float step)=>a<b?Math.Min(b,a+step):Math.Max(b,a-step);public static float Clamp01(float x)=>Clamp(x,0,1);public static float Pow(float x,float y)=>(float)Math.Pow(x,y);public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v));}
+ public static class Mathf {public const float PI=(float)Math.PI;public static float Max(float a,float b)=>Math.Max(a,b);public static int CeilToInt(float x)=>(int)Math.Ceiling(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float MoveTowards(float a,float b,float step)=>a<b?Math.Min(b,a+step):Math.Max(b,a-step);public static float Clamp01(float x)=>Clamp(x,0,1);public static float Pow(float x,float y)=>(float)Math.Pow(x,y);public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v));}
  public class Transform:Component
  {
-  public Transform parent;public Vector3 localPosition,localScale=Vector3.one;public Quaternion localRotation,rotation;public List<Transform> children=new List<Transform>();public int childCount=>children.Count;
+  public Vector3 forward=new Vector3(0,0,1),eulerAngles;public Transform parent;public Vector3 localPosition,localScale=Vector3.one;public Quaternion localRotation,rotation;public List<Transform> children=new List<Transform>();public int childCount=>children.Count;
   public Vector3 position {get=>parent==null?localPosition:parent.position+localPosition;set{var p=parent==null?new Vector3():parent.position;localPosition=new Vector3(value.x-p.x,value.y-p.y,value.z-p.z);}}
   public Transform GetChild(int i)=>children[i];public void SetParent(Transform p,bool world){if(parent!=null)parent.children.Remove(this);parent=p;p.children.Add(this);}
   public void SetAsLastSibling(){parent.children.Remove(this);parent.children.Add(this);}
@@ -108,14 +113,15 @@ namespace UnityEngine
   public static PlayerHudAssets hud;public static bool omitPreviewMaterial;
   public static T Load<T>(string name)where T:Object
   {
+   if(name=="DroppedItemMaterial"||name=="DroppedBlockMaterial")return (T)(Object)new Material();
    if(name=="InventoryPlayerMaterial"&&omitPreviewMaterial)return null;
    return name=="InventoryPlayerMaterial"||name=="ModernChestMaterial"?(T)(Object)new Material():name=="PlayerHudAssets"?(T)(Object)hud:null;
   }
  }
- public enum KeyCode {Alpha1=49,E=69,LeftShift=304,RightShift=303}
+ public enum KeyCode {Alpha1=49,E=69,Q=81,LeftShift=304,RightShift=303}
  public static class Input {public static Vector3 mousePosition;public static bool GetKeyDown(KeyCode k)=>false;public static bool GetKey(KeyCode k)=>false;public static float GetAxis(string n)=>0;}
  public enum RenderMode {ScreenSpaceOverlay,ScreenSpaceCamera}
- public class Camera:Component {}
+ public class Camera:Component {public static Camera main;}
  public class Canvas:Component {public RenderMode renderMode;public Camera worldCamera;}
  public static class RectTransformUtility {public static bool ScreenPointToLocalPointInRectangle(RectTransform r,Vector3 p,Camera camera,out Vector2 point){point=new Vector2(p.x,p.y);return true;}}
  public enum CursorLockMode {None,Locked}
@@ -159,7 +165,13 @@ public class ChunkData
  public bool modifiedByPlayer;public Vector3Int worldPos;public World worldRef;
  public Block GetBlock(Vector3Int local)=>worldRef.GetBlock(worldPos+local);
 }
-public class Player:MonoBehaviour {public bool escapeMenuOpen;public float reach=4.5f;public int health=20;}
+public partial class Player:MonoBehaviour
+{
+ public bool escapeMenuOpen,networkStarted,isServer=true;public float reach=4.5f,eyeHeight=1.578f;public int health=20;
+ public PlayerInventory inventory=>GetComponent<PlayerInventory>();public World world=>World.Instance;
+ public Transform cam;public Mirror.NetworkConnection connectionToClient=new Mirror.NetworkConnection();
+}
+public class GameManager {public static GameManager Instance;public Player localPlayer;}
 public static class PlayerSurvivalHUD {public static int attaches;public static void EnsureOn(Transform parent){attaches++;}}
 public class Block {public BlockType type;public object blockShape;public Block(BlockType type,Vector3Int p,object section){this.type=type;}public int GetSkyLight()=>15;public int GetBlockLight()=>0;}
 public static class BlockMapping {public static Block MapTypeToBlock(BlockType t,Block b)=>b;}
@@ -258,7 +270,7 @@ public partial class PlayerInventory
  }
  public static void Main(string[] args)
  {
-  CheckRules();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
+  CheckRules();CheckDrops();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
   var headless=new GameObject("DedicatedInventory").AddComponent<PlayerInventory>();
   Check(headless.AddItem(ItemType.Stone,64)&&headless.slots[0].count==64,"storage logic works without a canvas on nonlocal/server players");
   headless.LoadInventory(null);headless.AddItem(ItemType.Stone,63);headless.AddItem(ItemType.Dirt,35*64);
