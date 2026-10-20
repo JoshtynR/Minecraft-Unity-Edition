@@ -155,7 +155,7 @@ namespace TMPro
 {
  public class TMP_FontAsset:UnityEngine.Object {public Material material=new Material();public FaceInfo faceInfo=new FaceInfo();public class FaceInfo {public float pointSize=8;}}
  public enum TextAlignmentOptions {Center,BottomRight,Left,TopLeft}
- public class TextMeshProUGUI:Component {public TMP_FontAsset font=new TMP_FontAsset();public Material fontSharedMaterial;public Vector4 margin;public float fontSize;public string text;public Color color;public TextAlignmentOptions alignment;public bool raycastTarget,enableWordWrapping,enableExtraPadding,enableAutoSizing;public RectTransform rectTransform=>(RectTransform)transform;}
+ public class TextMeshProUGUI:Component {public TMP_FontAsset font=new TMP_FontAsset();public Material fontSharedMaterial;public Vector4 margin;public float fontSize;public string text;public Color color;public TextAlignmentOptions alignment;public bool raycastTarget,enableWordWrapping,extraPadding,enableAutoSizing;public RectTransform rectTransform=>(RectTransform)transform;}
 }
 namespace UnityEngine.EventSystems
 {

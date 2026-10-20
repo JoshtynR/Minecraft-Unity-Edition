@@ -239,7 +239,7 @@ public partial class PlayerInventory
         text.gameObject.name="Count";
         text.font=creativeFont;text.fontSize=8;text.color=Color.white;
         if(inventoryTextMaterial!=null)text.fontSharedMaterial=inventoryTextMaterial;
-        text.enableWordWrapping=false;text.enableAutoSizing=false;text.enableExtraPadding=true;
+        text.enableWordWrapping=false;text.enableAutoSizing=false;text.extraPadding=true;
         text.margin=Vector4.zero;text.raycastTarget=false;
         text.alignment=TextAlignmentOptions.BottomRight;
         text.rectTransform.sizeDelta=new Vector2(18,8);
@@ -318,7 +318,7 @@ public partial class PlayerInventory
         var text=rect.gameObject.AddComponent<TextMeshProUGUI>();text.font=creativeFont;text.fontSize=size;text.text=value;
         var material=color.r+color.g+color.b>1?inventoryTextMaterial:inventoryLabelMaterial;
         if(material!=null)text.fontSharedMaterial=material;
-        text.enableExtraPadding=true;
+        text.extraPadding=true;
         text.color=color;text.alignment=TextAlignmentOptions.Center;text.raycastTarget=false;text.enableWordWrapping=false;return text;
     }
     private Button CreativeButton(string label,Transform parent,float x,float y,float width,float height,UnityEngine.Events.UnityAction action)
