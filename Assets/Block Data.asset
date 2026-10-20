@@ -1342,6 +1342,15 @@ MonoBehaviour:
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 65
     textureData:
+      growthStages:
+      - {fileID: 2800000, guid: e08302f0c6fc0994cb853f155e93695c, type: 3}
+      - {fileID: 2800000, guid: ba95e4092ed2d79408d51dcec9f2108c, type: 3}
+      - {fileID: 2800000, guid: 25ec4d3ffd0a7044a89d5045ef4028ec, type: 3}
+      - {fileID: 2800000, guid: def356bd8509ad1499a715c4be64d272, type: 3}
+      - {fileID: 2800000, guid: d7d62436b3112694cb269c5adb585c26, type: 3}
+      - {fileID: 2800000, guid: 0e57ac42863e8d943ab428005b987e9f, type: 3}
+      - {fileID: 2800000, guid: c68f622a41b9ead43a17638b9c774cd7, type: 3}
+      - {fileID: 2800000, guid: f14316afe160cc34d8775d0b7b33f451, type: 3}
       top: {fileID: 2800000, guid: e08302f0c6fc0994cb853f155e93695c, type: 3}
       bottom: {fileID: 2800000, guid: e08302f0c6fc0994cb853f155e93695c, type: 3}
       side: {fileID: 2800000, guid: e08302f0c6fc0994cb853f155e93695c, type: 3}
@@ -2564,145 +2573,5 @@ MonoBehaviour:
     isTransparent: 0
     generateCollider: 1
     opacity: 15
-    lightEmission: 0
-    albedoTint: {r: 1, g: 1, b: 1, a: 1}
-  - blockType: 126
-    textureData:
-      top: {fileID: 2800000, guid: ba95e4092ed2d79408d51dcec9f2108c, type: 3}
-      bottom: {fileID: 2800000, guid: ba95e4092ed2d79408d51dcec9f2108c, type: 3}
-      side: {fileID: 2800000, guid: ba95e4092ed2d79408d51dcec9f2108c, type: 3}
-      front: {fileID: 0}
-      back: {fileID: 0}
-      left: {fileID: 0}
-      right: {fileID: 0}
-      specialTextures: []
-      animateFaces: 0
-      animationColumns: 1
-      animationRows: 0
-      animationFrameCount: 0
-      animationFramesPerSecond: 20
-    isTransparent: 1
-    generateCollider: 0
-    opacity: 0
-    lightEmission: 0
-    albedoTint: {r: 1, g: 1, b: 1, a: 1}
-  - blockType: 127
-    textureData:
-      top: {fileID: 2800000, guid: 25ec4d3ffd0a7044a89d5045ef4028ec, type: 3}
-      bottom: {fileID: 2800000, guid: 25ec4d3ffd0a7044a89d5045ef4028ec, type: 3}
-      side: {fileID: 2800000, guid: 25ec4d3ffd0a7044a89d5045ef4028ec, type: 3}
-      front: {fileID: 0}
-      back: {fileID: 0}
-      left: {fileID: 0}
-      right: {fileID: 0}
-      specialTextures: []
-      animateFaces: 0
-      animationColumns: 1
-      animationRows: 0
-      animationFrameCount: 0
-      animationFramesPerSecond: 20
-    isTransparent: 1
-    generateCollider: 0
-    opacity: 0
-    lightEmission: 0
-    albedoTint: {r: 1, g: 1, b: 1, a: 1}
-  - blockType: 128
-    textureData:
-      top: {fileID: 2800000, guid: def356bd8509ad1499a715c4be64d272, type: 3}
-      bottom: {fileID: 2800000, guid: def356bd8509ad1499a715c4be64d272, type: 3}
-      side: {fileID: 2800000, guid: def356bd8509ad1499a715c4be64d272, type: 3}
-      front: {fileID: 0}
-      back: {fileID: 0}
-      left: {fileID: 0}
-      right: {fileID: 0}
-      specialTextures: []
-      animateFaces: 0
-      animationColumns: 1
-      animationRows: 0
-      animationFrameCount: 0
-      animationFramesPerSecond: 20
-    isTransparent: 1
-    generateCollider: 0
-    opacity: 0
-    lightEmission: 0
-    albedoTint: {r: 1, g: 1, b: 1, a: 1}
-  - blockType: 129
-    textureData:
-      top: {fileID: 2800000, guid: d7d62436b3112694cb269c5adb585c26, type: 3}
-      bottom: {fileID: 2800000, guid: d7d62436b3112694cb269c5adb585c26, type: 3}
-      side: {fileID: 2800000, guid: d7d62436b3112694cb269c5adb585c26, type: 3}
-      front: {fileID: 0}
-      back: {fileID: 0}
-      left: {fileID: 0}
-      right: {fileID: 0}
-      specialTextures: []
-      animateFaces: 0
-      animationColumns: 1
-      animationRows: 0
-      animationFrameCount: 0
-      animationFramesPerSecond: 20
-    isTransparent: 1
-    generateCollider: 0
-    opacity: 0
-    lightEmission: 0
-    albedoTint: {r: 1, g: 1, b: 1, a: 1}
-  - blockType: 130
-    textureData:
-      top: {fileID: 2800000, guid: 0e57ac42863e8d943ab428005b987e9f, type: 3}
-      bottom: {fileID: 2800000, guid: 0e57ac42863e8d943ab428005b987e9f, type: 3}
-      side: {fileID: 2800000, guid: 0e57ac42863e8d943ab428005b987e9f, type: 3}
-      front: {fileID: 0}
-      back: {fileID: 0}
-      left: {fileID: 0}
-      right: {fileID: 0}
-      specialTextures: []
-      animateFaces: 0
-      animationColumns: 1
-      animationRows: 0
-      animationFrameCount: 0
-      animationFramesPerSecond: 20
-    isTransparent: 1
-    generateCollider: 0
-    opacity: 0
-    lightEmission: 0
-    albedoTint: {r: 1, g: 1, b: 1, a: 1}
-  - blockType: 131
-    textureData:
-      top: {fileID: 2800000, guid: c68f622a41b9ead43a17638b9c774cd7, type: 3}
-      bottom: {fileID: 2800000, guid: c68f622a41b9ead43a17638b9c774cd7, type: 3}
-      side: {fileID: 2800000, guid: c68f622a41b9ead43a17638b9c774cd7, type: 3}
-      front: {fileID: 0}
-      back: {fileID: 0}
-      left: {fileID: 0}
-      right: {fileID: 0}
-      specialTextures: []
-      animateFaces: 0
-      animationColumns: 1
-      animationRows: 0
-      animationFrameCount: 0
-      animationFramesPerSecond: 20
-    isTransparent: 1
-    generateCollider: 0
-    opacity: 0
-    lightEmission: 0
-    albedoTint: {r: 1, g: 1, b: 1, a: 1}
-  - blockType: 132
-    textureData:
-      top: {fileID: 2800000, guid: f14316afe160cc34d8775d0b7b33f451, type: 3}
-      bottom: {fileID: 2800000, guid: f14316afe160cc34d8775d0b7b33f451, type: 3}
-      side: {fileID: 2800000, guid: f14316afe160cc34d8775d0b7b33f451, type: 3}
-      front: {fileID: 0}
-      back: {fileID: 0}
-      left: {fileID: 0}
-      right: {fileID: 0}
-      specialTextures: []
-      animateFaces: 0
-      animationColumns: 1
-      animationRows: 0
-      animationFrameCount: 0
-      animationFramesPerSecond: 20
-    isTransparent: 1
-    generateCollider: 0
-    opacity: 0
     lightEmission: 0
     albedoTint: {r: 1, g: 1, b: 1, a: 1}

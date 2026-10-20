@@ -25,6 +25,10 @@ public class BlockTypeData
 [Serializable]
 public class TextureData
 {
+    [Tooltip("Wheat growth stages 0 through 7, on the single crop block.")]
+    public Texture2D[] growthStages = new Texture2D[8];
+    [NonSerialized] public int[] growthStageIndices;
+    public int GrowthStageIndex(int age) => growthStageIndices != null && growthStageIndices.Length == 8 ? growthStageIndices[age & 7] : FaceIndex(Direction.backwards);
     public Texture2D top;
     public Texture2D bottom;
     public Texture2D side;

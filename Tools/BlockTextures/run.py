@@ -48,6 +48,7 @@ def main():
         (tmp/'LoadingProbe.cs').write_text('public partial class LoadingProbe{'+loaded+'}')
         binary=tmp/'textures.exe'
         files=[ROOT/'Tools/BlockTextures/TextureCheck.cs',ROOT/'Assets/_Scripts/BlockDataSO.cs',ROOT/'Assets/_Scripts/SpecialBlockTextures.cs',ROOT/'Assets/_Scripts/BlockDataManager.cs',ROOT/'Assets/_Scripts/BlockDataDefaults.cs',ROOT/'Assets/_Scripts/Block/BlockType.cs',tmp/'BlockHelper.cs',ROOT/'Tools/BlockTextures/LoadingProbe.cs',tmp/'LoadingProbe.cs']
+        files.append(ROOT/'Assets/_Scripts/WheatCropRules.cs')
         files.append(ROOT/'Assets/_Scripts/World/Rendering/BiomeColorPalette.cs')
         subprocess.run([args.mcs,'-langversion:latest','-out:'+str(binary),*map(str,files)],check=True)
         subprocess.run([args.mono,str(binary)],check=True)

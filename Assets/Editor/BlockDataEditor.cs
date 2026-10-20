@@ -28,7 +28,8 @@ public class BlockDataEditor : EditorWindow
         foreach (var block in data.textureDataList)
         {
             if (block == null || (!string.IsNullOrEmpty(search) && block.blockType.ToString().IndexOf(search, System.StringComparison.OrdinalIgnoreCase) < 0)) continue;
-            if (GUILayout.Button(block.blockType.ToString())) selectedBlockTypeData = block;
+            if(WheatCropRules.IsLegacy(block.blockType))continue;
+            if (GUILayout.Button(block.blockType==WheatCropRules.Crop?"Wheat Crop":block.blockType.ToString())) selectedBlockTypeData = block;
         }
         EditorGUILayout.EndScrollView();
         detailScroll = EditorGUILayout.BeginScrollView(detailScroll);
@@ -41,7 +42,7 @@ public class BlockDataEditor : EditorWindow
     private void DrawDetails()
     {
         var block = selectedBlockTypeData;
-        EditorGUILayout.LabelField(block.blockType.ToString(), EditorStyles.boldLabel);
+        EditorGUILayout.LabelField(block.blockType==WheatCropRules.Crop?"Wheat Crop":block.blockType.ToString(), EditorStyles.boldLabel);
         BetaBlockCatalog.Entry entry;
         if (BetaBlockCatalog.TryGet(block.blockType, out entry))
         {
@@ -90,7 +91,12 @@ public class BlockDataEditor : EditorWindow
         serialized.Update();
         int selectedIndex=data.textureDataList.IndexOf(block);
         if(selectedIndex>=0)
-            SpecialTextureEditor.Draw(serialized.FindProperty("textureDataList").GetArrayElementAtIndex(selectedIndex).FindPropertyRelative("textureData"),block.blockType);
+        {
+            var textureProperty=serialized.FindProperty("textureDataList").GetArrayElementAtIndex(selectedIndex).FindPropertyRelative("textureData");
+            if(block.blockType==WheatCropRules.Crop)
+                EditorGUILayout.PropertyField(textureProperty.FindPropertyRelative("growthStages"),new GUIContent("Growth Stages (0-7)"),true);
+            SpecialTextureEditor.Draw(textureProperty,block.blockType);
+        }
         serialized.ApplyModifiedProperties();
         EditorGUILayout.BeginHorizontal();
         DrawImage(top); DrawImage(bottom); DrawImage(side);

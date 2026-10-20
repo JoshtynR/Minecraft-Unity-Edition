@@ -105,6 +105,9 @@ public class ChunkData
 }
 public partial class World
 {
+    public void DropWheat(Vector3Int p,int age) {}
+    private void TickFarming(WaterPosition p,Block block) {}
+    private void ValidateFarmNeighbors(Vector3Int p) {}
     public void EmitFluidEffect(Vector3Int p,byte kind) {}
     private void DisposeFluidEffects() {}
     public bool CanReplaceChest(Vector3Int p,BlockType t) { return true; }
@@ -195,7 +198,20 @@ public static partial class IntegrationCheck
             c.SetBlock(V(1,0,1),type);
             var shapeSave=new ChunkSectionSaveData(c.sections[0]);
             var shapeLoad=ChunkSection.Deserialize(shapeSave,c);
-            WaterCheck.Assert(shapeLoad.blocks[1,0,1].blockShape==BlockShapesExtensions.ForBlock(type),"saved catalog type reconstructs code-defined shape");
+            WaterCheck.Assert(shapeLoad.blocks[1,0,1].blockShape==(WheatCropRules.IsCrop(type)?SpecialBlockGeometry.Shape(WheatCropRules.Crop,WheatCropRules.LegacyAge(type)):WheatCropRules.IsSoil(type)?SpecialBlockGeometry.Shape(type,SpecialBlockGeometry.DefaultState(type)):BlockShapesExtensions.ForBlock(type)),"saved catalog type reconstructs shape or migrated crop state: "+type);
+        }
+        for(byte age=0;age<8;age++)
+        {
+            c.SetBlock(V(0,0,0),WheatCropRules.Crop);c.GetBlock(V(0,0,0)).blockShape=SpecialBlockGeometry.Shape(WheatCropRules.Crop,age);
+            c.SetBlock(V(1,0,0),WheatCropRules.Crop);c.GetBlock(V(1,0,0)).blockShape=SpecialBlockGeometry.Shape(WheatCropRules.Crop,(byte)((age+1)&7));
+            var cropSave=new ChunkSectionSaveData(c.sections[0]);
+            WaterCheck.Assert(cropSave.blocks[0].length==1&&cropSave.blocks[0].type==WheatCropRules.Crop&&cropSave.blocks[0].stairFacing==age,"RLE preserves wheat ages without separate IDs");
+            var cropLoad=ChunkSection.Deserialize(cropSave,c);
+            WaterCheck.Assert(cropLoad.blocks[0,0,0].type==WheatCropRules.Crop&&SpecialBlockGeometry.State(cropLoad.blocks[0,0,0].type,cropLoad.blocks[0,0,0].blockShape)==age,"wheat age survives chunk save/network snapshot");
+            var oldCrop=new ChunkSectionSaveData{yOffset=0,blocks=new[]{new BlockSaveData(WheatCropRules.LegacyTextureType(age),8){hasBlockState=true,stairFacing=0}}};
+            var migrated=ChunkSection.Deserialize(oldCrop,c).blocks[0,0,0];
+            WaterCheck.Assert(migrated.type==WheatCropRules.Crop&&SpecialBlockGeometry.State(migrated.type,migrated.blockShape)==age,"legacy ID migrates even with old zero metadata");
+            WaterCheck.Assert(new Block(migrated).blockShape==migrated.blockShape&&new Block(BlockType.Air,V(0,0,0),c.sections[0]).Reset(migrated).blockShape==migrated.blockShape,"crop copies retain age");
         }
         for(byte facing=0; facing<4; facing++)
         {

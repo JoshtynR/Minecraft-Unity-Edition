@@ -10,7 +10,7 @@ public partial class World
  public void StepFurnaces(float dt){Time.deltaTime=dt;UpdateFurnaces();}
  public void BreakFurnaceForTest(Vector3Int position){RemoveFurnace(position);}
  public void SetBlock(Vector3Int position,BlockType type,byte facing)
- {blocks[position]=new Block(type,position,null){blockShape=facing};}
+ {var old=GetBlock(position);bool harvest=WheatCropRules.IsCrop(old.type)&&!WheatCropRules.IsCrop(type);int age=SpecialBlockGeometry.State(old.type,old.blockShape);blocks[position]=new Block(type,position,null){blockShape=facing};if(harvest)DropWheat(position,age);}
 }
 public static class WorldDataHelper
 {

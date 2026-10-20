@@ -27,6 +27,8 @@ public static class DirectionExt {public static Direction GetOpposite(this Direc
 public class ShapeSlot {public BlockShapes orientation;public static implicit operator BlockShapes(ShapeSlot s)=>s.orientation;public BlockShape shape=new BlockShape(0,0,0,16,16,16);public BlockShape GetShape()=>shape;}
 public class TextureData
 {
+ public int[] growthStageIndices;
+ public int GrowthStageIndex(int stage)=>growthStageIndices==null?FaceIndex(Direction.backwards):growthStageIndices[stage&7];
  public Dictionary<BlockTexturePart,int> parts=new Dictionary<BlockTexturePart,int>();
  public int FaceIndex(Direction d)=>PartIndex(BlockTexturePart.Surface);
  public int FaceIndex(BlockType t,Direction d)=>t==BlockType.Water||t==BlockType.Lava?PartIndex(d==Direction.up||d==Direction.down?BlockTexturePart.FluidStill:BlockTexturePart.FluidFlow,FaceIndex(d)):FaceIndex(d);

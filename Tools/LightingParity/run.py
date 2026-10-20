@@ -15,6 +15,7 @@ def main():
   section=(ROOT/'Assets/_Scripts/World/ChunkSection.cs').read_text();axes=section[section.index('    public static void ChooseFaceAxes'):]
   (t/'ChunkSection.cs').write_text('using UnityEngine;public class ChunkSection{'+axes)
   sources=['Assets/_Scripts/WorldGeneration/Beta/Beta173Lighting.cs','Assets/_Scripts/Block/BlockType.cs','Assets/_Scripts/Block/StairGeometry.cs','Assets/_Scripts/Block/SpecialBlockGeometry.cs','Assets/_Scripts/World/Rendering/SpecialBlockMesh.cs','Assets/_Scripts/SpecialBlockTextures.cs','Assets/_Scripts/Block/BetaBlockCatalog.cs','Assets/_Scripts/Block/BlockShape.cs','Assets/_Scripts/Block/BlockShapes.cs','Assets/_Scripts/World/Rendering/PlantMesh.cs','Tools/LightingParity/PlantCheck.cs','Tools/LightingParity/StairCheck.cs','Assets/_Scripts/World/Rendering/MeshData.cs','Assets/_Scripts/World/Lighting.cs','Assets/_Scripts/World/WaterSurface.cs','Assets/_Scripts/World/WaterSimulation.cs','Tools/LightingParity/LightingCheck.cs']
+  sources.append('Assets/_Scripts/WheatCropRules.cs')
   binary=t/'lighting.exe'
   sources.append('Tools/LightingParity/SpecialMeshCheck.cs')
   sources.append('Assets/_Scripts/World/FluidTickScheduler.cs')

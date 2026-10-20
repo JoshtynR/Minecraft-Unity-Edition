@@ -27,10 +27,10 @@ public class Block
 
     public Block(BlockType type, Vector3Int position, ChunkSection section)
     {
-        this.type = type;
+        this.type = WheatCropRules.Canonical(type);
         this.position = position;
         this.section = section;
-        blockShape = BlockShapesExtensions.ForBlock(this.type);
+        blockShape = WheatCropRules.IsCrop(type) ? SpecialBlockGeometry.Shape(this.type, WheatCropRules.LegacyAge(type)) : BlockShapesExtensions.ForBlock(this.type);
     }
 
     public Block(Block block)
@@ -106,6 +106,8 @@ public class Block
 
     private void SetTypeCore(BlockType type)
     {
+        byte cropAge = WheatCropRules.LegacyAge(type);
+        type = WheatCropRules.Canonical(type);
         var x = position.x;
         var y = position.y;
         var z = position.z;
@@ -117,7 +119,7 @@ public class Block
 
         this.type = type;
         waterLevel = 0;
-        blockShape = BlockShapesExtensions.ForBlock(type);
+        blockShape = WheatCropRules.IsCrop(type) ? SpecialBlockGeometry.Shape(type, cropAge) : BlockShapesExtensions.ForBlock(type);
 
         if (brokeBlock)
         {

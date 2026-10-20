@@ -38,6 +38,7 @@ public partial class WorldServer : NetworkBehaviour
     {
         // Survival removal is authorized by Player's timed mining commands.
         if (message.blockType == BlockType.Air || message.blockType == BlockType.Nothing) return;
+        if(WheatCropRules.IsCrop(message.blockType))return; // Seeds use the inventory-authorized farming command.
         if(!World.Instance.CanReplaceChest(message.position,message.blockType))return;
         World.Instance.SetBlock(message.position, message.blockType, message.stairFacing);
         RpcSetBlock(message.position, message.blockType, message.stairFacing);

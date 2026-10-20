@@ -80,13 +80,34 @@ public class BlockDataManager : MonoBehaviour
                             settings.SetPartIndex(part.part,Register(part.image,settings,images,indices,ref nextLayer,fluid,part,lava&&part.part==BlockTexturePart.FluidStill));
                 }
             }
+        // Fold pre-state crop assets into one live definition without losing assigned images.
+        var crop = definitions[(int)WheatCropRules.Crop].textureData;
+        crop.growthStageIndices = new int[8];
+        var staticStage = new TextureData();
+        for (int age = 0; age < 8; age++)
+        {
+            var legacy = definitions[(int)WheatCropRules.LegacyTextureType(age)].textureData;
+            Texture2D image = crop.growthStages != null && age < crop.growthStages.Length ? crop.growthStages[age] : null;
+            if (image == null && entries != null)
+                foreach (var definition in entries)
+                    if (definition != null && definition.blockType == WheatCropRules.LegacyTextureType(age) && definition.textureData != null)
+                    {
+                        var texture = definition.textureData;
+                        if (texture.specialTextures != null)
+                            foreach (var part in texture.specialTextures)
+                                if (part != null && part.part == BlockTexturePart.Surface && part.image != null) image = part.image;
+                        if (image == null) image = texture.side != null ? texture.side : texture.top;
+                        break;
+                    }
+            crop.growthStageIndices[age] = image != null ? Register(image, staticStage, images, indices, ref nextLayer) : legacy.FaceIndex(Direction.backwards);
+        }
         // Publish a complete map, never a partially filled array, to chunk workers.
         blockTypeDataDictionary = definitions;
         if (Application.isPlaying)
         {
             var missing = new List<string>();
             foreach (BlockType type in System.Enum.GetValues(typeof(BlockType)))
-                if (!assigned[(int)type]) missing.Add(type.ToString());
+                if (!assigned[(int)type] && !WheatCropRules.IsLegacy(type)) missing.Add(type.ToString());
             if (missing.Count > 0)
             {
                 string examples = string.Join(", ", missing.GetRange(0, Mathf.Min(8, missing.Count)));

@@ -30,6 +30,11 @@ public partial class World
     }
     public InventoryStack MiningItemDrop(BlockType type,ItemType tool=ItemType.Nothing,int damage=0)
     {
+        if(type==BlockType.TallGrass||type==BlockType.Fern)
+        {
+            if(tool==ItemType.Shears&&damage<ItemDurability.Maximum(tool))return new InventoryStack(ItemCatalog.FromBlock(type),1);
+            return Random.Range(0,8)==0?new InventoryStack(ItemType.Seeds,1):new InventoryStack();
+        }
         return ToolMining.Drop(type,tool,Random.Range(0,10),Random.Range(0,20),Random.Range(0,30),damage);
     }
     public bool SpawnItemDrop(InventoryStack stack,Vector3 position,Vector3? motion=null,int delay=10)

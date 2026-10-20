@@ -129,7 +129,7 @@ public static class BlockHelper
             if (dir != Direction.forwards) return meshData;
             int first = meshData.vertices.Count;
             PlantMesh.Append(block.type, pos, chunk == null ? pos : chunk.GetGlobalBlockCoords(pos),
-                chunk != null, blockTypeData.textureData.FaceIndex(Direction.backwards), tint, meshData);
+                chunk != null, WheatCropRules.IsCrop(block.type) ? blockTypeData.textureData.GrowthStageIndex(SpecialBlockGeometry.State(block.type, block.blockShape)) : blockTypeData.textureData.FaceIndex(Direction.backwards), tint, meshData);
             if (chunk != null)
             {
                 float brightness = SampleBrightness(chunk, pos, chunk.worldRef.betaSkylightSubtracted, block.BlockData.lightEmission);

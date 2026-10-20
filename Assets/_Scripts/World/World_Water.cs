@@ -164,10 +164,13 @@ public partial class World : IWaterWorld
     {
         if (!TryGetWaterBlock(position, out var block)) return false;
         bool liquid=type==BlockType.Water||type==BlockType.Lava||type==BlockType.Fire;
+        bool washedCrop=WheatCropRules.IsCrop(block.type)&&!WheatCropRules.IsCrop(type);
+        byte cropAge=washedCrop?SpecialBlockGeometry.State(block.type,block.blockShape):(byte)0;
         if (block.type == type && (!liquid || block.waterLevel == level)) return false;
         bool hardening=block.type==BlockType.Lava&&(type==BlockType.Obsidian||type==BlockType.Cobblestone);
         var chunk = block.chunkData;
         if (block.type != type) WorldDataHelper.SetBlock(this,position,type);
+        if(washedCrop&&NetworkServer.active)DropWheat(position,cropAge);
         chunk.GetBlock(position - chunk.worldPos).waterLevel = liquid ? (byte)(level&15) : (byte)0;
         chunk.modifiedAfterSave = true;
         if(hardening)EmitFluidEffect(position,0);
@@ -255,7 +258,7 @@ public partial class World : IWaterWorld
         for (int i = 0; i < 2 && waterChunksToActivate.Count > 0; i++)
             ActivateWaterChunk(waterChunksToActivate.Dequeue());
         while (waterNotifications.TryDequeue(out var p))
-            if (NetworkServer.active) { waterSimulation.NotifyChanged(WaterPos(p));lavaSimulation.NotifyChanged(WaterPos(p));NotifyFireChange(WaterPos(p)); }
+            if (NetworkServer.active) { waterSimulation.NotifyChanged(WaterPos(p));lavaSimulation.NotifyChanged(WaterPos(p));NotifyFireChange(WaterPos(p));ValidateFarmNeighbors(p); }
 
         if (NetworkServer.active)
         {

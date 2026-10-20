@@ -27,7 +27,7 @@ public partial class PlayerInventory
     private void BuildCreativeInventory(Transform parent)
     {
         creativeBlocks.Clear();
-        foreach(var item in ItemCatalog.All)creativeBlocks.Add(item.id);
+        foreach(var item in ItemCatalog.All)if(!WheatCropRules.IsLegacy((BlockType)(int)item.id))creativeBlocks.Add(item.id);
         creativeBlocks.Sort((a,b)=>((int)a).CompareTo((int)b));
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         creativeFont=assets!=null&&assets.levelFont!=null?assets.levelFont:SlotTextPrefab.GetComponent<TextMeshProUGUI>().font;

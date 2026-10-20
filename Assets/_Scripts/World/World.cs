@@ -242,12 +242,15 @@ public partial class World : MonoBehaviour
 
     public async void SetBlocks(ChunkRenderer chunk, IEnumerable<Vector3Int> blockPoss, BlockType blockType, byte stairFacing = 0)
     {
+        if(WheatCropRules.IsLegacy(blockType)){stairFacing=WheatCropRules.LegacyAge(blockType);blockType=WheatCropRules.Crop;}
         var neightBourUpdates = new HashSet<ChunkRenderer>();
         
         foreach (var pos in blockPoss)
         {
             if(pos.y<0||pos.y>=worldHeight)continue;
             var previous = GetBlock(pos);
+            bool removingCrop=previous!=null&&WheatCropRules.IsCrop(previous.type)&&!WheatCropRules.IsCrop(blockType);
+            byte cropAge=removingCrop?SpecialBlockGeometry.State(previous.type,previous.blockShape):(byte)0;
             bool removingChest=previous!=null&&previous.type==BlockType.Chest&&blockType!=BlockType.Chest;
             bool removingFurnace=previous!=null&&IsFurnace(previous.type)&&!IsFurnace(blockType);
             if(!CanReplaceChest(pos,blockType))continue;
@@ -288,6 +291,7 @@ public partial class World : MonoBehaviour
                 GetBlock(pos).blockShape = SpecialBlockGeometry.Shape(blockType, stairFacing);
                 if(removingChest)chests.Removed(pos);
                 if(removingFurnace)RemoveFurnace(pos);
+                if(removingCrop)DropWheat(pos,cropAge);
                 if(IsFurnace(blockType))TrackFurnace(pos);
                 // Track is stateful, unlike purely visual fence/dust joins. Update
                 // its saved selection bounds and neighboring slopes before meshing.

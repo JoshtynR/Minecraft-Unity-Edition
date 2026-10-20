@@ -32,6 +32,8 @@ public static class SpecialBlockGeometry
     }
     public static BlockShapes Shape(BlockType t, byte state)
     {
+        if(WheatCropRules.IsCrop(t))return (BlockShapes)(First+(int)WheatCropRules.Crop*16+(WheatCropRules.IsLegacy(t)?WheatCropRules.LegacyAge(t):state&7));
+        if(WheatCropRules.IsSoil(t))return (BlockShapes)(First+(int)t*16+(state&7));
         if(StairGeometry.IsStair(t)) return StairGeometry.Shape(state);
         return Handles(t) ? (BlockShapes)(First+(int)t*16+(state&15)) : BlockShapesExtensions.ForBlock(t);
     }
@@ -42,6 +44,8 @@ public static class SpecialBlockGeometry
     }
     public static byte DefaultState(BlockType t)
     {
+        if(WheatCropRules.IsLegacy(t))return WheatCropRules.LegacyAge(t);
+        if(t==BlockType.MoistFarmland)return 7;
         if(IsTorch(t)) return 5;
         if(t==BlockType.Ladder || t==BlockType.WallSign || t==BlockType.Furnace || t==BlockType.LitFurnace || t==BlockType.Dispenser) return 2;
         if(t==BlockType.Piston || t==BlockType.StickyPiston || t==BlockType.PistonHead) return 1;
@@ -63,6 +67,8 @@ public static class SpecialBlockGeometry
     public static bool NonOccluding(BlockType t) => Handles(t) && t!=BlockType.Piston && t!=BlockType.StickyPiston && t!=BlockType.Furnace && t!=BlockType.LitFurnace && t!=BlockType.Dispenser && t!=BlockType.LockedChest && t!=BlockType.Pumpkin && t!=BlockType.JackOLantern;
     public static BlockShape Selection(BlockType t, byte s)
     {
+        if(WheatCropRules.IsCrop(t))return BlockShapesList.Crop;
+        if(WheatCropRules.IsSoil(t))return BlockShapesList.Farmland;
         s=(byte)(s&15);
         var cached=Bounds[(int)t,s]; if(cached!=null)return cached;
         BlockShape b=BlockShapesList.FullBlock;

@@ -131,7 +131,32 @@ public static class TextureCheck
         CheckSpecialParts();
         CheckFluidSheetGrids();
         CheckAnimations();
+        CheckWheatStages();
         Console.WriteLine(checks+" block texture data/UV/startup checks passed (Unity GPU APIs mocked).");
+    }
+    static void CheckWheatStages()
+    {
+        var crop=new BlockTypeData{blockType=WheatCropRules.Crop};
+        var entries=new List<BlockTypeData>{crop};
+        for(int age=0;age<8;age++)
+        {
+            var image=Image(16,(byte)(140+age));
+            if(age==0)crop.textureData.side=image;
+            else entries.Add(new BlockTypeData{blockType=WheatCropRules.LegacyTextureType(age),textureData=new TextureData{side=image}});
+        }
+        var manager=new BlockDataManager{textureData=new BlockDataSO{textureDataList=entries}};
+        Invoke(manager,"OnEnable");
+        for(int age=0;age<8;age++)Check(Shader.bound.layers[crop.textureData.GrowthStageIndex(age)][0].r==140+age,"legacy wheat assignments retain all stage images");
+        Invoke(manager,"OnDisable");
+        for(int age=0;age<8;age++)crop.textureData.growthStages[age]=Image(16,(byte)(160+age));
+        entries.RemoveRange(1,7);Invoke(manager,"OnEnable");
+        for(int age=0;age<8;age++)
+        {
+            int index=crop.textureData.GrowthStageIndex(age);
+            Check(Shader.bound.layers[index][0].r==160+age,"single crop definition registers each assigned growth image");
+            Check(Shader.animations.colors[index].g==1&&Shader.animations.colors[index].b==0,"growth images never autoplay as animation");
+        }
+        Check(entries.Count==1,"runtime keeps consolidated wheat asset intact");Invoke(manager,"OnDisable");
     }
     static void CheckSpecialParts()
     {

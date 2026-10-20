@@ -68,7 +68,7 @@ namespace UnityEngine
  }
  [Serializable] public struct Vector3Int
  {
-  public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static Vector3Int zero=>new Vector3Int();public static Vector3Int up=>new Vector3Int(0,1,0);
+  public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static Vector3Int zero=>new Vector3Int();public static Vector3Int up=>new Vector3Int(0,1,0);public static Vector3Int down=>new Vector3Int(0,-1,0);
   public static implicit operator Vector3(Vector3Int v)=>new Vector3(v.x,v.y,v.z);
   public static Vector3Int operator+(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);
   public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));
@@ -174,13 +174,13 @@ public partial class Player:MonoBehaviour
 }
 public class GameManager {public static GameManager Instance;public Player localPlayer;}
 public static class PlayerSurvivalHUD {public static int attaches;public static void EnsureOn(Transform parent){attaches++;}}
-public class Block {public BlockType type;public object blockShape;public Block(BlockType type,Vector3Int p,object section){this.type=type;}public int GetSkyLight()=>15;public int GetBlockLight()=>0;}
+public class Block {public int sky=15,light;public Vector3Int globalWorldPosition;public BlockType type;public object blockShape;public Block(BlockType type,Vector3Int p,object section){this.type=type;globalWorldPosition=p;}public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
 public static class BlockMapping {public static Block MapTypeToBlock(BlockType t,Block b)=>b;}
 public class TextureData {public Texture2D top,bottom,side,front,back,left,right;}
 public class BlockDefinition {public Color albedoTint;public TextureData textureData=new TextureData();}
 public static class BlockDataManager {public static BlockDefinition[] blockTypeDataDictionary=new BlockDefinition[133];}
 public static class BlockShapesExtensions {public static bool IsPlant(BlockType t)=>false;}
-public static class SpecialBlockGeometry {public static bool FlatShading(BlockType t)=>false;public static bool NormalCube(BlockType type)=>type==BlockType.Stone;public static byte State(BlockType type,object shape)=>2;}
+public static class SpecialBlockGeometry {public static object Shape(BlockType t,byte s)=>s;public static bool FlatShading(BlockType t)=>false;public static bool NormalCube(BlockType type)=>type==BlockType.Stone;public static byte State(BlockType type,object shape)=>shape is byte?(byte)shape:WheatCropRules.IsCrop(type)?WheatCropRules.LegacyAge(type):type==BlockType.MoistFarmland?(byte)7:(byte)2;}
 public static class BlockHelper
 {
  public static Direction[] directions=(Direction[])Enum.GetValues(typeof(Direction));
@@ -271,7 +271,7 @@ public partial class PlayerInventory
  }
  public static void Main(string[] args)
  {
-  CheckRules();CheckDurability();CheckDrops();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckFurnaces();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
+  CheckRules();CheckDurability();CheckDrops();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckFurnaces();CheckFarming();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
   var headless=new GameObject("DedicatedInventory").AddComponent<PlayerInventory>();
   Check(headless.AddItem(ItemType.Stone,64)&&headless.slots[0].count==64,"storage logic works without a canvas on nonlocal/server players");
   headless.LoadInventory(null);headless.AddItem(ItemType.Stone,63);headless.AddItem(ItemType.Dirt,35*64);
@@ -281,7 +281,7 @@ public partial class PlayerInventory
   Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewData.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
   CheckInventoryArtwork();
   inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival panel and catalogue open together");
-  Check(inv.creativeBlocks.Count==246&&inv.creativePageSize<inv.creativeBlocks.Count&&inv.nextPage.interactable,"complete item catalogue pages on a normal 1080p GUI screen");
+  Check(inv.creativeBlocks.Count==239&&inv.creativePageSize<inv.creativeBlocks.Count&&inv.nextPage.interactable,"complete item catalogue pages on a normal 1080p GUI screen");
   Check(inv.inventoryRect.anchoredPosition.x+88<=inv.creativePanel.anchoredPosition.x-inv.creativePanel.sizeDelta.x/2-8,"sidebar does not overlap survival panel");
   for(int i=0;i<131;i++)
   {

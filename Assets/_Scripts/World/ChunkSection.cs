@@ -34,7 +34,7 @@ public class ChunkSection
 
                 var block = new Block(saveData.blocks[i].type, pos, chunkSection);
                 if (saveData.blocks[i].hasBlockState || StairGeometry.IsStair(block.type))
-                    block.blockShape = SpecialBlockGeometry.Shape(block.type, saveData.blocks[i].stairFacing);
+                    block.blockShape = SpecialBlockGeometry.Shape(block.type, WheatCropRules.IsLegacy(saveData.blocks[i].type) ? WheatCropRules.LegacyAge(saveData.blocks[i].type) : saveData.blocks[i].stairFacing);
                 block.waterLevel = block.type == BlockType.Water || block.type == BlockType.Lava || block.type == BlockType.Fire ? (byte)(saveData.blocks[i].waterLevel & 15) : (byte)0;
                 chunkSection.blocks[pos.x, pos.y, pos.z] = BlockMapping.MapTypeToBlock(block.type, block);
                 chunkSection.blocks[pos.x, pos.y, pos.z].Loaded();

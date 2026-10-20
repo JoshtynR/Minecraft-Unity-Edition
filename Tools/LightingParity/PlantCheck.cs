@@ -43,6 +43,18 @@ public static partial class LightingCheck
    }
   }
   Check(count==20,"all twenty plants and crop stages classified");
+  var cropData=BlockDataManager.blockTypeDataDictionary[(int)WheatCropRules.Crop];
+  cropData.textureData.growthStageIndices=new[]{30,31,32,33,34,35,36,37};
+  for(byte age=0;age<8;age++)
+  {
+   var chunk=new ChunkData();var pos=new Vector3Int(2,10,3);
+   var block=new Block{type=WheatCropRules.Crop,sky=15,chunkData=chunk,localChunkPosition=pos};
+   block.blockShape.orientation=SpecialBlockGeometry.Shape(block.type,age);block.blockShape.shape=block.blockShape.orientation.GetShape();chunk.blocks[pos]=block;
+   var mesh=BlockHelper.GetMeshData(chunk,pos,new MeshData(true),block.type).transparentMesh;
+   Check(mesh.vertices.Count==32,"every wheat age retains native four-row geometry");
+   foreach(var uv in mesh.uv)Check(uv.z==30+age,"world mesh samples metadata-selected wheat stage image");
+  }
+  cropData.textureData.growthStageIndices=null;
   var crop=new MeshData(true);PlantMesh.Append(BlockType.WheatCrop7,new Vector3Int(),new Vector3Int(),false,17,new Color(),crop);
   Check(crop.vertices[0].x==.25f&&crop.vertices[8].x==.75f&&crop.vertices[16].z==.25f&&crop.vertices[24].z==.75f,"wheat has four parallel rows");
   Check(crop.vertices[0].y==-.0625f&&crop.vertices[1].y==.9375f,"wheat lowered one pixel into farmland");

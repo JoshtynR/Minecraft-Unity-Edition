@@ -250,13 +250,14 @@ public partial class Player : BaseEntity
 
     private bool TryUseBlock()
     {
-        if (isCrouching) return false;
         Vector3Int adjacent;
         var block=TargetedBlock(reach,out adjacent);
         if(block==null)return false;
+        if(isCrouching)return TryUseFarming(block,adjacent);
         if(block.type==BlockType.CraftingTable){inventory.OpenCraftingTable(block.globalWorldPosition);return true;}
         if(block.type==BlockType.Chest){inventory.RequestChest(block.globalWorldPosition);return true;}
         if(World.IsFurnace(block.type)){inventory.RequestFurnace(block.globalWorldPosition);return true;}
+        if(TryUseFarming(block,adjacent))return true;
         byte state=SpecialBlockGeometry.State(block.type,block.blockShape),next;
         if(!SpecialBlockGeometry.TryUse(block.type,state,out next))return false;
         var pos=block.globalWorldPosition;
@@ -275,6 +276,7 @@ public partial class Player : BaseEntity
         var held = inventory.slots[inventory.selectedSlotIndex];
         BlockType type;
         if (held.count <= 0 || !ItemCatalog.TryPlacedBlock(held.type, out type)) return false;
+        if(WheatCropRules.IsCrop(type))return false; // Plant through the validated seed action.
         if (type != BlockType.Nothing)
         {
             var targetedBlock = TargetedBlock(reach, out var blockPos);

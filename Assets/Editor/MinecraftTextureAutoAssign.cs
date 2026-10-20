@@ -431,6 +431,16 @@ public static class MinecraftTextureAutoAssign
             {
                 if(block==null)continue;
                 var spec=MinecraftTextureNames.Block(block.blockType);
+                if(block.blockType==WheatCropRules.Crop)
+                {
+                    if(block.textureData==null)block.textureData=new TextureData();
+                    if(block.textureData.growthStages==null||block.textureData.growthStages.Length!=8)block.textureData.growthStages=new Texture2D[8];
+                    for(int age=0;age<8;age++)
+                    {
+                        var stage=run.Find(MinecraftTextureKind.Block,"wheat_stage"+age+"|wheat_stage_"+age,"Wheat growth stage "+age);
+                        if(stage!=null&&block.textureData.growthStages[age]!=stage){block.textureData.growthStages[age]=stage;run.assigned++;}
+                    }
+                }
                 if(spec==null||string.IsNullOrEmpty(spec.side))continue;
                 TextureData texture=block.textureData;
                 foreach(string field in new[]{"top","bottom","side","front","back","left","right"})

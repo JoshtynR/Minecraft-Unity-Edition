@@ -83,6 +83,7 @@ public static class ToolMining
     // Rolls are supplied by the authoritative world, making the loot rules testable.
     public static InventoryStack Drop(BlockType block,ItemType tool,int gravelRoll,int saplingRoll,int quantityRoll,int toolDamage=0)
     {
+        if(WheatCropRules.IsCrop(block))return new InventoryStack(); // State-aware world harvest emits wheat plus seed rolls.
         if(!Harvestable(block,tool))return new InventoryStack();
         if(ItemDurability.IsLeaves(block))
         {
