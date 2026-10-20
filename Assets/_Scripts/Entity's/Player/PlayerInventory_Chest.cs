@@ -15,7 +15,7 @@ public partial class PlayerInventory
         if(DropRequestPending||chestPending||chestOpen||isOpen)return;
         ReadStorage();chestPosition=position;
         chestNetworkSession=NetworkClient.active;OpenInventory();
-        SendChest(new ChestRequest{action=0,position=position,inventory=(InventoryStack[])storageBuffer.Clone(),cursor=Stack(pickedUpSlot)});
+        SendChest(new ChestRequest{action=0,position=position,inventory=(InventoryStack[])storageBuffer.Clone(),cursor=Stack(pickedUpSlot),itemWearRevision=player!=null?player.ItemWearRevision:0});
     }
     private void SendChest(ChestRequest request)
     {
@@ -57,6 +57,7 @@ public partial class PlayerInventory
             var stack=reply.chest[i];var slot=chestSlots[i];
             ClearSlotIcon(chestRects[i]);CreateItemIcon(stack.type,chestRects[i]);
             slot.type=stack.type;slot.damage=stack.damage;slot.SetCount(stack.count);
+            DrawDurability(chestRects[i],stack);
         }
         if(chestCloseRequested)CloseInventory();
     }

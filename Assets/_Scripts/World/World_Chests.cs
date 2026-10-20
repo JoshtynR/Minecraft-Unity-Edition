@@ -49,6 +49,8 @@ public partial class WorldServer
         if(connection.identity==null||World.Instance==null)return;
         var player=connection.identity.GetComponent<Player>();if(player==null)return;
         var world=World.Instance;
+        if(request.action==0&&!player.AcceptsItemRevision(request.itemWearRevision))
+        {connection.Send(new ChestReply{error="Inventory update pending; open the chest again."});return;}
         if(world.isSaving&&request.action!=2)
         {connection.Send(new ChestReply{error="World is saving; try the chest again in a moment."});return;}
         bool accessible=player.health>0&&world.ChestAccessible(player.transform.position+Vector3.up*1.6f,request.position,player.reach);

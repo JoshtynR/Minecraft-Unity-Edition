@@ -5,6 +5,9 @@ namespace UnityEngine
 {
  public class AudioClip:Object {}
  public class Font:Object {}
+ public class RangeAttribute:Attribute {public RangeAttribute(int a,int b){}}
+ public enum RuntimeInitializeLoadType {SubsystemRegistration}
+ public class RuntimeInitializeOnLoadMethodAttribute:Attribute {public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType t){}}
  public class Object {public bool destroyed;public static void Destroy(Object o){if(o!=null)o.destroyed=true;} }
  public class Tooltip:Attribute {public Tooltip(string s){}}
  public struct Vector3Int
@@ -69,9 +72,27 @@ public class World
  public void SetBlock(Vector3Int p,BlockType type){edits++;blocks[p].type=type;}
 }
 public class WorldServer {public static WorldServer instance;public void RpcSetBlock(Vector3Int p,BlockType t,byte facing){} }
-public class Inventory {public bool isOpen;public List<BlockType> drops=new List<BlockType>();public void AddItem(BlockType t){drops.Add(t);} }
+public class Inventory
+{
+ public void ApplyCompletedMiningWear(int i,InventoryStack expected,int amount){ApplyItemWear(i,expected,amount);}
+ public bool isOpen,DropRequestPending;public int selectedSlotIndex;
+ public class Slot {public ItemType type;public int count,damage;}
+ public Slot[] slots=new Slot[36];public Inventory(){for(int i=0;i<36;i++)slots[i]=new Slot();}
+ public InventoryStack HeldItem()=>new InventoryStack(slots[selectedSlotIndex].type,slots[selectedSlotIndex].count,slots[selectedSlotIndex].damage);
+ public Slot GetSlot(int i)=>slots[i];
+ public InventoryStack[] DropInventorySnapshot(){var snapshot=new InventoryStack[36];for(int i=0;i<36;i++)snapshot[i]=new InventoryStack(slots[i].type,slots[i].count,slots[i].damage);return snapshot;}
+ public void ApplyDropInventory(InventoryStack[] snapshot){for(int i=0;i<36;i++){slots[i].type=snapshot[i].type;slots[i].count=snapshot[i].count;slots[i].damage=snapshot[i].damage;}}
+ public bool ApplyItemWear(int i,InventoryStack expected,int amount)
+ {
+  var current=new InventoryStack(slots[i].type,slots[i].count,slots[i].damage);
+  if(!current.Matches(expected)||current.Empty)return false;
+  bool broken=ItemDurability.Wear(ref current,amount);slots[i].type=current.type;slots[i].count=current.count;slots[i].damage=current.damage;return broken;
+ }
+ public List<BlockType> drops=new List<BlockType>();public void AddItem(BlockType t){drops.Add(t);}
+}
 public partial class Player
 {
+ public int knownItemWearRevision,serverItemWearRevision;public bool AcceptsItemRevision(int revision)=>revision==serverItemWearRevision;
  public World world=new World();public Transform transform=new Transform(),cam=new Transform();public int health=20;public float reach=4.5f,eyeHeight=1.578f;public Inventory inventory=new Inventory();public bool escapeMenuOpen,networkStarted,isServer=true,isLocalPlayer=true,isGrounded=true,serverGrounded=true;public Mirror.NetworkConnection connectionToClient=new Mirror.NetworkConnection();public float paidExhaustion;
  private HungerSimulation hungerSimulation=new HungerSimulation();private void LoadHungerState(){}private void StoreHungerState(){paidExhaustion=hungerSimulation.Exhaustion;}
  public Vector3Int aimed;public Block TargetedBlock(float reach,out Vector3Int pos){pos=aimed;targetHitPoint=(Vector3)aimed+Vector3.one*0.5f;return world.GetBlock(aimed);}
@@ -113,6 +134,22 @@ public static class MiningCheck
    Check(facing!=3||maxZ<.501f,"north stair overlay upper half orientation");
    cracks.Dispose();
   }
+  foreach(var tool in new[]{ItemType.WoodenPickaxe,ItemType.IronAxe,ItemType.GoldenShovel,ItemType.StoneSword})
+  {
+   var p=Setup(BlockType.Dirt);p.inventory.slots[0].type=tool;p.inventory.slots[0].count=1;
+   p.Begin(p.aimed,BlockType.Dirt);for(int i=0;i<30;i++)p.Step();
+   Check(p.inventory.slots[0].damage==ItemDurability.MiningWear(tool,BlockType.Dirt),"completed mining charges the held item once");
+   p=Setup(BlockType.Dirt);p.inventory.slots[0].type=tool;p.inventory.slots[0].count=1;p.inventory.slots[1].type=tool;p.inventory.slots[1].count=1;p.networkStarted=true;
+   p.Begin(p.aimed,BlockType.Dirt);for(int i=0;i<30;i++)p.Step();
+   Check(p.inventory.slots[0].damage==ItemDurability.MiningWear(tool,BlockType.Dirt)&&p.inventory.slots[1].damage==0,"host completion callback cannot double-charge another matching tool");
+  }
+  var swapped=Setup(BlockType.Dirt);swapped.inventory.slots[0].type=ItemType.WoodenPickaxe;swapped.inventory.slots[0].count=1;
+  swapped.Begin(swapped.aimed,BlockType.Dirt);swapped.Step();swapped.inventory.slots[0].type=ItemType.IronPickaxe;
+  for(int i=0;i<30;i++)swapped.Step();Check(swapped.world.edits==0&&swapped.inventory.slots[0].damage==0,"changing the mining item cancels stale server work without wearing its replacement");
+  var worn=Setup(BlockType.Dirt);worn.inventory.slots[0].type=ItemType.WoodenPickaxe;worn.inventory.slots[0].count=1;worn.inventory.slots[0].damage=59;
+  worn.Begin(worn.aimed,BlockType.Dirt);for(int i=0;i<30;i++)worn.Step();Check(worn.inventory.slots[0].count==0&&worn.world.edits==1,"last tool use completes the block before removing the broken item");
+  var interrupted=Setup(BlockType.Dirt);interrupted.inventory.slots[0].type=ItemType.WoodenPickaxe;interrupted.inventory.slots[0].count=1;interrupted.Begin(interrupted.aimed,BlockType.Dirt);interrupted.Step();interrupted.Cancel();for(int i=0;i<30;i++)interrupted.Step();
+  Check(interrupted.inventory.slots[0].damage==0,"canceled mining never charges durability");
   Check(HandMining.CrackStage(0)==0&&HandMining.CrackStage(0.99f)==9&&HandMining.CrackStage(1)==9,"ten bounded crack stages");
   Console.WriteLine(checks+" production hand mining/progress/drop/reach/overlay checks passed (Unity/Mirror mocked).");
  }

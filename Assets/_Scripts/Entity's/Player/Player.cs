@@ -77,7 +77,7 @@ public partial class Player : BaseEntity
     private static readonly int Sneaking = Animator.StringToHash("sneaking");
     private static readonly int DoZWrite = Shader.PropertyToID("_doZWrite");
 
-    private bool networkStarted => NetworkClient.active;
+    private bool networkStarted => NetworkClient.active || NetworkServer.active;
 
     // INFO:
     // 530ms from jumping to landing on the ground
@@ -623,7 +623,11 @@ public partial class Player : BaseEntity
             if (Physics.Raycast(objects.cam.position, objects.cam.forward, out ray, reach, LayerMask.GetMask("Default")))
             {
                 var other = ray.transform.GetComponentInParent<Player>();
-                if (other != null) other.CmdAddForce(ray.transform.position - transform.position + Vector3.up, 12);
+                if (other != null)
+                {
+                    other.CmdAddForce(ray.transform.position - transform.position + Vector3.up, 12);
+                    WearItemOnHit(other);
+                }
             }
         }
 

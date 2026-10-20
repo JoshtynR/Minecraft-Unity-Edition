@@ -11,6 +11,9 @@ public partial class Player
     private float nextLocalMineTime;
     private double nextServerMineTime;
     private BlockBreakOverlay crackOverlay;
+    private int localMineSlot,serverMineSlot;
+    private InventoryStack localMineItem,serverMineItem;
+    private static bool SameMiningItem(InventoryStack a,InventoryStack b)=>a.Empty&&b.Empty||!a.Empty&&!b.Empty&&a.Matches(b);
 
     private bool HeadInWater()
     {
@@ -20,7 +23,7 @@ public partial class Player
 
     private void UpdateMining()
     {
-        if (world == null || health <= 0 || inventory.isOpen || escapeMenuOpen || !Input.GetMouseButton(0) || Time.time < nextLocalMineTime)
+        if (world == null || health <= 0 || inventory.isOpen || inventory.DropRequestPending || escapeMenuOpen || !Input.GetMouseButton(0) || Time.time < nextLocalMineTime)
         { CancelMining(); return; }
         RaycastHit hit;
         if (Physics.Raycast(cam.position, cam.forward, out hit, reach, LayerMask.GetMask("Default")) && hit.transform.GetComponentInParent<Player>() != null)
@@ -28,12 +31,14 @@ public partial class Player
         var block = TargetedBlock(reach, out _);
         if (block == null || HandMining.Hardness(block.type) < 0) { CancelMining(); return; }
         var position = block.globalWorldPosition;
-        if (!localMining || localMinePosition != position || localMineType != block.type)
+        var held=inventory.HeldItem();
+        if (!localMining || localMinePosition != position || localMineType != block.type || localMineSlot!=inventory.selectedSlotIndex || !SameMiningItem(localMineItem,held))
         {
             CancelMining();
             localMining = true; localMinePosition = position; localMineType = block.type;
+            localMineSlot=inventory.selectedSlotIndex;localMineItem=held;
             localMineProgress = localMineClock = 0;
-            if (networkStarted && !isServer) CmdBeginMining(position, block.type, targetHitPoint);
+            if (networkStarted && !isServer) CmdBeginMining(position, block.type, targetHitPoint,localMineSlot,inventory.DropInventorySnapshot(),knownItemWearRevision);
             else BeginServerMining(position, block.type, targetHitPoint);
         }
         localMineClock += Time.deltaTime;
@@ -61,7 +66,15 @@ public partial class Player
         if (crackOverlay != null) crackOverlay.Hide();
     }
 
-    [Command] private void CmdBeginMining(Vector3Int position, BlockType type, Vector3 hitPoint) { BeginServerMining(position, type, hitPoint); }
+    [Command] private void CmdBeginMining(Vector3Int position, BlockType type, Vector3 hitPoint,int slot,InventoryStack[] snapshot,int revision)
+    {
+        if(!AcceptsItemRevision(revision)){TargetRejectMining(connectionToClient);return;}
+        if(slot<0||slot>=9||!ChestTransactions.Valid(snapshot,new InventoryStack()))return;
+        inventory.ApplyDropInventory(snapshot);inventory.selectedSlotIndex=slot;
+        BeginServerMining(position,type,hitPoint);
+    }
+    [TargetRpc] private void TargetRejectMining(NetworkConnection target)
+    {localMining=false;localMineProgress=localMineClock=0;if(crackOverlay!=null)crackOverlay.Hide();}
     [Command] private void CmdCancelMining() { serverMining = false; }
 
     private bool InMiningReach(Vector3Int position)
@@ -106,6 +119,7 @@ public partial class Player
             local.y < shape.yMin / 16f || local.y > shape.yMax / 16f ||
             local.z < shape.zMin / 16f || local.z > shape.zMax / 16f ||
             !MiningLineOfSight(position, hitPoint)) return;
+        serverMineSlot=inventory.selectedSlotIndex;serverMineItem=inventory.HeldItem();
         serverMineHitPoint = hitPoint;
         serverMining = true; serverMinePosition = position; serverMineType = type;
         serverMineProgress = serverMineClock = 0;
@@ -114,6 +128,9 @@ public partial class Player
     private void AdvanceMining(float dt)
     {
         if (!serverMining) return;
+        var held=inventory.GetSlot(serverMineSlot);
+        if(held==null||!SameMiningItem(serverMineItem,new InventoryStack(held.type,held.count,held.damage)))
+        {serverMining=false;return;}
         if (world == null || !world.IsWorldCreated || health <= 0 || !InMiningReach(serverMinePosition) || !MiningLineOfSight(serverMinePosition, serverMineHitPoint)) { serverMining = false; return; }
         var block = world.GetBlock(serverMinePosition);
         if (block == null || block.type != serverMineType) { serverMining = false; return; }
@@ -141,14 +158,26 @@ public partial class Player
             if (HandMining.Harvestable(serverMineType))
             { LoadHungerState(); hungerSimulation.AddExhaustion(0.025f); StoreHungerState(); }
             if(!drop.Empty)world.SpawnItemDrop(drop,(Vector3)serverMinePosition+Vector3.one*.5f);
-            if (networkStarted) TargetMiningCompleted(connectionToClient);
-            else ReceiveMiningCompleted();
+            int wear=ItemDurability.MiningWear(serverMineItem.type,serverMineType);
+            if (networkStarted)
+            {
+                inventory.ApplyItemWear(serverMineSlot,serverMineItem,wear);
+                if(wear>0&&ItemDurability.Maximum(serverMineItem.type)>0)serverItemWearRevision++;
+                TargetMiningCompleted(connectionToClient,serverMineSlot,serverMineItem,wear,serverItemWearRevision);
+            }
+            else ReceiveMiningCompleted(serverMineSlot,serverMineItem,wear,knownItemWearRevision+1);
         }
     }
 
-    [TargetRpc] private void TargetMiningCompleted(NetworkConnection target) { ReceiveMiningCompleted(); }
-    private void ReceiveMiningCompleted()
+    [TargetRpc] private void TargetMiningCompleted(NetworkConnection target,int slot,InventoryStack expected,int wear,int revision) { ReceiveMiningCompleted(slot,expected,wear,revision); }
+    private void ReceiveMiningCompleted(int slot,InventoryStack expected,int wear,int revision)
     {
+        if(revision>knownItemWearRevision)
+        {
+            if(!networkStarted||!isServer)inventory.ApplyCompletedMiningWear(slot,expected,wear);
+            knownItemWearRevision=revision;
+            if(!networkStarted)serverItemWearRevision=revision;
+        }
         localMining = false; localMineProgress = localMineClock = 0;
         nextLocalMineTime = Time.time + 0.25f;
         if (crackOverlay != null) crackOverlay.Hide();

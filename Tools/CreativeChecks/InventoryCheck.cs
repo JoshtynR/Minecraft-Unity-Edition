@@ -20,8 +20,8 @@ namespace UnityEngine
  public class Font:Object {}
  public class Object
  {
-  public string name;public bool destroyed;
-  public static void Destroy(Object value){if(value==null)return;value.destroyed=true;var go=value as GameObject;if(go!=null&&go.transform.parent!=null)go.transform.parent.children.Remove(go.transform);}
+  public static bool deferDestroy;public string name;public bool destroyed;
+  public static void Destroy(Object value){if(value==null)return;value.destroyed=true;var go=value as GameObject;if(go!=null&&!deferDestroy&&go.transform.parent!=null)go.transform.parent.children.Remove(go.transform);}
   public static GameObject Instantiate(GameObject original,Transform parent)
   {
    var go=new GameObject(original.name,original.components.Select(c=>c.GetType()).ToArray());go.layer=original.layer;go.transform.SetParent(parent,false);return go;
@@ -82,7 +82,7 @@ namespace UnityEngine
  {
   public Vector3 forward=new Vector3(0,0,1),eulerAngles;public Transform parent;public Vector3 localPosition,localScale=Vector3.one;public Quaternion localRotation,rotation;public List<Transform> children=new List<Transform>();public int childCount=>children.Count;
   public Vector3 position {get=>parent==null?localPosition:parent.position+localPosition;set{var p=parent==null?new Vector3():parent.position;localPosition=new Vector3(value.x-p.x,value.y-p.y,value.z-p.z);}}
-  public Transform GetChild(int i)=>children[i];public void SetParent(Transform p,bool world){if(parent!=null)parent.children.Remove(this);parent=p;p.children.Add(this);}
+  public Transform GetChild(int i)=>children[i];public void SetParent(Transform p,bool world){if(parent!=null)parent.children.Remove(this);parent=p;if(p!=null)p.children.Add(this);}
   public void SetAsLastSibling(){parent.children.Remove(this);parent.children.Add(this);}
   public Transform Find(string path){Transform current=this;foreach(var name in path.Split('/')){current=current.children.Find(c=>c.gameObject.name==name);if(current==null)return null;}return current;}
  }
@@ -167,6 +167,7 @@ public class ChunkData
 }
 public partial class Player:MonoBehaviour
 {
+ private bool serverMining;
  public bool escapeMenuOpen,networkStarted,isServer=true;public float reach=4.5f,eyeHeight=1.578f;public int health=20;
  public PlayerInventory inventory=>GetComponent<PlayerInventory>();public World world=>World.Instance;
  public Transform cam;public Mirror.NetworkConnection connectionToClient=new Mirror.NetworkConnection();
@@ -270,7 +271,7 @@ public partial class PlayerInventory
  }
  public static void Main(string[] args)
  {
-  CheckRules();CheckDrops();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
+  CheckRules();CheckDurability();CheckDrops();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
   var headless=new GameObject("DedicatedInventory").AddComponent<PlayerInventory>();
   Check(headless.AddItem(ItemType.Stone,64)&&headless.slots[0].count==64,"storage logic works without a canvas on nonlocal/server players");
   headless.LoadInventory(null);headless.AddItem(ItemType.Stone,63);headless.AddItem(ItemType.Dirt,35*64);

@@ -49,6 +49,8 @@ public partial class PlayerInventory : MonoBehaviour
         for(int i=0;i<4;i++){CreateItemIcon(craftingSlots[i].type,craftingRects[i]);craftingSlots[i].SetCount(craftingSlots[i].count);}
         for(int i=0;i<4;i++){CreateItemIcon(equipmentSlots[i].type,equipmentRects[i]);equipmentGhosts[i].gameObject.SetActive(equipmentSlots[i].count<=0);}
         RefreshPreviewEquipment();
+        for(int i=0;i<36;i++)RefreshSlotDurability(i);
+        for(int i=0;i<4;i++){RefreshSlotDurability(36+i);RefreshSlotDurability(41+i);}
         craftedOutput.type=ItemType.Nothing;RefreshCraftingOutput();
         creativeRoot.gameObject.SetActive(false);
     }
@@ -112,10 +114,14 @@ public partial class PlayerInventory : MonoBehaviour
     private static void ClearSlotIcon(Transform parent)
     {
         for (int i=parent.childCount-1;i>=0;i--)
-            if (parent.GetChild(i).GetComponent<MeshFilter>() != null || parent.GetChild(i).gameObject.name == "ItemIcon")
+            if (parent.GetChild(i).GetComponent<MeshFilter>() != null || (parent.GetChild(i).gameObject.name == "ItemIcon" || parent.GetChild(i).gameObject.name == "DurabilityBar"))
             {
-                parent.GetChild(i).gameObject.SetActive(false);
-                Destroy(parent.GetChild(i).gameObject);
+                var child=parent.GetChild(i);
+                child.gameObject.SetActive(false);
+                // Unity destroys at end of frame. Detach now so a replacement
+                // durability bar cannot find and revive the pending old one.
+                child.SetParent(null,false);
+                Destroy(child.gameObject);
             }
     }
 
@@ -145,6 +151,7 @@ public partial class PlayerInventory : MonoBehaviour
         pickedUpSlot.countText=text;
         CreateItemIcon(pickedUpSlot.type,pickedUpItemRect);
         pickedUpSlot.SetCount(pickedUpSlot.count);
+        DrawDurability(pickedUpItemRect,Stack(pickedUpSlot));
     }
 
     private void CreateItemIcon(ItemType type, Transform parent)

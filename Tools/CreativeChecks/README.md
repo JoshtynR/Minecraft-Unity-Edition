@@ -105,8 +105,8 @@ cannot be cast into a world block. The old AddItem(BlockType) overload maps bloc
 drops to their corresponding item before inserting. New callers can use
 AddItem(ItemType, count). Damage travels with clicks, transfers, crafting-grid
 returns, snapshots, equipment and recovery; differing damage cannot merge.
-Durable definitions force stack limit one, but no tool wear/actions or durability
-bar is added yet. Native per-item limits apply, bounded to sixty-four.
+Durable definitions force stack limit one. Mining/hit wear and durability bars
+are implemented below; tool action/speed/harvest systems remain separate. Native per-item limits apply, bounded to sixty-four.
 Oversized old stacks are split into available slots/recovery.
 
 The runtime snapshots resource definitions on first use each play session.
@@ -229,3 +229,37 @@ The mining runner checks world spawning without direct inventory awards, and the
 shape suite checks the production swept collision code plus placement blocking
 during a pending drop transfer. Unity shader compilation, real pointer/rendering,
 audio, late joins and multiplayer transport still require a Play Mode check.
+
+## Durability
+
+`ItemDurability` uses the existing catalog's maxDamage values; a stack's `damage`
+is wear used. Beta breaks an item only when damage exceeds maxDamage, then clears
+its count/type/damage together. Pristine items have no bar. Worn inventory,
+hotbar, cursor, crafting/equipment and chest slots show the original 13x2-pixel
+black-backed bar, with source rounding and green-to-red color. Icon replacement
+detaches old objects before deferred Unity destruction, preserving the new bar.
+
+Completed mining costs one point for axes, shovels and pickaxes, two for swords,
+and one for shears on leaves/webs. Canceled/failed mining costs none. The existing
+player hit/knockback interaction costs one for swords and two for ordinary tools;
+it validates a live nearby target and serializes inventory changes with pickups.
+Changing the held item resets mining. A host applies wear once; remote clients
+receive a wear receipt. Late receipts follow a matching moved tool/cursor stack.
+Revision checks reject pre-wear pickup, chest-open, mining and hit snapshots so
+older client inventory contents cannot overwrite completed server mining wear.
+Dedicated servers are included in the player's network-session detection.
+
+This does not introduce tool mining speed/harvest tiers, item repair, fishing,
+armor equipment/combat, hoe tilling, or flint-and-steel ignition. Their catalog
+limits remain available, and the shared `Wear` operation works for all durable
+item definitions. Beta bows have no durability. A future fishing implementation
+can use the source retract costs: empty 0, fish 1, stuck 2, hooked entity 3 (stuck
+takes precedence). Existing save, drop and chest copies retain damage; crafted
+items start pristine and Beta has no crafting repair recipe here.
+
+Checks cover every durable catalog type at its last-use boundary, non-durable
+items, wear costs, bars in the hotbar/inventory/cursor, migration and transfers,
+replayed receipts, a moved tool, stale-revision rejection, and deferred UI object
+destruction. The mining runner tests completed/canceled uses, changed tools,
+last-use breakage and host double-charge prevention. Unity rendering and real
+Mirror transport/weaving still need a Play Mode check.

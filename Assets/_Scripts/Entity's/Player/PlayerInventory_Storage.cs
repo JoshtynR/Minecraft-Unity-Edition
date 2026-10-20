@@ -58,6 +58,7 @@ public partial class PlayerInventory
         }
         slot.damage=value.damage;
         slot.SetCount(value.count);
+        RefreshSlotDurability(index);
         if(index>=41&&index<45)
         {
             if(equipmentGhosts[index-41]!=null)equipmentGhosts[index-41].gameObject.SetActive(value.Empty);

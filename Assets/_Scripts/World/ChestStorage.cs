@@ -6,6 +6,7 @@ using UnityEngine;
 
 public struct ChestRequest : NetworkMessage
 {
+    public int itemWearRevision;
     public byte action; // 0 open, 1 click, 2 close
     public Vector3Int position;
     public int slot;

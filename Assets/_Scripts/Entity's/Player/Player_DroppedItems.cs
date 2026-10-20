@@ -31,13 +31,17 @@ public partial class Player
         inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted;
         int request=++dropRequestId;
         var snapshot=inventory.DropInventorySnapshot();
-        if(networkStarted)CmdDropAction(request,dropping,id,snapshot);
-        else ProcessDropAction(request,dropping,id,snapshot,false);
+        if(networkStarted)CmdDropAction(request,dropping,id,snapshot,knownItemWearRevision);
+        else ProcessDropAction(request,dropping,id,snapshot,false,knownItemWearRevision);
     }
-    [Command] private void CmdDropAction(int request,bool dropping,int id,InventoryStack[] snapshot)
-    {ProcessDropAction(request,dropping,id,snapshot,true);}
-    private void ProcessDropAction(int request,bool dropping,int id,InventoryStack[] snapshot,bool network)
+    [Command] private void CmdDropAction(int request,bool dropping,int id,InventoryStack[] snapshot,int revision)
+    {ProcessDropAction(request,dropping,id,snapshot,true,revision);}
+    private void ProcessDropAction(int request,bool dropping,int id,InventoryStack[] snapshot,bool network,int revision=0)
     {
+        // Mining wear can finish while an older pickup request is in flight.
+        // The reliable wear callback arrives before this rejection; retrying
+        // then uses the updated client stack without overwriting its damage.
+        if(!AcceptsItemRevision(revision)){CompleteDropAction(request,snapshot,false,network);return;}
         if(request==lastServerDropRequest&&lastServerDropReply!=null)
         {CompleteDropAction(request,lastServerDropReply,lastServerDropAccepted,network);return;}
         bool accepted=false;

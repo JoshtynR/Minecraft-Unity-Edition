@@ -42,13 +42,19 @@ hunger system; this is a survival addition beyond Beta. Host/offline and remote
 players use separate visual/authoritative progress. Network latency can produce
 short visual differences; aim/movement validation is not a full anti-cheat.
 
-Drops use the existing block inventory, awarded directly to the owner once;
-there are no world pickup entities. Grass gives dirt. Stone/sandstone/slabs and
-glowstone do not drop to bare hands, and glass/ice never drop themselves. Leaves'
-saplings and gravel's 10% flint outcome are unsupported item types, so those
-outcomes give no inventory item rather than inventing the broken block. Tools,
-non-block items, drop entities, particles, break sounds, and swing animations
-are separate systems. Ice conversion to water uses the existing water simulation.
+Drops now use the world-item system: mining spawns pickup entities rather than
+inserting directly into inventory. Grass gives dirt; gravel can drop flint and
+leaves can drop their species' sapling. Existing hand-harvest restrictions remain.
+Ice conversion to water uses the existing water simulation. Tool mining speeds
+and harvest tiers are not introduced by the durability update.
+
+Completed mining consumes held-tool durability using the Beta costs in
+`ItemDurability`: axes/shovels/pickaxes one, swords two, shears one on leaves/webs.
+Canceled/failed breaks consume none. Changing item identity/damage resets mining.
+The server snapshots the selected tool at mining start and validates it before
+completion. Breakage happens after the final block completes. Host receipts do
+not damage a second matching tool; remote wear revisions reject older incoming
+inventory snapshots from pickup/chest/mining interactions.
 
 The editor auto-binds the user's `Assets/Textures/Minecraft/block_break.png` to
 Resources/PlayerHudAssets.asset, preserving existing HUD bindings. That PNG is
