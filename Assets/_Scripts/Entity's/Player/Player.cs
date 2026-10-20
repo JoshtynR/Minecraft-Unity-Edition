@@ -272,7 +272,7 @@ public partial class Player : BaseEntity
 
     public bool PlaceBlock()
     {
-        if(inventory.DropRequestPending)return false;
+        if(inventory.DropRequestPending || TargetedCow()!=null)return false;
         var held = inventory.slots[inventory.selectedSlotIndex];
         BlockType type;
         if (held.count <= 0 || !ItemCatalog.TryPlacedBlock(held.type, out type)) return false;
@@ -466,7 +466,7 @@ public partial class Player : BaseEntity
         if (!Application.isPlaying || !isLocalPlayer && networkStarted) return;
         GetPlayerInput();
         UpdateFluidView();
-        UpdateMining();
+        if(TargetedCow()==null)UpdateMining();else CancelMining();
         var vel = new Vector3(velocity.x, 0, velocity.z);
         animator.SetFloat(Speed, (vel.magnitude/Time.fixedDeltaTime)/walkSpeed);
         if (!isFlying)
@@ -622,6 +622,7 @@ public partial class Player : BaseEntity
 
         if (Input.GetMouseButtonDown(0))
         {
+            if(TryUseCow(false))return;
             RaycastHit ray;
             if (Physics.Raycast(objects.cam.position, objects.cam.forward, out ray, reach, LayerMask.GetMask("Default")))
             {
@@ -644,6 +645,7 @@ public partial class Player : BaseEntity
         }
         if (Input.GetMouseButtonDown(1))
         {
+            if(TryUseCow(true))return;
             if (TryUseBlock()) return;
             if (placeCoroutine == null)
             {

@@ -12,6 +12,7 @@ public class WorldSaveData
     public long betaWorldSeed;
     public FluidTickSave fluidTicks;
     public DroppedItemState[] droppedItems;
+    public CowSaveData cows;
     
     [NonSerialized]
     public ChunkSaveData[] chunks;

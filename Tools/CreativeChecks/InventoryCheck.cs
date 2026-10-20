@@ -61,6 +61,8 @@ namespace UnityEngine
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
   public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 operator*(Vector3 v,float s)=>new Vector3(v.x*s,v.y*s,v.z*s);
   public static Vector3 up=>new Vector3(0,1,0);public static Vector3 down=>new Vector3(0,-1,0);
+  public Vector3 normalized=>magnitude<.000001f?zero:new Vector3(x/magnitude,y/magnitude,z/magnitude);
+  public static Vector3 operator/(Vector3 v,float n)=>new Vector3(v.x/n,v.y/n,v.z/n);
   public float sqrMagnitude=>x*x+y*y+z*z;public float magnitude=>(float)Math.Sqrt(sqrMagnitude);
   public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
   public static Vector3 Lerp(Vector3 a,Vector3 b,float t)=>a+(b-a)*t;
@@ -77,7 +79,7 @@ namespace UnityEngine
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}}
  public struct Quaternion {public static Quaternion Euler(float x,float y,float z)=>new Quaternion();}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float width,float height){this.x=x;this.y=y;this.width=width;this.height=height;}}
- public static class Mathf {public const float PI=(float)Math.PI;public static float Max(float a,float b)=>Math.Max(a,b);public static int CeilToInt(float x)=>(int)Math.Ceiling(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float MoveTowards(float a,float b,float step)=>a<b?Math.Min(b,a+step):Math.Max(b,a-step);public static float Clamp01(float x)=>Clamp(x,0,1);public static float Pow(float x,float y)=>(float)Math.Pow(x,y);public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v));}
+ public static class Mathf {public const float PI=(float)Math.PI;public const float Rad2Deg=180f/PI;public static float Atan2(float y,float x)=>(float)Math.Atan2(y,x);public static float Max(float a,float b)=>Math.Max(a,b);public static int CeilToInt(float x)=>(int)Math.Ceiling(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float MoveTowards(float a,float b,float step)=>a<b?Math.Min(b,a+step):Math.Max(b,a-step);public static float Clamp01(float x)=>Clamp(x,0,1);public static float Pow(float x,float y)=>(float)Math.Pow(x,y);public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v));}
  public class Transform:Component
  {
   public Vector3 forward=new Vector3(0,0,1),eulerAngles;public Transform parent;public Vector3 localPosition,localScale=Vector3.one;public Quaternion localRotation,rotation;public List<Transform> children=new List<Transform>();public int childCount=>children.Count;
@@ -271,7 +273,7 @@ public partial class PlayerInventory
  }
  public static void Main(string[] args)
  {
-  CheckRules();CheckDurability();CheckDrops();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckFurnaces();CheckFarming();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
+  CheckRules();CheckDurability();CheckDrops();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckFurnaces();CheckFarming();CheckCows();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
   var headless=new GameObject("DedicatedInventory").AddComponent<PlayerInventory>();
   Check(headless.AddItem(ItemType.Stone,64)&&headless.slots[0].count==64,"storage logic works without a canvas on nonlocal/server players");
   headless.LoadInventory(null);headless.AddItem(ItemType.Stone,63);headless.AddItem(ItemType.Dirt,35*64);

@@ -29,6 +29,11 @@ public partial class WorldServer : NetworkBehaviour
             foreach(var item in World.Instance.CaptureDroppedItems())connection.Send(new DropStateMessage{item=item});
         });
 
+        NetworkServer.RegisterHandler<CowSyncRequest>((connection,request)=>
+        {
+            if(World.Instance!=null)World.Instance.SendCowSnapshot(connection);
+        });
+
         StartCoroutine(SaveLoop());
     }
 
