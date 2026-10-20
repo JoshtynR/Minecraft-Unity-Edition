@@ -61,7 +61,8 @@ public partial class PlayerInventory
         }
         craftedOutput.countText=InventoryCell("CraftResult",inventoryRect,74,47,40);
         craftResultRect=craftedOutput.countText.transform.parent.GetComponent<RectTransform>();
-        ContainerLabel("CraftingLabel",inventoryRect,86,16,"Crafting");
+        // The supplied inventory sheet has its 2x2 grid at (98,18).
+        ContainerLabel("CraftingLabel",inventoryRect,97,8,"Crafting");
         if(!texturedInventory)CreativeText("CraftArrow",inventoryRect,55,47,18,16,">",13,new Color(.45f,.45f,.45f,1));
         var preview=CreativeRect("PlayerPreview",inventoryRect,-37,40,50,70);
         if(!texturedInventory)preview.gameObject.AddComponent<Image>().color=new Color(.05f,.05f,.05f,1);
