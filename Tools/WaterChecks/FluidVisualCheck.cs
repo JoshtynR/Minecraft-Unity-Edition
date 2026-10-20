@@ -45,7 +45,7 @@ namespace UnityEngine
  }
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}public static Vector4 zero=>new Vector4();}
  public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color white=>new Color(1,1,1,1);public static Color black=>new Color(0,0,0,1);}
- public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
+ public struct Vector2 {public static Vector2 zero=>new Vector2();public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public static class Input {public static Vector3 mousePosition;}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;width=w;height=h;}public bool Contains(Vector2 p)=>p.x>=x&&p.x<x+width&&p.y>=y&&p.y<y+height;}
  public static class Mathf {public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int FloorToInt(float n)=>(int)Math.Floor(n);}
@@ -79,11 +79,12 @@ namespace UnityEngine
  public enum EventType {Repaint}public class Event {public static Event current=new Event();public EventType type;public Vector2 mousePosition;}
  public static class Screen {public static int width=800,height=600;}
  public struct Matrix4x4 {public static Matrix4x4 Scale(Vector3 v)=>new Matrix4x4();}
- public enum TextAnchor {MiddleCenter}
+ public enum TextAnchor {MiddleCenter,UpperCenter}
+ public class RectOffset {}
  public class GUIStyleState {public Color textColor;}
- public class GUIStyle {public Font font;public int fontSize;public bool richText;public TextAnchor alignment;public GUIStyleState normal=new GUIStyleState();public GUIStyle(){}public GUIStyle(GUIStyle other){font=other.font;fontSize=other.fontSize;}public static GUIStyle none=new GUIStyle();}
+ public class GUIStyle {public Font font;public int fontSize;public bool richText;public RectOffset padding,margin;public Vector2 contentOffset;public TextAnchor alignment;public GUIStyleState normal=new GUIStyleState();public GUIStyle(){}public GUIStyle(GUIStyle other){font=other.font;fontSize=other.fontSize;richText=other.richText;alignment=other.alignment;}public static GUIStyle none=new GUIStyle();}
  public class GUISkin {public GUIStyle label=new GUIStyle();}
- public static class GUI {public static Color color;public static int depth;public static Matrix4x4 matrix;public static GUISkin skin=new GUISkin();public static List<string> labels=new List<string>();public static int clickButton=-1,buttons;public static void DrawTextureWithTexCoords(Rect r,Texture t,Rect uv){}public static void DrawTexture(Rect r,Texture t){}public static void Box(Rect r,string s){}public static void Label(Rect r,string s){}public static void Label(Rect r,string s,GUIStyle style){labels.Add(s);}public static bool Button(Rect r,string s,GUIStyle style)=>buttons++==clickButton;}
+ public static class GUI {public static Color color;public static int depth;public static Matrix4x4 matrix;public static GUISkin skin=new GUISkin();public static List<string> labels=new List<string>();public static int clickButton=-1,buttons;public static void DrawTextureWithTexCoords(Rect r,Texture t,Rect uv){}public static void DrawTexture(Rect r,Texture t){}public static void Box(Rect r,string s){}public static void Label(Rect r,string s){}public static List<Tuple<Rect,string,Color,bool,int>> draws=new List<Tuple<Rect,string,Color,bool,int>>();public static void Label(Rect r,string s,GUIStyle style){labels.Add(s);draws.Add(Tuple.Create(r,s,style.normal.textColor,style.richText,style.fontSize));}public static bool Button(Rect r,string s,GUIStyle style)=>buttons++==clickButton;}
 }
 public class Block {public BlockType type;public byte waterLevel;}
 public static class SpecialBlockGeometry {public static bool NormalCube(BlockType t)=>t==BlockType.Stone;}
@@ -143,11 +144,17 @@ public static class FluidVisualCheck
   assets.guiFont=new Font();assets.guiWidgets=new Texture2D{width=256,height=256};
   GUI.labels.Clear();GUI.buttons=0;GUI.clickButton=0;Call(effect,"OnGUI");
   Check(player.health==0&&GUI.labels.Contains("You died!")&&GUI.labels.Contains("Score: <color=#ffff55>0</color>"),"Minecraft death screen draws title/score and blocks immediate respawn clicks");
-  Check(GUI.labels.FindAll(s=>s=="You died!").Count==1&&GUI.labels.FindAll(s=>s=="Score: <color=#ffff55>0</color>").Count==1&&GUI.labels.FindAll(s=>s=="Respawn").Count==1&&GUI.labels.FindAll(s=>s=="Title screen").Count==1,"death screen text and colored score each draw once without offset duplicates");
+  Check(GUI.labels.FindAll(s=>s=="You died!").Count==2&&GUI.labels.FindAll(s=>s=="Score: <color=#ffff55>0</color>").Count==1&&GUI.labels.FindAll(s=>s=="Score: 0").Count==1,"death screen draws one colored foreground and a plain shadow");
+  var titleDraws=GUI.draws.FindAll(d=>d.Item2=="You died!");
+  Check(titleDraws[0].Item3.r==0&&titleDraws[0].Item3.g==0&&titleDraws[0].Item3.b==0&&!titleDraws[0].Item4&&titleDraws[0].Item1.y==62&&titleDraws[1].Item1.y==60&&titleDraws[1].Item5==16,"title has a black two-pixel shadow under its correctly positioned foreground");
+  var scoreShadow=GUI.draws.Find(d=>d.Item2=="Score: 0");
+  Check(scoreShadow.Item3.r==0&&scoreShadow.Item3.g==0&&scoreShadow.Item3.b==0&&!scoreShadow.Item4&&scoreShadow.Item1.y==101,"colored score cannot override the black one-pixel shadow");
+  var respawnDraws=GUI.draws.FindAll(d=>d.Item2=="Respawn");
+  Check(Math.Abs(respawnDraws[1].Item3.r-160/255f)<.00001f&&respawnDraws[1].Item1.y==153,"disabled button text uses native gray and six-pixel top inset");
   var gradient=(Texture2D)typeof(FluidCameraEffects).GetField("deathGradient",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(effect);
   Check(gradient.pixels.Length==2&&Math.Abs(gradient.pixels[1].a-96/255f)<.00001f&&Math.Abs(gradient.pixels[0].a-160/255f)<.00001f,"death screen uses native red gradient opacity");
   var style=(GUIStyle)typeof(FluidCameraEffects).GetField("deathTextStyle",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(effect);
-  Check(style.font==assets.guiFont&&style.fontSize==9,"death screen uses the Minecraft font at logical pixel size");
+  Check(style.font==assets.guiFont&&style.fontSize==8&&style.alignment==TextAnchor.UpperCenter,"death screen uses logical pixel sizing and native top coordinates");
   Time.unscaledTime=1.1f;GUI.buttons=0;GUI.clickButton=1;Call(effect,"OnGUI");
   Mirror.NetworkManager.singleton=new Mirror.NetworkManager();Mirror.NetworkServer.active=Mirror.NetworkClient.active=true;LobbyManager.currentLobby=new TestLobby();
   Time.unscaledTime=2.2f;GUI.buttons=0;GUI.clickButton=0;Call(effect,"OnGUI");

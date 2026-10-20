@@ -64,5 +64,6 @@ public partial class PlayerInventory
         var colored=bar.Find("Fill").GetComponent<RectTransform>();
         colored.anchoredPosition=new Vector2(-6.5f+width*.5f,.5f);colored.sizeDelta=new Vector2(width,1);
         colored.GetComponent<Image>().color=new Color((255-green)/255f,green/255f,0,1);
+        RaiseSlotCount(parent);
     }
 }
