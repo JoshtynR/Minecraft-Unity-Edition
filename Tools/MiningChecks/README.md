@@ -1,4 +1,4 @@
-# Bare-hand survival mining
+# Beta tool and hand mining
 
 Reference reconstructed Beta 1.7.3 client commit
 740c583901e1ff1150e9ef37e37dab5bc0e4f807:
@@ -46,7 +46,7 @@ Drops now use the world-item system: mining spawns pickup entities rather than
 inserting directly into inventory. Grass gives dirt; gravel can drop flint and
 leaves can drop their species' sapling. Existing hand-harvest restrictions remain.
 Ice conversion to water uses the existing water simulation. Tool mining speeds
-and harvest tiers are not introduced by the durability update.
+and harvest tiers now use `ToolMining` on both local and server progress.
 
 Completed mining consumes held-tool durability using the Beta costs in
 `ItemDurability`: axes/shovels/pickaxes one, swords two, shears one on leaves/webs.
@@ -76,3 +76,27 @@ UVs and mesh/material cleanup. These checks do not compile the whole Unity
 project, run shader compilation, texture importing, Mirror weaving or live RPC
 transport. Test holding/releasing and target switching, mining half slabs,
 standing underwater/in air, and host+remote clients in Unity.
+
+Tool rules follow ItemPickaxe, ItemAxe, ItemSpade, ItemSword and ItemShears in
+the same pinned reference. Wood/stone/iron/diamond/gold efficiency is 2/4/6/8/12;
+gold has harvest tier zero. Iron/lapis require stone; gold/diamond/redstone
+require iron; obsidian requires diamond. Beta efficiency lists are exact lists:
+obsidian, redstone, furnaces and stairs do not gain a pickaxe speed bonus; axes
+do not speed crafting tables, fences or doors. Swords use 1.5 strength generally
+and 15 on webs; shears use 15 on leaves/webs and 5 on wool. Snow needs a shovel.
+Insufficient tools use the slow unharvestable branch and yield no loot.
+
+Stone yields cobblestone, coal/diamond ores yield their items, iron/gold ores
+yield the ore, lapis gives 4–8 dye, redstone 4–5 dust and glowstone 2–4 dust.
+Double slabs give two matching singles, snow gives snowballs, webs give string,
+and shears preserve leaf species (unless that use breaks the shears). Spawners,
+glass and ice still yield nothing. Loot eligibility uses the tool recorded at
+mining start, and the final use still harvests eligible ore before breakage.
+
+`beta-tool-efficiency.tsv` is extracted from the Java reference by
+`extract_tool_reference.py <reference src directory>`. The harness checks all
+15 ordinary tools against every registered block using those extracted lists,
+all harvest thresholds, special tools, environmental penalties, loot quantities,
+server completion timing and durability. Inventory checks exercise the actual
+World loot method as well. Unity visual and live multiplayer testing remain
+required; mocks do not run Unity or Mirror transport.

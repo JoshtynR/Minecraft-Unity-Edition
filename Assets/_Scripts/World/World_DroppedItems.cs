@@ -28,13 +28,9 @@ public partial class World
             droppedItems.Apply(message.item);
         });
     }
-    public InventoryStack MiningItemDrop(BlockType type)
+    public InventoryStack MiningItemDrop(BlockType type,ItemType tool=ItemType.Nothing,int damage=0)
     {
-        if(type==BlockType.Gravel)return new InventoryStack(Random.Range(0,10)==0?ItemType.Flint:ItemType.Gravel,1);
-        if(type==BlockType.Leaves||type==BlockType.SpruceLeaves||type==BlockType.BirchLeaves)
-            return Random.Range(0,20)==0?new InventoryStack(type==BlockType.SpruceLeaves?ItemType.SpruceSapling:type==BlockType.BirchLeaves?ItemType.BirchSapling:ItemType.OakSapling,1):new InventoryStack();
-        var drop=HandMining.ExistingDrop(type,1);
-        return drop==BlockType.Nothing?new InventoryStack():new InventoryStack(ItemCatalog.FromBlock(drop),1);
+        return ToolMining.Drop(type,tool,Random.Range(0,10),Random.Range(0,20),Random.Range(0,30),damage);
     }
     public bool SpawnItemDrop(InventoryStack stack,Vector3 position,Vector3? motion=null,int delay=10)
     {

@@ -62,9 +62,9 @@ public class Block {public BlockType type;public Vector3Int globalWorldPosition;
 public struct MiningDropProbe {public BlockType type;public bool Empty=>type==BlockType.Nothing;}
 public class World
 {
- public List<BlockType> drops=new List<BlockType>();
- public MiningDropProbe MiningItemDrop(BlockType type)=>new MiningDropProbe{type=HandMining.ExistingDrop(type,1)};
- public bool SpawnItemDrop(MiningDropProbe drop,Vector3 position){drops.Add(drop.type);return true;}
+ public List<InventoryStack> drops=new List<InventoryStack>();
+ public InventoryStack MiningItemDrop(BlockType type,ItemType tool,int damage)=>ToolMining.Drop(type,tool,1,1,0,damage);
+ public bool SpawnItemDrop(InventoryStack drop,Vector3 position){drops.Add(drop);return true;}
  public bool IsWorldCreated=true;public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();public int edits;
  public bool chestProtected;public bool CanReplaceChest(Vector3Int position,BlockType next)=>!chestProtected;
  public Block GetBlock(Vector3 p)=>GetBlock(new Vector3Int((int)Math.Floor(p.x),(int)Math.Floor(p.y),(int)Math.Floor(p.z)));
@@ -102,6 +102,66 @@ public static class MiningCheck
 {
  static int checks;static void Check(bool ok,string label){checks++;if(!ok)throw new Exception(label);}
  static Player Setup(BlockType type){var p=new Player();p.aimed=new Vector3Int(0,1,2);p.world.blocks[p.aimed]=new Block{type=type,globalWorldPosition=p.aimed};return p;}
+ static void CheckTools()
+ {
+  var effective=new HashSet<string>();
+  foreach(var line in System.IO.File.ReadAllLines("Tools/MiningChecks/beta-tool-efficiency.tsv"))effective.Add(line);
+  var tools=new[]{ItemType.WoodenPickaxe,ItemType.StonePickaxe,ItemType.IronPickaxe,ItemType.DiamondPickaxe,ItemType.GoldenPickaxe,
+   ItemType.WoodenAxe,ItemType.StoneAxe,ItemType.IronAxe,ItemType.DiamondAxe,ItemType.GoldenAxe,
+   ItemType.WoodenShovel,ItemType.StoneShovel,ItemType.IronShovel,ItemType.DiamondShovel,ItemType.GoldenShovel};
+  float[] speeds={2,4,6,8,12};
+  for(int i=0;i<tools.Length;i++)foreach(var entry in BetaBlockCatalog.Entries)
+  {
+   float expected=effective.Contains(ItemDurability.Kind(tools[i])+"\t"+entry.SourceId)?speeds[i%5]:1;
+   Check(ToolMining.Strength(entry.Type,tools[i])==expected,"source efficiency list "+tools[i]+" / "+entry.Type);
+  }
+  foreach(BlockType block in Enum.GetValues(typeof(BlockType)))
+  {
+   Check(ToolMining.DamagePerTick(block,ItemType.Nothing,true,false)==HandMining.DamagePerTick(block,true,false),"empty-hand behavior preserved");
+   Check(ToolMining.Strength(block,ItemType.Dirt)==1&&ToolMining.Strength(block,ItemType.DiamondHoe)==1,"held blocks and hoes grant no mining bonus");
+  }
+  for(int i=0;i<5;i++)
+  {
+   var pick=tools[i];int tier=new[]{0,1,2,3,0}[i];
+   foreach(var block in new[]{BlockType.Stone,BlockType.CoalOre,BlockType.Netherrack,BlockType.WoodenSlab,BlockType.GlowStone})Check(ToolMining.Harvestable(block,pick),"any pick harvests low-tier rock");
+   foreach(var block in new[]{BlockType.IronOre,BlockType.IronBlock,BlockType.LapisOre,BlockType.LapisBlock})Check(ToolMining.Harvestable(block,pick)==(tier>=1),"stone tier requirement");
+   foreach(var block in new[]{BlockType.GoldOre,BlockType.GoldBlock,BlockType.DiamondOre,BlockType.DiamondBlock,BlockType.RedstoneOre,BlockType.LitRedstoneOre})Check(ToolMining.Harvestable(block,pick)==(tier>=2),"iron tier requirement");
+   Check(ToolMining.Harvestable(BlockType.Obsidian,pick)==(tier==3),"only diamond harvests obsidian");
+  }
+  Check(ToolMining.DamagePerTick(BlockType.Stone,ItemType.DiamondPickaxe,true,false)==8f/1.5f/30,"diamond stone damage");
+  Check(ToolMining.DamagePerTick(BlockType.Stone,ItemType.GoldenPickaxe,true,false)>ToolMining.DamagePerTick(BlockType.Stone,ItemType.DiamondPickaxe,true,false),"gold faster than diamond on stone");
+  Check(ToolMining.Strength(BlockType.Obsidian,ItemType.DiamondPickaxe)==1&&ToolMining.Strength(BlockType.RedstoneOre,ItemType.DiamondPickaxe)==1,"Beta obsidian and redstone not on efficiency list");
+  Check(Math.Abs(ToolMining.DamagePerTick(BlockType.Stone,ItemType.DiamondPickaxe,false,true)-8f/25/1.5f/30)<.000001,"water and air stack penalties on valid tool");
+  Check(ToolMining.DamagePerTick(BlockType.DiamondOre,ItemType.GoldenPickaxe,false,true)==1f/3/100,"insufficient tier has no speed or environment multiplier");
+  Check(ToolMining.Strength(BlockType.Cobweb,ItemType.IronSword)==15&&ToolMining.Harvestable(BlockType.Cobweb,ItemType.Shears)&&!ToolMining.Harvestable(BlockType.Cobweb,ItemType.DiamondPickaxe),"web sword/shears harvest");
+  Check(ToolMining.Strength(BlockType.BlackWool,ItemType.Shears)==5&&ToolMining.Strength(BlockType.SpruceLeaves,ItemType.Shears)==15,"shears wool/leaves speed");
+  Check(ToolMining.Drop(BlockType.Stone,ItemType.DiamondPickaxe,1,1,0).type==ItemType.Cobblestone,"stone drops cobblestone");
+  Check(ToolMining.Drop(BlockType.DiamondOre,ItemType.GoldenPickaxe,1,1,0).Empty,"fast low-tier tool gives no diamond");
+  Check(ToolMining.Drop(BlockType.IronOre,ItemType.StonePickaxe,1,1,0).type==ItemType.IronOre,"iron ore drops unsmelted");
+  Check(ToolMining.Drop(BlockType.GoldOre,ItemType.IronPickaxe,1,1,0).type==ItemType.GoldOre,"gold ore drops unsmelted");
+  Check(ToolMining.Drop(BlockType.DiamondOre,ItemType.IronPickaxe,1,1,0).type==ItemType.Diamond&&ToolMining.Drop(BlockType.CoalOre,ItemType.WoodenPickaxe,1,1,0).type==ItemType.Coal,"ore products");
+  Check(ToolMining.Drop(BlockType.Obsidian,ItemType.DiamondPickaxe,1,1,0).type==ItemType.Obsidian,"diamond harvests obsidian");
+  for(int q=0;q<30;q++)
+  {
+   var lapis=ToolMining.Drop(BlockType.LapisOre,ItemType.StonePickaxe,1,1,q);Check(lapis.type==ItemType.LapisLazuli&&lapis.count==4+q%5,"lapis count 4-8");
+   var red=ToolMining.Drop(BlockType.LitRedstoneOre,ItemType.IronPickaxe,1,1,q);Check(red.type==ItemType.RedstoneDust&&red.count==4+q%2,"redstone count 4-5");
+   var glow=ToolMining.Drop(BlockType.GlowStone,ItemType.WoodenPickaxe,1,1,q);Check(glow.type==ItemType.GlowstoneDust&&glow.count==2+q%3,"glowstone count 2-4");
+  }
+  foreach(var leaf in new[]{BlockType.Leaves,BlockType.SpruceLeaves,BlockType.BirchLeaves})Check(ToolMining.Drop(leaf,ItemType.Shears,1,1,0).type==ItemCatalog.FromBlock(leaf),"shears keep leaf species");
+  Check(ToolMining.Drop(BlockType.Leaves,ItemType.Shears,1,1,0,238).Empty,"shears that break on this block lose the special leaf harvest");
+  Check(ToolMining.Drop(BlockType.SnowBlock,ItemType.DiamondShovel,1,1,0).count==4&&ToolMining.Drop(BlockType.SnowLayer,ItemType.DiamondPickaxe,1,1,0).Empty,"snow shovel-only drops");
+  Check(ToolMining.Drop(BlockType.DoubleWoodenSlab,ItemType.WoodenPickaxe,1,1,0).count==2,"double slabs give two singles");
+  foreach(var block in new[]{BlockType.Glass,BlockType.Ice,BlockType.MonsterSpawner,BlockType.Bedrock})Check(ToolMining.Drop(block,ItemType.DiamondPickaxe,1,1,0).Empty,"no invented drops");
+  foreach(var tool in new[]{ItemType.DiamondPickaxe,ItemType.GoldenPickaxe,ItemType.WoodenPickaxe})
+  {
+   var p=Setup(BlockType.Stone);p.inventory.slots[0].type=tool;p.inventory.slots[0].count=1;p.Begin(p.aimed,BlockType.Stone);
+   float progress=0;int ticks=0;while(progress<1){progress+=ToolMining.DamagePerTick(BlockType.Stone,tool,true,false);ticks++;}
+   for(int i=0;i<ticks-1;i++)p.Step();Check(p.world.edits==0,"tool cannot finish early");p.Step();
+   Check(p.world.edits==1&&p.world.drops.Count==1&&p.world.drops[0].type==ItemType.Cobblestone&&p.inventory.slots[0].damage==1,"tool completion spawns correct drop and charges wear once");
+  }
+  var denied=Setup(BlockType.DiamondOre);denied.inventory.slots[0].type=ItemType.GoldenPickaxe;denied.inventory.slots[0].count=1;denied.Begin(denied.aimed,BlockType.DiamondOre);for(int i=0;i<301;i++)denied.Step();
+  Check(denied.world.edits==1&&denied.world.drops.Count==0&&denied.inventory.slots[0].damage==1,"insufficient tier can destroy ore slowly but loses the drop and wears tool");
+ }
  public static void Main()
  {
   foreach(BlockType t in Enum.GetValues(typeof(BlockType)))
@@ -150,7 +210,8 @@ public static class MiningCheck
   worn.Begin(worn.aimed,BlockType.Dirt);for(int i=0;i<30;i++)worn.Step();Check(worn.inventory.slots[0].count==0&&worn.world.edits==1,"last tool use completes the block before removing the broken item");
   var interrupted=Setup(BlockType.Dirt);interrupted.inventory.slots[0].type=ItemType.WoodenPickaxe;interrupted.inventory.slots[0].count=1;interrupted.Begin(interrupted.aimed,BlockType.Dirt);interrupted.Step();interrupted.Cancel();for(int i=0;i<30;i++)interrupted.Step();
   Check(interrupted.inventory.slots[0].damage==0,"canceled mining never charges durability");
+  CheckTools();
   Check(HandMining.CrackStage(0)==0&&HandMining.CrackStage(0.99f)==9&&HandMining.CrackStage(1)==9,"ten bounded crack stages");
-  Console.WriteLine(checks+" production hand mining/progress/drop/reach/overlay checks passed (Unity/Mirror mocked).");
+  Console.WriteLine(checks+" production tool and hand mining/progress/drop/reach/overlay checks passed (Unity/Mirror mocked).");
  }
 }

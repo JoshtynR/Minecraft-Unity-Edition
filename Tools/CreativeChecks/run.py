@@ -43,6 +43,7 @@ with tempfile.TemporaryDirectory() as tmp:
         str(root / "Assets/_Scripts/Entity's/Player/HandMining.cs"),
         str(root / 'Assets/_Scripts/Block/BetaBlockCatalog.cs'),
         str(root / 'Assets/_Scripts/ItemVisualMesh.cs'),
+        str(root / 'Assets/_Scripts/ToolMining.cs'),
         str(root / 'Assets/_Scripts/ItemDurability.cs'),
         str(root / "Assets/_Scripts/Entity's/Player/PlayerInventory_Durability.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/Player_Durability.cs"),

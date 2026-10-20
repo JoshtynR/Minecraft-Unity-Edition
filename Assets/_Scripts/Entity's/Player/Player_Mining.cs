@@ -45,7 +45,7 @@ public partial class Player
         while (localMineClock >= 0.05f)
         {
             localMineClock -= 0.05f;
-            localMineProgress = Mathf.Min(1, localMineProgress + HandMining.DamagePerTick(localMineType, isGrounded, HeadInWater()));
+            localMineProgress = Mathf.Min(1, localMineProgress + ToolMining.DamagePerTick(localMineType, localMineItem.type, isGrounded, HeadInWater()));
         }
         if (localMineProgress > 0)
         {
@@ -140,11 +140,11 @@ public partial class Player
         {
             serverMineClock = Mathf.Max(0, serverMineClock - 0.05f);
             bool grounded = !networkStarted || isLocalPlayer ? isGrounded : serverGrounded;
-            serverMineProgress += HandMining.DamagePerTick(serverMineType, grounded, HeadInWater());
+            serverMineProgress += ToolMining.DamagePerTick(serverMineType, serverMineItem.type, grounded, HeadInWater());
             if (serverMineProgress < 1) continue;
             serverMining = false;
             nextServerMineTime = NetworkTime.time + 0.25;
-            var drop = world.MiningItemDrop(serverMineType);
+            var drop = world.MiningItemDrop(serverMineType,serverMineItem.type,serverMineItem.damage);
             var replacement = BlockType.Air;
             if (serverMineType == BlockType.Ice)
             {
@@ -155,7 +155,7 @@ public partial class Player
             if (WorldServer.instance != null && isServer) WorldServer.instance.RpcSetBlock(serverMinePosition, replacement, 0);
             // Mining is a later survival addition to the Beta renderer: normal
             // harvested blocks use the classic 0.025 exhaustion cost.
-            if (HandMining.Harvestable(serverMineType))
+            if (ToolMining.Harvestable(serverMineType,serverMineItem.type))
             { LoadHungerState(); hungerSimulation.AddExhaustion(0.025f); StoreHungerState(); }
             if(!drop.Empty)world.SpawnItemDrop(drop,(Vector3)serverMinePosition+Vector3.one*.5f);
             int wear=ItemDurability.MiningWear(serverMineItem.type,serverMineType);

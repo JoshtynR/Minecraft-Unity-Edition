@@ -31,6 +31,11 @@ public partial class PlayerInventory
 {
     static void CheckDrops()
     {
+        var loot=new GameObject("MiningLoot").AddComponent<World>();
+        Check(loot.MiningItemDrop(BlockType.Stone,ItemType.DiamondPickaxe).type==ItemType.Cobblestone,"production world resolves tool harvest drops");
+        Check(loot.MiningItemDrop(BlockType.DiamondOre,ItemType.GoldenPickaxe).Empty,"production world suppresses insufficient-tier ore loot");
+        Check(loot.MiningItemDrop(BlockType.BirchLeaves,ItemType.Shears).type==ItemType.BirchLeaves,"production world preserves sheared leaf species");
+        Check(loot.MiningItemDrop(BlockType.BirchLeaves,ItemType.Shears,238).type!=ItemType.BirchLeaves,"production world forwards tool wear into special harvest");
         var store=new DroppedItemStore();
         var item=store.Spawn(new InventoryStack(ItemType.Stone,17),new Vector3(0,0,0),new Vector3(),10,0);
         Check(item!=null&&store.Count==1&&!DroppedItemRules.CanPickup(item,Vector3.zero),"fresh drops respect pickup delay");
