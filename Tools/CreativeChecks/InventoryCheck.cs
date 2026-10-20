@@ -256,9 +256,9 @@ public partial class PlayerInventory
   Check(missingSkinMenu.inventoryPreview!=null&&ReferenceEquals(missingSkinMenu.inventoryPreviewGraphic.mainTexture,Texture2D.whiteTexture),"missing skin and missing material still construct a visible fallback model");
   CheckCanvasPreview(missingSkinMenu);missingSkinMenu.OnDestroy();Resources.omitPreviewMaterial=false;
  }
- public static void Main()
+ public static void Main(string[] args)
  {
-  CheckRules();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
+  CheckRules();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
   var headless=new GameObject("DedicatedInventory").AddComponent<PlayerInventory>();
   Check(headless.AddItem(ItemType.Stone,64)&&headless.slots[0].count==64,"storage logic works without a canvas on nonlocal/server players");
   headless.LoadInventory(null);headless.AddItem(ItemType.Stone,63);headless.AddItem(ItemType.Dirt,35*64);

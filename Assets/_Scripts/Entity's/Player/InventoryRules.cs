@@ -70,44 +70,8 @@ public static class InventoryRules
         int remaining=Insert(slots,stack.type,stack.count,index<9?9:0,index<9?36:9,stack.damage);
         slots[index]=new InventoryStack(stack.type,remaining,stack.damage);slots[index].Normalize();
     }
-    public static InventoryStack CraftResult(InventoryStack[] input)
-    {
-        int used=0,last=-1;
-        for(int i=0;i<4;i++)if(!input[i].Empty){used++;last=i;}
-        if(used==1&&(input[last].type==ItemType.Log||input[last].type==ItemType.SpruceLog||input[last].type==ItemType.BirchLog))
-            return new InventoryStack(ItemType.WoodenPlanks,4);
-        if(used==2)
-        {
-            for(int row=0;row<2;row++)
-            {
-                int a=row*2,b=a+1;
-                if(input[a].Empty||input[b].Empty||input[a].type!=input[b].type)continue;
-                if(input[a].type==ItemType.Stone)return new InventoryStack(ItemType.StonePressurePlate,1);
-                if(input[a].type==ItemType.WoodenPlanks)return new InventoryStack(ItemType.WoodenPressurePlate,1);
-            }
-            for(int column=0;column<2;column++)
-            {
-                var top=input[column];var bottom=input[column+2];
-                if(top.Empty||bottom.Empty)continue;
-                if(top.type==ItemType.WoodenPlanks&&bottom.type==ItemType.WoodenPlanks)return new InventoryStack(ItemType.Stick,4);
-                if((top.type==ItemType.Coal||top.type==ItemType.Charcoal)&&bottom.type==ItemType.Stick)return new InventoryStack(ItemType.Torch,4);
-                if(top.type==ItemType.Stone&&bottom.type==ItemType.Stone)return new InventoryStack(ItemType.StoneButton,1);
-                if(top.type==ItemType.Pumpkin&&bottom.type==ItemType.Torch)return new InventoryStack(ItemType.JackOLantern,1);
-            }
-        }
-        if(used==4)
-        {
-            ItemType type=input[0].type;
-            for(int i=1;i<4;i++)if(input[i].type!=type)return new InventoryStack();
-            if(type==ItemType.WoodenPlanks)return new InventoryStack(ItemType.CraftingTable,1);
-            if(type==ItemType.Sand)return new InventoryStack(ItemType.Sandstone,1);
-        }
-        return new InventoryStack();
-    }
-    public static void ConsumeRecipe(InventoryStack[] input)
-    {
-        for(int i=0;i<4;i++)if(!input[i].Empty){input[i].count--;input[i].Normalize();}
-    }
+    public static InventoryStack CraftResult(InventoryStack[] input) => BetaCraftingRecipes.Result(input);
+    public static void ConsumeRecipe(InventoryStack[] input) => BetaCraftingRecipes.Consume(input);
 }
 
 // Coordinates use the original 176x166 Beta inventory, with 18-pixel slot pitch.

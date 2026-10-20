@@ -32,13 +32,23 @@ https://www.minecraftforum.net/forums/mapping-and-modding-java-edition/minecraft
   the pointer enters while the mouse is held.
 - AddItem's bool API is atomic: insufficient space returns false without changing
   anything. The catalogue's separate partial-insert path adds what fits.
-- The current block registry supports log/spruce-log/birch-log to four planks,
-  crafting tables, sandstone, wooden/stone pressure plates, the two-stone vertical
-  Beta button recipe, and pumpkin-over-torch jack-o'-lanterns. Result clicks
-  consume ingredients only after the whole output fits; shift repeats while
-  ingredients and space remain. Two vertical planks now yield four sticks, and
-  coal or charcoal above a stick yields four torches. A 3x3 crafting table,
-  tool actions, food actions and editable recipe assets remain future work.
+- All 151 Beta 1.7.3 crafting recipes are registered, including tools, armor,
+  redstone, transport, food, dye mixing and wool dyeing. The inventory grid is
+  2x2; right-click a crafting table for its 3x3 grid. Shaped recipes translate
+  and mirror horizontally. Shapeless recipes require exactly their ingredient
+  multiset. Source block ingredients accept metadata variants (all log species,
+  any wool in beds/paintings); dye recipes require white wool. Beta quantities
+  and shapes apply: three slabs, two ladders, six powered/detector rails, vertical
+  mushroom stew, and gold blocks in golden apples. This implements recipes,
+  not the use behavior of every crafted item.
+- Result clicks consume ingredients only after the entire output fits; shift
+  repeats while ingredients and space remain. Milk buckets become empty buckets.
+  Result slots cannot receive cursor items. Table inputs support normal clicks,
+  half-stack pickup, single-item placement and shift transfer back to storage.
+- The table closes when removed, more than eight blocks away, after death, or
+  after a network disconnect. Table ingredients return to storage; overflow
+  becomes saved recovery stacks. Saving with the table open snapshots its inputs
+  into recovery, preserving the existing four-slot save format without duplication.
 - Closing returns cursor and crafting inputs to free storage. If storage is full,
   they remain persisted and reappear on reopening; they are not destroyed. The
   game does not yet have dropped-item entities, so vanilla outside-click drops
@@ -154,3 +164,25 @@ preview fills the black window and looks toward the mouse relative to that windo
 Missing artwork retains the procedural panel. Tests cover both paths, HD cropping,
 clickable slots, emitted canvas triangles, skin UVs and all allowed player poses;
 actual Unity rendering needs Play Mode.
+
+## Crafting reference and validation
+
+`beta-crafting.tsv` is independently extracted from `CraftingManager.java` and
+its seven recipe families in reference commit
+`740c583901e1ff1150e9ef37e37dab5bc0e4f807`. Regenerate it with
+`python Tools/CreativeChecks/extract_crafting_reference.py /path/to/mc_b1.7.3_release`.
+The inventory runner compares all 151 definitions against this fixture and tests
+both grid sizes, every valid shaped offset and mirror, shapeless order, extra
+inputs, recipe consumption, empty milk buckets, output capacity, shift repeats,
+full-inventory closure, save recovery, durability preservation, reach/removal and
+disconnect closure. UI checks use native/HD container textures and procedural
+fallbacks. These checks mock Unity UI and transport; actual Unity rendering and
+multiplayer still need Play Mode validation.
+
+The table uses `PlayerHudAssets.craftingTable`, linked to
+`Assets/Textures/Minecraft/gui/container/crafting_table.png`. Startup binds a
+missing reference without replacing a custom assignment. The 176x166 panel is
+cropped from the 256x256 atlas and uses the original ContainerWorkbench slot
+coordinates. Inventory/hotbar slots move into the table panel and return when it
+closes; the existing TMI sidebar remains available. No modern recipe book or
+outside-click item dropping is added.

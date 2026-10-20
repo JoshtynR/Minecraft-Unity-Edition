@@ -137,6 +137,7 @@ public static class AssignmentCheck
    for(int i=0;i<16*16;i++)clock.pixels[clock.pixels.Length-1-i]=new Color32(8,0,0,255);
    var icons=Image(root+"/gui/icons.png",256,256);
    var inventory=Image(PlayerHudAssetSetup.InventoryPath,256,256);
+   var crafting=Image(PlayerHudAssetSetup.CraftingPath,256,256);
    var chestSkin=Image(root+"/block/normal.png",64,64);
    var chestContainer=Image(root+"/gui/container/generic_54.png",256,256);
    var steve=Image(root+"/entity/steve.png",64,64,10);
@@ -163,6 +164,14 @@ public static class AssignmentCheck
    Check(items.items[3].icon.width==16&&items.items[3].icon.height==16&&items.items[3].icon.pixels.All(p=>p.r==8),"animated item sheet becomes its top frame rather than a squeezed strip");
    Check(ReferenceEquals(hud.icons,icons)&&hud.blockBreak.width==160&&hud.blockBreak.height==16,"HUD icons and all ten breaking images are assigned");
    Check(ReferenceEquals(hud.inventory,inventory),"auto-assign binds exact inventory container sheet");
+   Check(ReferenceEquals(hud.craftingTable,crafting),"auto-assign binds exact crafting-table container sheet");
+   hud.craftingTable=original;PlayerHudAssetSetup.Bind();
+   Check(ReferenceEquals(hud.craftingTable,original),"automatic GUI binding preserves explicitly assigned crafting artwork");
+   hud.craftingTable=null;
+   var craftingImporter=UnityEditor.AssetImporter.all[PlayerHudAssetSetup.CraftingPath];
+   craftingImporter.mipmapEnabled=true;craftingImporter.npotScale=UnityEditor.TextureImporterNPOTScale.ToNearest;
+   PlayerHudAssetSetup.Bind();
+   Check(ReferenceEquals(hud.craftingTable,crafting)&&!craftingImporter.mipmapEnabled&&craftingImporter.npotScale==UnityEditor.TextureImporterNPOTScale.None,"crafting sheet binds automatically with pixel-preserving import settings");
    hud.inventory=null;
    var guiImporter=UnityEditor.AssetImporter.all[PlayerHudAssetSetup.InventoryPath];
    guiImporter.mipmapEnabled=true;guiImporter.npotScale=UnityEditor.TextureImporterNPOTScale.ToNearest;

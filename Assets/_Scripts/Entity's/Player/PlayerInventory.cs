@@ -91,6 +91,7 @@ public partial class PlayerInventory : MonoBehaviour
     public void CloseInventory()
     {
         if(TryCloseChest())return;
+        if(tableOpen)EndCraftingTable(true);
         ReturnTransientStacks();
         HideSlotHover();
         isOpen = false;

@@ -8,6 +8,7 @@ public class PlayerHudAssets : ScriptableObject
     public Texture2D icons;
     [Tooltip("256x256 inventory sheet; the upper-left 176x166 region is the survival panel.")]
     public Texture2D inventory;
+    public Texture2D craftingTable;
     [Tooltip("Player skin used directly by the inventory preview. A skin material is optional.")]
     public Texture2D inventoryPlayerSkin;
     public Texture2D chestSkin;

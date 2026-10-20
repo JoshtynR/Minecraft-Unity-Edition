@@ -7,6 +7,7 @@ public static class PlayerHudAssetSetup
     public const string BreakPath = "Assets/Textures/Minecraft/block_break.png";
     public const string IconsPath = "Assets/Textures/Minecraft/gui/icons.png";
     public const string InventoryPath = "Assets/Textures/Minecraft/gui/container/inventory.png";
+    public const string CraftingPath = "Assets/Textures/Minecraft/gui/container/crafting_table.png";
     static PlayerHudAssetSetup() { EditorApplication.delayCall += Bind; }
 
     [MenuItem("Minecraft/Textures/Refresh GUI and Chest Assets")]
@@ -22,6 +23,7 @@ public static class PlayerHudAssetSetup
         var icons = Prepare(IconsPath);
         var cracks = Prepare(BreakPath);
         var inventory = Prepare(InventoryPath);
+        var crafting = config.craftingTable!=null?config.craftingTable:Prepare(CraftingPath);
         var guiWidgets=config.guiWidgets!=null?config.guiWidgets:Prepare("Assets/Textures/Minecraft/gui/widgets.png");
         if(guiWidgets==null)guiWidgets=Prepare("Assets/Resources/Sprites/UI/widgets.png");
         var guiFont=config.guiFont!=null?config.guiFont:AssetDatabase.LoadAssetAtPath<Font>("Assets/UI/Font/MinecraftRegular.otf");
@@ -43,6 +45,7 @@ public static class PlayerHudAssetSetup
         var bubbleParticle=config.bubbleParticle!=null?config.bubbleParticle:Prepare("Assets/Textures/Minecraft/particle/bubble.png");
         if ((icons == null || config.icons == icons) && (cracks == null || config.blockBreak == cracks) &&
             (inventory == null || config.inventory == inventory) &&
+            (crafting == null || config.craftingTable == crafting) &&
             (playerSkin == null || config.inventoryPlayerSkin == playerSkin) &&
             (chestSkin == null || config.chestSkin == chestSkin) &&
             (chestContainer == null || config.chestContainer == chestContainer) &&
@@ -57,6 +60,7 @@ public static class PlayerHudAssetSetup
         if (icons != null) config.icons = icons;
         if (cracks != null) config.blockBreak = cracks;
         if (inventory != null) config.inventory = inventory;
+        if (crafting != null) config.craftingTable = crafting;
         if(guiWidgets!=null)config.guiWidgets=guiWidgets;
         if(guiFont!=null)config.guiFont=guiFont;
         if (playerSkin != null) config.inventoryPlayerSkin = playerSkin;
@@ -97,7 +101,7 @@ public class PlayerHudIconImporter : AssetPostprocessor
     private void OnPreprocessTexture()
     {
         if (assetPath != PlayerHudAssetSetup.IconsPath && assetPath != PlayerHudAssetSetup.BreakPath &&
-            assetPath != PlayerHudAssetSetup.InventoryPath) return;
+            assetPath != PlayerHudAssetSetup.InventoryPath && assetPath != PlayerHudAssetSetup.CraftingPath) return;
         var importer = (TextureImporter)assetImporter;
         importer.filterMode = FilterMode.Point;
         importer.mipmapEnabled = false;
@@ -110,7 +114,7 @@ public class PlayerHudIconImporter : AssetPostprocessor
     {
         foreach (var path in imported)
             if (path == PlayerHudAssetSetup.IconsPath || path == PlayerHudAssetSetup.BreakPath ||
-                path == PlayerHudAssetSetup.InventoryPath || path=="Assets/Textures/Minecraft/entity/chest/normal.png" ||
+                path == PlayerHudAssetSetup.InventoryPath || path == PlayerHudAssetSetup.CraftingPath || path=="Assets/Textures/Minecraft/entity/chest/normal.png" ||
                 path=="Assets/Textures/Minecraft/block/normal.png" || path=="Assets/Textures/Minecraft/gui/container/generic_54.png" ||
                 path=="Assets/Textures/Player/player.mat" || path=="Assets/Textures/Player/steve.png" ||
                 path=="Assets/Textures/Minecraft/entity/steve.png" || path=="Assets/Textures/Minecraft/entity/player/wide/steve.png")

@@ -9,7 +9,10 @@ public partial class PlayerInventory
     private readonly Slot craftedOutput = new Slot(40);
     private readonly List<Slot> recoveryItems = new List<Slot>();
     private readonly InventoryStack[] storageBuffer = new InventoryStack[36];
-    private readonly InventoryStack[] craftBuffer = new InventoryStack[4];
+    private readonly InventoryStack[] playerCraftBuffer = new InventoryStack[4];
+    private readonly InventoryStack[] tableCraftBuffer = new InventoryStack[9];
+    private InventoryStack[] craftBuffer => tableOpen ? tableCraftBuffer : playerCraftBuffer;
+    private Slot[] ActiveCrafting => tableOpen ? tableSlots : craftingSlots;
 
     private static InventoryStack Stack(Slot slot) => slot==null ? new InventoryStack() : new InventoryStack(slot.type,slot.count,slot.damage);
     private void InitializeSlotData()
@@ -22,11 +25,13 @@ public partial class PlayerInventory
         }
         for(int i=0;i<36;i++)if(slots[i]==null)slots[i]=new Slot(i);
         for(int i=0;i<4;i++)if(craftingSlots[i]==null)craftingSlots[i]=new Slot(36+i);
+        for(int i=0;i<9;i++)if(tableSlots[i]==null)tableSlots[i]=new Slot(200+i);
         for(int i=0;i<4;i++)if(equipmentSlots[i]==null)equipmentSlots[i]=new Slot(41+i);
     }
     public Slot GetSlot(int index)
     {
         if(chestOpen&&index>=100&&index<127)return chestSlots[index-100];
+        if(tableOpen&&index>=200&&index<209)return tableSlots[index-200];
         InitializeSlotData();return index>=0&&index<36 ? slots[index] : index>=36&&index<40 ? craftingSlots[index-36] : index==40 ? craftedOutput : index>=41&&index<45 ? equipmentSlots[index-41] : null;
     }
     private void ReadStorage()
@@ -40,20 +45,20 @@ public partial class PlayerInventory
     }
     private void WriteStack(int index,InventoryStack value)
     {
-        value.Normalize();var slot=GetSlot(index);
+        value.Normalize();var slot=GetSlot(index);if(slot==null)return;
         if(index<36)
         {
             if(slot.type!=value.type)SetSlotItemType(index,value.type);
         }
         else if(slot.type!=value.type)
         {
-            var rect=index>=41?equipmentRects[index-41]:index==40?craftResultRect:craftingRects[index-36];
+            var rect=index>=200?tableRects[index-200]:index>=41?equipmentRects[index-41]:index==40?craftResultRect:craftingRects[index-36];
             if(rect!=null){ClearSlotIcon(rect);CreateItemIcon(value.type,rect);}
             slot.type=value.type;
         }
         slot.damage=value.damage;
         slot.SetCount(value.count);
-        if(index>=41)
+        if(index>=41&&index<45)
         {
             if(equipmentGhosts[index-41]!=null)equipmentGhosts[index-41].gameObject.SetActive(value.Empty);
             RefreshPreviewEquipment();
@@ -68,6 +73,8 @@ public partial class PlayerInventory
     {
         if(chestPending)return;
         if(chestOpen){ClickChest(index,right,shift);return;}
+        if(tableOpen&&!TableAccessible()){CloseInventory();return;}
+        if(tableOpen&&((index>=36&&index<40)||(index>=41&&index<45)))return;
         if(index==40){TakeCraftResult(shift);return;}
         var slot=GetSlot(index);if(slot==null)return;
         if(shift&&index<36)
@@ -83,7 +90,7 @@ public partial class PlayerInventory
         else
         {
             var value=Stack(slot);var cursor=Stack(pickedUpSlot);
-            if(index>=41)InventoryRules.ClickEquipment(ref value,ref cursor,index-41);
+            if(index>=41&&index<45)InventoryRules.ClickEquipment(ref value,ref cursor,index-41);
             else InventoryRules.Click(ref value,ref cursor,right);
             WriteStack(index,value);SetCursor(cursor);
         }
@@ -91,7 +98,7 @@ public partial class PlayerInventory
     }
     private void ReadCrafting()
     {
-        for(int i=0;i<4;i++)craftBuffer[i]=Stack(craftingSlots[i]);
+        for(int i=0;i<ActiveCrafting.Length;i++)craftBuffer[i]=Stack(ActiveCrafting[i]);
     }
     private void RefreshCraftingOutput()
     {
@@ -117,7 +124,7 @@ public partial class PlayerInventory
             InventoryRules.ConsumeRecipe(craftBuffer);
         }
         CommitStorage();
-        for(int i=0;i<4;i++)WriteStack(36+i,craftBuffer[i]);
+        for(int i=0;i<ActiveCrafting.Length;i++)WriteStack(tableOpen?200+i:36+i,craftBuffer[i]);
         SetCursor(cursor);RefreshCraftingOutput();
     }
     // Existing block-drop callers cross the block/item boundary here.
@@ -160,7 +167,14 @@ public partial class PlayerInventory
     public Slot[] SavedCrafting() => CopySlots(craftingSlots);
     public Slot[] SavedEquipment() => CopySlots(equipmentSlots);
     public Slot SavedCursor() => pickedUpSlot==null?null:new Slot(pickedUpSlot);
-    public Slot[] SavedRecovery() => CopySlots(recoveryItems.ToArray());
+    public Slot[] SavedRecovery()
+    {
+        // A table is a transient container. Save its inputs with the player's
+        // recovery stacks so a save taken with this screen open retains its inputs.
+        var saved=new List<Slot>(recoveryItems);
+        if(tableOpen)foreach(var slot in tableSlots)if(slot!=null&&slot.count>0)saved.Add(slot);
+        return CopySlots(saved.ToArray());
+    }
     private static Slot[] CopySlots(Slot[] source)
     {
         var copy=new Slot[source.Length];for(int i=0;i<copy.Length;i++)copy[i]=source[i]==null?new Slot(i):new Slot(source[i]);return copy;
@@ -171,6 +185,7 @@ public partial class PlayerInventory
     }
     public void LoadInventory(Slot[] saved,Slot[] crafting=null,Slot cursor=null,Slot[] recovery=null,Slot[] equipment=null)
     {
+        if(tableOpen)EndCraftingTable(false);
         InitializeSlotData();
         recoveryItems.Clear();
         for(int i=0;i<36;i++)

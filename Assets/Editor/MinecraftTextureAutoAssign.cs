@@ -515,6 +515,8 @@ public static class MinecraftTextureAutoAssign
             var inventory=AssetDatabase.LoadAssetAtPath<Texture2D>(inventoryPath);
             if(inventory!=null&&hud.inventory!=inventory)
             {hud.inventory=inventory;run.assigned++;run.report.AppendLine("MATCH Survival inventory -> "+inventoryPath);}
+            var crafting=AssetDatabase.LoadAssetAtPath<Texture2D>(Root+"/gui/container/crafting_table.png");
+            if(crafting!=null&&hud.craftingTable!=crafting){hud.craftingTable=crafting;run.assigned++;}
             var breaking=run.Find(MinecraftTextureKind.Block,"block_break","Block breaking sheet",true);
             if(breaking==null)
             {

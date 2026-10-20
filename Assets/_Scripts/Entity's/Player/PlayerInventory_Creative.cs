@@ -128,6 +128,7 @@ public partial class PlayerInventory
         }
         UpdateSlotTooltip();
         UpdateChestPanel();
+        UpdateCraftingTable();
     }
 
     private void ChangeCreativePage(int delta)

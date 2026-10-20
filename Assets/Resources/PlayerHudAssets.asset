@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10afee2ba88b4d16af99413a6e454221, type: 3}
   m_Name: PlayerHudAssets
   m_EditorClassIdentifier: 
+  craftingTable: {fileID: 2800000, guid: 54ba8932ad9360147b828eb24a9b7979, type: 3}
   icons: {fileID: 2800000, guid: 4525a3faaaa32704cb43d4ae54527df1, type: 3}
   levelFont: {fileID: 11400000, guid: 236def6fe4895f84a99e370b4b5e59b5, type: 2}
   blockBreak: {fileID: 2800000, guid: b0f623e5a889ca64fa6332a6fc5643de, type: 3}

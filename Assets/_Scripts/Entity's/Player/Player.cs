@@ -254,6 +254,7 @@ public partial class Player : BaseEntity
         Vector3Int adjacent;
         var block=TargetedBlock(reach,out adjacent);
         if(block==null)return false;
+        if(block.type==BlockType.CraftingTable){inventory.OpenCraftingTable(block.globalWorldPosition);return true;}
         if(block.type==BlockType.Chest){inventory.RequestChest(block.globalWorldPosition);return true;}
         byte state=SpecialBlockGeometry.State(block.type,block.blockShape),next;
         if(!SpecialBlockGeometry.TryUse(block.type,state,out next))return false;
