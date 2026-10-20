@@ -319,7 +319,7 @@ public partial class World
         {
             var item = meshDataDict[i];
             CreateChunk(worldData, item.Key, item.Value);
-            if (Application.isPlaying && (i + 1) % Math.Max(1, chunksPerFrame) == 0)
+            if (Application.isPlaying && (i + 1) % Math.Max(1, (int)chunksPerFrame) == 0)
             {
                 yield return new WaitForEndOfFrame();
             }
