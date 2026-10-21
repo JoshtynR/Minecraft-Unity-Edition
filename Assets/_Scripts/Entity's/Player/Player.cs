@@ -151,6 +151,7 @@ public partial class Player : BaseEntity
         _camComponent = cam.GetComponent<Camera>();
         _normalFOV = _camComponent.fieldOfView;
         clientInitialized = true;
+        if (GetComponent<FirstPersonView>() == null) gameObject.AddComponent<FirstPersonView>().Initialize(this);
 
     }
 
