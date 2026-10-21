@@ -141,6 +141,9 @@ public partial class WorldServer : NetworkBehaviour
                 ".minecraftUnity/saves/" + World.Instance.worldName + $"/playerdata/{message.steamId}.json")));
             
             var player = Instantiate(NetworkManager.singleton.playerPrefab, playerData.position, Quaternion.identity);
+            // Included in the initial spawn state: the loading UI must wait even
+            // if the saved-player TargetRpc arrives several frames after spawn.
+            player.GetComponent<Player>().expectsSavedPlayerData = true;
             NetworkServer.AddPlayerForConnection(conn, player);
             player.GetComponent<Player>().RpcLoadPlayer(conn, playerData);
             conn.identity.AssignClientAuthority(conn);

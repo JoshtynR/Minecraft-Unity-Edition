@@ -16,6 +16,7 @@ public class MinecraftNetworkManager : NetworkManager
 
     public override void OnClientConnect()
     {
+        WorldLoadingScreen.Begin();
         base.OnClientConnect();
         NetworkClient.Send(new WorldServer.StartPlayerMessage(SteamClient.SteamId));
         
@@ -40,8 +41,21 @@ public class MinecraftNetworkManager : NetworkManager
         }
     }
 
+    public override void OnServerChangeScene(string sceneName)
+    {
+        if (sceneName.Contains("World")) WorldLoadingScreen.Begin();
+        base.OnServerChangeScene(sceneName);
+    }
+
+    public override void OnClientChangeScene(string sceneName, SceneOperation operation, bool customHandling)
+    {
+        if (sceneName.Contains("World")) WorldLoadingScreen.Begin();
+        base.OnClientChangeScene(sceneName, operation, customHandling);
+    }
+
     public override void OnClientDisconnect()
     {
+        WorldLoadingScreen.Cancel();
         if (LobbyManager.currentLobby.HasValue)
         {
             LobbyManager.currentLobby.Value.Leave();
@@ -51,9 +65,15 @@ public class MinecraftNetworkManager : NetworkManager
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
-        WorldServer.instance.CloseChestForDisconnect(conn);
-        WorldServer.instance.CloseFurnaceForDisconnect(conn);
-        WorldServer.instance.SavePlayerMessageHandler(conn, conn.identity.GetComponent<Player>().SavePlayer());
+        var server = WorldServer.instance;
+        if (server != null && conn != null)
+        {
+            server.CloseChestForDisconnect(conn);
+            server.CloseFurnaceForDisconnect(conn);
+            var player = conn.identity != null ? conn.identity.GetComponent<Player>() : null;
+            // Cancelling during loading can disconnect before any player exists or Start has run.
+            if (player != null && player.inventory != null) server.SavePlayerMessageHandler(conn, player.SavePlayer());
+        }
         
         base.OnServerDisconnect(conn);
     }

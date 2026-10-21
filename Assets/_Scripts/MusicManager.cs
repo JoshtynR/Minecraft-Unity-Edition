@@ -6,290 +6,198 @@ using UnityEngine.Audio;
 [DisallowMultipleComponent]
 public class MusicManager : MonoBehaviour
 {
-    // Optional singleton so you can call MusicManager.Instance.Next() from anywhere.
     public static MusicManager Instance { get; private set; }
-
     [Header("Playlist")]
-    [Tooltip("Ordered list of music tracks to choose from.")]
     public List<AudioClip> tracks = new List<AudioClip>();
-
     [Header("Playback")]
     public bool playOnStart = true;
-    public bool shuffle = false;
-    public bool loopPlaylist = true;  // loops when reaching end
-    public bool loopTrack = false;    // repeat the same song
-
+    public bool shuffle;
+    public bool loopPlaylist = true;
+    public bool loopTrack;
     [Header("Routing & Levels")]
     [Range(0f, 1f)] public float volume = 1f;
-    public AudioMixerGroup output;     // optional; leave null to use default
-
+    public AudioMixerGroup output;
     [Header("Transitions")]
-    [Tooltip("Seconds to crossfade between tracks. 0 = hard cut.")]
+    [Tooltip("Seconds to crossfade before the current track ends. 0 = hard cut.")]
     [Min(0f)] public float crossfadeSeconds = 1.5f;
-
     [Header("Lifetime")]
-    [Tooltip("Keep this music manager alive across scene loads.")]
     public bool dontDestroyOnLoad = true;
 
-    // Internals
-    private AudioSource _a, _b;     // double-source for crossfades
-    private bool _usingA = true;
-    private int _currentIndex = -1; // index in 'tracks'
+    private AudioSource _a, _b;
+    private bool _usingA = true, _paused, _playbackRequested;
+    private int _currentIndex = -1;
     private Coroutine _fadeCo;
     private System.Random _rng;
+    private readonly List<int> _order = new List<int>();
+    private readonly List<AudioClip> _snapshot = new List<AudioClip>();
+    private bool _orderShuffled;
 
     void Awake()
     {
-        // Optional singleton pattern
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-
         if (dontDestroyOnLoad) DontDestroyOnLoad(gameObject);
-
-        // Make sure we have 2 audio sources for crossfading
-        _a = gameObject.AddComponent<AudioSource>();
-        _b = gameObject.AddComponent<AudioSource>();
-        foreach (var src in new[] { _a, _b })
+        _a = gameObject.AddComponent<AudioSource>(); _b = gameObject.AddComponent<AudioSource>();
+        foreach (var source in new[] { _a, _b })
         {
-            src.playOnAwake = false;
-            src.loop = false; // we manage looping ourselves
-            src.volume = 0f;
-            if (output) src.outputAudioMixerGroup = output;
+            source.playOnAwake = false; source.loop = false; source.spatialBlend = 0; source.volume = 0;
+            source.outputAudioMixerGroup = output;
         }
-
         _rng = new System.Random();
     }
-
     void Start()
     {
-        SetVolume(volume);
-
-        if (playOnStart && tracks.Count > 0)
-        {
-            if (shuffle)
-                PlayIndex(_rng.Next(tracks.Count), instant: true);
-            else
-                PlayIndex(0, instant: true);
-        }
+        SetVolume(volume); EnsureOrder();
+        if (playOnStart && _order.Count > 0) PlayIndex(_order[0], true);
     }
-
     void Update()
     {
-        // Auto-advance when the current source finishes
+        if (_a == null || !_playbackRequested || _paused || _fadeCo != null) return;
         var active = ActiveSource();
-        if (!active.isPlaying && active.clip != null)
+        if (AudioListener.pause && !active.ignoreListenerPause) return;
+        if (active.clip == null) return;
+        active.loop = loopTrack;
+        if (loopTrack) { if (!active.isPlaying) active.Play(); return; }
+        // Start exactly one transition. Never poll the finished outgoing source during a fade.
+        if (!active.isPlaying || (crossfadeSeconds > 0 && active.clip.length - active.time <= crossfadeSeconds))
         {
-            if (loopTrack)
-            {
-                PlayIndex(_currentIndex, instant: false); // re-trigger with crossfade
-            }
-            else
-            {
-                Next();
-            }
+            EnsureOrder(); int next = NextIndex();
+            if (next >= 0) PlayIndex(next);
+            else if (!active.isPlaying) StopAll(); // Let the final non-looping song finish.
         }
     }
-
-    // ----- Public API -----
-
     public void PlayIndex(int index, bool instant = false)
     {
         if (tracks == null || tracks.Count == 0) return;
         index = Mathf.Clamp(index, 0, tracks.Count - 1);
-
-        _currentIndex = index;
-        var clip = tracks[_currentIndex];
-
-        if (instant || crossfadeSeconds <= 0f)
-            HardSwap(clip);
-        else
-            StartCrossfadeTo(clip);
+        if (tracks[index] == null) return;
+        _currentIndex = index; BeginTrack(tracks[index], instant);
     }
-
     public void PlayClip(AudioClip clip, bool instant = false)
     {
         if (clip == null) return;
-        _currentIndex = FindIndex(clip);
-        if (instant || crossfadeSeconds <= 0f)
-            HardSwap(clip);
-        else
-            StartCrossfadeTo(clip);
+        _currentIndex = FindIndex(clip); BeginTrack(clip, instant);
     }
-
-    public void Play()  // resume if paused, or start current index
+    public void Play()
     {
-        var active = ActiveSource();
-        if (active.clip != null)
+        if (_paused && ActiveSource().clip != null)
+        { _paused = false; _playbackRequested = true; _a.UnPause(); _b.UnPause(); }
+        else if (!_playbackRequested || ActiveSource().clip == null)
         {
-            active.UnPause();
-            InactiveSource().Pause();
-        }
-        else if (tracks.Count > 0)
-        {
-            PlayIndex(Mathf.Max(0, _currentIndex), instant: true);
+            EnsureOrder();
+            if (_order.Count > 0) PlayIndex(_order.Contains(_currentIndex) ? _currentIndex : _order[0], true);
         }
     }
-
-    public void Pause()
-    {
-        ActiveSource().Pause();
-        InactiveSource().Pause();
-    }
-
+    public void Pause() { _paused = true; _a.Pause(); _b.Pause(); }
     public void StopAll()
     {
-        if (_fadeCo != null) StopCoroutine(_fadeCo);
-        _a.Stop(); _b.Stop();
-        _a.clip = null; _b.clip = null;
-        _a.volume = 0f; _b.volume = 0f;
+        CancelFade(); _paused = false; _playbackRequested = false;
+        _a.Stop(); _b.Stop(); _a.clip = null; _b.clip = null; _a.volume = 0; _b.volume = 0;
     }
-
     public void Next()
     {
-        if (tracks.Count == 0) return;
-
-        if (shuffle)
-        {
-            // Pick a track that isn't the current one if possible
-            int next = (tracks.Count == 1) ? _currentIndex : _rng.Next(tracks.Count);
-            if (tracks.Count > 1)
-            {
-                while (next == _currentIndex)
-                    next = _rng.Next(tracks.Count);
-            }
-            PlayIndex(next);
-        }
-        else
-        {
-            int next = _currentIndex + 1;
-            if (next >= tracks.Count)
-            {
-                if (!loopPlaylist) { StopAll(); return; }
-                next = 0;
-            }
-            PlayIndex(next);
-        }
+        EnsureOrder(); int next = NextIndex();
+        if (next < 0) StopAll(); else PlayIndex(next);
     }
-
     public void Previous()
     {
-        if (tracks.Count == 0) return;
-
-        if (shuffle)
-        {
-            PlayIndex(_rng.Next(tracks.Count));
-        }
-        else
-        {
-            int prev = _currentIndex - 1;
-            if (prev < 0) prev = loopPlaylist ? tracks.Count - 1 : 0;
-            PlayIndex(prev);
-        }
+        EnsureOrder(); if (_order.Count == 0) return;
+        int previous = _order.IndexOf(_currentIndex) - 1;
+        if (previous < 0) previous = loopPlaylist ? _order.Count - 1 : 0;
+        PlayIndex(_order[previous]);
     }
-
-    public void SetShuffle(bool enabled) => shuffle = enabled;
-    public void SetLoopPlaylist(bool enabled) => loopPlaylist = enabled;
-    public void SetLoopTrack(bool enabled) => loopTrack = enabled;
-
-    public void SetVolume(float v)
+    public void SetShuffle(bool enabled) { shuffle = enabled; }
+    public void SetLoopPlaylist(bool enabled) { loopPlaylist = enabled; }
+    public void SetLoopTrack(bool enabled)
+    { loopTrack = enabled; if (_a != null) ActiveSource().loop = enabled; }
+    public void SetVolume(float value)
     {
-        volume = Mathf.Clamp01(v);
-        // Keep perceived loudness stable during crossfades: each source scales from 0..1
-        // but cap each to 'volume'.
-        var active = ActiveSource();
-        var inactive = InactiveSource();
-        if (_fadeCo == null)
-        {
-            active.volume = volume;
-            inactive.volume = 0f;
-        }
-        // During fades, coroutine will drive volumes based on 'volume'
+        volume = Mathf.Clamp01(value);
+        if (_a != null && _fadeCo == null) { ActiveSource().volume = volume; InactiveSource().volume = 0; }
     }
-
     public int CurrentIndex => _currentIndex;
-    public AudioClip CurrentClip => (_currentIndex >= 0 && _currentIndex < tracks.Count) ? tracks[_currentIndex] : null;
-    public bool IsPlaying => ActiveSource().isPlaying;
-
-    // Playlist management at runtime (optional)
-    public void AddTrack(AudioClip clip) { if (clip != null) tracks.Add(clip); }
+    public AudioClip CurrentClip => _a != null ? ActiveSource().clip : null;
+    public bool IsPlaying => _a != null && ActiveSource().isPlaying;
+    public void AddTrack(AudioClip clip)
+    {
+        if (clip == null) return;
+        if (tracks == null) tracks = new List<AudioClip>(); tracks.Add(clip);
+    }
     public void RemoveTrackAt(int index)
     {
-        if (index < 0 || index >= tracks.Count) return;
-        bool removingCurrent = index == _currentIndex;
-        tracks.RemoveAt(index);
-        if (removingCurrent) StopAll();
-        _currentIndex = Mathf.Clamp(_currentIndex, 0, Mathf.Max(0, tracks.Count - 1));
+        if (tracks == null || index < 0 || index >= tracks.Count) return;
+        if (index == _currentIndex) StopAll();
+        tracks.RemoveAt(index); if (index <= _currentIndex) _currentIndex--;
     }
-
-    // ----- Internals -----
-
     private AudioSource ActiveSource() => _usingA ? _a : _b;
     private AudioSource InactiveSource() => _usingA ? _b : _a;
-
-    private int FindIndex(AudioClip clip)
+    private int FindIndex(AudioClip clip) => tracks == null ? -1 : tracks.IndexOf(clip);
+    private void EnsureOrder()
     {
-        for (int i = 0; i < tracks.Count; i++)
-            if (tracks[i] == clip) return i;
-        return -1;
+        bool changed = _orderShuffled != shuffle || _snapshot.Count != (tracks == null ? 0 : tracks.Count);
+        if (!changed && tracks != null)
+            for (int i = 0; i < tracks.Count; i++) if (_snapshot[i] != tracks[i]) { changed = true; break; }
+        if (!changed) return;
+        _snapshot.Clear(); _order.Clear(); _orderShuffled = shuffle;
+        if (tracks == null) return;
+        for (int i = 0; i < tracks.Count; i++) { _snapshot.Add(tracks[i]); if (tracks[i] != null) _order.Add(i); }
+        if (shuffle)
+        {
+            ShuffleOrder();
+            if (_order.Remove(_currentIndex)) _order.Insert(0, _currentIndex);
+        }
     }
-
+    private void ShuffleOrder()
+    {
+        for (int i = _order.Count - 1; i > 0; i--)
+        { int j = _rng.Next(i + 1), value = _order[i]; _order[i] = _order[j]; _order[j] = value; }
+    }
+    private int NextIndex()
+    {
+        if (_order.Count == 0) return -1;
+        int next = _order.IndexOf(_currentIndex) + 1;
+        if (next < _order.Count) return _order[next];
+        if (!loopPlaylist) return -1;
+        if (shuffle)
+        {
+            ShuffleOrder();
+            // Visit every valid entry once per pass; avoid an immediate repeat at the boundary.
+            if (_order.Count > 1 && _order[0] == _currentIndex)
+            { int value = _order[0]; _order[0] = _order[1]; _order[1] = value; }
+        }
+        return _order[0];
+    }
+    private void BeginTrack(AudioClip clip, bool instant)
+    {
+        bool canFade = !instant && !_paused && ActiveSource().isPlaying && crossfadeSeconds > 0;
+        _paused = false; _playbackRequested = true;
+        if (!canFade) { HardSwap(clip); return; }
+        CancelFade(); var from = ActiveSource(); var to = InactiveSource();
+        to.Stop(); to.clip = clip; to.time = 0; to.volume = 0; to.loop = loopTrack; to.Play();
+        _usingA = !_usingA; // The incoming source is current, even while the old one fades out.
+        float seconds = Mathf.Min(crossfadeSeconds, Mathf.Max(.01f, clip.length * .5f));
+        _fadeCo = StartCoroutine(CrossfadeCo(from, to, seconds));
+    }
+    private void CancelFade() { if (_fadeCo != null) StopCoroutine(_fadeCo); _fadeCo = null; }
     private void HardSwap(AudioClip clip)
     {
-        if (_fadeCo != null) StopCoroutine(_fadeCo);
-
+        CancelFade(); _a.Stop(); _b.Stop(); _a.volume = 0; _b.volume = 0;
         var active = ActiveSource();
-        var inactive = InactiveSource();
-
-        inactive.Stop();
-        inactive.clip = clip;
-        inactive.time = 0f;
-        inactive.volume = volume;
-        inactive.Play();
-
-        active.Stop();
-        active.volume = 0f;
-
-        _usingA = !_usingA;
+        active.clip = clip; active.time = 0; active.loop = loopTrack; active.volume = volume; active.Play();
     }
-
-    private void StartCrossfadeTo(AudioClip clip)
+    private IEnumerator CrossfadeCo(AudioSource from, AudioSource to, float seconds)
     {
-        if (_fadeCo != null) StopCoroutine(_fadeCo);
-        _fadeCo = StartCoroutine(CrossfadeCo(clip, crossfadeSeconds));
-    }
-
-    private IEnumerator CrossfadeCo(AudioClip newClip, float seconds)
-    {
-        var from = ActiveSource();
-        var to = InactiveSource();
-
-        // Prep 'to'
-        to.Stop();
-        to.clip = newClip;
-        to.time = 0f;
-        to.volume = 0f;
-        to.Play();
-
-        float t = 0f;
-        seconds = Mathf.Max(0.01f, seconds);
-        while (t < seconds)
+        float elapsed = 0, fromGain = volume > 0 ? from.volume / volume : 0;
+        while (elapsed < seconds)
         {
-            t += Time.unscaledDeltaTime; // unscaled so fades ignore timescale
-            float k = Mathf.Clamp01(t / seconds);
-            to.volume = volume * k;
-            from.volume = volume * (1f - k);
+            if (!_paused && (!AudioListener.pause || to.ignoreListenerPause))
+            {
+                elapsed += Time.unscaledDeltaTime; float k = Mathf.Clamp01(elapsed / seconds);
+                to.volume = volume * k; from.volume = volume * fromGain * (1 - k);
+            }
             yield return null;
         }
-
-        // Finish
-        from.Stop();
-        from.volume = 0f;
-        to.volume = volume;
-        _usingA = !_usingA;
-        _fadeCo = null;
+        from.Stop(); from.volume = 0; to.volume = volume; _fadeCo = null;
     }
+    void OnDestroy() { if (Instance == this) Instance = null; }
 }

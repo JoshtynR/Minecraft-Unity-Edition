@@ -67,6 +67,7 @@ public partial class PlayerInventory : MonoBehaviour
 
     private void Update()
     {
+        if (WorldLoadingScreen.IsLoading) return;
         UpdateSelectedSlotUI();
         if (!isOpen)
             for (int i=0;i<9;i++) if (Input.GetKeyDown(KeyCode.Alpha1+i)) selectedSlotIndex=i;
