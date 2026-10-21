@@ -5,6 +5,8 @@ using UnityEngine;
 // reference available in builds without runtime AssetDatabase/file access.
 public class PlayerHudAssets : ScriptableObject
 {
+    [Tooltip("Fallback world-list row for scenes whose menu references were lost.")]
+    public GameObject worldListEntryPrefab;
     public Texture2D icons;
     [Tooltip("256x256 inventory sheet; the upper-left 176x166 region is the survival panel.")]
     public Texture2D inventory;

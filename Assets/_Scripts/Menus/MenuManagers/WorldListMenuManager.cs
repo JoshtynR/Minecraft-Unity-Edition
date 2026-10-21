@@ -2,9 +2,7 @@
 using System.IO;
 using System.Linq;
 using Mirror;
-using Steamworks;
 using TMPro;
-using Unity.IO.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,10 +19,47 @@ public class WorldListMenuManager : MonoBehaviour
     private void Awake()
     {
         instance = this;
+        ResolveReferences();
+    }
+
+    [ContextMenu("Repair World Menu References")]
+    private void ResolveReferences()
+    {
+        // Older/local scene copies can lose serialized links. Resolve only
+        // missing references, keeping explicitly assigned custom UI intact.
+        if(worldContainer==null)
+        {
+            var scroll=GetComponentInChildren<ScrollRect>(true);
+            if(scroll!=null)worldContainer=scroll.content;
+            if(worldContainer==null)worldContainer=transform.Find("Scroll View/Viewport/Content");
+        }
+        var root=transform.parent!=null?transform.parent:transform;
+        if(joiningMenu==null)
+        {
+            var node=root.Find("JoiningMenu");
+            if(node!=null)joiningMenu=node.GetComponent<Menu>();
+        }
+        if(worldCreationMenu==null)
+        {
+            var node=root.Find("WorldCreationMenu");
+            if(node!=null)worldCreationMenu=node.GetComponent<Menu>();
+        }
+        if(worldPrefab==null)
+        {
+            var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
+            if(assets!=null)worldPrefab=assets.worldListEntryPrefab;
+        }
     }
 
     public async void GetWorlds()
     {
+        ResolveReferences();
+        if(worldContainer==null||worldPrefab==null)
+        {
+            Debug.LogError("World list needs its ScrollRect Content and world-entry prefab. Check the WorldListMenu bindings.",this);
+            return;
+        }
+        WorldButton.currentWorldButton=null;
         for (var i = 0; i < worldContainer.childCount; i++)
         {
             Destroy(worldContainer.GetChild(i).gameObject);
@@ -50,9 +85,20 @@ public class WorldListMenuManager : MonoBehaviour
             var worldFolderName = Path.GetFileName(world);
             var worldFilePath = Path.Combine(world, "world.json");
             
-            var worldFile = await File.ReadAllTextAsync(worldFilePath);
-            if(!worldFile.TrimStart().StartsWith("{"))worldFile=World.Decompress(worldFile);
-            var worldSaveData = JsonUtility.FromJson<WorldSaveData>(worldFile);
+            WorldSaveData worldSaveData;
+            try
+            {
+                var worldFile = await File.ReadAllTextAsync(worldFilePath);
+                if(!worldFile.TrimStart().StartsWith("{"))worldFile=World.Decompress(worldFile);
+                worldSaveData = JsonUtility.FromJson<WorldSaveData>(worldFile);
+                if(worldSaveData==null)throw new InvalidDataException("World metadata is empty.");
+                if(string.IsNullOrWhiteSpace(worldSaveData.worldName))worldSaveData.worldName=worldFolderName;
+            }
+            catch(Exception error)
+            {
+                Debug.LogWarning("Could not read world '"+worldFolderName+"': "+error.Message,this);
+                continue;
+            }
             
 
             var worldObject = Instantiate(worldPrefab, worldContainer);
@@ -79,8 +125,15 @@ public class WorldListMenuManager : MonoBehaviour
 
     public void OpenCreationMenu()
     {
+        ResolveReferences();
+        var creation=worldCreationMenu!=null?worldCreationMenu.GetComponent<WorldCreationMenuManager>():null;
+        if(creation==null)
+        {
+            Debug.LogError("Cannot open world creation: WorldCreationMenu needs its Menu and WorldCreationMenuManager components.",this);
+            return;
+        }
+        creation.multiplayerMode = multiplayerMode;
         worldCreationMenu.Open();
-        worldCreationMenu.GetComponent<WorldCreationMenuManager>().multiplayerMode = multiplayerMode;
     }
 
     public void SetMultiplayerMode(bool value)
