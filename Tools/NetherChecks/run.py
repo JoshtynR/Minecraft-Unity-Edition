@@ -10,6 +10,11 @@ def compile_run(out,sources,args=(),flags=(),run=True):
     if run:subprocess.run([a.mono,str(out),*map(str,args)],check=True)
 with tempfile.TemporaryDirectory() as tmp:
     tmp=Path(tmp)
+    generation=(root/'Assets/_Scripts/World/World_Generation.cs').read_text()
+    ensure=generation[generation.index('    public async Task EnsureAreaAsync'):generation.index('    private async Task GenerateWorldCore')].replace('EnsureAreaAsync','EnsureProductionAsync')
+    ensure_file=tmp/'EnsureArea.cs'
+    ensure_file.write_text('using System.Threading.Tasks;using UnityEngine;public partial class World{public int productionCoreCalls;public bool observedFullArea;private Task GenerateWorldCore(Vector3Int p){productionCoreCalls++;observedFullArea=PreparingDimensionArea;return Task.CompletedTask;}'+ensure+'}')
+    runtime.append(str(ensure_file))
     compile_run(tmp/'terrain.exe',terrain+['Tools/NetherChecks/TerrainCheck.cs'],[root/'Tools/NetherChecks/terrain-fixtures.tsv'])
     population=[beta+n+'.cs' for n in ['Beta173NetherPopulation','BetaPopulationFeatures','Beta173Trees','BetaBiome','BetaMathHelper']]
     compile_run(tmp/'dimension.exe',runtime+population+['Tools/NetherChecks/DimensionCheck.cs'])

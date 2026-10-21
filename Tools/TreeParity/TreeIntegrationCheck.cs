@@ -78,7 +78,9 @@ public class TreeIntegrationCheck
         if(Beta173Population.HasCompleteNeighborhood(edgeOwner,0,0))throw new Exception("missing canopy neighbor accepted");checks++;
         edge.unavailable.Clear();
         if(!Beta173Population.HasCompleteNeighborhood(edgeOwner,0,0))throw new Exception("tree neighborhood did not resume");checks++;
+        edgeOwner.modifiedAfterSave=true;
         var saved=ChunkSaveData.Serialize(edgeOwner);
+        if(!edgeOwner.modifiedAfterSave)throw new Exception("Creating a network/save snapshot cleared unsaved dirty terrain");checks++;
         if(saved.betaTreePopulationVersion!=1 || saved.betaTreePopulationDone)throw new Exception("deferred tree state not saved");checks++;
         edgeOwner.betaPopulationDone=true;saved=ChunkSaveData.Serialize(edgeOwner);
         if(!saved.betaTreePopulationDone)throw new Exception("completed tree state not saved");checks++;

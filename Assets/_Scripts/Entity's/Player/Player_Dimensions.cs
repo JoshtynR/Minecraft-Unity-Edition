@@ -13,6 +13,8 @@ public partial class Player
     public bool DimensionTransferInProgress => dimensionTransfer;
     private float portalTime,portalCooldown;
     private int transferSequence;
+    private bool initialDimensionJoin;
+    private System.Diagnostics.Stopwatch joinStopwatch;
     private TaskCompletionSource<WorldServer.SavePlayerMessage> dimensionCheckpoint;
     private Vector3 transferDestination;
     private readonly Dictionary<Vector3Int,string> incomingDimensionChunks=new Dictionary<Vector3Int,string>();
@@ -79,7 +81,15 @@ public partial class Player
         try
         {
             while(this!=null&&inventory==null)await Task.Yield();
-            if(this!=null){dimensionTransfer=false;BeginDimensionTravel(dimension,transform.position,false);}
+            if(this==null)return;
+            // Startup terrain was prepared before StartWorldMessage. Joining is
+            // not a portal departure: there is no source inventory/world to save.
+            initialDimensionJoin=true;
+            joinStopwatch=System.Diagnostics.Stopwatch.StartNew();
+            dimensionTransfer=true;PauseDimensionTransforms();
+            transferDestination=transform.position;
+            int sequence=++transferSequence;
+            TargetPrepareDimension(connectionToClient,sequence,dimension,transferDestination,CurrentWorld.betaWorldSeed);
         }
         catch(Exception error){Debug.LogException(error);}
     }
@@ -177,7 +187,9 @@ public partial class Player
             transferSequence=sequence;dimension=target;
             var realm=World.GetDimension(target);realm.betaWorldSeed=seed;world=realm;
             World.ActivateDimension(realm);
-            await realm.EnsureAreaAsync(Vector3Int.FloorToInt(destination),true);
+            // A host shares the authoritative World; preparing it again only
+            // repeats lighting/generation bookkeeping. Remote clients still wait.
+            if(!NetworkServer.active)await realm.EnsureAreaAsync(Vector3Int.FloorToInt(destination),true);
             if(this==null)return;
             CmdDimensionTerrainReady(sequence);
         }
@@ -190,14 +202,19 @@ public partial class Player
         var realm=CurrentWorld;
         // Reliable ordered messages carry authoritative saved edits, fluid states and
         // portal blocks. Keep each compressed chunk separate from the completion RPC.
-        foreach(var chunk in realm.worldData.chunkDataDict.Values.ToArray())
+        // Local clients use the very same chunk objects and deliberately ignore
+        // TargetDimensionChunk. Never serialize/compress their discarded copies.
+        if(!(connectionToClient is LocalConnectionToClient))
         {
-            if(Math.Abs(chunk.worldPos.x-transferDestination.x)>(realm.renderDistance+3)*16||
-               Math.Abs(chunk.worldPos.z-transferDestination.z)>(realm.renderDistance+3)*16)continue;
-            TargetDimensionChunk(connectionToClient,sequence,chunk.worldPos,World.Compress(JsonUtility.ToJson(ChunkSaveData.Serialize(chunk))));
+            foreach(var chunk in realm.worldData.chunkDataDict.Values.ToArray())
+            {
+                if(Math.Abs(chunk.worldPos.x-transferDestination.x)>(realm.renderDistance+3)*16||
+                   Math.Abs(chunk.worldPos.z-transferDestination.z)>(realm.renderDistance+3)*16)continue;
+                TargetDimensionChunk(connectionToClient,sequence,chunk.worldPos,World.Compress(JsonUtility.ToJson(ChunkSaveData.Serialize(chunk))));
+            }
+            realm.SendCowSnapshot(connectionToClient);
+            foreach(var item in realm.CaptureDroppedItems())connectionToClient.Send(new DropStateMessage{dimension=dimension,item=item});
         }
-        realm.SendCowSnapshot(connectionToClient);
-        foreach(var item in realm.CaptureDroppedItems())connectionToClient.Send(new DropStateMessage{dimension=dimension,item=item});
         TargetCompleteDimension(connectionToClient,sequence,transferDestination);
     }
     [TargetRpc] private void TargetDimensionChunk(NetworkConnection connection,int sequence,Vector3Int position,string json)
@@ -228,7 +245,13 @@ public partial class Player
         inventory.LoadInventory(state.inventory,state.crafting,state.cursor,state.recovery,state.equipment);
         FinishDimensionTravel(transferDestination);
         CurrentWorld.SavePlayer(SavePlayer());
-        CurrentWorld.SaveWorld();
+        if(initialDimensionJoin)
+        {
+            initialDimensionJoin=false;
+            joinStopwatch?.Stop();
+            Debug.Log("[WorldStartup] Player ready in "+(joinStopwatch?.ElapsedMilliseconds??0)+"ms; reused prepared terrain without a departure save.");
+        }
+        else CurrentWorld.SaveWorld();
     }
     private static bool ValidDimensionInventory(WorldServer.SavePlayerMessage state)
     {

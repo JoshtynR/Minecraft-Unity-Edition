@@ -17,6 +17,25 @@ public partial class World
 {
     [HideInInspector]
     public bool isSaving = false;
+
+    // A brand-new world needs a seed/list entry, not a full chunk save before
+    // the player can spawn. Existing metadata must never be overwritten here.
+    public async Task EnsureWorldMetadataAsync()
+    {
+        if(string.IsNullOrEmpty(worldName))return;
+        await generationGate.WaitAsync(worldCancellationToken);
+        try
+        {
+            string path=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),".minecraftUnity/saves/"+StorageName+"/world.json");
+            if(File.Exists(path))return;
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            var metadata=new WorldSaveData{chunks=new ChunkSaveData[0],worldName=worldName,dimension=dimension,
+                seedOffset=mapSeedOffset,betaWorldSeed=betaWorldSeed};
+            // Plain JSON also allows the menu to list the world before its first autosave.
+            await File.WriteAllTextAsync(path,JsonUtility.ToJson(metadata));
+        }
+        finally{generationGate.Release();}
+    }
     
     public async void SaveWorld()
     {
@@ -39,6 +58,8 @@ public partial class World
 
         await generationGate.WaitAsync(worldCancellationToken);
         isSaving = true;
+        ChunkData[] capturedChunks=null;
+        bool saveCompleted=false;
         try
         {
             chests.SaveWorld(StorageName);
@@ -49,10 +70,11 @@ public partial class World
                 GameManager.Instance.players.Where(player=>player!=null&&player.inventory!=null&&!player.DimensionTransferInProgress).Select(player=>player.SavePlayer()).ToArray();
             var stopwatch = Stopwatch.StartNew();
             var saveWatch = Stopwatch.StartNew();
+            capturedChunks=worldData.chunkDataDict.Values.Where(data=>data.modifiedAfterSave).ToArray();
             // Create object with data to save
             var worldSaveData = new WorldSaveData
             {
-                chunks = worldData.chunkDataDict.Values.Where(data => data.modifiedAfterSave).Select(ChunkSaveData.Serialize).ToArray(),
+                chunks = capturedChunks.Select(ChunkSaveData.Serialize).ToArray(),
                 worldName = worldName,
                 dimension = dimension,
                 seedOffset = mapSeedOffset,
@@ -61,15 +83,19 @@ public partial class World
                 droppedItems = CaptureDroppedItems(),
                 cows = CaptureCows()
             };
+            // Capture/clear synchronously. Changes arriving during asynchronous
+            // IO set dirty again and must remain eligible for the next save.
+            foreach(var chunk in capturedChunks)chunk.modifiedAfterSave=false;
             saveWatch.Stop();
             Debug.Log($"Creating local save object took {saveWatch.ElapsedMilliseconds}ms");
 
             Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/"+StorageName+"/chunks"));
 
             // Save the chunks
+            var saveOptions=ChunkWorkerOptions();
             await Task.Run(() =>
             {
-                Parallel.ForEach(worldSaveData.chunks,new ParallelOptions() {MaxDegreeOfParallelism = 8}, chunk =>
+                Parallel.ForEach(worldSaveData.chunks,saveOptions, chunk =>
                 {
                     var path = GetChunkPath(worldName, chunk.position, dimension);
                     string json;
@@ -106,11 +132,13 @@ public partial class World
             Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/"+worldSaveData.worldName+"/playerdata"));
 
             foreach(var playerSnapshot in chestPlayerSnapshots)SavePlayer(playerSnapshot);
-
+            saveCompleted=true;
             Debug.Log("Saved world in " + stopwatch.ElapsedMilliseconds + "ms");
         }
         finally
         {
+            if(!saveCompleted&&capturedChunks!=null)
+                foreach(var chunk in capturedChunks)chunk.modifiedAfterSave=true;
             isSaving = false;
             generationGate.Release();
         }

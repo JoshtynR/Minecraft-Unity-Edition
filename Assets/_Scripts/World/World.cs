@@ -28,6 +28,8 @@ public partial class World : MonoBehaviour
     public int chunksGenerationPerFrame = 1;
     [Tooltip("Maximum concurrent terrain/mesh workers per world. Lower values leave CPU time for rendering while exploring.")]
     [Range(1, 8)] public int chunkWorkerThreads = 2;
+    [Tooltip("Log terrain, population, lighting/meshing and upload timings for each generation request.")]
+    public bool logGenerationTimings;
     public WorldRenderer worldRenderer;
     
     public TerrainGenerator terrainGenerator;
@@ -102,8 +104,14 @@ public partial class World : MonoBehaviour
             betaWorldSeed = message.betaWorldSeed;
             if (WorldSettingsManager.Instance != null) WorldSettingsManager.Instance.betaWorldSeed = message.betaWorldSeed;
             var destination = GetDimension(message.dimension);
-            destination.requestPlayerSpawn = true;
             ActivateDimension(destination);
+            if(NetworkServer.active && destination.IsWorldCreated)
+            {
+                // StartPlayerMessageHandler already built this shared host world.
+                NetworkClient.Send(new WorldServer.SpawnPlayerMessage(PlayerIdentity.Id));
+                return;
+            }
+            destination.requestPlayerSpawn = true;
             destination.StartWorld();
             destination.GenerateWorld(message.position);
         });

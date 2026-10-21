@@ -43,3 +43,5 @@ assert '  m_Enabled: 0' in preview and '  m_Enabled: 1' in ui_camera
 background_guid=next(line.split(': ')[1] for line in (root/'Assets/Textures/sprites/options_background.png.meta').read_text().splitlines() if line.startswith('guid:'))
 assert '  loadingBackground: {fileID: 2800000, guid: '+background_guid in (root/'Assets/Resources/PlayerHudAssets.asset').read_text()
 print('Player initialization, saved-player restore, gameplay guards, and scene/network entry points verified.')
+
+subprocess.run(['python3',str(root/'Tools/StartupChecks/save_check.py'),'--mcs',args.mcs,'--mono',args.mono],check=True)

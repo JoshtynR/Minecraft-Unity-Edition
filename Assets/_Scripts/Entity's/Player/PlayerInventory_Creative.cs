@@ -117,21 +117,26 @@ public partial class PlayerInventory
             creativePageText.rectTransform.anchoredPosition=new Vector2(0,layout.height/2-10);
             creativePageText.rectTransform.sizeDelta=new Vector2(layout.columns*18-36,16);
             creativePageSize=Math.Max(1,Math.Min(layout.PageSize,creativeBlocks.Count));
-            while(creativeCells.Count<creativePageSize)
+            // F1 is off by default. Build catalog cells/icons only when the
+            // sidebar is actually shown, rather than during player startup.
+            if(sidebarVisible)
             {
-                int index=creativeCells.Count;
-                var cell=CreativeRect("Catalog"+index,creativePanel,0,0,18,18);
-                var hit=cell.gameObject.AddComponent<Image>();hit.color=Color.clear;
-                var input=cell.gameObject.AddComponent<InventorySlot>();input.playerInventory=this;input.slotIndex=index;input.isCatalog=true;
-                creativeCells.Add(cell);
+                while(creativeCells.Count<creativePageSize)
+                {
+                    int index=creativeCells.Count;
+                    var cell=CreativeRect("Catalog"+index,creativePanel,0,0,18,18);
+                    var hit=cell.gameObject.AddComponent<Image>();hit.color=Color.clear;
+                    var input=cell.gameObject.AddComponent<InventorySlot>();input.playerInventory=this;input.slotIndex=index;input.isCatalog=true;
+                    creativeCells.Add(cell);
+                }
+                for(int i=0;i<creativeCells.Count;i++)
+                {
+                    creativeCells[i].anchoredPosition=new Vector2(-layout.columns*9+9+(i%layout.columns)*18,layout.height/2-30-(i/layout.columns)*18);
+                    creativeCells[i].gameObject.SetActive(i<creativePageSize);
+                }
+                creativePage=Math.Min(creativePage,Math.Max(0,(creativeBlocks.Count-1)/creativePageSize));
+                RefreshCreativePage();
             }
-            for(int i=0;i<creativeCells.Count;i++)
-            {
-                creativeCells[i].anchoredPosition=new Vector2(-layout.columns*9+9+(i%layout.columns)*18,layout.height/2-30-(i/layout.columns)*18);
-                creativeCells[i].gameObject.SetActive(i<creativePageSize);
-            }
-            creativePage=Math.Min(creativePage,Math.Max(0,(creativeBlocks.Count-1)/creativePageSize));
-            RefreshCreativePage();
         }
         UpdateSlotTooltip();
         UpdateChestPanel();

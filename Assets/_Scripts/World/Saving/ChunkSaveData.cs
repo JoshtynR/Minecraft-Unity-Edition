@@ -39,7 +39,8 @@ public class ChunkSaveData
             chunkSaveData.betaPopulationRecords = chunk.betaPopulationRecords.ToArray();
         chunkSaveData.betaTreePopulationVersion = 1;
         chunkSaveData.betaTreePopulationDone = chunk.betaPopulationDone;
-        chunk.modifiedAfterSave = false;
+        // Creating a network/save snapshot is read-only. Only the actual save
+        // transaction may clear dirty state; network transfers are not disk saves.
         
         return chunkSaveData;
     }

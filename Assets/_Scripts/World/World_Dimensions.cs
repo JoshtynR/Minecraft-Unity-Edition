@@ -116,6 +116,19 @@ public partial class World
 {
     public bool GenerationBusy => generationGate.CurrentCount == 0;
     public bool PreparingDimensionArea { get; private set; }
+    public bool HasReadyArea(Vector3Int position)
+    {
+        if(!IsWorldCreated||worldData.chunkDict==null||worldData.chunkDataDict==null)return false;
+        foreach(var origin in WorldDataHelper.GetChunkPositionsInRenderDistance(this,position))
+        {
+            if(!worldData.chunkDict.TryGetValue(origin,out var renderer)||renderer==null||
+               !worldData.chunkDataDict.TryGetValue(origin,out var data)||
+               !ReferenceEquals(renderer.ChunkData,data)||!data.betaPopulationDone)return false;
+        }
+        foreach(var origin in WorldDataHelper.GetDataPositionsInRenderDistance(this,position))
+            if(!worldData.chunkDataDict.ContainsKey(origin))return false;
+        return true;
+    }
     public async Task ApplyDimensionSnapshotsAsync(Dictionary<Vector3Int,string> incoming)
     {
         await generationGate.WaitAsync(worldCancellationToken);

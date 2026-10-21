@@ -48,6 +48,31 @@ public static class DimensionCheck {
   Wait(()=>!hosted.DimensionTransferInProgress);
   Check(netSource.playerSaves>0&&netDestination.playerSaves>0,"Travel checkpoints source inventory before saving destination");
   Check(hosted.inventory.loads>=2,"Inventory reconciled at checkpoint and arrival");
+  // Initial host joins reuse already prepared server terrain. They must not
+  // checkpoint/save a source realm or serialize snapshots discarded by a host.
+  var joiningRealm=Realm(WorldDimension.Overworld);World.Instance=joiningRealm;
+  var readyChunk=new ChunkData{worldRef=joiningRealm,worldPos=Vector3Int.zero,betaPopulationDone=true,modifiedAfterSave=true};
+  joiningRealm.worldData.chunkDataDict[Vector3Int.zero]=readyChunk;
+  var joining=new GameObject("Initial Host").AddComponent<Player>();joining.ForTestAssignWorld(joiningRealm);joining.networkStarted=true;
+  joining.connectionToClient=new Mirror.LocalConnectionToClient{identity=joining.gameObject.AddComponent<Mirror.NetworkIdentity>()};
+  int snapshots=ChunkSaveData.serializations;
+  joining.PrepareDimensionJoin();joining.SynchronizeDimensionOnJoin();Wait(()=>!joining.DimensionTransferInProgress);
+  Check(joiningRealm.saves==0&&joiningRealm.worldSaveCalls==0,"Initial join performs no full departure/arrival world saves");
+  Check(joiningRealm.generationCalls==0,"Initial host join does not regenerate prepared terrain");
+  Check(ChunkSaveData.serializations==snapshots&&readyChunk.modifiedAfterSave,"Host skips discarded snapshots and retains unsaved dirty terrain");
+  Check(joiningRealm.playerSaves==1&&joining.inventory.loads==1,"Initial join persists the reconciled player once");
+  Check(!joiningRealm.HasReadyArea(Vector3Int.zero),"Readiness rejects absent renderers");
+  var readyRenderer=new GameObject("Ready chunk").AddComponent<ChunkRenderer>();readyRenderer.Initialize(readyChunk);
+  joiningRealm.worldData.chunkDict[Vector3Int.zero]=readyRenderer;
+  Check(!joiningRealm.HasReadyArea(Vector3Int.zero),"Readiness requires raw-data halo");
+  joiningRealm.worldData.chunkDataDict[new Vector3Int(16,0,0)]=new ChunkData();
+  Check(joiningRealm.HasReadyArea(Vector3Int.zero),"Populated rendered chunk with halo is ready");
+  readyChunk.betaPopulationDone=false;Check(!joiningRealm.HasReadyArea(Vector3Int.zero),"Readiness does not bypass deferred population");readyChunk.betaPopulationDone=true;
+  readyRenderer.Initialize(new ChunkData());Check(!joiningRealm.HasReadyArea(Vector3Int.zero),"Readiness rejects stale pooled renderer data");readyRenderer.Initialize(readyChunk);
+  joiningRealm.EnsureProductionAsync(Vector3Int.zero,true).GetAwaiter().GetResult();
+  Check(joiningRealm.productionCoreCalls==0&&!joiningRealm.GenerationBusy,"Ready-area fast path skips core work and releases gate");
+  readyChunk.betaPopulationDone=false;joiningRealm.EnsureProductionAsync(Vector3Int.zero,true).GetAwaiter().GetResult();
+  Check(joiningRealm.productionCoreCalls==1&&joiningRealm.observedFullArea&&!joiningRealm.PreparingDimensionArea&&!joiningRealm.GenerationBusy,"Missing population still generates with full-area flag and releases gate");
   Mirror.NetworkServer.active=false;
   var populated=new HashSet<BlockType>();
   for(int seed=0;seed<30;seed++)

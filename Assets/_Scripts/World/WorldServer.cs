@@ -198,11 +198,13 @@ public partial class WorldServer : NetworkBehaviour
             
             var destination=World.GetDimension(playerData.dimension);
             await destination.EnsureAreaAsync(Vector3Int.RoundToInt(playerData.position),true);
+            await destination.EnsureWorldMetadataAsync();
             conn.Send(new StartWorldMessage(Vector3Int.RoundToInt(playerData.position), destination.betaWorldSeed, destination.dimension));
         }
         else
         {
             await World.Overworld.EnsureAreaAsync(Vector3Int.zero,true);
+            await World.Overworld.EnsureWorldMetadataAsync();
             conn.Send(new StartWorldMessage(Vector3Int.zero, World.Overworld.betaWorldSeed));
         }
     }

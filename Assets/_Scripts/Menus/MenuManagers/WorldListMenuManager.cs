@@ -51,6 +51,7 @@ public class WorldListMenuManager : MonoBehaviour
             var worldFilePath = Path.Combine(world, "world.json");
             
             var worldFile = await File.ReadAllTextAsync(worldFilePath);
+            if(!worldFile.TrimStart().StartsWith("{"))worldFile=World.Decompress(worldFile);
             var worldSaveData = JsonUtility.FromJson<WorldSaveData>(worldFile);
             
 

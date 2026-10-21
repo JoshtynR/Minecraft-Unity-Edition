@@ -44,8 +44,9 @@ namespace UnityEngine
  public class Material:Object {public Texture2D mainTexture=new Texture2D();public Dictionary<string,float> floats=new Dictionary<string,float>();public Dictionary<string,Color> colors=new Dictionary<string,Color>();public HashSet<string> keywords=new HashSet<string>();public Material(){}public Material(Material value){mainTexture=value.mainTexture;floats=new Dictionary<string,float>(value.floats);colors=new Dictionary<string,Color>(value.colors);keywords=new HashSet<string>(value.keywords);}public void SetFloat(string n,float v){floats[n]=v;}public float GetFloat(string n)=>floats.ContainsKey(n)?floats[n]:1;public void SetColor(string n,Color v){colors[n]=v;}public void EnableKeyword(string n){keywords.Add(n);}public void DisableKeyword(string n){keywords.Remove(n);}}
  public class Mesh:Object
  {
+  public Bounds bounds;public void SetNormals(List<Vector3> normals){}
   public UnityEngine.Rendering.IndexFormat indexFormat;public int subMeshCount;public void Clear(){vertices=new List<Vector3>();}public void MarkDynamic(){}
-  public List<Vector3> vertices;public void SetVertices(List<Vector3> v){vertices=v;}public void SetUVs<T>(int channel,List<T> uv){}public void SetUVs(int channel,Vector2[] uv){}public void SetTriangles(List<int> t,int sub){}public void SetColors(List<Color> c){}public void RecalculateNormals(){}public void RecalculateBounds(){}
+  public List<Vector3> vertices;public void SetVertices(List<Vector3> v){vertices=v;}public void SetUVs<T>(int channel,List<T> uv){}public void SetUVs(int channel,Vector2[] uv){}public void SetTriangles(List<int> t,int sub,bool calculateBounds=true){}public void SetColors(List<Color> c){}public void RecalculateNormals(){}public void RecalculateBounds(){}
  }
  public class MeshFilter:Component {public Mesh sharedMesh;}
  public class MeshRenderer:Component {public UnityEngine.Rendering.ShadowCastingMode shadowCastingMode;public Material sharedMaterial;public void SetPropertyBlock(MaterialPropertyBlock properties){}}
@@ -211,7 +212,7 @@ public partial class PlayerInventory
   for(int i=0;i<9;i++){var cell=Child("Hotbar"+i,hotbar.transform);Child("Count",cell.transform,typeof(TMPro.TextMeshProUGUI));}
   Child("Inventory",ui.transform).SetActive(false);
   var go=new GameObject("Player",typeof(Player));var inv=go.AddComponent<PlayerInventory>();
-  inv.UIBlockPrefab=new GameObject("BlockIcon",typeof(MeshFilter));inv.SlotTextPrefab=new GameObject("SlotText",typeof(TMPro.TextMeshProUGUI));inv.Start();return inv;
+  inv.UIBlockPrefab=new GameObject("BlockIcon",typeof(MeshFilter));inv.SlotTextPrefab=new GameObject("SlotText",typeof(TMPro.TextMeshProUGUI));inv.Start();Check(inv.creativeCells.Count==0,"hidden TooManyItems catalog does not allocate cells during startup");return inv;
  }
  static UnityEngine.UI.VertexHelper DrawPreview(InventoryPlayerGraphic graphic)
  {

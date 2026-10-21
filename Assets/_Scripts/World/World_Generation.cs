@@ -45,6 +45,7 @@ public partial class World
         try
         {
             while(chunkUpdateInProgress||waterMeshBuildInProgress)await Task.Yield();
+            if(IsWorldCreated && HasReadyArea(position))return;
             PreparingDimensionArea=fullArea;
             await GenerateWorldCore(position);
         }
@@ -52,6 +53,7 @@ public partial class World
     }
     private async Task GenerateWorldCore(Vector3Int position)
     {
+        var totalWatch=Stopwatch.StartNew();
         Profiler.BeginThreadProfiling("GenerateWorld", "GenerateWorld");
         if (!Application.isPlaying)
         {
@@ -172,7 +174,9 @@ public partial class World
             Debug.Log($"Mesh generation took {visualStopWatch.ElapsedMilliseconds}ms");
         }
 
+        var uploadWatch=Stopwatch.StartNew();
         await ApplyGeneratedChunks(meshDataDict, position);
+        if(logGenerationTimings)Debug.Log($"[WorldGeneration:{dimension}] total={totalWatch.ElapsedMilliseconds}ms terrain={dataStopWatch.ElapsedMilliseconds}ms load={loadStopWatch.ElapsedMilliseconds}ms population={featureStopWatch.ElapsedMilliseconds}ms lighting/meshes={visualStopWatch.ElapsedMilliseconds}ms upload={uploadWatch.ElapsedMilliseconds}ms chunks={meshDataDict.Count}");
         
         Profiler.EndThreadProfiling();
     }

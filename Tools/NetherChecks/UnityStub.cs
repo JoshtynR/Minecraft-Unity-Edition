@@ -30,7 +30,7 @@ namespace UnityEngine {
  }
  public static class Mathf {public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v));public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Max(float a,float b)=>Math.Max(a,b);public static int Max(int a,int b)=>Math.Max(a,b);public static int FloorToInt(float v)=>(int)Math.Floor(v);public static int CeilToInt(float v)=>(int)Math.Ceiling(v);public static float Clamp01(float v)=>Clamp(v,0,1);}
  public static class Time {public static float unscaledTime,time,fixedDeltaTime=.05f;}
- public static class Debug {public static List<Exception> errors=new List<Exception>();public static void LogException(Exception e){errors.Add(e);}}
+ public static class Debug {public static List<Exception> errors=new List<Exception>();public static void LogException(Exception e){errors.Add(e);}public static void Log(object message){}}
  public static class JsonUtility {static Dictionary<string,object> objects=new Dictionary<string,object>();public static string ToJson(object obj){string key=Guid.NewGuid().ToString();objects[key]=obj;return key;}public static T FromJson<T>(string s)=>(T)objects[s];public static void FromJsonOverwrite(string s,object obj){foreach(var field in obj.GetType().GetFields())if(!field.IsInitOnly&&!field.IsStatic)field.SetValue(obj,field.GetValue(objects[s]));}}
 }
 namespace UnityEngine.Events {public class UnityEvent {private event Action listeners;public void AddListener(Action action){listeners+=action;}public void Invoke(){listeners?.Invoke();}}}
@@ -42,6 +42,7 @@ namespace Mirror {
  public class TargetRpcAttribute:Attribute {}
  public class NetworkConnection {public NetworkIdentity identity;}
  public class NetworkConnectionToClient:NetworkConnection {public int connectionId;public bool disconnected;public List<object> messages=new List<object>();public void Send<T>(T m){messages.Add(m);}public void Disconnect(){disconnected=true;}}
+ public class LocalConnectionToClient:NetworkConnectionToClient {}
  public class NetworkIdentity:UnityEngine.Component {public void AssignClientAuthority(NetworkConnectionToClient c){}}
  public static class NetworkServer {public static bool active;
  public static void RegisterHandler<T>(Action<NetworkConnectionToClient,T> handler,bool auth=true){}
@@ -52,8 +53,8 @@ public struct WorldData {public string worldName;public World owner;public Dicti
 public class WorldRenderer:UnityEngine.MonoBehaviour {public UnityEngine.GameObject chunkPrefab;}
 public class TerrainGenerator:UnityEngine.MonoBehaviour {public bool dumpBetaParity;}
 public class Block {public UnityEngine.Vector3Int globalWorldPosition;public BlockType type;public byte blockShape;public ChunkData chunkData;}
-public class ChunkData {public UnityEngine.Vector3Int worldPos;public bool modifiedByPlayer,modifiedAfterSave,HasPendingLighting;public World worldRef;public Dictionary<UnityEngine.Vector3Int,Block> blocks=new Dictionary<UnityEngine.Vector3Int,Block>();public static ChunkData Deserialize(ChunkSaveData s,World w)=>new ChunkData{worldRef=w,worldPos=s.position};public void UpdateLight(){HasPendingLighting=false;}}
-public class ChunkSaveData {public UnityEngine.Vector3Int position;public static ChunkSaveData Serialize(ChunkData d)=>new ChunkSaveData{position=d.worldPos};}
+public class ChunkData {public UnityEngine.Vector3Int worldPos;public bool modifiedByPlayer,modifiedAfterSave,HasPendingLighting,betaPopulationDone;public World worldRef;public Dictionary<UnityEngine.Vector3Int,Block> blocks=new Dictionary<UnityEngine.Vector3Int,Block>();public static ChunkData Deserialize(ChunkSaveData s,World w)=>new ChunkData{worldRef=w,worldPos=s.position};public void UpdateLight(){HasPendingLighting=false;}}
+public class ChunkSaveData {public static int serializations;public UnityEngine.Vector3Int position;public static ChunkSaveData Serialize(ChunkData d){serializations++;return new ChunkSaveData{position=d.worldPos};}}
 public class ChunkRenderer:UnityEngine.MonoBehaviour {public ChunkData ChunkData;public void Initialize(ChunkData d){ChunkData=d;}public void UpdateChunk(object mesh){}}
 public class WorldSaveData {public object fluidTicks,droppedItems,cows;}
 public struct DropStateMessage {public WorldDimension dimension;public object item;}
@@ -63,12 +64,14 @@ public static class GameAudio {public static void Play(string s,UnityEngine.Vect
 public static class SpecialBlockGeometry {public static bool NormalCube(BlockType b)=>b!=BlockType.Air&&b!=BlockType.Nothing&&b!=BlockType.NetherPortal&&b!=BlockType.Fire;public static bool NoCollision(BlockType b)=>!NormalCube(b);public static byte Shape(BlockType t,byte s)=>s;public static byte State(BlockType t,byte s)=>s;public static UnityEngine.Vector3Int PartnerOffset(BlockType t,byte s)=>UnityEngine.Vector3Int.right;}
 public static class BlockShapesExtensions {public static bool IsPlant(BlockType t)=>t==BlockType.BrownMushroom||t==BlockType.RedMushroom;}
 public static class WorldDataHelper {
+ public static List<UnityEngine.Vector3Int> GetChunkPositionsInRenderDistance(World w,UnityEngine.Vector3Int p)=>new List<UnityEngine.Vector3Int>{GetChunkPosition(w,p)};
+ public static List<UnityEngine.Vector3Int> GetDataPositionsInRenderDistance(World w,UnityEngine.Vector3Int p)=>new List<UnityEngine.Vector3Int>{GetChunkPosition(w,p),GetChunkPosition(w,p)+new UnityEngine.Vector3Int(16,0,0)};
  public static UnityEngine.Vector3Int GetChunkPosition(World w,UnityEngine.Vector3Int p)=>new UnityEngine.Vector3Int((int)Math.Floor(p.x/16.0)*16,0,(int)Math.Floor(p.z/16.0)*16);
  public static ChunkRenderer GetChunk(World w,UnityEngine.Vector3Int p){w.worldData.chunkDict.TryGetValue(p,out var c);return c;}
  public static void SetBlock(World w,UnityEngine.Vector3Int p,BlockType t){var block=w.GetBlock(p);block.type=t;w.blocks[p]=block;}
 }
 public partial class World:UnityEngine.MonoBehaviour {
- public static World Instance;public string worldName="test";public long betaWorldSeed;public bool spawnCows=true,DropAuthority=true,GenerateMoreChunks=true,isSaving,disabled,IsWorldCreated=true;public int worldHeight=128,renderDistance=1,chunkSize=16;
+ public static World Instance;public string worldName="test";public long betaWorldSeed;public bool spawnCows=true,DropAuthority=true,GenerateMoreChunks=true,isSaving,disabled,IsWorldCreated=true;public int worldHeight=128,renderDistance=1,chunkSize=16,chunksPerFrame=1;
  public WorldData worldData;public WorldRenderer worldRenderer;public TerrainGenerator terrainGenerator;public UnityEngine.Events.UnityEvent OnWorldCreated,OnNewChunksGenerated;
  private int lastBetaSkyDarkness,lastBetaBrightnessBoost;private readonly SemaphoreSlim generationGate=new SemaphoreSlim(1,1);private readonly CancellationToken worldCancellationToken=CancellationToken.None;private bool chunkUpdateInProgress,waterMeshBuildInProgress;
  public List<ChunkRenderer> chunksToUpdate=new List<ChunkRenderer>();public Queue<Block> blockToUpdate=new Queue<Block>();
@@ -83,7 +86,8 @@ public partial class World:UnityEngine.MonoBehaviour {
  public void GenerateWorld(UnityEngine.Vector3Int p){}
  public Task SaveDimensionAsync(){saves++;return Task.CompletedTask;}
  public int playerSaves;public void SavePlayer(object save){playerSaves++;}
- public void SaveWorld(){}
+ public int worldSaveCalls;public void SaveWorld(){worldSaveCalls++;}
+ public Task EnsureWorldMetadataAsync()=>Task.CompletedTask;
  public static string GetChunkPath(string name,UnityEngine.Vector3Int p,WorldDimension dimension=WorldDimension.Overworld)=>"/nonexistent/test-chunk";
  public Task<Dictionary<UnityEngine.Vector3Int,ChunkData>> LoadChunksAsync(IEnumerable<UnityEngine.Vector3Int> positions,string name)=>Task.FromResult(new Dictionary<UnityEngine.Vector3Int,ChunkData>());
  public void UpadteLightTexture(){}

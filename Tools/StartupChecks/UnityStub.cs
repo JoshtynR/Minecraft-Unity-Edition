@@ -131,10 +131,13 @@ namespace Mirror
  public enum SceneOperation{Normal,LoadAdditive,UnloadAdditive}
  public class NetworkConnectionToClient{public UnityEngine.GameObject identity;}
  public static class NetworkServer{public static bool active,isLoadingScene;public static void Spawn(UnityEngine.GameObject go){}}
- public static class NetworkClient{public static bool isLoadingScene;public static void Send<T>(T value){}}
+ public static class NetworkClient{public static bool active,isLoadingScene;public static void Send<T>(T value){}}
+ public class Transport:UnityEngine.Behaviour{public static Transport activeTransport;}
  public class NetworkManager:UnityEngine.MonoBehaviour
  {
   public static NetworkManager singleton;public string offlineScene="MainMenu";public bool stopped;public int disconnects;
+  public Transport transport;public string networkAddress;public void StartHost(){}
+  public virtual void OnStopClient(){}
   public void StopHost(){stopped=true;}public void StopClient(){stopped=true;}
   public virtual void OnClientConnect(){}public virtual void OnStartServer(){}public virtual void OnServerSceneChanged(string name){}
   public virtual void OnServerChangeScene(string name){}public virtual void OnClientChangeScene(string name,SceneOperation operation,bool customHandling){}
@@ -154,10 +157,12 @@ public static class WorldDataHelper
 {
  public static UnityEngine.Vector3Int GetChunkPosition(World w,UnityEngine.Vector3Int p)=>new UnityEngine.Vector3Int((int)Math.Floor(p.x/16f)*16,0,(int)Math.Floor(p.z/16f)*16);
 }
-namespace kcp2k{}
+namespace kcp2k{public class KcpTransport:Mirror.Transport{}}
+namespace Mirror.FizzySteam{public class FizzyFacepunch:Mirror.Transport{}}
 namespace Unity.Mathematics{}
 namespace Unity.VisualScripting{}
 namespace Steamworks{public static class SteamClient{public static ulong SteamId;}}
+public static class PlayerIdentity{public static ulong Id=>Steamworks.SteamClient.SteamId;public static bool UsingSteam=>false;public static void BeginSession(){}public static void EndSession(){}}
 public class LobbyManager{public static Lobby? currentLobby;public struct Lobby{public void Leave(){}}}
 public partial class WorldServer
 {
