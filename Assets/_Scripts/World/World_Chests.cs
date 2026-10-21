@@ -16,7 +16,10 @@ public partial class World
         };
     }
     public void SetChestLid(Vector3Int position,bool opened)
-    {if(opened)openChestLids.Add(position);else openChestLids.Remove(position);}
+    {
+        bool changed=opened?openChestLids.Add(position):openChestLids.Remove(position);
+        if(changed)GameAudio.Play(opened?"random/chestopen":"random/chestclosed",(Vector3)position+Vector3.one*.5f,.5f);
+    }
     public bool CanReplaceChest(Vector3Int position,BlockType next)
     {
         if(NetworkClient.active&&!NetworkServer.active)return true;

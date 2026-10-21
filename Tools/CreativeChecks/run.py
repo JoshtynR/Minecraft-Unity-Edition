@@ -3,6 +3,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[2]
 p = argparse.ArgumentParser()
 p.add_argument('--mcs', default='mcs'); p.add_argument('--mono', default='mono')
+p.add_argument('--custom-assets', action='store_true', help='Validate editable item asset ranges instead of requiring stock Beta values.')
 a = p.parse_args()
 fixture=root/'Tools/CreativeChecks/beta-items.tsv'
 expected=list(csv.DictReader(fixture.open(),delimiter='\t'))
@@ -17,10 +18,13 @@ for part in parts:
 assert set(actual)==set(enum.values())-{0,1}, 'Asset must contain every registered item'
 for entry in expected:
     definition=actual[enum[entry['item_type']]]
-    assert int(definition['maxStack'])==int(entry['stack_limit'])
-    assert int(definition['maxDamage'])==int(entry['max_damage'])
+    if not a.custom_assets:
+        assert int(definition['maxStack'])==int(entry['stack_limit'])
+        assert int(definition['maxDamage'])==int(entry['max_damage'])
+    else:
+        assert 1 <= int(definition['maxStack']) <= 64 and int(definition['maxDamage']) >= 0
 assert len(actual)==246 and len(expected)==122
-print('246 asset entries verified against 122 Beta item/variant defaults.',flush=True)
+print('246 asset entries verified ('+('custom item values preserved' if a.custom_assets else '122 Beta item/variant defaults')+').',flush=True)
 with tempfile.TemporaryDirectory() as tmp:
     binary = Path(tmp) / 'creative.exe'
     server=(root/'Assets/_Scripts/World/WorldServer.cs').read_text()
@@ -55,6 +59,7 @@ with tempfile.TemporaryDirectory() as tmp:
         str(root / 'Assets/_Scripts/ChestTransactions.cs'),
         str(root / 'Assets/_Scripts/BetaSmelting.cs'),
         str(root / 'Assets/_Scripts/WheatCropRules.cs'),
+        str(root / 'Assets/_Scripts/BlockSoundRules.cs'),str(root / 'Tools/AudioChecks/SilentGameAudio.cs'),
         str(root / 'Assets/_Scripts/MinecraftUIText.cs'),
         str(root / 'Assets/_Scripts/World/CowState.cs'),
         str(root / 'Assets/_Scripts/World/Rendering/CowModelGeometry.cs'),

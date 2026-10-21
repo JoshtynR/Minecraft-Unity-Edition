@@ -6,6 +6,7 @@ using UnityEngine;
 namespace JetBrains.Annotations { public class CanBeNullAttribute : Attribute {} }
 namespace UnityEngine
 {
+    public class AudioClip {}
     public struct Vector3Int : IEquatable<Vector3Int>
     {
         public int x,y,z;
@@ -22,6 +23,10 @@ namespace UnityEngine
     {
         public float x,y,z;
         public Vector3(float x,float y,float z) { this.x=x; this.y=y; this.z=z; }
+        public static implicit operator Vector3(Vector3Int v)=>new Vector3(v.x,v.y,v.z);
+        public static Vector3 one=>new Vector3(1,1,1);
+        public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
+        public static Vector3 operator *(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);
     }
  public struct Vector4 { public float x,y,z,w; public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
     public struct Vector2 { public float x,y; public Vector2(float x,float y){this.x=x;this.y=y;} }

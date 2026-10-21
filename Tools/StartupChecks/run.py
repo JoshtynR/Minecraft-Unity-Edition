@@ -12,6 +12,7 @@ args = p.parse_args()
 with tempfile.TemporaryDirectory() as tmp:
     binary = Path(tmp) / 'startup.exe'
     files = ['Assets/_Scripts/MusicManager.cs', 'Assets/_Scripts/WorldLoadingScreen.cs', 'Assets/_Scripts/Networking/MinecraftNetworkManager.cs',
+             'Assets/_Scripts/Block/BlockType.cs',
              'Tools/StartupChecks/UnityStub.cs', 'Tools/StartupChecks/StartupCheck.cs']
     subprocess.run([args.mcs, '-langversion:latest', '-out:' + str(binary), *[str(root / f) for f in files]], check=True)
     subprocess.run([args.mono, str(binary)], check=True)

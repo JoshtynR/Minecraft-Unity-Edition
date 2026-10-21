@@ -86,7 +86,7 @@ public partial class World
         if(NetworkServer.active&&!NetworkClient.active)return;
         if(dropVisuals.TryGetValue(id,out var visual))visual.BeginPickup(target);
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
-        if(assets!=null&&assets.itemPickup!=null)AudioSource.PlayClipAtPoint(assets.itemPickup,target,.2f);
+        GameAudio.PlayClip(assets!=null&&assets.itemPickup!=null?assets.itemPickup:GameAudio.Find("random/pop"),target,.2f,true,GameAudio.Variation(.9f,1.1f));
     }
     private void EnsureDroppedItemsRestored()
     {

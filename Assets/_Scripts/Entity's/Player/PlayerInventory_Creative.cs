@@ -326,6 +326,7 @@ public partial class PlayerInventory
     {
         var rect=CreativeRect(label,parent,x,y,width,height);Panel(rect);
         var button=rect.gameObject.AddComponent<Button>();button.onClick.AddListener(action);
+        button.onClick.AddListener(()=>GameAudio.PlayClip(GameAudio.Find("UI/click"),Vector3.zero,.2f,false));
         CreativeText("Label",rect,0,0,width,height,label,8,Color.white);return button;
     }
 }

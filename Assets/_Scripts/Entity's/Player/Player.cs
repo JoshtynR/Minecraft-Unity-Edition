@@ -98,6 +98,7 @@ public partial class Player : BaseEntity
         direction = objects.moveDirection;
         animator = GetComponent<Animator>();
         if (!Application.isPlaying) return;
+        if(GetComponent<PlayerGameplayAudio>()==null)gameObject.AddComponent<PlayerGameplayAudio>();
 
         meshFilters = GetComponentsInChildren<MeshFilter>();
         SetMeshLight(15, 15);
@@ -272,7 +273,7 @@ public partial class Player : BaseEntity
             pos+=Vector3Int.down;next=(byte)(next&7);
         }
         if(networkStarted)NetworkClient.Send(new WorldServer.SetBlockMessage(pos,block.type,next));
-        else world.SetBlock(pos,block.type,next);
+        else {world.SetBlock(pos,block.type,next);GameAudio.Play(BlockSoundRules.Use(block.type,next),(Vector3)pos+Vector3.one*.5f,.7f);}
         return true;
     }
 
@@ -325,6 +326,7 @@ public partial class Player : BaseEntity
                     else
                     {
                         world.SetBlock(blockPos, type, facing);
+                        GameAudio.BroadcastBlock(type,blockPos,false);
                     }
                     inventory.RemoveHeldItem();
                     return true;

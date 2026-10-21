@@ -44,6 +44,7 @@ def main():
                  'WorldGeneration/Beta/JavaRandom.cs','WorldGeneration/Beta/BetaPopulationRecord.cs','Block/BlockType.cs','Block/StairGeometry.cs','Block/SpecialBlockGeometry.cs','Block/BlockShapes.cs','Block/BlockShape.cs','World/Rendering/MeshData.cs','Block/Block.cs','Block/Blocks/WaterBlock.cs',
                  'World/ChunkSection.cs','World/Saving/BlockSaveData.cs','World/Saving/ChunkSectionSaveData.cs']
         sources = [ROOT / 'Assets/_Scripts' / f for f in files]
+        sources.extend([ROOT/'Assets/_Scripts/BlockSoundRules.cs',ROOT/'Tools/AudioChecks/SilentGameAudio.cs'])
         sources.append(ROOT/'Tools/WaterChecks/FluidFeatureCheck.cs')
         sources += [ROOT / 'Tools/WaterChecks/WaterCheck.cs',ROOT/'Tools/WaterChecks/LavaCheck.cs', ROOT / 'Tools/WaterChecks/IntegrationCheck.cs',ROOT/'Tools/WaterChecks/LavaIntegrationCheck.cs',tmp/'BlockMapping.cs',tmp/'WorldServer.cs',tmp/'WaterMeshCheck.cs',tmp/'WorldStairPlacement.cs',tmp/'PopulationRecordCleanup.cs']
         binary=tmp/'water.exe'
@@ -52,7 +53,8 @@ def main():
         visual=tmp/'visual.exe'
         production=['World/WaterSimulation.cs','World/FluidTickScheduler.cs','World/BetaFluidPhysics.cs','World/FluidWorldQueries.cs','World/World_FluidEffects.cs','World/Rendering/FluidEffects.cs','World/Rendering/FluidCameraEffects.cs',"Entity's/Player/Player_Fluids.cs","Entity's/Player/PlayerHudAssets.cs",'Block/BlockType.cs']
         production.append('Menus/MenuManagers/EscapeMenuManager.cs')
-        subprocess.run([args.mcs,'-langversion:latest',f'-out:{visual}',str(ROOT/'Tools/WaterChecks/FluidVisualCheck.cs'),*[str(ROOT/'Assets/_Scripts'/p) for p in production]],check=True)
+        production.append('BlockSoundRules.cs')
+        subprocess.run([args.mcs,'-langversion:latest',f'-out:{visual}',str(ROOT/'Tools/AudioChecks/SilentGameAudio.cs'),str(ROOT/'Tools/WaterChecks/FluidVisualCheck.cs'),*[str(ROOT/'Assets/_Scripts'/p) for p in production]],check=True)
         subprocess.run([args.mono,str(visual)],check=True)
 
 if __name__=='__main__': main()

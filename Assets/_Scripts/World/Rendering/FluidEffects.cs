@@ -5,11 +5,11 @@ public sealed class FluidEffects : MonoBehaviour
 {
     private readonly ParticleSystem[] emitters=new ParticleSystem[4];
     private readonly Material[] materials=new Material[4];
-    private AudioSource audioSource;
     private AudioClip fizz,splash;
     private AudioClip flow;
     private bool ownsFizz,ownsSplash;
     private float displayTime;
+    private float nextFireSound,nextLavaSound,nextFlowSound;
     private readonly System.Random cosmetic=new System.Random();
     private void Awake()
     {
@@ -33,12 +33,13 @@ public sealed class FluidEffects : MonoBehaviour
             emitters[i]=ps;
             ps.Play();
         }
-        var audioObject=new GameObject("FluidAudio");audioObject.transform.SetParent(transform,false);
-        audioSource=audioObject.AddComponent<AudioSource>();audioSource.playOnAwake=false;audioSource.spatialBlend=1;audioSource.maxDistance=16;audioSource.rolloffMode=AudioRolloffMode.Linear;
-        ownsFizz=assets==null||assets.fluidFizz==null;ownsSplash=assets==null||assets.fluidSplash==null;
-        fizz=assets!=null&&assets.fluidFizz!=null?assets.fluidFizz:Noise("FluidFizz",false);
-        splash=assets!=null&&assets.fluidSplash!=null?assets.fluidSplash:Noise("FluidSplash",true);
-        flow=assets!=null&&assets.fluidFlow!=null?assets.fluidFlow:splash;
+        fizz=assets!=null&&assets.fluidFizz!=null?assets.fluidFizz:GameAudio.Find("random/fizz");
+        splash=assets!=null&&assets.fluidSplash!=null?assets.fluidSplash:GameAudio.Find("liquid/splash");
+        ownsFizz=fizz==null;ownsSplash=splash==null;
+        if(ownsFizz)fizz=Noise("FluidFizz",false);
+        if(ownsSplash)splash=Noise("FluidSplash",true);
+        flow=assets!=null&&assets.fluidFlow!=null?assets.fluidFlow:GameAudio.Find("liquid/water");
+        if(flow==null)flow=splash;
     }
     private AudioClip Noise(string name,bool low)
     {
@@ -59,7 +60,11 @@ public sealed class FluidEffects : MonoBehaviour
             emit.startColor=index==0?new Color(.55f,.55f,.55f,.7f):index==2?new Color(1,.45f,.05f,1):new Color(.45f,.65f,1,.8f);
             emitters[index].Emit(emit,1);
         }
-        if(kind<2){audioSource.transform.position=position;audioSource.PlayOneShot(kind==0?fizz:splash,kind==0?.5f:.35f);}
+        if(kind<2)GameAudio.PlayClip(kind==0?fizz:splash,position,kind==0?.5f:.35f);
+        if(kind==2&&Time.unscaledTime>=nextLavaSound)
+        {nextLavaSound=Time.unscaledTime+GameAudio.Variation(1,3);GameAudio.Play("liquid/lavapop",position,.25f);}
+        if(kind==4&&Time.unscaledTime>=nextFireSound)
+        {nextFireSound=Time.unscaledTime+GameAudio.Variation(3,5);GameAudio.Play("fire/fire",position,.2f);}
     }
     private void Update()
     {
@@ -73,8 +78,8 @@ public sealed class FluidEffects : MonoBehaviour
             if(b.type==BlockType.Lava&&cosmetic.Next(100)==0)
             {var above=World.Instance.GetBlock(p+Vector3Int.up);if(above!=null&&above.type==BlockType.Air)Emit((Vector3)p+Vector3.one*.5f,2);}
             else if(b.type==BlockType.Fire&&cosmetic.Next(8)==0)Emit((Vector3)p+Vector3.up*.5f,4);
-            else if(b.type==BlockType.Water&&b.waterLevel>0&&b.waterLevel<8&&cosmetic.Next(64)==0)
-            {audioSource.transform.position=p;audioSource.PlayOneShot(flow,.12f);}
+            else if(b.type==BlockType.Water&&b.waterLevel>0&&b.waterLevel<8&&cosmetic.Next(64)==0&&Time.unscaledTime>=nextFlowSound)
+            {nextFlowSound=Time.unscaledTime+GameAudio.Variation(1,2);GameAudio.PlayClip(flow,p,.12f);}
         }
     }
     private void OnDestroy()
@@ -83,6 +88,5 @@ public sealed class FluidEffects : MonoBehaviour
         foreach(var material in materials)if(material!=null)Destroy(material);
         if(fizz!=null&&ownsFizz)Destroy(fizz);
         if(splash!=null&&ownsSplash)Destroy(splash);
-        if(audioSource!=null)Destroy(audioSource.gameObject);
     }
 }

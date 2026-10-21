@@ -10,6 +10,7 @@ public sealed class CowVisual
     private readonly MaterialPropertyBlock properties = new MaterialPropertyBlock();
     private Vector3 previous;
     private float walk, amplitude, deathTime, yaw;
+    private float soundTime=GameAudio.Variation(4,12),stepDistance;
     public CowVisual(Transform parent,CowState cow,Mesh[] meshes,Material material)
     {
         root=new GameObject("Cow "+cow.id);root.transform.SetParent(parent,false);
@@ -31,6 +32,14 @@ public sealed class CowVisual
         yaw=Mathf.LerpAngle(root.transform.eulerAngles.y,cow.yaw,t);root.transform.rotation=Quaternion.Euler(0,yaw,0);
         float moved=new Vector2(root.transform.position.x-previous.x,root.transform.position.z-previous.z).magnitude;
         previous=root.transform.position;walk+=moved*4;
+        soundTime-=delta;
+        if(soundTime<=0){soundTime=GameAudio.Variation(8,20);GameAudio.Play("mob/cow/say",root.transform.position,.4f,GameAudio.Variation(.9f,1.1f));}
+        if(cow.grounded)
+        {
+            stepDistance+=moved;
+            if(stepDistance>=1.67f){stepDistance%=1.67f;GameAudio.Play("mob/cow/step",root.transform.position,.15f);}
+        }
+        else stepDistance=0;
         amplitude=Mathf.Lerp(amplitude,Mathf.Clamp01(moved/Mathf.Max(.0001f,delta)*.2f),t);
         float angle=Mathf.Cos(walk*.6662f)*1.4f*amplitude*Mathf.Rad2Deg;
         parts[5].localRotation=parts[8].localRotation=Quaternion.Euler(angle,0,0);

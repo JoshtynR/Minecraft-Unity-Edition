@@ -9,6 +9,7 @@ public partial class Player
     private Vector3 targetHitPoint, serverMineHitPoint;
     private float localMineProgress, localMineClock, serverMineProgress, serverMineClock;
     private float nextLocalMineTime;
+    private float nextMineSoundTime;
     private double nextServerMineTime;
     private BlockBreakOverlay crackOverlay;
     private int localMineSlot,serverMineSlot;
@@ -42,6 +43,11 @@ public partial class Player
             else BeginServerMining(position, block.type, targetHitPoint);
         }
         localMineClock += Time.deltaTime;
+        if(Time.time>=nextMineSoundTime)
+        {
+            nextMineSoundTime=Time.time+.25f;
+            GameAudio.Play(BlockSoundRules.Step(localMineType),targetHitPoint,.25f,.5f);
+        }
         while (localMineClock >= 0.05f)
         {
             localMineClock -= 0.05f;
@@ -152,6 +158,7 @@ public partial class Player
                 if (below != null && below.type != BlockType.Nothing && below.type != BlockType.Air) replacement = BlockType.Water;
             }
             world.SetBlock(serverMinePosition, replacement);
+            GameAudio.BroadcastBlock(serverMineType,serverMinePosition,true);
             if (WorldServer.instance != null && isServer) WorldServer.instance.RpcSetBlock(serverMinePosition, replacement, 0);
             // Mining is a later survival addition to the Beta renderer: normal
             // harvested blocks use the classic 0.025 exhaustion cost.

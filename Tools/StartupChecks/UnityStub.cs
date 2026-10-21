@@ -7,6 +7,7 @@ namespace UnityEngine
 {
  public class Object
  {
+  public string name;
   public bool destroyed;
   public static void Destroy(Object obj){if(obj==null)return;obj.destroyed=true;if(obj is GameObject go){go.activeInHierarchy=false;foreach(var c in go.components.ToArray())Lifecycle.Call(c,"OnDestroy");}}
   public static void DontDestroyOnLoad(Object obj){}
@@ -36,7 +37,7 @@ namespace UnityEngine
  }
  public class GameObject:Object
  {
-  public string name;public bool activeInHierarchy=true;public readonly List<Component> components=new List<Component>();public Transform transform;
+  public bool activeInHierarchy=true;public readonly List<Component> components=new List<Component>();public Transform transform;
   public GameObject(string name,params Type[] types){this.name=name;transform=new RectTransform{gameObject=this};components.Add(transform);foreach(var t in types)if(t!=typeof(RectTransform))Add(t);}
   Component Add(Type t){var c=(Component)Activator.CreateInstance(t);c.gameObject=this;components.Add(c);Lifecycle.Call(c,"Awake");return c;}
   public T AddComponent<T>() where T:Component,new()=> (T)Add(typeof(T));
@@ -49,16 +50,16 @@ namespace UnityEngine
   public void SetParent(Transform parent,bool stays){parent.children.Add(this);}
  }
  public class RectTransform:Transform {public Vector2 anchorMin,anchorMax,pivot,anchoredPosition,sizeDelta;}
- public struct Vector2{public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}public static Vector2 zero=>new Vector2();public static Vector2 one=>new Vector2(1,1);}
- public struct Vector3{public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}}
- public struct Vector3Int{public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static Vector3Int FloorToInt(Vector3 p)=>new Vector3Int((int)Math.Floor(p.x),(int)Math.Floor(p.y),(int)Math.Floor(p.z));}
+ public struct Vector2{public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}public float magnitude=>(float)Math.Sqrt(x*x+y*y);public static Vector2 zero=>new Vector2();public static Vector2 one=>new Vector2(1,1);}
+ public struct Vector3{public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 down=>new Vector3(0,-1,0);public static Vector3 zero=>new Vector3();public float sqrMagnitude=>x*x+y*y+z*z;public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static Vector3 operator*(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);}
+ public struct Vector3Int{public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static implicit operator Vector3(Vector3Int p)=>new Vector3(p.x,p.y,p.z);public static Vector3Int FloorToInt(Vector3 p)=>new Vector3Int((int)Math.Floor(p.x),(int)Math.Floor(p.y),(int)Math.Floor(p.z));}
  public struct Color{public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color black=>new Color(0,0,0,1);public static Color white=>new Color(1,1,1,1);}
  public class Material:Object{}
  public class Sprite:Object{}
  public class AudioClip:Object {public float length=10;}
  public class AudioSource:Behaviour
  {
-  public AudioClip clip;public float volume,time,spatialBlend;public bool loop,playOnAwake,ignoreListenerPause;
+  public AudioClip clip;public float volume,time,spatialBlend,pitch,minDistance,maxDistance,dopplerLevel;public AudioRolloffMode rolloffMode;public bool loop,playOnAwake,ignoreListenerPause;
   public Audio.AudioMixerGroup outputAudioMixerGroup;private bool playing,paused;
   public bool isPlaying=>playing&&(!AudioListener.pause||ignoreListenerPause);
   public void Play(){playing=clip!=null;paused=false;}
@@ -68,15 +69,18 @@ namespace UnityEngine
   public void Step(float seconds){if(!isPlaying)return;time+=seconds;if(time>=clip.length){if(loop)time%=clip.length;else{time=clip.length;playing=false;}}}
  }
  public static class AudioListener{public static bool pause;}
- public static class Time{public static float unscaledDeltaTime=.1f;public static int frameCount;}
+ public enum AudioRolloffMode{Linear}
+ public class Camera:Behaviour{public static Camera main;}
+ public static class Time{public static float unscaledDeltaTime=.1f,deltaTime=.1f;public static int frameCount;}
  public static class Application{public static bool isBatchMode;}
  public static class Screen{public static int width=1920,height=1080;}
  public static class Cursor{public static bool visible;public static CursorLockMode lockState;}
  public enum CursorLockMode{None,Locked}
- public static class Resources{public static T Load<T>(string path) where T:class=>null;}
+ public static class Resources{public static Dictionary<string,AudioClip[]> audio=new Dictionary<string,AudioClip[]>();public static int reads;public static T Load<T>(string path) where T:class=>null;public static T[] LoadAll<T>(string path) where T:class {reads++;return audio.ContainsKey(path)?audio[path].Cast<T>().ToArray():new T[0];}}
  public static class Mathf
  {
   public static int Clamp(int x,int min,int max)=>Math.Max(min,Math.Min(max,x));public static float Clamp01(float x)=>Math.Max(0,Math.Min(1,x));
+  public static float Clamp(float x,float min,float max)=>Math.Max(min,Math.Min(max,x));public static float Abs(float x)=>Math.Abs(x);
   public static float Min(float a,float b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int FloorToInt(float x)=>(int)Math.Floor(x);
  }
  public class Canvas:Behaviour {public RenderMode renderMode;public int sortingOrder;public bool pixelPerfect;}
@@ -116,6 +120,7 @@ namespace TMPro
 }
 namespace Mirror
 {
+ public class ClientRpcAttribute:Attribute{}
  public enum SceneOperation{Normal,LoadAdditive,UnloadAdditive}
  public class NetworkConnectionToClient{public UnityEngine.GameObject identity;}
  public static class NetworkServer{public static bool active,isLoadingScene;public static void Spawn(UnityEngine.GameObject go){}}
@@ -132,11 +137,12 @@ namespace Mirror
 public class PlayerHudAssets{public TMPro.TMP_FontAsset levelFont;}
 public static class MinecraftUIText{public static UnityEngine.Material CreateMaterial(TMPro.TMP_FontAsset font,float size,bool shadow)=>new UnityEngine.Material();}
 public class Menu {public static Menu currentMenu,lastMenu;public static void CloseCurrentMenu(){}}
-public class World {public static World Instance;public bool IsWorldCreated,disabled;public WorldData worldData=new WorldData();}
+public class Block {public BlockType type=BlockType.Stone;public int sky=15,light;public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
+public class World {public static World Instance;public bool IsWorldCreated,disabled;public WorldData worldData=new WorldData();public Func<UnityEngine.Vector3,Block> blockAt;public Block GetBlock(UnityEngine.Vector3 p)=>blockAt==null?new Block():blockAt(p);}
 public class WorldData{public Dictionary<UnityEngine.Vector3Int,ChunkRenderer> chunkDict=new Dictionary<UnityEngine.Vector3Int,ChunkRenderer>();}
 public class ChunkRenderer:UnityEngine.Component{public object ChunkData;}
 public class GameManager {public static GameManager Instance;public bool playerSpawned;public Player localPlayer;}
-public class Player:UnityEngine.Component {public bool IsReadyForPlay;public object inventory;public object SavePlayer()=>new object();}
+public class Player:UnityEngine.Component {public bool IsReadyForPlay,isFlying,isCrouching,isLocalPlayer,InWater;public int health=20,experienceLevel;public float eyeHeight=1.6f;public object inventory;public object SavePlayer()=>new object();}
 public static class WorldDataHelper
 {
  public static UnityEngine.Vector3Int GetChunkPosition(World w,UnityEngine.Vector3Int p)=>new UnityEngine.Vector3Int((int)Math.Floor(p.x/16f)*16,0,(int)Math.Floor(p.z/16f)*16);
@@ -146,7 +152,7 @@ namespace Unity.Mathematics{}
 namespace Unity.VisualScripting{}
 namespace Steamworks{public static class SteamClient{public static ulong SteamId;}}
 public class LobbyManager{public static Lobby? currentLobby;public struct Lobby{public void Leave(){}}}
-public class WorldServer
+public partial class WorldServer
 {
  public static WorldServer instance;public int chestCloses,furnaceCloses,saves;
  public void CloseChestForDisconnect(Mirror.NetworkConnectionToClient conn){chestCloses++;}

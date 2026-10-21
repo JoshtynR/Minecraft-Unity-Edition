@@ -194,6 +194,7 @@ public partial class World
     private bool DamageCow(CowState cow,int damage,Vector3 away)
     {
         if (!CowRules.Hurt(cow,damage,away)) return false;
+        GameAudio.Broadcast("mob/cow/hurt",cow.position,.5f,GameAudio.Variation(.9f,1.1f));
         if (cow.health == 0)
         {
             // Remove first: repeated attacks/packets cannot duplicate the drop.

@@ -46,7 +46,7 @@ public class UIButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         if(isDisabled) return;
         
-        AudioSource.PlayClipAtPoint(clickSound, Camera.main.transform.position, 0.20f);
+        GameAudio.PlayClip(clickSound,Vector3.zero,.2f,false);
     }
     
     public void Disable()

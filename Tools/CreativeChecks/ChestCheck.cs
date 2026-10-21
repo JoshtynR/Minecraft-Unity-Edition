@@ -153,9 +153,13 @@ public partial class PlayerInventory
   var model=new GameObject("ChestVisual").AddComponent<ModernChestVisual>();model.Initialize(World.Instance,pos,5);
   var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
   var tick=typeof(ModernChestVisual).GetMethod("Update",flags);
-  World.Instance.SetChestLid(pos,true);for(int i=0;i<10;i++)tick.Invoke(model,null);
+  int soundCount=GameAudio.plays;
+  World.Instance.SetChestLid(pos,true);World.Instance.SetChestLid(pos,true);
+  Check(GameAudio.plays==soundCount+1,"repeated lid replication does not duplicate chest-open sound");
+  for(int i=0;i<10;i++)tick.Invoke(model,null);
   Check((float)typeof(ModernChestVisual).GetField("progress",flags).GetValue(model)==1,"rendered lid reaches open state");
   World.Instance.SetChestLid(pos,false);for(int i=0;i<10;i++)tick.Invoke(model,null);
+  Check(GameAudio.plays==soundCount+2,"closing chest emits one additional sound");
   Check((float)typeof(ModernChestVisual).GetField("progress",flags).GetValue(model)==0,"rendered lid returns to closed state");
   var owned=(System.Collections.Generic.List<Mesh>)typeof(ModernChestVisual).GetField("meshes",flags).GetValue(model);
   var material=(Material)typeof(ModernChestVisual).GetField("material",flags).GetValue(model);

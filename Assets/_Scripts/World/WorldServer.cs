@@ -45,8 +45,12 @@ public partial class WorldServer : NetworkBehaviour
         if (message.blockType == BlockType.Air || message.blockType == BlockType.Nothing) return;
         if(WheatCropRules.IsCrop(message.blockType))return; // Seeds use the inventory-authorized farming command.
         if(!World.Instance.CanReplaceChest(message.position,message.blockType))return;
+        var previous=World.Instance.GetBlock(message.position);
+        var previousType=previous!=null?previous.type:BlockType.Nothing;
         World.Instance.SetBlock(message.position, message.blockType, message.stairFacing);
         RpcSetBlock(message.position, message.blockType, message.stairFacing);
+        if(previousType!=message.blockType)GameAudio.BroadcastBlock(message.blockType,message.position,false);
+        else GameAudio.Broadcast(BlockSoundRules.Use(message.blockType,message.stairFacing),(Vector3)message.position+Vector3.one*.5f,.7f);
     }
 
     [ClientRpc]
