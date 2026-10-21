@@ -5,6 +5,22 @@ using UnityEngine;
 class FirstPersonCheck {
  static int assertions;
  static void Check(bool ok,string message){assertions++;if(!ok)throw new Exception(message);}
+ static int VisibleArmVertices(Mesh mesh,Transform pivot,Vector3 inheritedScale,float aspect)
+ {
+  int visible=0;var e=pivot.localRotation.euler;
+  double rz=e.z*Math.PI/180,rx=e.x*Math.PI/180,ry=e.y*Math.PI/180;
+  foreach(var vertex in mesh.vertices)
+  {
+   double x=vertex.x*pivot.localScale.x,y=vertex.y*pivot.localScale.y,z=vertex.z*pivot.localScale.z;
+   double tx=x*Math.Cos(rz)-y*Math.Sin(rz);y=x*Math.Sin(rz)+y*Math.Cos(rz);x=tx;
+   double ty=y*Math.Cos(rx)-z*Math.Sin(rx);z=y*Math.Sin(rx)+z*Math.Cos(rx);y=ty;
+   tx=x*Math.Cos(ry)+z*Math.Sin(ry);z=-x*Math.Sin(ry)+z*Math.Cos(ry);x=tx;
+   x=(x+pivot.localPosition.x)*inheritedScale.x;y=(y+pivot.localPosition.y)*inheritedScale.y;z=(z+pivot.localPosition.z)*inheritedScale.z;
+   double halfHeight=z*Math.Tan(35*Math.PI/180);
+   if(z>.01&&z<4&&Math.Abs(y)<halfHeight&&Math.Abs(x)<halfHeight*aspect)visible++;
+  }
+  return visible;
+ }
  static object Field(object o,string name)=>o.GetType().GetField(name,BindingFlags.NonPublic|BindingFlags.Instance).GetValue(o);
  static void Call(object o,string method)=>o.GetType().GetMethod(method,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(o,null);
  static void Step(FirstPersonView view,int frames=1){for(int i=0;i<frames;i++)Call(view,"LateUpdate");}
@@ -26,6 +42,9 @@ class FirstPersonCheck {
   var ui=new GameObject("UI camera").AddComponent<Camera>();ui.depth=0;
   new GameObject("PlayerCanvas").AddComponent<Canvas>().worldCamera=ui;
   var player=new GameObject("Player").AddComponent<Player>();player.cam=new GameObject("Player camera").transform;
+  var body=new GameObject("Scaled body").transform;body.localScale=new Vector3(.058f,.058f,.058f);
+  player.cam.SetParent(body,false);player.cam.localScale=new Vector3(18.018015f,18.018015f,.99369353f);
+  player.cam.position=new Vector3(15,72,-31);player.cam.rotation=Quaternion.Euler(new Vector3(12,85,0));
   var source=player.cam.gameObject.AddComponent<Camera>();source.cullingMask=255;
   var view=player.gameObject.AddComponent<FirstPersonView>();view.Initialize(player);Step(view);
   var hand=(Camera)Field(view,"handCamera");var filter=(MeshFilter)Field(view,"filter");
@@ -33,6 +52,15 @@ class FirstPersonCheck {
   Check(hand.cullingMask==128&&(source.cullingMask&128)==0,"Camera layer isolation");
   Check(hand.clearFlags==CameraClearFlags.Depth&&hand.nearClipPlane==.01f,"Hand cannot clip into world depth");
   Check(filter.sharedMesh.name=="First person right arm","Empty hand skin mesh");
+  var root=(GameObject)Field(view,"cameraObject");var pose=(Transform)Field(view,"pivot");
+  Check(root.transform.parent==null&&root.transform.lossyScale.z==1,"hand root does not inherit compressed prefab scale");
+  Check(root.transform.position.x==15&&root.transform.position.y==72&&root.transform.rotation.euler.y==85,"hand camera copies world camera pose");
+  Check(VisibleArmVertices(filter.sharedMesh,pose,player.cam.lossyScale,16f/9)==0,"original scaled hierarchy moves the actual arm outside the view");
+  Check(VisibleArmVertices(filter.sharedMesh,pose,root.transform.lossyScale,16f/9)>=4,"unscaled arm intersects widescreen frustum");
+  Check(VisibleArmVertices(filter.sharedMesh,pose,root.transform.lossyScale,4f/3)>=4,"unscaled arm intersects standard aspect frustum");
+  player.cam.position=new Vector3(-20,90,50);player.cam.rotation=Quaternion.Euler(new Vector3(-30,180,0));source.targetDisplay=1;
+  Step(view);Check(root.transform.position.x==-20&&root.transform.rotation.euler.x==-30&&hand.targetDisplay==1,"camera follows movement/looking and display changes");
+  player.cam.localScale=new Vector3(10,20,.01f);Step(view);Check(root.transform.lossyScale.x==1&&root.transform.lossyScale.z==1,"later source scale changes do not distort hand");
   var ownedArm=filter.sharedMesh;
   player.inventory.stack.type=ItemType.Stone;Step(view,30);
   Check((ItemType)Field(view,"shown")==ItemType.Stone&&(bool)Field(view,"isBlock"),"Block stays 3D despite assigned icon");

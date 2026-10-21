@@ -32,7 +32,10 @@ public sealed class FirstPersonView : MonoBehaviour
         sourceMask = sourceCamera.cullingMask;
         sourceCamera.cullingMask &= ~(1 << HandLayer);
         cameraObject = new GameObject("First person camera");
-        cameraObject.transform.SetParent(owner.cam, false);
+        // The player prefab's camera has nonuniform inherited scale. A child
+        // camera ignores that scale for projection, but its mesh children do not.
+        // Keep this owned root unparented and copy only the real camera pose.
+        cameraObject.transform.SetPositionAndRotation(sourceCamera.transform.position, sourceCamera.transform.rotation);
         handCamera = cameraObject.AddComponent<Camera>();
         handCamera.clearFlags = CameraClearFlags.Depth;
         handCamera.cullingMask = 1 << HandLayer;
@@ -87,7 +90,8 @@ public sealed class FirstPersonView : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (handCamera == null || spriteMaterial == null || player == null) return;
+        if (handCamera == null || spriteMaterial == null || player == null || sourceCamera == null) return;
+        cameraObject.transform.SetPositionAndRotation(sourceCamera.transform.position, sourceCamera.transform.rotation);
         bool visible = player.IsReadyForPlay && player.health > 0 && !WorldLoadingScreen.IsLoading &&
             player.inventory != null && !player.inventory.isOpen && !player.escapeMenuOpen && sourceCamera.enabled;
         handCamera.enabled = visible;
@@ -102,6 +106,7 @@ public sealed class FirstPersonView : MonoBehaviour
         // Follow viewport changes (split-screen, resizing), without inheriting sprint FOV zoom.
         handCamera.rect = sourceCamera.rect;
         handCamera.targetTexture = sourceCamera.targetTexture;
+        handCamera.targetDisplay = sourceCamera.targetDisplay;
         var held = player.inventory.HeldItem();
         ItemType wanted = held.Empty ? ItemType.Nothing : held.type;
         if (hidden) { Show(wanted); equip = 1; hidden = false; }
@@ -119,8 +124,8 @@ public sealed class FirstPersonView : MonoBehaviour
         float hit = Mathf.Sin(swing * Mathf.PI);
         Vector3 bob = new Vector3(Mathf.Sin(bobPhase) * .018f, Mathf.Abs(Mathf.Cos(bobPhase)) * .018f, 0) * bobAmount;
         bool arm = shown == ItemType.Nothing || !hasModel;
-        Vector3 position = arm ? new Vector3(.55f, -.68f, .68f) : new Vector3(.43f, -.33f, .72f);
-        Vector3 rotation = arm ? new Vector3(165, 0, 25) : isBlock ? new Vector3(-15, 45, 0) : new Vector3(-12, -35, -15);
+        Vector3 position = arm ? new Vector3(.45f, -.60f, .75f) : new Vector3(.43f, -.33f, .72f);
+        Vector3 rotation = arm ? new Vector3(165, 0, -25) : isBlock ? new Vector3(-15, 45, 0) : new Vector3(-12, -35, -15);
         pivot.localPosition = position + bob + new Vector3(-hit * .18f, -(1 - equip) * .8f + hit * .06f, -hit * .15f);
         pivot.localRotation = Quaternion.Euler(rotation + new Vector3(-hit * 35, -hit * 25, hit * 15));
         pivot.localScale = Vector3.one * (arm ? .8f : isBlock ? .38f : .55f);

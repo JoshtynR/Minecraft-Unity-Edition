@@ -13,13 +13,13 @@ namespace UnityEngine {
   public T GetComponent<T>() where T:Component=>components.OfType<T>().FirstOrDefault();
   public static GameObject Find(string name)=>objects.ContainsKey(name)?objects[name]:null;
  }
- public class Transform:Component { public Vector3 position,localPosition,localScale; public Quaternion localRotation; public Transform parent;public void SetParent(Transform p,bool world){parent=p;} }
+ public class Transform:Component { public Vector3 position,localPosition,localScale=Vector3.one; public Quaternion localRotation,rotation; public Transform parent;public void SetParent(Transform p,bool world){parent=p;}public void SetPositionAndRotation(Vector3 p,Quaternion q){position=p;rotation=q;}public Vector3 lossyScale {get{var p=parent==null?Vector3.one:parent.lossyScale;return new Vector3(localScale.x*p.x,localScale.y*p.y,localScale.z*p.z);}} }
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public struct Vector3 {public float x,y,z; public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;} public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static Vector3 operator*(Vector3 a,float s)=>new Vector3(a.x*s,a.y*s,a.z*s);}
  public struct Quaternion {public Vector3 euler;public static Quaternion Euler(Vector3 p)=>new Quaternion{euler=p};}
  public struct Rect { public float x,y,width,height; }
  public enum CameraClearFlags {Depth}
- public class Camera:Component {public int cullingMask;public bool enabled=true,useOcclusionCulling,allowHDR,allowMSAA;public float depth,nearClipPlane,farClipPlane,fieldOfView;public Rect rect;public object targetTexture;public CameraClearFlags clearFlags;}
+ public class Camera:Component {public int cullingMask,targetDisplay;public bool enabled=true,useOcclusionCulling,allowHDR,allowMSAA;public float depth,nearClipPlane,farClipPlane,fieldOfView;public Rect rect;public object targetTexture;public CameraClearFlags clearFlags;}
  public class Canvas:Component {public Camera worldCamera;}
  public class Texture:Object {public int width=64,height=64;}
  public class Texture2D:Texture {public static Texture2D whiteTexture=new Texture2D();}

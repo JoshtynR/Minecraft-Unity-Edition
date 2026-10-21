@@ -19,3 +19,11 @@ Unity Play Mode visual checks (not covered by the doubles):
 The view is created at runtime by Player.Start; no prefab or data-asset setup is needed.
 `Resources/FirstPersonMaterial` retains its shader in builds. Layer 7 (`FirstPerson`)
 is reserved for the held model. Geometry is cached per item and released with the player.
+
+The first-person camera owns an unparented, unit-scale hierarchy and follows only
+the player camera position/rotation. The existing player prefab has inherited
+scale of approximately (1.045, 1.045, .058); inheriting that scale compresses the
+hand's depth until it is outside the frustum. Regression checks use those prefab
+scales, verify camera following, and project the real arm vertices at 4:3/16:9.
+An existing FirstPersonView component is initialized too, so adding it manually
+to a local prefab does not bypass setup.
