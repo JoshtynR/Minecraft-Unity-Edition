@@ -58,6 +58,12 @@ class FirstPersonCheck {
   Check(VisibleArmVertices(filter.sharedMesh,pose,player.cam.lossyScale,16f/9)==0,"original scaled hierarchy moves the actual arm outside the view");
   Check(VisibleArmVertices(filter.sharedMesh,pose,root.transform.lossyScale,16f/9)>=4,"unscaled arm intersects widescreen frustum");
   Check(VisibleArmVertices(filter.sharedMesh,pose,root.transform.lossyScale,4f/3)>=4,"unscaled arm intersects standard aspect frustum");
+  var armEuler=pose.localRotation.euler;
+  double wristDepth=-.75*pose.localScale.y*Math.Cos(armEuler.z*Math.PI/180)*Math.Sin(armEuler.x*Math.PI/180);
+  Check(wristDepth>0,"empty wrist extends into the scene, beyond the shoulder");
+  double wristHeight=-.75*pose.localScale.y*Math.Cos(armEuler.z*Math.PI/180)*Math.Cos(armEuler.x*Math.PI/180);
+  double shoulderHalfHeight=pose.localPosition.z*Math.Tan(35*Math.PI/180);
+  Check(wristHeight>0&&pose.localPosition.y < -shoulderHalfHeight,"shoulder exits below view while hand extends upward");
   player.cam.position=new Vector3(-20,90,50);player.cam.rotation=Quaternion.Euler(new Vector3(-30,180,0));source.targetDisplay=1;
   Step(view);Check(root.transform.position.x==-20&&root.transform.rotation.euler.x==-30&&hand.targetDisplay==1,"camera follows movement/looking and display changes");
   player.cam.localScale=new Vector3(10,20,.01f);Step(view);Check(root.transform.lossyScale.x==1&&root.transform.lossyScale.z==1,"later source scale changes do not distort hand");
