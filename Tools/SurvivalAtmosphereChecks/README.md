@@ -6,11 +6,21 @@ sky component against Unity/Mirror doubles. It covers food timing, cancellation,
 nutrition, inventory revision rejection, bowl returns, fall thresholds, camera
 baseline recovery, clock resume, fog scope and sky resource ownership.
 
+Motion also compiles the production BetaPlayerMotion and MinecraftWalkAnimator.
+Checks cover the reference first camera/limb tick, identical travel at 30/50/60/
+144/240 update rates, settling, teleport reset, jump pitch, opposite leg phases
+and forward hand bob versus inverse camera bob. The old walking clip is kept as
+an asset; runtime limb rotations now follow ModelBiped's displacement formulas.
+The Animator continues to supply existing crouch translations.
+
 The existing fluid, startup/save, first-person, hunger, inventory, memory and
 Nether checks cover their integration points. Unity and shader rendering still
 need an editor/build smoke test:
 
-- Walk/sprint, stop, jump, swim and fly; only grounded walking should bob the view.
+- Walk/sprint, stop, jump, swim and fly; walking bob should ease out in the air,
+  with vertical-velocity camera pitch during jumps. Flight disables bob. Check
+  crouching, held items and remote players' limb poses. Enable/disable view bob
+  and confirm the camera returns to its resting position.
 - Hold right-click with food below full hunger; releasing or changing slots
   cancels. Eating takes 1.6 seconds, slows movement and returns bowls for stew.
 - Fall three blocks safely, then four blocks for one damage point; test water

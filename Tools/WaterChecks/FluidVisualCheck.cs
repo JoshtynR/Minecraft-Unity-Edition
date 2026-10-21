@@ -101,6 +101,7 @@ public partial class World:MonoBehaviour
 public partial class Player:MonoBehaviour
 {
  private class FallStub {public void Reset(){}}private readonly FallStub falling=new FallStub();
+ private void ResetWalkMotion(){}
  public WorldDimension dimension;public World CurrentWorld=>world??World.Instance;public float PortalOverlay;private void BeginDimensionTravel(WorldDimension target,Vector3 position,bool portal){}
  public World world;public bool networkStarted,isLocalPlayer=true,isFlying,serverFlying,InWater;
  public bool isServer;public Mirror.NetworkConnection connectionToClient;

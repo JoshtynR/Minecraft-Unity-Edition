@@ -29,6 +29,7 @@ public partial class Player:BaseEntity
  private class FallStub {public void Reset(){}}
  private readonly FallStub falling=new FallStub();private void AdvanceFallDamage(){}
  private void CancelFoodForTravel(){}
+ private void ResetWalkMotion(){}private void AdvanceWalkMotion(float dt){}
  private bool dimensionTransfer;private void TickDimension(){}
  public bool networkStarted,isLocalPlayer=true,isServer=true;public int health=20,hunger=20;public World world=new World();
  private void AdvanceMining(float dt){}

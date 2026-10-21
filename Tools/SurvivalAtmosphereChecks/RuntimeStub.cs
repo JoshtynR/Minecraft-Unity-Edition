@@ -13,18 +13,27 @@ namespace UnityEngine {
   public T AddComponent<T>() where T:Component,new(){var c=new T{gameObject=this};parts.Add(c);return c;}
   public T GetComponent<T>() where T:Component=>parts.OfType<T>().FirstOrDefault();public void SetActive(bool value){activeSelf=value;}
  }
- public class Transform:Component {public Vector3 position,localPosition,localScale=Vector3.one;public Quaternion rotation,localRotation;public Transform parent;public Vector3 right=>new Vector3(1,0,0);public void SetParent(Transform p,bool keep){parent=p;}public Vector3 InverseTransformVector(Vector3 v)=>new Vector3(v.x/localScale.x,v.y/localScale.y,v.z/localScale.z);}
+ public class Transform:Component {public Vector3 position,localPosition,localScale=Vector3.one;public Quaternion rotation=Quaternion.identity,localRotation=Quaternion.identity;public Transform parent;public Vector3 right=>new Vector3(1,0,0);public void SetParent(Transform p,bool keep){parent=p;}public Vector3 InverseTransformVector(Vector3 v)=>new Vector3(v.x/localScale.x,v.y/localScale.y,v.z/localScale.z);}
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}public float magnitude=>(float)Math.Sqrt(x*x+y*y);}
  public struct Vector3 {
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
-  public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 down=>new Vector3(0,-1,0);public static Vector3 forward=>new Vector3(0,0,1);
+  public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 down=>new Vector3(0,-1,0);public static Vector3 forward=>new Vector3(0,0,1);
   public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3 operator-(Vector3 a)=>new Vector3(-a.x,-a.y,-a.z);public static Vector3 operator-(Vector3 a,Vector3 b)=>a+-b;public static Vector3 operator*(Vector3 a,float s)=>new Vector3(a.x*s,a.y*s,a.z*s);
  }
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}public static Vector4 zero=>new Vector4();}
- public struct Quaternion {public static Quaternion Euler(float x,float y,float z)=>new Quaternion();public static Quaternion operator*(Quaternion a,Quaternion b)=>new Quaternion();public static Quaternion LookRotation(Vector3 a,Vector3 b)=>new Quaternion();}
+ public struct Quaternion {
+  public double x,y,z,w;public static Quaternion identity=>new Quaternion{w=1};
+  public static Quaternion Euler(float x,float y,float z){double k=Math.PI/360;return new Quaternion{y=Math.Sin(y*k),w=Math.Cos(y*k)}*new Quaternion{x=Math.Sin(x*k),w=Math.Cos(x*k)}*new Quaternion{z=Math.Sin(z*k),w=Math.Cos(z*k)};}
+  public static Quaternion Inverse(Quaternion q)=>new Quaternion{x=-q.x,y=-q.y,z=-q.z,w=q.w};
+  public static Quaternion operator*(Quaternion a,Quaternion b)=>new Quaternion{x=a.w*b.x+a.x*b.w+a.y*b.z-a.z*b.y,y=a.w*b.y-a.x*b.z+a.y*b.w+a.z*b.x,z=a.w*b.z+a.x*b.y-a.y*b.x+a.z*b.w,w=a.w*b.w-a.x*b.x-a.y*b.y-a.z*b.z};
+  public static Vector3 operator*(Quaternion q,Vector3 p){var v=q*new Quaternion{x=p.x,y=p.y,z=p.z}*Inverse(q);return new Vector3((float)v.x,(float)v.y,(float)v.z);}
+  public static Quaternion LookRotation(Vector3 a,Vector3 b)=>identity;
+ }
  public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a=1){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color white=>new Color(1,1,1);public static Color clear=>new Color(0,0,0,0);public static Color Lerp(Color a,Color b,float t)=>new Color(a.r+(b.r-a.r)*t,a.g+(b.g-a.g)*t,a.b+(b.b-a.b)*t,a.a+(b.a-a.a)*t);}
  public static class Mathf {public const float PI=(float)Math.PI,Deg2Rad=PI/180;public static float Sin(float x)=>(float)Math.Sin(x);public static float Cos(float x)=>(float)Math.Cos(x);public static float Abs(float x)=>Math.Abs(x);public static float Max(float a,float b)=>Math.Max(a,b);public static float Min(float a,float b)=>Math.Min(a,b);public static int Max(int a,int b)=>Math.Max(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static float Clamp01(float x)=>Math.Max(0,Math.Min(1,x));public static int RoundToInt(float x)=>(int)Math.Round(x);public static float MoveTowards(float x,float y,float d)=>Math.Abs(y-x)<d?y:x+Math.Sign(y-x)*d;}
- public static class Time {public static float time,deltaTime=.02f;}
+ public static class Time {public static float time,fixedTime,deltaTime=.02f;}
+ public class DefaultExecutionOrder:Attribute {public DefaultExecutionOrder(int order){}}
+ public class Animator:Component {public float speed;public bool sneaking;public void SetFloat(string key,float value){speed=value;}public void SetBool(string key,bool value){sneaking=value;}}
  public static class Input {public static bool held=true;public static bool GetMouseButton(int n)=>held;public static bool GetMouseButtonDown(int n)=>false;}
  public static class Application {public static bool isPlaying=true;}
  public enum CameraClearFlags {SolidColor}
@@ -55,7 +64,12 @@ public partial class World {public static World Overworld;public bool IsWorldCre
 public static class InventoryRules {public static int Insert(InventoryStack[] slots,ItemType type,int count,int start,int end){for(int n=start;n<end;n++)if(slots[n].Empty){slots[n]=new InventoryStack{type=type,count=count};return 0;}return count;}}
 public partial class WorldServer {public static WorldServer instance;}
 public class PlayerHudAssets:UnityEngine.Object {public Texture2D sunTexture,moonTexture,cloudTexture;}
+public static class WorldLoadingScreen {public static bool IsLoading;}
+public class PlayerObjects {public Transform leftArm,rightArm,leftLeg,rightLeg;}
 public partial class Player:MonoBehaviour {
+ public bool DimensionTransferInProgress=>dimensionTransfer;
+ public bool isCrouching;
+ public void MotionTick(float dt)=>AdvanceWalkMotion(dt);
  public World world,CurrentWorld;public Transform cam;public PlayerInventory inventory=new PlayerInventory();public int health=20,hunger=10;public float saturation,walkSpeed=4.317f,entityWidth=.3f,entityHeight=1.8f;
  public bool dimensionTransfer,isGrounded=true,isFlying,InWater,InLava,escapeMenuOpen,networkStarted,isLocalPlayer=true,serverFlying,serverGrounded,isSprinting;public float horizontal,vertical;
  public int knownItemWearRevision;public Mirror.NetworkConnection connectionToClient;private bool AcceptsItemRevision(int revision)=>revision==knownItemWearRevision;

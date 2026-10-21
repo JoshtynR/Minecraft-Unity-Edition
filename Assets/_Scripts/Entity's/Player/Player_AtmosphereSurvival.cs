@@ -4,9 +4,27 @@ using UnityEngine;
 public partial class Player
 {
     public bool viewBobbing=true;
-    private Vector3 cameraRest,bobPrevious;
+    private Vector3 cameraRest,previousWalkPosition;
     private bool cameraBobKnown;
-    private float cameraBobPhase,cameraBobAmount;
+    private bool walkPositionKnown;
+    private readonly BetaPlayerMotion walkMotion=new BetaPlayerMotion();
+    private Vector3 viewBobTranslation;
+    private Quaternion viewBobRotation=Quaternion.identity;
+    public BetaMotionPose WalkPose => walkMotion.Sample(Mathf.Max(0,Time.time-Time.fixedTime));
+    private void ResetWalkMotion(){walkPositionKnown=false;walkMotion.Reset();}
+    private void AdvanceWalkMotion(float dt)
+    {
+        var position=transform.position;
+        if(!walkPositionKnown||world==null||!world.IsWorldCreated)
+        {previousWalkPosition=position;walkPositionKnown=true;walkMotion.Reset();return;}
+        var delta=position-previousWalkPosition;previousWalkPosition=position;
+        walkMotion.Advance(delta.x,delta.y,delta.z,dt,isGrounded,health>0,isFlying,isCrouching);
+    }
+    public void ApplyFirstPersonBob(Transform pose)
+    {
+        pose.localPosition=viewBobTranslation+viewBobRotation*pose.localPosition;
+        pose.localRotation=viewBobRotation*pose.localRotation;
+    }
     private readonly FallTracker falling=new FallTracker();
     private World fallWorld;
     private bool eating,foodWaiting;
@@ -27,19 +45,17 @@ public partial class Player
     private void UpdateCameraBobbing()
     {
         if(cam==null)return;
-        if(!cameraBobKnown){cameraRest=cam.localPosition;bobPrevious=transform.position;cameraBobKnown=true;}
-        var delta=transform.position-bobPrevious;bobPrevious=transform.position;
-        float distance=new Vector2(delta.x,delta.z).magnitude;
-        bool active=viewBobbing&&health>0&&isGrounded&&!isFlying&&!InWater&&!InLava&&
-            inventory!=null&&!inventory.isOpen&&!escapeMenuOpen&&distance<1;
-        cameraBobAmount=Mathf.MoveTowards(cameraBobAmount,active?Mathf.Clamp01(distance/Mathf.Max(Time.deltaTime,.001f)/walkSpeed):0,Time.deltaTime*8);
-        // Abs(cos) repeats every PI, so advance PI per footstep (1.67m),
-        // matching the footstep audio instead of bouncing eight times a second.
-        if(active)cameraBobPhase+=distance*(Mathf.PI/1.67f);
-        var offset=cam.right*(Mathf.Sin(cameraBobPhase)*.018f*cameraBobAmount)+
-            Vector3.up*(Mathf.Abs(Mathf.Cos(cameraBobPhase))*.020f*cameraBobAmount);
+        if(!cameraBobKnown){cameraRest=cam.localPosition;cameraBobKnown=true;}
+        bool active=viewBobbing&&health>0&&!isFlying&&inventory!=null&&!inventory.isOpen&&!escapeMenuOpen;
+        var motion=WalkPose;
+        viewBobTranslation=active?new Vector3(motion.X,motion.Y,0):Vector3.zero;
+        viewBobRotation=active?Quaternion.Euler(0,0,motion.Roll)*Quaternion.Euler(-motion.Pitch,0,0):Quaternion.identity;
+        // Java applies bob to the view matrix. A Unity camera needs the
+        // inverse transform; held models get the forward transform separately.
+        var inverse=Quaternion.Inverse(viewBobRotation);
+        var offset=cam.rotation*(inverse*(-viewBobTranslation));
         cam.localPosition=cameraRest+(cam.parent!=null?cam.parent.InverseTransformVector(offset):offset);
-        cam.localRotation*=Quaternion.Euler(0,0,Mathf.Sin(cameraBobPhase)*.35f*cameraBobAmount);
+        cam.localRotation*=inverse;
         if(cam.GetComponent<OverworldAtmosphere>()==null)cam.gameObject.AddComponent<OverworldAtmosphere>().player=this;
     }
 

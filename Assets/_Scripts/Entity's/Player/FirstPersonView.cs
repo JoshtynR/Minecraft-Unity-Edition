@@ -19,9 +19,8 @@ public sealed class FirstPersonView : MonoBehaviour
     private Texture skin;
     private ItemType shown = ItemType.Nothing;
     private bool hasModel, isBlock, hidden;
-    private float equip = 1, swing = 1, bobPhase, bobAmount, uiDepth, ownedUIDepth;
+    private float equip = 1, swing = 1, uiDepth, ownedUIDepth;
     private int sourceMask;
-    private Vector3 lastPosition;
 
     public void Initialize(Player owner)
     {
@@ -86,7 +85,6 @@ public sealed class FirstPersonView : MonoBehaviour
         }
         if (skin == null) skin = Texture2D.whiteTexture;
         armMesh = FirstPersonMesh.Arm(skin.width, skin.height);
-        lastPosition = owner.transform.position;
         Show(ItemType.Nothing);
         Debug.Log("[FirstPersonView] Beta arm pose v2 loaded.");
     }
@@ -102,8 +100,6 @@ public sealed class FirstPersonView : MonoBehaviour
         {
             hidden = true;
             swing = 1;
-            bobAmount = 0;
-            lastPosition = player.transform.position;
             return;
         }
         // Follow viewport changes (split-screen, resizing), without inheriting sprint FOV zoom.
@@ -117,15 +113,7 @@ public sealed class FirstPersonView : MonoBehaviour
         if (wanted != shown && equip <= 0) Show(wanted);
         if (!player.IsEating && (Input.GetMouseButton(0) || Input.GetMouseButton(1)) && swing >= 1) swing = 0;
         swing = Mathf.Min(1, swing + Time.deltaTime / .3f);
-        Vector3 delta = player.transform.position - lastPosition;
-        lastPosition = player.transform.position;
-        // Ignore vertical travel and teleports; animate only actual horizontal movement.
-        float distance = Mathf.Sqrt(delta.x * delta.x + delta.z * delta.z);
-        if (distance > 1) distance = 0;
-        bobAmount = Mathf.MoveTowards(bobAmount, Mathf.Min(1, distance / Mathf.Max(.001f, Time.deltaTime) / 4), Time.deltaTime * 8);
-        bobPhase += distance * (Mathf.PI / 1.67f);
-        // The hand already follows camera bob. Keep its relative sway subtle.
-        Vector3 bob = new Vector3(Mathf.Sin(bobPhase) * .008f, Mathf.Abs(Mathf.Cos(bobPhase)) * .008f, 0) * bobAmount;
+        Vector3 bob = Vector3.zero;
         bool arm = shown == ItemType.Nothing || !hasModel;
         if(arm)FirstPersonArmPose.Apply(pivot,swing,equip,bob);
         else FirstPersonItemPose.Apply(pivot,isBlock,shown==ItemType.FishingRod,swing,equip,bob);
@@ -135,6 +123,7 @@ public sealed class FirstPersonView : MonoBehaviour
             pivot.localPosition+=new Vector3(-.35f,.32f-chew*.035f,-.1f);
             pivot.localRotation=Quaternion.Euler(chew*8,0,10)*pivot.localRotation;
         }
+        player.ApplyFirstPersonBob(pivot);
         UpdateLight();
     }
 

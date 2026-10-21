@@ -97,6 +97,7 @@ public partial class Player
     private void ApplyFluidRespawn(Vector3 destination)
     {
         falling.Reset();
+        ResetWalkMotion();
         transform.position=destination;health=hunger=20;saturation=5;exhaustion=0;
         fluidHazards.Reset();fluidHazardTime=0;airSupply=300;burning=false;
         fluidRespawnUnavailable=false;fluidViewContactKnown=false;ResetFluidMovement();RestoreDeathCursor();

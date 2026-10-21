@@ -40,7 +40,6 @@ public partial class Player : BaseEntity
     [HideInInspector]
     public Transform cam;
     private PlayerObjects objects;
-    private Animator animator;
     [HideInInspector]
     public PlayerInventory inventory;
     
@@ -73,8 +72,6 @@ public partial class Player : BaseEntity
     [SyncVar]
     public ulong SteamId;
     
-    private static readonly int Speed = Animator.StringToHash("speed");
-    private static readonly int Sneaking = Animator.StringToHash("sneaking");
     private static readonly int DoZWrite = Shader.PropertyToID("_doZWrite");
 
     private bool networkStarted => NetworkClient.active || NetworkServer.active;
@@ -96,8 +93,10 @@ public partial class Player : BaseEntity
         cam = objects.cam;
         inventory = GetComponent<PlayerInventory>();
         direction = objects.moveDirection;
-        animator = GetComponent<Animator>();
         if (!Application.isPlaying) return;
+        var walkAnimator=GetComponent<MinecraftWalkAnimator>();
+        if(walkAnimator==null)walkAnimator=gameObject.AddComponent<MinecraftWalkAnimator>();
+        walkAnimator.Initialize(this,objects);
         if(GetComponent<PlayerGameplayAudio>()==null)gameObject.AddComponent<PlayerGameplayAudio>();
 
         meshFilters = GetComponentsInChildren<MeshFilter>();
@@ -232,8 +231,8 @@ public partial class Player : BaseEntity
     {
         if (!Application.isPlaying) return;
         TickDimension();
-        if (dimensionTransfer) { CancelFoodForTravel(); falling.Reset(); return; }
-        if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) { falling.Reset(); return; }
+        if (dimensionTransfer) { CancelFoodForTravel(); falling.Reset(); ResetWalkMotion(); return; }
+        if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) { falling.Reset(); ResetWalkMotion(); return; }
         if (!networkStarted || isLocalPlayer)
         {
             if (hunger <= 6 && !isFlying) isSprinting = false;
@@ -250,6 +249,7 @@ public partial class Player : BaseEntity
             }
             PublishSurvivalMovement();
         }
+        AdvanceWalkMotion(Time.fixedDeltaTime);
         // Host and dedicated server each tick a player once; clients only read
         // replicated food/health. Offline preview also works without a server.
         if (isServer || !networkStarted)
@@ -486,12 +486,6 @@ public partial class Player : BaseEntity
         if(IsEating){horizontal*=.2f;vertical*=.2f;isSprinting=false;}
         UpdateFluidView();
         if(!IsEating&&TargetedCow()==null)UpdateMining();else CancelMining();
-        var vel = new Vector3(velocity.x, 0, velocity.z);
-        animator.SetFloat(Speed, (vel.magnitude/Time.fixedDeltaTime)/walkSpeed);
-        if (!isFlying)
-        {
-            animator.SetBool(Sneaking, isCrouching);
-        }
         DoHeadRotation();
         UpdateCameraBobbing();
 

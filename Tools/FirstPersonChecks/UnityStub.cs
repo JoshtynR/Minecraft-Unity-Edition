@@ -44,7 +44,7 @@ public enum ItemType {Nothing,Stone,Pickaxe,Missing,FishingRod}
 public enum BlockType {Nothing,Stone}
 public class InventoryStack {public ItemType type;public bool Empty=>type==ItemType.Nothing;}
 public class PlayerInventory {public bool isOpen;public InventoryStack stack=new InventoryStack();public InventoryStack HeldItem()=>stack;}
-public class Player:UnityEngine.MonoBehaviour {public World CurrentWorld=>World.Instance;public UnityEngine.Transform cam;public bool IsReadyForPlay=true,escapeMenuOpen,IsEating;public float EatingProgress;public int health=20;public PlayerInventory inventory=new PlayerInventory();}
+public class Player:UnityEngine.MonoBehaviour {public World CurrentWorld=>World.Instance;public UnityEngine.Transform cam;public bool IsReadyForPlay=true,escapeMenuOpen,IsEating;public float EatingProgress;public int health=20;public PlayerInventory inventory=new PlayerInventory();public void ApplyFirstPersonBob(UnityEngine.Transform pose){}}
 public class PlayerHudAssets:UnityEngine.Object {public UnityEngine.Texture inventoryPlayerSkin;}
 public static class WorldLoadingScreen {public static bool IsLoading;}
 public class World {public WorldDimension dimension;public static World Instance;public int betaSkylightSubtracted;public Block GetBlock(UnityEngine.Vector3 position)=>new Block();}
