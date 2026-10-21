@@ -1,0 +1,122 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+static class StartupCheck
+{
+ static int checks;
+ static void Check(bool value,string message){checks++;if(!value)throw new Exception(message);}
+ static void Call(object target,string method)=>Lifecycle.Call(target,method);
+ static T Field<T>(object target,string name)=>(T)target.GetType().GetField(name,BindingFlags.Instance|BindingFlags.NonPublic).GetValue(target);
+ static AudioSource Active(MusicManager music)=>Field<bool>(music,"_usingA")?Field<AudioSource>(music,"_a"):Field<AudioSource>(music,"_b");
+ static MusicManager Music(bool shuffle=false,bool loop=true,params AudioClip[] tracks)
+ {
+  var manager=new GameObject("Music").AddComponent<MusicManager>();manager.shuffle=shuffle;manager.loopPlaylist=loop;
+  manager.tracks=new List<AudioClip>(tracks.Length>0?tracks:new[]{new AudioClip(),new AudioClip(),new AudioClip()});
+  Call(manager,"Start");return manager;
+ }
+ static void Tick(MusicManager music,int frames=1)
+ {
+  for(int i=0;i<frames;i++)
+  {
+   Field<AudioSource>(music,"_a").Step(.1f);Field<AudioSource>(music,"_b").Step(.1f);
+   Call(music,"Update");Scheduler.Step();
+  }
+ }
+ static void End(MusicManager music){music.StopAll();UnityEngine.Object.Destroy(music.gameObject);Check(MusicManager.Instance==null,"destroyed singleton is released");}
+ static void MusicChecks()
+ {
+  var music=Music();Check(music.CurrentIndex==0&&music.IsPlaying,"ordered playlist starts at first clip");
+  // This reproduces the old failure: outgoing track ends before Update, while fades are enabled.
+  Active(music).Stop();Tick(music,1);
+  Check(music.CurrentIndex==1&&music.IsPlaying&&Field<Coroutine>(music,"_fadeCo")==null,"already-finished clip advances immediately without repeatedly restarting a fade");
+  Active(music).time=9;Tick(music,1);
+  Check(music.CurrentIndex==2&&Field<Coroutine>(music,"_fadeCo")!=null,"crossfade begins before track finishes");
+  Tick(music,20);Check(music.CurrentIndex==2&&Field<Coroutine>(music,"_fadeCo")==null&&Math.Abs(Active(music).volume-1)<.001,"crossfade completes once with incoming track at full volume");
+  Active(music).time=9;Tick(music);Check(music.CurrentIndex==0,"last track wraps to first");Tick(music,20);
+  music.Pause();int index=music.CurrentIndex;float time=Active(music).time;Tick(music,30);
+  Check(!music.IsPlaying&&music.CurrentIndex==index&&Active(music).time==time,"pause never advances playlist");
+  music.Play();Tick(music);Check(music.IsPlaying&&Active(music).time>time,"play resumes paused clip");
+  music.Next();Tick(music,2);music.Pause();float gain=Active(music).volume;Tick(music,25);
+  Check(Active(music).volume==gain&&Field<Coroutine>(music,"_fadeCo")!=null,"pausing freezes both sources and transition");
+  music.Play();Tick(music,20);Check(Field<Coroutine>(music,"_fadeCo")==null&&music.IsPlaying,"both sources resume and fade completes");
+  music.Next();Tick(music,2);music.PlayIndex(0,true);music.SetVolume(.35f);
+  Check(Field<Coroutine>(music,"_fadeCo")==null&&Math.Abs(Active(music).volume-.35f)<.001,"hard cut cancels fade and volume remains adjustable");
+  AudioListener.pause=true;index=music.CurrentIndex;Tick(music,30);Check(music.CurrentIndex==index,"listener pause does not advance tracks");AudioListener.pause=false;
+  music.SetLoopTrack(true);Active(music).time=9.9f;Tick(music,30);
+  Check(music.CurrentIndex==index&&music.IsPlaying&&Active(music).loop,"single-track loop uses audio-source looping");
+  music.SetLoopTrack(false);music.StopAll();Tick(music,30);Check(!music.IsPlaying&&Scheduler.running.Count==0,"stop stays stopped and cancels coroutines");End(music);
+
+  music=Music(false,false);music.PlayIndex(2,true);Active(music).time=9;Tick(music);
+  Check(music.CurrentIndex==2&&music.IsPlaying,"non-looping final song is not cut off by crossfade lead time");
+  Tick(music,15);Check(!music.IsPlaying&&music.CurrentClip==null,"non-looping playlist stops at end");End(music);
+
+  music=Music(true,true);music.crossfadeSeconds=0;
+  for(int pass=0;pass<20;pass++)
+  {
+   var heard=new HashSet<int>();
+   for(int track=0;track<3;track++)
+   {
+    Check(heard.Add(music.CurrentIndex),"shuffle plays each entry once per pass");int old=music.CurrentIndex;
+    Active(music).Stop();Tick(music);Check(music.CurrentIndex!=old,"shuffle avoids immediate repeat across pass boundaries");
+   }
+   Check(heard.Count==3,"shuffle pass includes every track");
+  }
+  End(music);
+  music=Music(true,false);music.crossfadeSeconds=0;var visited=new HashSet<int>();
+  for(int i=0;i<3;i++){visited.Add(music.CurrentIndex);Active(music).Stop();Tick(music);}
+  Check(visited.Count==3&&!music.IsPlaying,"non-looping shuffled playlist ends after one complete pass");End(music);
+  music=Music(false,true,new AudioClip(),null,new AudioClip());music.crossfadeSeconds=0;
+  Check(music.CurrentIndex==0,"null entries do not prevent startup");music.Next();Check(music.CurrentIndex==2,"null entry is skipped");music.Next();Check(music.CurrentIndex==0,"null entry does not prevent wrapping");
+  var standalone=new AudioClip();music.PlayClip(standalone,true);Check(music.CurrentClip==standalone&&music.CurrentIndex==-1,"standalone clip is reported correctly");
+  Active(music).Stop();Tick(music);Check(music.CurrentIndex==0,"standalone clip rejoins playlist");End(music);
+  music=Music(false,true,new AudioClip());music.crossfadeSeconds=0;for(int i=0;i<5;i++){Active(music).Stop();Tick(music);Check(music.CurrentIndex==0&&music.IsPlaying,"single-entry playlist repeats");}End(music);
+  music=Music(false,true,(AudioClip)null);Tick(music,30);Check(!music.IsPlaying,"all-null playlist stays idle");End(music);
+ }
+ static WorldLoadingScreen Screen()
+ {
+  return (WorldLoadingScreen)typeof(WorldLoadingScreen).GetField("instance",BindingFlags.Static|BindingFlags.NonPublic).GetValue(null);
+ }
+ static void LoadingTick(int frame){Time.frameCount=frame;var view=Screen();if(view!=null)Call(view,"LateUpdate");}
+ static void LoadingChecks()
+ {
+  for(int mask=0;mask<7;mask++)
+  {
+   var gate=new WorldLoadReadiness();Check(!gate.Advance((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,1000),"every readiness condition is required");
+  }
+  World.Instance=null;GameManager.Instance=null;SceneManager.LoadScene("MainMenu");WorldLoadingScreen.Begin();var original=Screen();
+  Check(WorldLoadingScreen.IsLoading&&original.GetComponent<Canvas>().sortingOrder==32767,"persistent screen covers menu and game canvases");
+  WorldLoadingScreen.Begin();Check(Screen()==original,"duplicate begin calls share one overlay");
+  SceneManager.LoadScene("World");LoadingTick(10);Check(WorldLoadingScreen.IsLoading,"scene activation does not reveal game");
+  World.Instance=new World{IsWorldCreated=true};GameManager.Instance=new GameManager();LoadingTick(20);
+  Check(WorldLoadingScreen.IsLoading,"generated map still waits for local player");
+  var player=new GameObject("Player").AddComponent<Player>();player.inventory=new object();GameManager.Instance.localPlayer=player;GameManager.Instance.playerSpawned=true;
+  LoadingTick(21);Check(WorldLoadingScreen.IsLoading,"spawned player waits for initialization and saved-data restoration");
+  player.IsReadyForPlay=true;LoadingTick(22);Check(WorldLoadingScreen.IsLoading,"initialized player waits for rendered spawn chunk");
+  var chunk=new GameObject("Chunk").AddComponent<ChunkRenderer>();chunk.ChunkData=new object();World.Instance.worldData.chunkDict[new Vector3Int()]=chunk;
+  LoadingTick(23);LoadingTick(24);Check(WorldLoadingScreen.IsLoading,"ready world stays covered for two completed frames");
+  player.IsReadyForPlay=false;LoadingTick(25);player.IsReadyForPlay=true;LoadingTick(26);LoadingTick(27);
+  Check(WorldLoadingScreen.IsLoading,"deferred saved-player restoration resets readiness grace period");
+  LoadingTick(28);Check(!WorldLoadingScreen.IsLoading&&Cursor.lockState==CursorLockMode.Locked&&!Cursor.visible,"ready world reveals and locks gameplay cursor");
+  Mirror.NetworkClient.isLoadingScene=true;WorldLoadingScreen.Begin();LoadingTick(29);LoadingTick(32);
+  Check(WorldLoadingScreen.IsLoading,"previous world's ready state cannot reveal a pending network scene transition");Mirror.NetworkClient.isLoadingScene=false;WorldLoadingScreen.Cancel();
+  WorldLoadingScreen.Begin();LoadingTick(30);SceneManager.LoadScene("MainMenu");Check(!WorldLoadingScreen.IsLoading,"leaving world removes overlay");
+  WorldLoadingScreen.Begin();WorldLoadingScreen.Cancel();Check(!WorldLoadingScreen.IsLoading,"disconnect cancels loading before world scene exists");
+  SceneManager.LoadScene("World");WorldLoadingScreen.Begin();original=Screen();Mirror.NetworkManager.singleton=new Mirror.NetworkManager{offlineScene=""};
+  Call(original,"CancelLoad");Check(!WorldLoadingScreen.IsLoading&&Mirror.NetworkManager.singleton.stopped&&SceneManager.GetActiveScene().name=="MainMenu","cancel disconnects and returns to menu without configured offline scene");
+  Application.isBatchMode=true;WorldLoadingScreen.Begin();Check(!WorldLoadingScreen.IsLoading,"headless server does not create loading UI");Application.isBatchMode=false;
+  var network=new GameObject("Network").AddComponent<MinecraftNetworkManager>();
+  network.OnServerDisconnect(null);Check(network.disconnects==1,"cancel before world-server creation still performs base disconnect");
+  WorldServer.instance=new WorldServer();var connection=new Mirror.NetworkConnectionToClient();network.OnServerDisconnect(connection);
+  Check(WorldServer.instance.saves==0&&WorldServer.instance.chestCloses==1&&network.disconnects==2,"cancel before player spawn releases sessions without dereferencing player");
+  connection.identity=new GameObject("EarlyPlayer");var earlyPlayer=connection.identity.AddComponent<Player>();network.OnServerDisconnect(connection);
+  Check(WorldServer.instance.saves==0,"cancel before player Start does not save uninitialized state");
+  earlyPlayer.inventory=new object();network.OnServerDisconnect(connection);Check(WorldServer.instance.saves==1,"ordinary disconnect still saves initialized player");
+  network.OnClientConnect();Check(WorldLoadingScreen.IsLoading,"actual client-connect hook opens persistent loading screen");
+  network.OnClientDisconnect();Check(!WorldLoadingScreen.IsLoading,"actual client-disconnect hook clears loading screen");
+ }
+ public static void Main(){MusicChecks();LoadingChecks();Console.WriteLine(checks+" music transition/shuffle/pause and world/player readiness checks passed (Unity mocked).");}
+}

@@ -78,6 +78,10 @@ public partial class Player : BaseEntity
     private static readonly int DoZWrite = Shader.PropertyToID("_doZWrite");
 
     private bool networkStarted => NetworkClient.active || NetworkServer.active;
+    private bool clientInitialized, loadingSavedPlayer;
+    private bool savedPlayerApplied;
+    [SyncVar, HideInInspector] public bool expectsSavedPlayerData;
+    public bool IsReadyForPlay => clientInitialized && !loadingSavedPlayer && (!expectsSavedPlayerData || savedPlayerApplied);
 
     // INFO:
     // 530ms from jumping to landing on the ground
@@ -145,6 +149,7 @@ public partial class Player : BaseEntity
         // Cache camera & remember baseline FOV
         _camComponent = cam.GetComponent<Camera>();
         _normalFOV = _camComponent.fieldOfView;
+        clientInitialized = true;
 
     }
 
@@ -222,6 +227,7 @@ public partial class Player : BaseEntity
     public override void FixedUpdate()
     {
         if (!Application.isPlaying) return;
+        if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) return;
         if (!networkStarted || isLocalPlayer)
         {
             if (hunger <= 6 && !isFlying) isSprinting = false;
@@ -444,6 +450,7 @@ public partial class Player : BaseEntity
 
     public override void Update()
     {
+        if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) return;
         base.Update();
         if (Application.isPlaying)
         {
@@ -537,12 +544,15 @@ public partial class Player : BaseEntity
     
     public void LoadPlayer(WorldServer.SavePlayerMessage message)
     {
+        loadingSavedPlayer = true;
         this.ExecuteAfterFrames(1, () =>
         {
             transform.position = message.position;
             objects.body.rotation = message.bodyRotation;
             objects.head.rotation = message.headRotation;
             inventory.LoadInventory(message.inventory,message.crafting,message.cursor,message.recovery,message.equipment);
+            savedPlayerApplied = true;
+            loadingSavedPlayer = false;
         });
     }
 

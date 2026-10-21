@@ -67,6 +67,7 @@ public partial class World : MonoBehaviour
 
     private void Awake()
     {
+        WorldLoadingScreen.Begin();
         worldCancellationToken = taskTokenSource.Token;
         Instance = this;
         InitializeChests();

@@ -3,6 +3,7 @@ using TMPro;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+public static class WorldLoadingScreen {public static bool IsLoading;}
 namespace JetBrains.Annotations {public class CanBeNullAttribute:Attribute {}}
 namespace Mirror
 {
@@ -298,6 +299,8 @@ public partial class PlayerInventory
   Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewData.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
   CheckInventoryArtwork();
   inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&!inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival inventory opens with TooManyItems disabled");
+  WorldLoadingScreen.IsLoading=true;Input.down=KeyCode.E;inv.Update();Input.down=null;WorldLoadingScreen.IsLoading=false;
+  Check(inv.isOpen,"loading screen blocks inventory keyboard input");
   Check(inv.inventoryRect.anchoredPosition.x==0,"normal survival inventory is centered without sidebar space");
   inv.GiveCatalogItem(0,false);Check(inv.slots.All(s=>s.count==0),"hidden catalogue cannot grant items");
   Input.down=KeyCode.F1;inv.Update();Input.down=null;

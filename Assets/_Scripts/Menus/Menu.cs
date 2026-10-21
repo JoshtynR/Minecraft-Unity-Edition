@@ -21,6 +21,7 @@ public class Menu : MonoBehaviour
 
     public void Open()
     {
+        if (gameObject.name == "JoiningMenu") WorldLoadingScreen.Begin(transform);
         if (currentMenu != null)
         {
             lastMenu = currentMenu;
