@@ -87,10 +87,28 @@ static class StartupCheck
   {
    var gate=new WorldLoadReadiness();Check(!gate.Advance((mask&1)!=0,(mask&2)!=0,(mask&4)!=0,1000),"every readiness condition is required");
   }
+  Resources.hud=new PlayerHudAssets{loadingBackground=new Texture2D(),guiWidgets=new Texture2D()};
+  var preview=new GameObject("Preview").AddComponent<Camera>();GameObject.named["Rendering/Camera"]=preview.gameObject;
+  var uiCamera=new GameObject("UI camera").AddComponent<Camera>();
   World.Instance=null;GameManager.Instance=null;SceneManager.LoadScene("MainMenu");WorldLoadingScreen.Begin();var original=Screen();
   Check(WorldLoadingScreen.IsLoading&&original.GetComponent<Canvas>().sortingOrder==32767,"persistent screen covers menu and game canvases");
+  var background=original.transform.children.Single(c=>c.gameObject.name=="Background").GetComponent<UnityEngine.UI.Image>();
+  var dirt=Field<UnityEngine.UI.RawImage>(original,"dirt");var fill=Field<RectTransform>(original,"progressFill");
+  Check(background.color.a==1&&background.material==null&&dirt.color.a==1,"opaque default-material dirt backdrop cannot reveal the world");
+  Check(dirt.texture==((PlayerHudAssets)Resources.hud).loadingBackground&&Math.Abs(dirt.uvRect.width-15)<.001,"dirt uses 32px tiles at native automatic GUI scale");
+  WorldLoadingScreen.ReportProgress("Building terrain",.5f);Check(fill.sizeDelta.x==50,"progress reflects reported generation work");
+  WorldLoadingScreen.ReportProgress("Building terrain",.2f);Check(fill.sizeDelta.x==50,"late stage updates cannot move progress backwards");
+  WorldLoadingScreen.ReportProgress("Done",2);Check(fill.sizeDelta.x==100,"progress is clamped to the native 100px bar");WorldLoadingScreen.ResetProgress();
+  Check(fill.sizeDelta.x==0,"a new terrain generation resets progress");
+  ScreenResize(original,dirt);
+  var cancel=original.transform.children.Single(c=>c.gameObject.name=="Cancel");
+  var hover=cancel.GetComponent<LoadingCancelHover>();var widget=cancel.GetComponent<UnityEngine.UI.RawImage>();
+  hover.OnPointerEnter(null);Check(widget.uvRect.y==1-106/256f,"cancel button uses the native highlighted texture row");
+  hover.OnPointerExit(null);Check(widget.uvRect.y==1-86/256f,"cancel button restores the native normal texture row");
+  Check(preview.enabled,"world-camera suppression does not affect menu scenes");
   WorldLoadingScreen.Begin();Check(Screen()==original,"duplicate begin calls share one overlay");
   SceneManager.LoadScene("World");LoadingTick(10);Check(WorldLoadingScreen.IsLoading,"scene activation does not reveal game");
+  Check(!preview.enabled&&uiCamera.enabled,"legacy isometric camera is disabled while the UI camera remains available");
   World.Instance=new World{IsWorldCreated=true};GameManager.Instance=new GameManager();LoadingTick(20);
   Check(WorldLoadingScreen.IsLoading,"generated map still waits for local player");
   var player=new GameObject("Player").AddComponent<Player>();player.inventory=new object();GameManager.Instance.localPlayer=player;GameManager.Instance.playerSpawned=true;
@@ -117,6 +135,13 @@ static class StartupCheck
   earlyPlayer.inventory=new object();network.OnServerDisconnect(connection);Check(WorldServer.instance.saves==1,"ordinary disconnect still saves initialized player");
   network.OnClientConnect();Check(WorldLoadingScreen.IsLoading,"actual client-connect hook opens persistent loading screen");
   network.OnClientDisconnect();Check(!WorldLoadingScreen.IsLoading,"actual client-disconnect hook clears loading screen");
+  Resources.hud=null;GameObject.named.Clear();
+ }
+ static void ScreenResize(WorldLoadingScreen view,UnityEngine.UI.RawImage dirt)
+ {
+  UnityEngine.Screen.width=1280;UnityEngine.Screen.height=720;LoadingTick(0);
+  Check(view.GetComponent<UnityEngine.UI.CanvasScaler>().scaleFactor==3&&Math.Abs(dirt.uvRect.width-1280/3f/32)<.001,"resizing preserves native GUI scale and dirt tile size");
+  UnityEngine.Screen.width=1920;UnityEngine.Screen.height=1080;LoadingTick(1);
  }
  public static void Main(){MusicChecks();LoadingChecks();Console.WriteLine(checks+" music transition/shuffle/pause and world/player readiness checks passed (Unity mocked).");}
 }

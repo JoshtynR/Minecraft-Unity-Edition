@@ -37,6 +37,7 @@ namespace UnityEngine
  }
  public class GameObject:Object
  {
+  public static Dictionary<string,GameObject> named=new Dictionary<string,GameObject>();public static GameObject Find(string name)=>named.ContainsKey(name)?named[name]:null;
   public bool activeInHierarchy=true;public readonly List<Component> components=new List<Component>();public Transform transform;
   public GameObject(string name,params Type[] types){this.name=name;transform=new RectTransform{gameObject=this};components.Add(transform);foreach(var t in types)if(t!=typeof(RectTransform))Add(t);}
   Component Add(Type t){var c=(Component)Activator.CreateInstance(t);c.gameObject=this;components.Add(c);Lifecycle.Call(c,"Awake");return c;}
@@ -54,6 +55,9 @@ namespace UnityEngine
  public struct Vector3{public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 down=>new Vector3(0,-1,0);public static Vector3 zero=>new Vector3();public float sqrMagnitude=>x*x+y*y+z*z;public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static Vector3 operator*(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);}
  public struct Vector3Int{public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static implicit operator Vector3(Vector3Int p)=>new Vector3(p.x,p.y,p.z);public static Vector3Int FloorToInt(Vector3 p)=>new Vector3Int((int)Math.Floor(p.x),(int)Math.Floor(p.y),(int)Math.Floor(p.z));}
  public struct Color{public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color black=>new Color(0,0,0,1);public static Color white=>new Color(1,1,1,1);}
+ public struct Rect{public float x,y,width,height;public Rect(float x,float y,float width,float height){this.x=x;this.y=y;this.width=width;this.height=height;}}
+ public class Texture:Object{}
+ public class Texture2D:Texture{}
  public class Material:Object{}
  public class Sprite:Object{}
  public class AudioClip:Object {public float length=10;}
@@ -76,7 +80,7 @@ namespace UnityEngine
  public static class Screen{public static int width=1920,height=1080;}
  public static class Cursor{public static bool visible;public static CursorLockMode lockState;}
  public enum CursorLockMode{None,Locked}
- public static class Resources{public static Dictionary<string,AudioClip[]> audio=new Dictionary<string,AudioClip[]>();public static int reads;public static T Load<T>(string path) where T:class=>null;public static T[] LoadAll<T>(string path) where T:class {reads++;return audio.ContainsKey(path)?audio[path].Cast<T>().ToArray():new T[0];}}
+ public static class Resources{public static object hud;public static Dictionary<string,AudioClip[]> audio=new Dictionary<string,AudioClip[]>();public static int reads;public static T Load<T>(string path) where T:class=>path=="PlayerHudAssets"?hud as T:null;public static T[] LoadAll<T>(string path) where T:class {reads++;return audio.ContainsKey(path)?audio[path].Cast<T>().ToArray():new T[0];}}
  public static class Mathf
  {
   public static int Clamp(int x,int min,int max)=>Math.Max(min,Math.Min(max,x));public static float Clamp01(float x)=>Math.Max(0,Math.Min(1,x));
@@ -97,7 +101,9 @@ namespace UnityEngine
   public class GraphicRaycaster:Behaviour{}
   public class CanvasScaler:Behaviour{public ScaleMode uiScaleMode;public float scaleFactor;public enum ScaleMode{ConstantPixelSize}}
   public class Image:Behaviour{public Sprite sprite;public Material material;public Color color;public int type;}
-  public class Button:Behaviour{public Click onClick=new Click();public class Click{Action action;public void AddListener(Action value){action+=value;}public void Invoke(){action?.Invoke();}}}
+  public class RawImage:Behaviour{public Texture texture;public Color color;public Rect uvRect;public bool raycastTarget;}
+  public class Selectable:Behaviour{public enum Transition{None}public Transition transition;}
+  public class Button:Selectable{public Click onClick=new Click();public class Click{Action action;public void AddListener(Action value){action+=value;}public void Invoke(){action?.Invoke();}}}
  }
  namespace SceneManagement
  {
@@ -111,6 +117,7 @@ namespace UnityEngine
   }
  }
 }
+namespace UnityEngine.EventSystems{public class PointerEventData{}public interface IPointerEnterHandler{void OnPointerEnter(PointerEventData data);}public interface IPointerExitHandler{void OnPointerExit(PointerEventData data);}}
 namespace TMPro
 {
  public class TMP_FontAsset:UnityEngine.Object{}
@@ -134,7 +141,7 @@ namespace Mirror
   public virtual void OnClientDisconnect(){stopped=true;}public virtual void OnServerDisconnect(NetworkConnectionToClient conn){disconnects++;}
  }
 }
-public class PlayerHudAssets{public TMPro.TMP_FontAsset levelFont;}
+public class PlayerHudAssets{public TMPro.TMP_FontAsset levelFont;public UnityEngine.Texture2D loadingBackground,guiWidgets;}
 public static class MinecraftUIText{public static UnityEngine.Material CreateMaterial(TMPro.TMP_FontAsset font,float size,bool shadow)=>new UnityEngine.Material();}
 public class Menu {public static Menu currentMenu,lastMenu;public static void CloseCurrentMenu(){}}
 public class Block {public BlockType type=BlockType.Stone;public int sky=15,light;public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}

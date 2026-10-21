@@ -28,6 +28,7 @@ public static class PlayerHudAssetSetup
         var furnace = config.furnace!=null?config.furnace:Prepare(FurnacePath);
         var guiWidgets=config.guiWidgets!=null?config.guiWidgets:Prepare("Assets/Textures/Minecraft/gui/widgets.png");
         if(guiWidgets==null)guiWidgets=Prepare("Assets/Resources/Sprites/UI/widgets.png");
+        var loadingBackground=config.loadingBackground!=null?config.loadingBackground:Prepare("Assets/Textures/sprites/options_background.png");
         var guiFont=config.guiFont!=null?config.guiFont:AssetDatabase.LoadAssetAtPath<Font>("Assets/UI/Font/MinecraftRegular.otf");
         var playerSkin=config.inventoryPlayerSkin;
         var playerMaterial=AssetDatabase.LoadAssetAtPath<Material>("Assets/Textures/Player/player.mat");
@@ -59,6 +60,7 @@ public static class PlayerHudAssetSetup
             (lavaParticle == null || config.lavaParticle == lavaParticle)&&
             (bubbleParticle == null || config.bubbleParticle == bubbleParticle)&&
             (guiWidgets == null || config.guiWidgets == guiWidgets)&&
+            (loadingBackground == null || config.loadingBackground == loadingBackground)&&
             (guiFont == null || config.guiFont == guiFont)) return;
         if (icons != null) config.icons = icons;
         if (cracks != null) config.blockBreak = cracks;
@@ -66,6 +68,7 @@ public static class PlayerHudAssetSetup
         if (crafting != null) config.craftingTable = crafting;
         if (furnace != null) config.furnace = furnace;
         if(guiWidgets!=null)config.guiWidgets=guiWidgets;
+        if(loadingBackground!=null)config.loadingBackground=loadingBackground;
         if(guiFont!=null)config.guiFont=guiFont;
         if (playerSkin != null) config.inventoryPlayerSkin = playerSkin;
         if (chestSkin != null) config.chestSkin = chestSkin;
@@ -120,7 +123,7 @@ public class PlayerHudIconImporter : AssetPostprocessor
             if (path == PlayerHudAssetSetup.IconsPath || path == PlayerHudAssetSetup.BreakPath ||
                 path == PlayerHudAssetSetup.InventoryPath || path == PlayerHudAssetSetup.CraftingPath || path == PlayerHudAssetSetup.FurnacePath || path=="Assets/Textures/Minecraft/entity/chest/normal.png" ||
                 path=="Assets/Textures/Minecraft/block/normal.png" || path=="Assets/Textures/Minecraft/gui/container/generic_54.png" ||
-                path=="Assets/Textures/Player/player.mat" || path=="Assets/Textures/Player/steve.png" ||
+                path=="Assets/Textures/sprites/options_background.png" || path=="Assets/Textures/Player/player.mat" || path=="Assets/Textures/Player/steve.png" ||
                 path=="Assets/Textures/Minecraft/entity/steve.png" || path=="Assets/Textures/Minecraft/entity/player/wide/steve.png")
             { EditorApplication.delayCall += PlayerHudAssetSetup.Bind; break; }
     }

@@ -26,6 +26,7 @@ public partial class World
     {
         OnValidate();
         IsWorldCreated = false;
+        WorldLoadingScreen.ResetProgress();
 
         disabled = false;
     }
@@ -39,6 +40,7 @@ public partial class World
         }
 
         WorldGenerationData worldGenerationData = await Task.Run(() => GetPositionsInRenderDistance(position), worldCancellationToken);
+        if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Building terrain",.05f);
         
         foreach (var pos in worldGenerationData.chunkPositionsToRemove)
         {
@@ -71,6 +73,7 @@ public partial class World
             }
         }
         dataStopWatch.Stop();
+        if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Reading world data",.3f);
         if (!Application.isPlaying)
         {
             Debug.Log($"Data generation took {dataStopWatch.ElapsedMilliseconds}ms");
@@ -91,6 +94,7 @@ public partial class World
         }
         
         loadStopWatch.Stop();
+        if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Simulating world for a bit",.45f);
         if (!Application.isPlaying)
         {
             Debug.Log($"Loading took {loadStopWatch.ElapsedMilliseconds}ms");
@@ -108,6 +112,7 @@ public partial class World
         
         // Populate lakes, dungeons, ores, trees, plants, springs, and snow.
         await CalculateFeatures(worldGenerationData.chunkPositionsToCreate);
+        if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Calculating lighting",.65f);
         if (terrainGenerator.dumpBetaParity)
             foreach (var data in worldData.chunkDataDict.Values) terrainGenerator.DumpBetaPopulation(data);
 
@@ -130,6 +135,7 @@ public partial class World
 
         await CastLightFirstTime(dataToRender);
         await RefreshTreeMeshes();
+        if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Building terrain",.8f);
 
         try
         {
@@ -319,6 +325,7 @@ public partial class World
         {
             var item = meshDataDict[i];
             CreateChunk(worldData, item.Key, item.Value);
+            if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Building terrain",.8f+.15f*(i+1)/meshDataDict.Length);
             if (Application.isPlaying && (i + 1) % Math.Max(1, (int)chunksPerFrame) == 0)
             {
                 yield return new WaitForEndOfFrame();
@@ -328,6 +335,7 @@ public partial class World
         if (!IsWorldCreated && Application.isPlaying)
         {
             IsWorldCreated = true;
+            WorldLoadingScreen.ReportProgress("Loading player",.95f);
             OnWorldCreated?.Invoke();
             NetworkClient.Send(new WorldServer.SpawnPlayerMessage(SteamClient.SteamId));
         }
