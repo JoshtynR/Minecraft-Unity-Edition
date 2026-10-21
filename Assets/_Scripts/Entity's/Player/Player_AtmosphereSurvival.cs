@@ -33,11 +33,13 @@ public partial class Player
         bool active=viewBobbing&&health>0&&isGrounded&&!isFlying&&!InWater&&!InLava&&
             inventory!=null&&!inventory.isOpen&&!escapeMenuOpen&&distance<1;
         cameraBobAmount=Mathf.MoveTowards(cameraBobAmount,active?Mathf.Clamp01(distance/Mathf.Max(Time.deltaTime,.001f)/walkSpeed):0,Time.deltaTime*8);
-        if(active)cameraBobPhase+=distance*6;
-        var offset=cam.right*(Mathf.Sin(cameraBobPhase)*.025f*cameraBobAmount)+
-            Vector3.up*(Mathf.Abs(Mathf.Cos(cameraBobPhase))*.035f*cameraBobAmount);
+        // Abs(cos) repeats every PI, so advance PI per footstep (1.67m),
+        // matching the footstep audio instead of bouncing eight times a second.
+        if(active)cameraBobPhase+=distance*(Mathf.PI/1.67f);
+        var offset=cam.right*(Mathf.Sin(cameraBobPhase)*.018f*cameraBobAmount)+
+            Vector3.up*(Mathf.Abs(Mathf.Cos(cameraBobPhase))*.020f*cameraBobAmount);
         cam.localPosition=cameraRest+(cam.parent!=null?cam.parent.InverseTransformVector(offset):offset);
-        cam.localRotation*=Quaternion.Euler(0,0,Mathf.Sin(cameraBobPhase)*.6f*cameraBobAmount);
+        cam.localRotation*=Quaternion.Euler(0,0,Mathf.Sin(cameraBobPhase)*.35f*cameraBobAmount);
         if(cam.GetComponent<OverworldAtmosphere>()==null)cam.gameObject.AddComponent<OverworldAtmosphere>().player=this;
     }
 

@@ -120,9 +120,10 @@ public sealed class FirstPersonView : MonoBehaviour
         float distance = Mathf.Sqrt(delta.x * delta.x + delta.z * delta.z);
         if (distance > 1) distance = 0;
         bobAmount = Mathf.MoveTowards(bobAmount, Mathf.Min(1, distance / Mathf.Max(.001f, Time.deltaTime) / 4), Time.deltaTime * 8);
-        bobPhase += distance * 7;
+        bobPhase += distance * (Mathf.PI / 1.67f);
         float hit = Mathf.Sin(swing * Mathf.PI);
-        Vector3 bob = new Vector3(Mathf.Sin(bobPhase) * .018f, Mathf.Abs(Mathf.Cos(bobPhase)) * .018f, 0) * bobAmount;
+        // The hand already follows camera bob. Keep its relative sway subtle.
+        Vector3 bob = new Vector3(Mathf.Sin(bobPhase) * .008f, Mathf.Abs(Mathf.Cos(bobPhase)) * .008f, 0) * bobAmount;
         bool arm = shown == ItemType.Nothing || !hasModel;
         // The arm mesh runs down -Y from shoulder to wrist. Pitch past 180
         // so the wrist points away from the camera, with the shoulder closer
