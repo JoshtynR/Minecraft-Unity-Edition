@@ -105,7 +105,7 @@ public partial class Player : BaseEntity
 
         if (isLocalPlayer)
         {
-            CmdSetPlayerServerData(SteamClient.Name, SteamClient.SteamId);
+            CmdSetPlayerServerData(PlayerIdentity.DisplayName, PlayerIdentity.Id);
         }
 
         objects.playerName.text = PlayerName;

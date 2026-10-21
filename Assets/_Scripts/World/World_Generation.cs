@@ -360,7 +360,7 @@ public partial class World
             if (requestPlayerSpawn)
             {
                 requestPlayerSpawn = false;
-                NetworkClient.Send(new WorldServer.SpawnPlayerMessage(SteamClient.SteamId));
+                NetworkClient.Send(new WorldServer.SpawnPlayerMessage(PlayerIdentity.Id));
             }
         }
 

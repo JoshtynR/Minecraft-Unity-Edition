@@ -37,7 +37,9 @@ public class WorldListMenuManager : MonoBehaviour
             return;
         }
         
-        var worlds = Directory.GetDirectories(path).ToList();
+        // Failed older builds can leave a folder without a completed world save.
+        var worlds = Directory.GetDirectories(path)
+            .Where(folder => File.Exists(Path.Combine(folder, "world.json"))).ToList();
         worlds.Sort((x, y) =>
         
             File.GetLastWriteTime(Path.Combine(y, "world.json")).CompareTo(File.GetLastWriteTime(Path.Combine(x, "world.json")))
@@ -63,7 +65,7 @@ public class WorldListMenuManager : MonoBehaviour
                 joiningMenu.Open();
                 if (!multiplayerMode)
                 {
-                    NetworkManager.singleton.StartHost();
+                    MinecraftNetworkManager.StartGameHost();
                 }
                 else
                 {

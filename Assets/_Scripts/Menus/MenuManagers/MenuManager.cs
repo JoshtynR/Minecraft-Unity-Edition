@@ -31,16 +31,19 @@ public class MenuManager : MonoBehaviour
 
     public void OnGameLobbyJoinRequested(Lobby lobby, SteamId steamId)
     {
+        if (!PlayerIdentity.SteamAvailable) return;
         lobby.Join();
     }
     
     public void OnLobbyEntered(Lobby lobby)
     {
+        if (!PlayerIdentity.SteamAvailable) return;
         LobbyManager.currentLobby = lobby;
         if (NetworkServer.active)
         {
             return;
         }
+        MinecraftNetworkManager.PrepareClientSession();
 
         WorldSettingsManager.Instance.seedOffset = JsonConvert.DeserializeObject<Vector3Int>(lobby.GetData("seed"));
 

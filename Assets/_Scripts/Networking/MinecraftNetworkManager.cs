@@ -12,15 +12,55 @@ public class MinecraftNetworkManager : NetworkManager
 {
     [Space] 
     public GameObject WorldServerPrefab;
+    private Transport steamTransport;
+
+    // All local host entry points go through this before Mirror starts listening.
+    public static void StartGameHost()
+    {
+        if (NetworkServer.active || NetworkClient.active) return;
+        PrepareClientSession();
+        if (singleton != null) singleton.StartHost();
+    }
+
+    public static void PrepareClientSession()
+    {
+        PlayerIdentity.BeginSession();
+        var manager = singleton as MinecraftNetworkManager;
+        if (manager == null) return;
+        manager.ConfigureSessionTransport();
+    }
+
+    private void ConfigureSessionTransport()
+    {
+        if (transport is Mirror.FizzySteam.FizzyFacepunch) steamTransport = transport;
+        if (PlayerIdentity.UsingSteam)
+        {
+            if (steamTransport != null) transport = steamTransport;
+        }
+        else if (transport is Mirror.FizzySteam.FizzyFacepunch)
+        {
+            // The normal prefab already contains KCP. Also support older scenes.
+            var localTransport = GetComponent<KcpTransport>();
+            if (localTransport == null) localTransport = gameObject.AddComponent<KcpTransport>();
+            localTransport.enabled = true;
+            transport = localTransport;
+            networkAddress = "localhost";
+        }
+        Transport.activeTransport = transport;
+    }
+
+    public override void OnStopClient()
+    {
+        base.OnStopClient();
+        PlayerIdentity.EndSession();
+    }
 
 
     public override void OnClientConnect()
     {
         WorldLoadingScreen.Begin();
         base.OnClientConnect();
-        NetworkClient.Send(new WorldServer.StartPlayerMessage(SteamClient.SteamId));
-        
-        // NetworkClient.Send(new WorldServer.SpawnPlayerMessage(SteamClient.SteamId));
+        NetworkClient.Send(new WorldServer.StartPlayerMessage(PlayerIdentity.Id));
     }
 
     public override void OnStartServer()

@@ -35,7 +35,7 @@ public class WorldCreationMenuManager : MonoBehaviour
         
         if (!multiplayerMode)
         {
-            NetworkManager.singleton.StartHost();
+            MinecraftNetworkManager.StartGameHost();
         }
         else
         {
@@ -45,25 +45,32 @@ public class WorldCreationMenuManager : MonoBehaviour
 
     public static async void CreateLobby(string worldName, Vector3Int seedOffset)
     {
+        if (!PlayerIdentity.SteamAvailable)
+        {
+            Debug.LogWarning("Steam multiplayer requires Steam. Single-player is available offline.");
+            WorldLoadingScreen.Cancel();
+            return;
+        }
         var lobbyNull = await SteamMatchmaking.CreateLobbyAsync();
         if (lobbyNull.HasValue)
         {
             var lobby = lobbyNull.Value;
             lobby.SetPublic();
-            lobby.SetData("name", $"{LobbyCreationMenu.lobbyName}\n<color=#808080>{SteamClient.Name} playing on {worldName}</color>");
+            lobby.SetData("name", $"{LobbyCreationMenu.lobbyName}\n<color=#808080>{PlayerIdentity.DisplayName} playing on {worldName}</color>");
             lobby.SetData("seed", JsonConvert.SerializeObject(seedOffset));
             lobby.SetData("minecraft", "TRUE");
-            NetworkManager.singleton.StartHost();
+            MinecraftNetworkManager.StartGameHost();
         }
     }
 
     private void CheckIfNameIsUsed()
     {
+        var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/");
+        Directory.CreateDirectory(savePath);
         var worldName = worldNameInputField.text;
         var count = 1;
         while (true)
         {
-            var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/");
             var countOfWorldsWithSameName = new DirectoryInfo(savePath).EnumerateDirectories().Count(d => d.Name == worldNameInputField.text);
             if (countOfWorldsWithSameName != 0)
             {

@@ -35,6 +35,13 @@ public class MultiplayerMenuManager : MonoBehaviour
         {
             Destroy(lobbyContainer.GetChild(i).gameObject);
         }
+        if (!PlayerIdentity.SteamAvailable)
+        {
+            var message = Instantiate(textPrefab, lobbyContainer);
+            message.GetComponentInChildren<TextMeshProUGUI>().text = "Steam is unavailable. Single-player works offline.";
+            message.GetComponent<RectTransform>().sizeDelta = new Vector2(305, 130);
+            return;
+        }
         var lobbys = await SteamMatchmaking.LobbyList.WithKeyValue("minecraft", "TRUE").RequestAsync();
         if (lobbys != null)
         {

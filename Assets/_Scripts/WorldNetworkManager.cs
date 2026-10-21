@@ -12,15 +12,8 @@ public class WorldNetworkManager : MonoBehaviour
     {
         if (NetworkClient.active) return;
 
-        try
-        {
-            SteamClient.Init(480);
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning("Steam failed to initialize");
-        }
-        GetComponent<NetworkManager>().StartHost();
+        PlayerIdentity.TryInitializeSteam(480);
+        MinecraftNetworkManager.StartGameHost();
 
         SceneManager.sceneUnloaded += OnSceneUnloaded;
     }
