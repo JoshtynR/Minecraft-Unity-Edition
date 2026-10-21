@@ -257,7 +257,7 @@ public partial class PlayerInventory
    }
    for(int i=0;i<4;i++)Check(menu.craftingRects[i].anchoredPosition.x==18+i%2*18&&menu.craftingRects[i].anchoredPosition.y==57-i/2*18,"craft controls align with atlas pixel centers");
    Check(menu.craftResultRect.anchoredPosition.x==74&&menu.craftResultRect.anchoredPosition.y==47,"result control aligns with atlas output slot");
-   CheckContainerLabel(menu,menu.inventoryRect,"CraftingLabel",86,16);
+   CheckContainerLabel(menu,menu.inventoryRect,"CraftingLabel",97,8);
    var window=menu.inventoryRect.Find("PlayerPreview");
    Check(window.localPosition.x==-37&&window.localPosition.y==40&&window.GetComponent<UnityEngine.UI.Image>()==null,"preview sits in existing black sheet window");
    CheckCanvasPreview(menu);
@@ -265,7 +265,7 @@ public partial class PlayerInventory
   }
   Resources.hud=null;
   QualitySettings.activeColorSpace=ColorSpace.Gamma;
-  var gammaMenu=BuildMenu();CheckContainerLabel(gammaMenu,gammaMenu.inventoryRect,"CraftingLabel",86,16);gammaMenu.OnDestroy();
+  var gammaMenu=BuildMenu();CheckContainerLabel(gammaMenu,gammaMenu.inventoryRect,"CraftingLabel",97,8);gammaMenu.OnDestroy();
   QualitySettings.activeColorSpace=ColorSpace.Linear;
   Resources.omitPreviewMaterial=true;
   var directSkin=new Texture2D{width=128,height=128};Resources.hud=new PlayerHudAssets{inventoryPlayerSkin=directSkin};
