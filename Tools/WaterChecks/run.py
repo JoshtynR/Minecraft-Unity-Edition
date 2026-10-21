@@ -54,6 +54,7 @@ def main():
         production=['World/WaterSimulation.cs','World/FluidTickScheduler.cs','World/BetaFluidPhysics.cs','World/FluidWorldQueries.cs','World/World_FluidEffects.cs','World/Rendering/FluidEffects.cs','World/Rendering/FluidCameraEffects.cs',"Entity's/Player/Player_Fluids.cs","Entity's/Player/PlayerHudAssets.cs",'Block/BlockType.cs']
         production.append('Menus/MenuManagers/EscapeMenuManager.cs')
         production.append('BlockSoundRules.cs')
+        production.append('World/SkyClock.cs')
         subprocess.run([args.mcs,'-langversion:latest',f'-out:{visual}',str(ROOT/'Tools/AudioChecks/SilentGameAudio.cs'),str(ROOT/'Tools/WaterChecks/FluidVisualCheck.cs'),*[str(ROOT/'Assets/_Scripts'/p) for p in production]],check=True)
         subprocess.run([args.mono,str(visual)],check=True)
 

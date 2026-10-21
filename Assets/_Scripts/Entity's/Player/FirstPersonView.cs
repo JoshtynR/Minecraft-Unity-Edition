@@ -112,7 +112,7 @@ public sealed class FirstPersonView : MonoBehaviour
         if (hidden) { Show(wanted); equip = 1; hidden = false; }
         equip = Mathf.MoveTowards(equip, wanted == shown ? 1 : 0, Time.deltaTime * 5);
         if (wanted != shown && equip <= 0) Show(wanted);
-        if ((Input.GetMouseButton(0) || Input.GetMouseButton(1)) && swing >= 1) swing = 0;
+        if (!player.IsEating && (Input.GetMouseButton(0) || Input.GetMouseButton(1)) && swing >= 1) swing = 0;
         swing = Mathf.Min(1, swing + Time.deltaTime / .3f);
         Vector3 delta = player.transform.position - lastPosition;
         lastPosition = player.transform.position;
@@ -129,6 +129,12 @@ public sealed class FirstPersonView : MonoBehaviour
         pivot.localPosition = position + bob + new Vector3(-hit * .18f, -(1 - equip) * .8f + hit * .06f, -hit * .15f);
         pivot.localRotation = Quaternion.Euler(rotation + new Vector3(-hit * 35, -hit * 25, hit * 15));
         pivot.localScale = Vector3.one * (arm ? .8f : isBlock ? .38f : .55f);
+        if(player.IsEating)
+        {
+            float chew=Mathf.Abs(Mathf.Sin(player.EatingProgress*Mathf.PI*8));
+            pivot.localPosition=new Vector3(.12f,-.22f-chew*.035f,.42f);
+            pivot.localRotation=Quaternion.Euler(-15+chew*8,-25,15);
+        }
         UpdateLight();
     }
 

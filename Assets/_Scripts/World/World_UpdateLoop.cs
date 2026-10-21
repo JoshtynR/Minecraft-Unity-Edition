@@ -69,6 +69,7 @@ public partial class World
 
     private void Update()
     {
+        AdvanceAtmosphereClock(Time.deltaTime);
         UpdateWater();
         UpdateDroppedItems();
         UpdateFurnaces();
@@ -80,7 +81,8 @@ public partial class World
         UpdateBetaLightingSettings();
         if (backgroundCamera == null) backgroundCamera = Camera.main;
         if (backgroundCamera != null)
-            backgroundCamera.backgroundColor = dimension == WorldDimension.Nether ? new Color(.2f,.03f,.03f,1) : Color.Lerp(nightColor, dayColor, skyLightMultiplier * (1 + 1 / 9f));
+            backgroundCamera.backgroundColor = dimension == WorldDimension.Nether ? new Color(.2f,.03f,.03f,1) :
+                Color.Lerp(new Color(.01f,.015f,.035f),new Color(.47f,.65f,1),SkyClock.Daylight(CurrentWorldTicks));
     }
 
     public void UpdateBlocks()

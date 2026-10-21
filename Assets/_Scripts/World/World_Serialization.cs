@@ -30,7 +30,7 @@ public partial class World
             if(File.Exists(path))return;
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             var metadata=new WorldSaveData{chunks=new ChunkSaveData[0],worldName=worldName,dimension=dimension,
-                seedOffset=mapSeedOffset,betaWorldSeed=betaWorldSeed};
+                seedOffset=mapSeedOffset,betaWorldSeed=betaWorldSeed,hasWorldTime=true,worldTimeTicks=CurrentWorldTicks};
             // Plain JSON also allows the menu to list the world before its first autosave.
             await File.WriteAllTextAsync(path,JsonUtility.ToJson(metadata));
         }
@@ -79,6 +79,7 @@ public partial class World
                 dimension = dimension,
                 seedOffset = mapSeedOffset,
                 betaWorldSeed = betaWorldSeed,
+                hasWorldTime = true, worldTimeTicks = CurrentWorldTicks,
                 fluidTicks = CaptureFluidTicks(),
                 droppedItems = CaptureDroppedItems(),
                 cows = CaptureCows()

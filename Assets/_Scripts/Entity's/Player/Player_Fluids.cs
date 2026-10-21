@@ -96,6 +96,7 @@ public partial class Player
     [TargetRpc] private void TargetFluidRespawn(NetworkConnection target,Vector3 destination){ApplyFluidRespawn(destination);}
     private void ApplyFluidRespawn(Vector3 destination)
     {
+        falling.Reset();
         transform.position=destination;health=hunger=20;saturation=5;exhaustion=0;
         fluidHazards.Reset();fluidHazardTime=0;airSupply=300;burning=false;
         fluidRespawnUnavailable=false;fluidViewContactKnown=false;ResetFluidMovement();RestoreDeathCursor();

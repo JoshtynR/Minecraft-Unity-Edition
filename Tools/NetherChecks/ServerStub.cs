@@ -20,6 +20,7 @@ public struct FurnaceRequest {}
 public struct DropSyncRequest {}
 public struct CowSyncRequest {}
 public partial class WorldServer {
+ private void InitializeWorldClock(){}
  public void ReceiveChestRequest(NetworkConnectionToClient c,ChestRequest r){}
  public void ReceiveFurnaceRequest(NetworkConnectionToClient c,FurnaceRequest r){}
  public void CloseChestForDisconnect(NetworkConnectionToClient c){}

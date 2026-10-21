@@ -11,6 +11,8 @@ public class WorldSaveData
     
     public Vector3Int seedOffset;
     public long betaWorldSeed;
+    public bool hasWorldTime;
+    public double worldTimeTicks;
     public FluidTickSave fluidTicks;
     public DroppedItemState[] droppedItems;
     public CowSaveData cows;

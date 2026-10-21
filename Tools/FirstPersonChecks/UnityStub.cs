@@ -16,7 +16,7 @@ namespace UnityEngine {
  public class Transform:Component { public Vector3 position,localPosition,localScale=Vector3.one; public Quaternion localRotation,rotation; public Transform parent;public void SetParent(Transform p,bool world){parent=p;}public void SetPositionAndRotation(Vector3 p,Quaternion q){position=p;rotation=q;}public Vector3 lossyScale {get{var p=parent==null?Vector3.one:parent.lossyScale;return new Vector3(localScale.x*p.x,localScale.y*p.y,localScale.z*p.z);}} }
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public struct Vector3 {public float x,y,z; public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;} public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static Vector3 operator*(Vector3 a,float s)=>new Vector3(a.x*s,a.y*s,a.z*s);}
- public struct Quaternion {public Vector3 euler;public static Quaternion Euler(Vector3 p)=>new Quaternion{euler=p};}
+ public struct Quaternion {public Vector3 euler;public static Quaternion Euler(Vector3 p)=>new Quaternion{euler=p};public static Quaternion Euler(float x,float y,float z)=>Euler(new Vector3(x,y,z));}
  public struct Rect { public float x,y,width,height; }
  public enum CameraClearFlags {Depth}
  public class Camera:Component {public int cullingMask,targetDisplay;public bool enabled=true,useOcclusionCulling,allowHDR,allowMSAA;public float depth,nearClipPlane,farClipPlane,fieldOfView;public Rect rect;public object targetTexture;public CameraClearFlags clearFlags;}
@@ -38,7 +38,7 @@ public enum ItemType {Nothing,Stone,Pickaxe,Missing}
 public enum BlockType {Nothing,Stone}
 public class InventoryStack {public ItemType type;public bool Empty=>type==ItemType.Nothing;}
 public class PlayerInventory {public bool isOpen;public InventoryStack stack=new InventoryStack();public InventoryStack HeldItem()=>stack;}
-public class Player:UnityEngine.MonoBehaviour {public World CurrentWorld=>World.Instance;public UnityEngine.Transform cam;public bool IsReadyForPlay=true,escapeMenuOpen;public int health=20;public PlayerInventory inventory=new PlayerInventory();}
+public class Player:UnityEngine.MonoBehaviour {public World CurrentWorld=>World.Instance;public UnityEngine.Transform cam;public bool IsReadyForPlay=true,escapeMenuOpen,IsEating;public float EatingProgress;public int health=20;public PlayerInventory inventory=new PlayerInventory();}
 public class PlayerHudAssets:UnityEngine.Object {public UnityEngine.Texture inventoryPlayerSkin;}
 public static class WorldLoadingScreen {public static bool IsLoading;}
 public class World {public WorldDimension dimension;public static World Instance;public int betaSkylightSubtracted;public Block GetBlock(UnityEngine.Vector3 position)=>new Block();}

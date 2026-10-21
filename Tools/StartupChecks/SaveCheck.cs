@@ -21,7 +21,7 @@ namespace UnityEngine
         {
             if(value is ChunkSaveData){duringChunkWrite?.Invoke();return "{\"chunk\":true}";}
             var world=(WorldSaveData)value;
-            return "{\"worldName\":\""+world.worldName+"\",\"betaWorldSeed\":"+world.betaWorldSeed+"}";
+            return "{\"worldName\":\""+world.worldName+"\",\"betaWorldSeed\":"+world.betaWorldSeed+",\"hasWorldTime\":"+world.hasWorldTime.ToString().ToLowerInvariant()+",\"worldTimeTicks\":"+world.worldTimeTicks+"}";
         }
     }
 }
@@ -35,6 +35,7 @@ public class ChunkSaveData
 }
 public class WorldSaveData
 {
+    public bool hasWorldTime;public double worldTimeTicks;
     public ChunkSaveData[] chunks;public string worldName;public WorldDimension dimension;
     public UnityEngine.Vector3Int seedOffset;public long betaWorldSeed;public object fluidTicks,droppedItems,cows;
 }
@@ -45,6 +46,7 @@ public class GameManager{public static GameManager Instance;public List<Player> 
 public class WorldData{public Dictionary<int,ChunkData> chunkDataDict=new Dictionary<int,ChunkData>();}
 public partial class World
 {
+    public double CurrentWorldTicks=>1000;
     public string worldName="test";public string StorageName=>worldName;public WorldDimension dimension;
     public UnityEngine.Vector3Int mapSeedOffset;public long betaWorldSeed=123;
     public bool isSaving,binaryCompressSaves;public WorldData worldData=new WorldData();
@@ -69,6 +71,7 @@ public static class SaveCheck
         string metadata=Path.Combine(args[0],".minecraftUnity/saves/test/world.json");
         world.EnsureWorldMetadataAsync().GetAwaiter().GetResult();
         Check(File.Exists(metadata)&&File.ReadAllText(metadata).Contains("123"),"initial metadata contains seed and list entry");
+        Check(File.ReadAllText(metadata).Contains("\"hasWorldTime\":true")&&File.ReadAllText(metadata).Contains("\"worldTimeTicks\":1000"),"initial metadata persists sky clock");
         Check(chunk.modifiedAfterSave&&ChunkSaveData.captures==0,"metadata creation skips full chunk capture and retains dirty terrain");
         File.WriteAllText(metadata,"existing-world");world.EnsureWorldMetadataAsync().GetAwaiter().GetResult();
         Check(File.ReadAllText(metadata)=="existing-world"&&world.GateReleased,"metadata creation preserves existing saves and releases gate");

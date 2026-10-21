@@ -9,6 +9,7 @@ public class WorldSettingsManager : MonoBehaviour
     public Vector3Int seedOffset;
     public long betaWorldSeed;
     public string worldName;
+    public double worldTimeTicks=1000;
     private FluidTickSave fluidTicks;
     private DroppedItemState[] droppedItems;
     private CowSaveData cows;
@@ -38,6 +39,7 @@ public class WorldSettingsManager : MonoBehaviour
             worldName = worldSaveData.worldName;
             seedOffset = worldSaveData.seedOffset;
             betaWorldSeed = worldSaveData.betaWorldSeed;
+            worldTimeTicks=worldSaveData.hasWorldTime?worldSaveData.worldTimeTicks:1000;
             fluidTicks=worldSaveData.fluidTicks;
             droppedItems=worldSaveData.droppedItems;
             cows=worldSaveData.cows;
@@ -51,6 +53,7 @@ public class WorldSettingsManager : MonoBehaviour
             World.Instance.mapSeedOffset = seedOffset;
             World.Instance.betaWorldSeed = betaWorldSeed;
             World.Instance.worldName = worldName;
+            World.Instance.worldTimeTicks=worldTimeTicks;
             World.Instance.RestoreFluidTicks(fluidWorldName==worldName?fluidTicks:null);
             World.Instance.RestoreDroppedItems(fluidWorldName==worldName?droppedItems:null);
             World.Instance.RestoreCows(fluidWorldName==worldName?cows:null);

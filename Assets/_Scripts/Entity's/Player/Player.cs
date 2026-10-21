@@ -232,8 +232,8 @@ public partial class Player : BaseEntity
     {
         if (!Application.isPlaying) return;
         TickDimension();
-        if (dimensionTransfer) return;
-        if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) return;
+        if (dimensionTransfer) { CancelFoodForTravel(); falling.Reset(); return; }
+        if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) { falling.Reset(); return; }
         if (!networkStarted || isLocalPlayer)
         {
             if (hunger <= 6 && !isFlying) isSprinting = false;
@@ -255,6 +255,7 @@ public partial class Player : BaseEntity
         if (isServer || !networkStarted)
         {
             AdvanceFluidHazards(Time.fixedDeltaTime);
+            AdvanceFallDamage();
             AdvanceSurvival(Time.fixedDeltaTime);
             AdvanceMining(Time.fixedDeltaTime);
         }
@@ -481,8 +482,10 @@ public partial class Player : BaseEntity
         
         if (!Application.isPlaying || !isLocalPlayer && networkStarted) return;
         GetPlayerInput();
+        UpdateEating();
+        if(IsEating){horizontal*=.2f;vertical*=.2f;isSprinting=false;}
         UpdateFluidView();
-        if(TargetedCow()==null)UpdateMining();else CancelMining();
+        if(!IsEating&&TargetedCow()==null)UpdateMining();else CancelMining();
         var vel = new Vector3(velocity.x, 0, velocity.z);
         animator.SetFloat(Speed, (vel.magnitude/Time.fixedDeltaTime)/walkSpeed);
         if (!isFlying)
@@ -490,6 +493,7 @@ public partial class Player : BaseEntity
             animator.SetBool(Sneaking, isCrouching);
         }
         DoHeadRotation();
+        UpdateCameraBobbing();
 
                 // Smooth FOV shift while sprinting
         if (_camComponent != null)
@@ -666,6 +670,7 @@ public partial class Player : BaseEntity
         {
             if(TryUseCow(true))return;
             if (TryUseBlock()) return;
+            if (TryStartEating()) return;
             if (placeCoroutine == null)
             {
                 placeCoroutine = PlaceLoop();

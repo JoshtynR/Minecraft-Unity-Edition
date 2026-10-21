@@ -17,6 +17,7 @@ public partial class WorldServer : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
+        InitializeWorldClock();
         NetworkServer.RegisterHandler<SetBlockMessage>(SetBlockMessageHandler, false);
         NetworkServer.RegisterHandler<SavePlayerMessage>(SavePlayerMessageHandler, false);
         NetworkServer.RegisterHandler<SpawnPlayerMessage>(SpawnPlayerMessageHandler, false);

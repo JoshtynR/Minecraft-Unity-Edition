@@ -30,6 +30,7 @@ public class WorldCreationMenuManager : MonoBehaviour
         CheckIfNameIsUsed();
         
         WorldSettingsManager.Instance.worldName = worldNameInputField.text;
+        WorldSettingsManager.Instance.worldTimeTicks=1000;
         WorldSettingsManager.Instance.seedOffset = GenerateSeed(worldSeedInputField.text);
         WorldSettingsManager.Instance.betaWorldSeed = MinecraftSeed.Parse(worldSeedInputField.text);
         

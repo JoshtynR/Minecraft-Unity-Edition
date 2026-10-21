@@ -1,4 +1,5 @@
             #include "UnityCG.cginc"
+            #include "WorldFog.cginc"
             UNITY_DECLARE_TEX2DARRAY(_BlockFaceTextures);
             #include "BlockFaceAnimation.cginc"
             float _TextureOn, _LightingOn, _AOOn, _FaceShadeOn;
@@ -87,7 +88,7 @@
                 if (_Debug > 0.5 && _Debug < 1.5) col.rgb = (i.skyBlock.x / 15).xxx;
                 if (_Debug > 1.5 && _Debug < 2.5) col.rgb = (i.skyBlock.y / 15).xxx;
                 if (_Debug > 2.5) col.rgb = brightness.xxx;
-                col.rgb = lerp(col.rgb,_FluidFog.rgb,1-exp(-_FluidFog.w*i.fogDistance));
+                col.rgb = ApplyWorldFog(col.rgb,i.fogDistance,_FluidFog);
                 #ifndef UNITY_COLORSPACE_GAMMA
                     col.rgb = GammaToLinearSpace(col.rgb);
                 #endif

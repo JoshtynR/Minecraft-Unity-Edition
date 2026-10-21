@@ -46,6 +46,9 @@ public static class PlayerHudAssetSetup
         var splashParticle=config.splashParticle!=null?config.splashParticle:Prepare("Assets/Textures/Minecraft/particle/splash_0.png");
         var lavaParticle=config.lavaParticle!=null?config.lavaParticle:Prepare("Assets/Textures/Minecraft/particle/lava.png");
         var bubbleParticle=config.bubbleParticle!=null?config.bubbleParticle:Prepare("Assets/Textures/Minecraft/particle/bubble.png");
+        var sun=config.sunTexture!=null?config.sunTexture:Prepare("Assets/Textures/Minecraft/environment/sun.png");
+        var moon=config.moonTexture!=null?config.moonTexture:Prepare("Assets/Textures/Minecraft/environment/moon_phases.png");
+        var clouds=config.cloudTexture!=null?config.cloudTexture:Prepare("Assets/Textures/Minecraft/environment/clouds.png");
         if ((icons == null || config.icons == icons) && (cracks == null || config.blockBreak == cracks) &&
             (inventory == null || config.inventory == inventory) &&
             (crafting == null || config.craftingTable == crafting) &&
@@ -59,6 +62,9 @@ public static class PlayerHudAssetSetup
             (splashParticle == null || config.splashParticle == splashParticle)&&
             (lavaParticle == null || config.lavaParticle == lavaParticle)&&
             (bubbleParticle == null || config.bubbleParticle == bubbleParticle)&&
+            (sun == null || config.sunTexture == sun)&&
+            (moon == null || config.moonTexture == moon)&&
+            (clouds == null || config.cloudTexture == clouds)&&
             (guiWidgets == null || config.guiWidgets == guiWidgets)&&
             (loadingBackground == null || config.loadingBackground == loadingBackground)&&
             (guiFont == null || config.guiFont == guiFont)) return;
@@ -68,6 +74,9 @@ public static class PlayerHudAssetSetup
         if (crafting != null) config.craftingTable = crafting;
         if (furnace != null) config.furnace = furnace;
         if(guiWidgets!=null)config.guiWidgets=guiWidgets;
+        if(sun!=null)config.sunTexture=sun;
+        if(moon!=null)config.moonTexture=moon;
+        if(clouds!=null)config.cloudTexture=clouds;
         if(loadingBackground!=null)config.loadingBackground=loadingBackground;
         if(guiFont!=null)config.guiFont=guiFont;
         if (playerSkin != null) config.inventoryPlayerSkin = playerSkin;
@@ -123,6 +132,7 @@ public class PlayerHudIconImporter : AssetPostprocessor
             if (path == PlayerHudAssetSetup.IconsPath || path == PlayerHudAssetSetup.BreakPath ||
                 path == PlayerHudAssetSetup.InventoryPath || path == PlayerHudAssetSetup.CraftingPath || path == PlayerHudAssetSetup.FurnacePath || path=="Assets/Textures/Minecraft/entity/chest/normal.png" ||
                 path=="Assets/Textures/Minecraft/block/normal.png" || path=="Assets/Textures/Minecraft/gui/container/generic_54.png" ||
+                path=="Assets/Textures/Minecraft/environment/sun.png" || path=="Assets/Textures/Minecraft/environment/moon_phases.png" || path=="Assets/Textures/Minecraft/environment/clouds.png" ||
                 path=="Assets/Textures/sprites/options_background.png" || path=="Assets/Textures/Player/player.mat" || path=="Assets/Textures/Player/steve.png" ||
                 path=="Assets/Textures/Minecraft/entity/steve.png" || path=="Assets/Textures/Minecraft/entity/player/wide/steve.png")
             { EditorApplication.delayCall += PlayerHudAssetSetup.Bind; break; }

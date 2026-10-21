@@ -24,6 +24,7 @@ public class PlayerHudAssets : ScriptableObject
     public Font guiFont;
     public Texture2D guiWidgets;
     public Texture2D loadingBackground;
+    public Texture2D sunTexture,moonTexture,cloudTexture;
     public Texture2D blockBreak;
     public Material blockBreakMaterial;
     [Tooltip("Zero detects horizontal/vertical ten-frame strips or a 5x2/2x5 grid.")]

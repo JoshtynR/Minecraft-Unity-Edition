@@ -10,6 +10,7 @@ Shader "Voxel/Cow"
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
+            #include "WorldFog.cginc"
             sampler2D _MainTex;float _Brightness,_Hurt;float4 _FluidFog;
             struct appdata {float4 vertex:POSITION;float2 uv:TEXCOORD0;float3 normal:NORMAL;};
             struct v2f {float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float light:TEXCOORD1;float distance:TEXCOORD2;};
@@ -24,7 +25,7 @@ Shader "Voxel/Cow"
             {
                 fixed4 c=tex2D(_MainTex,i.uv);clip(c.a-.1);
                 float3 rgb=lerp(c.rgb*i.light,float3(1,.2,.2),_Hurt*.45);
-                return fixed4(lerp(rgb,_FluidFog.rgb,1-exp(-_FluidFog.w*i.distance)),1);
+                return fixed4(ApplyWorldFog(rgb,i.distance,_FluidFog),1);
             }
             ENDCG
         }

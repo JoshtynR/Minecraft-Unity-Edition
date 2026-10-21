@@ -2,7 +2,7 @@ using UnityEngine;
 
 public partial class World
 {
-    [Tooltip("Beta skylight subtraction: 0 is daytime; 11 is a clear night. This does not add a day/night clock.")]
+    [Tooltip("Current Beta skylight subtraction: 0 is daytime; 11 is a clear night. Updated by the overworld clock during play.")]
     [Range(0, 11)] public int betaSkylightSubtracted;
     [Tooltip("Optional enhanced smoothing. Enable bilinear face interpolation and smoothed liquids; disable for Beta vertex interpolation and original liquid sampling.")]
     public bool fullSmoothLighting = false;
@@ -22,6 +22,8 @@ public partial class World
         {
             Shader.SetGlobalFloat("_BetaSkyDarkness", darkness);
             LightTextureCreator.skyDarkness = darkness;
+            LightTextureCreator.CreateLightTexture();
+            Shader.SetGlobalVectorArray("lightColors",LightTextureCreator.lightColors);
             lastBetaSkyDarkness = darkness;
 
         }

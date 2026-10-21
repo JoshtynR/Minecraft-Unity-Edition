@@ -11,6 +11,7 @@ Shader "Voxel/DroppedItem"
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
+            #include "WorldFog.cginc"
             sampler2D _MainTex;float _Brightness;float4 _FluidFog;
             struct appdata {float4 vertex:POSITION;float2 uv:TEXCOORD0;};
             struct v2f {float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float distance:TEXCOORD1;};
@@ -21,7 +22,7 @@ Shader "Voxel/DroppedItem"
                 #ifndef UNITY_COLORSPACE_GAMMA
                     c.rgb=LinearToGammaSpace(c.rgb);
                 #endif
-                c.rgb*=_Brightness;c.rgb=lerp(c.rgb,_FluidFog.rgb,1-exp(-_FluidFog.w*i.distance));
+                c.rgb*=_Brightness;c.rgb=ApplyWorldFog(c.rgb,i.distance,_FluidFog);
                 #ifndef UNITY_COLORSPACE_GAMMA
                     c.rgb=GammaToLinearSpace(c.rgb);
                 #endif

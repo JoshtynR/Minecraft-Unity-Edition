@@ -45,11 +45,11 @@ namespace UnityEngine
   public static implicit operator Vector3(Vector3Int p)=>new Vector3(p.x,p.y,p.z);
  }
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}public static Vector4 zero=>new Vector4();}
- public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color white=>new Color(1,1,1,1);public static Color black=>new Color(0,0,0,1);}
+ public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a=1){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color Lerp(Color a,Color b,float t)=>a;public static Color white=>new Color(1,1,1,1);public static Color black=>new Color(0,0,0,1);}
  public struct Vector2 {public static Vector2 zero=>new Vector2();public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public static class Input {public static Vector3 mousePosition;}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;width=w;height=h;}public bool Contains(Vector2 p)=>p.x>=x&&p.x<x+width&&p.y>=y&&p.y<y+height;}
- public static class Mathf {public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int FloorToInt(float n)=>(int)Math.Floor(n);}
+ public static class Mathf {public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int FloorToInt(float n)=>(int)Math.Floor(n);}
  public enum CursorLockMode {None,Locked}public static class Cursor {public static CursorLockMode lockState=CursorLockMode.Locked;public static bool visible;}
  public class Texture:Object {}
  public enum TextureFormat {RGBA32}public enum FilterMode {Bilinear}public enum TextureWrapMode {Clamp}
@@ -72,8 +72,8 @@ namespace UnityEngine
  }
  public class ParticleSystemRenderer:Component {public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public bool receiveShadows;}
  public enum FogMode {Exponential,Linear}public enum CameraClearFlags {SolidColor,Skybox}
- public class Camera:Component {public Color backgroundColor;public CameraClearFlags clearFlags=CameraClearFlags.Skybox;}
- public static class RenderSettings {public static bool fog;public static Color fogColor;public static float fogDensity;public static FogMode fogMode;}
+ public class Camera:Component {public float farClipPlane=1000;public Color backgroundColor;public CameraClearFlags clearFlags=CameraClearFlags.Skybox;}
+ public static class RenderSettings {public static bool fog;public static Color fogColor;public static float fogDensity,fogStartDistance,fogEndDistance;public static FogMode fogMode;}
  public static class Shader {static Vector4 fog;public static Vector4 GetGlobalVector(string key)=>fog;public static void SetGlobalVector(string key,Vector4 value){fog=value;}}
  public static class Application {public static bool isBatchMode,isPlaying=true;}
  public static class Time {public static float time,unscaledTime,deltaTime=.05f;}
@@ -91,6 +91,7 @@ public class Block {public BlockType type;public byte waterLevel;}
 public static class SpecialBlockGeometry {public static bool NormalCube(BlockType t)=>t==BlockType.Stone;}
 public partial class World:MonoBehaviour
 {
+ public bool overworldFog=true;public double CurrentWorldTicks=>1000;public int renderDistance=6,chunkSize=16;
  public World worldRenderer=>this;public WorldDimension dimension;public static System.Threading.Tasks.Task SaveAllDimensionsAsync()=>System.Threading.Tasks.Task.CompletedTask;
  public static World Instance;public bool IsWorldCreated=true;public int worldHeight=12;
  public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();
@@ -99,6 +100,7 @@ public partial class World:MonoBehaviour
 }
 public partial class Player:MonoBehaviour
 {
+ private class FallStub {public void Reset(){}}private readonly FallStub falling=new FallStub();
  public WorldDimension dimension;public World CurrentWorld=>world??World.Instance;public float PortalOverlay;private void BeginDimensionTravel(WorldDimension target,Vector3 position,bool portal){}
  public World world;public bool networkStarted,isLocalPlayer=true,isFlying,serverFlying,InWater;
  public bool isServer;public Mirror.NetworkConnection connectionToClient;
@@ -130,6 +132,10 @@ public static class FluidVisualCheck
   Call(effect,"OnPostRender");Check(Shader.GetGlobalVector("_FluidFog").w==4&&!RenderSettings.fog&&camera.clearFlags==CameraClearFlags.Skybox,"camera restores global state after rendering");
   world.blocks[new Vector3Int(0,1,0)].type=BlockType.Lava;Call(effect,"OnPreCull");Check(Shader.GetGlobalVector("_FluidFog").w==2,"lava camera uses dense fog");
   Call(effect,"OnDisable");Check(Shader.GetGlobalVector("_FluidFog").w==4,"disabled camera also restores globals");
+  world.blocks[new Vector3Int(0,1,0)].type=BlockType.Air;
+  RenderSettings.fogStartDistance=3;RenderSettings.fogEndDistance=7;
+  Call(effect,"OnPreCull");Check(RenderSettings.fogMode==FogMode.Linear&&RenderSettings.fogEndDistance>16,"overworld air uses distance fog");
+  Call(effect,"OnPostRender");Check(RenderSettings.fogStartDistance==3&&RenderSettings.fogEndDistance==7,"overworld fog range restored for other cameras");
   var fluidEffects=world.GetComponent<FluidEffects>();fluidEffects.Emit(new Vector3(8,9,10),0);
   Check(world.transform.position.x==0&&world.transform.position.y==0,"positional sound never moves the world transform");
   var emitters=(ParticleSystem[])typeof(FluidEffects).GetField("emitters",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(fluidEffects);

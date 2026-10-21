@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--mcs',default='mcs');ap.add_argument('--mono',default='mono');args=ap.parse_args()
- files=['Tools/MemoryChecks/LifecycleCheck.cs','Assets/_Scripts/World/Rendering/MeshData.cs','Assets/_Scripts/World/Rendering/ChunkRenderer.cs','Assets/_Scripts/World/World_UpdateLoop.cs']
+ files=['Tools/MemoryChecks/LifecycleCheck.cs','Assets/_Scripts/World/Rendering/MeshData.cs','Assets/_Scripts/World/Rendering/ChunkRenderer.cs','Assets/_Scripts/World/World_UpdateLoop.cs','Assets/_Scripts/World/SkyClock.cs']
  with tempfile.TemporaryDirectory() as tmp:
   player=(ROOT/"Assets/_Scripts/Entity's/Player/Player.cs").read_text()
   method=player[player.index('    public void SetMeshLight'):player.index('    // Name plate name')]

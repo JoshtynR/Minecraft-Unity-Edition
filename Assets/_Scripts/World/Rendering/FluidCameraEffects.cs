@@ -10,6 +10,7 @@ public sealed class FluidCameraEffects : MonoBehaviour
     private Color previousBackground,previousFogColor;
     private bool previousFogEnabled,applied;
     private float previousDensity;
+    private float previousStart,previousEnd;
     private FogMode previousMode;
     private CameraClearFlags previousClearFlags;
     private BlockType medium;
@@ -27,10 +28,22 @@ public sealed class FluidCameraEffects : MonoBehaviour
         previousClearFlags=view.clearFlags;
         previousFogEnabled=RenderSettings.fog;previousFogColor=RenderSettings.fogColor;
         previousDensity=RenderSettings.fogDensity;previousMode=RenderSettings.fogMode;applied=true;
+        previousStart=RenderSettings.fogStartDistance;previousEnd=RenderSettings.fogEndDistance;
         Vector4 fog=medium==BlockType.Water?new Vector4(.02f,.02f,.2f,.1f):medium==BlockType.Lava?new Vector4(.6f,.1f,0,2):Vector4.zero;
         if (fog.w<=0 && player.CurrentWorld.dimension==WorldDimension.Nether) fog=new Vector4(.2f,.03f,.03f,.025f);
         Shader.SetGlobalVector("_FluidFog",fog);
-        if(fog.w<=0)return;
+        if(fog.w<=0)
+        {
+            var world=player.CurrentWorld;
+            if(world.overworldFog&&world.dimension==WorldDimension.Overworld)
+            {
+                RenderSettings.fog=true;RenderSettings.fogMode=FogMode.Linear;
+                RenderSettings.fogColor=Color.Lerp(new Color(.025f,.03f,.06f),new Color(.65f,.77f,.9f),SkyClock.Daylight(world.CurrentWorldTicks));
+                RenderSettings.fogEndDistance=Mathf.Max(16,Mathf.Min(view.farClipPlane*.9f,(world.renderDistance-.5f)*world.chunkSize));
+                RenderSettings.fogStartDistance=RenderSettings.fogEndDistance*.35f;
+            }
+            return;
+        }
         view.backgroundColor=new Color(fog.x,fog.y,fog.z,1);
         view.clearFlags=CameraClearFlags.SolidColor;
         RenderSettings.fog=true;RenderSettings.fogColor=view.backgroundColor;
@@ -45,6 +58,7 @@ public sealed class FluidCameraEffects : MonoBehaviour
         view.clearFlags=previousClearFlags;
         RenderSettings.fog=previousFogEnabled;RenderSettings.fogColor=previousFogColor;
         RenderSettings.fogDensity=previousDensity;RenderSettings.fogMode=previousMode;applied=false;
+        RenderSettings.fogStartDistance=previousStart;RenderSettings.fogEndDistance=previousEnd;
     }
     private void OnGUI()
     {

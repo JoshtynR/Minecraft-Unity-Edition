@@ -29,7 +29,7 @@ server = (root / 'Assets/_Scripts/World/WorldServer.cs').read_text()
 spawn = server[server.index('    public void SpawnPlayerMessageHandler('):server.index('    public struct SpawnPlayerMessage')]
 assert spawn.index('expectsSavedPlayerData = true;') < spawn.index('NetworkServer.AddPlayerForConnection(')
 assert spawn.index('PrepareDimensionJoin();') < spawn.index('NetworkServer.AddPlayerForConnection(')
-assert player.count('if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) return;') == 2
+assert player.count('if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer))') == 2
 assert 'if (WorldLoadingScreen.IsLoading) return;' in (root / "Assets/_Scripts/Entity's/Player/PlayerInventory.cs").read_text()
 network = (root / 'Assets/_Scripts/Networking/MinecraftNetworkManager.cs').read_text()
 assert network.count('WorldLoadingScreen.Begin();') == 3

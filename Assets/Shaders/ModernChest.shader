@@ -10,6 +10,7 @@ Shader "Voxel/ModernChest"
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
+            #include "WorldFog.cginc"
             sampler2D _MainTex;float _Brightness;float4 _FluidFog;
             struct appdata {float4 vertex:POSITION;float2 uv:TEXCOORD0;float3 normal:NORMAL;};
             struct v2f {float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float light:TEXCOORD1;float distance:TEXCOORD2;};
@@ -20,7 +21,7 @@ Shader "Voxel/ModernChest"
                 float shade=n.y>.5?(UnityObjectToWorldNormal(v.normal).y<0?.5:1):n.x>.5?.6:.8;
                 o.light=_Brightness*shade;return o;
             }
-            fixed4 frag(v2f i):SV_Target {fixed4 c=tex2D(_MainTex,i.uv);clip(c.a-.1);return fixed4(lerp(c.rgb*i.light,_FluidFog.rgb,1-exp(-_FluidFog.w*i.distance)),1);}
+            fixed4 frag(v2f i):SV_Target {fixed4 c=tex2D(_MainTex,i.uv);clip(c.a-.1);return fixed4(ApplyWorldFog(c.rgb*i.light,i.distance,_FluidFog),1);}
             ENDCG
         }
     }
