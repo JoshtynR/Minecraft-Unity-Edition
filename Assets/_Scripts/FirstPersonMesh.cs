@@ -10,11 +10,14 @@ public static class FirstPersonMesh
         public readonly List<Vector3> vertices = new List<Vector3>();
         public readonly List<Vector2> uv = new List<Vector2>();
         private readonly List<int> triangles = new List<int>();
+        public bool mirrorU;
         public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector2 ua, Vector2 ub, Vector2 uc, Vector2 ud)
         {
             int start = vertices.Count;
             vertices.AddRange(new[] { a, b, c, d });
-            uv.AddRange(new[] { ua, ub, uc, ud });
+            if(mirrorU)
+                uv.AddRange(new[]{new Vector2(1-ua.x,ua.y),new Vector2(1-ub.x,ub.y),new Vector2(1-uc.x,uc.y),new Vector2(1-ud.x,ud.y)});
+            else uv.AddRange(new[] { ua, ub, uc, ud });
             triangles.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3 });
         }
         public Mesh Finish(string name)
@@ -26,10 +29,10 @@ public static class FirstPersonMesh
         }
     }
 
-    public static Mesh Sprite(int width, int height)
+    public static Mesh Sprite(int width, int height,bool mirrorImage=false)
     {
         width = Mathf.Clamp(width, 1, 256); height = Mathf.Clamp(height, 1, 256);
-        var b = new Builder(); const float d = 1f / 16;
+        var b = new Builder{mirrorU=mirrorImage}; const float d = 1f / 16;
         b.Quad(new Vector3(0,0,0), new Vector3(0,1,0), new Vector3(1,1,0), new Vector3(1,0,0),
             new Vector2(0,0), new Vector2(0,1), new Vector2(1,1), new Vector2(1,0));
         b.Quad(new Vector3(1,0,d), new Vector3(1,1,d), new Vector3(0,1,d), new Vector3(0,0,d),
@@ -95,5 +98,31 @@ public static class FirstPersonArmPose
         pose.localPosition=position+bob;
         pose.localRotation=arm*Quaternion.Euler(180,0,0);
         pose.localScale=Vector3.one;
+    }
+}
+
+public static class FirstPersonItemPose
+{
+    public static void Apply(Transform pose,bool block,bool reversed,float swing,float equip,Vector3 bob)
+    {
+        float rootSwing=Mathf.Sin(Mathf.Sqrt(swing)*Mathf.PI);
+        float arc=Mathf.Sin(swing*Mathf.PI);
+        var rotation=Quaternion.Euler(0,-45,0)*
+            Quaternion.Euler(0,Mathf.Sin(swing*swing*Mathf.PI)*20,0)*
+            Quaternion.Euler(0,0,-rootSwing*20)*Quaternion.Euler(rootSwing*80,0,0);
+        if(reversed)rotation*=Quaternion.Euler(0,-180,0);
+        var position=new Vector3(.56f,-.52f-(1-equip)*.6f,.72f)+
+            new Vector3(-rootSwing*.4f,Mathf.Sin(Mathf.Sqrt(swing)*Mathf.PI*2)*.2f,arc*.2f);
+        float scale=.4f;
+        if(!block)
+        {
+            // ItemRenderer's sprite mesh has an offset grip, rather than
+            // rotating around the inventory icon's centre. Z is reflected
+            // from OpenGL to Unity, as in the empty-arm transform.
+            position+=rotation*new Vector3(0,-.3f,0)*scale;
+            rotation=rotation*Quaternion.Euler(0,-50,0)*Quaternion.Euler(0,0,335);
+            scale*=1.5f;
+        }
+        pose.localPosition=position+bob;pose.localRotation=rotation;pose.localScale=Vector3.one*scale;
     }
 }

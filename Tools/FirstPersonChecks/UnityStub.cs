@@ -40,7 +40,7 @@ namespace UnityEngine {
  public static class Debug {public static void Log(string s){}public static void LogError(string s){throw new Exception(s);}}
 }
 namespace UnityEngine.Rendering {public enum ShadowCastingMode {Off}}
-public enum ItemType {Nothing,Stone,Pickaxe,Missing}
+public enum ItemType {Nothing,Stone,Pickaxe,Missing,FishingRod}
 public enum BlockType {Nothing,Stone}
 public class InventoryStack {public ItemType type;public bool Empty=>type==ItemType.Nothing;}
 public class PlayerInventory {public bool isOpen;public InventoryStack stack=new InventoryStack();public InventoryStack HeldItem()=>stack;}

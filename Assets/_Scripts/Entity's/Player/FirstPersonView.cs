@@ -124,24 +124,16 @@ public sealed class FirstPersonView : MonoBehaviour
         if (distance > 1) distance = 0;
         bobAmount = Mathf.MoveTowards(bobAmount, Mathf.Min(1, distance / Mathf.Max(.001f, Time.deltaTime) / 4), Time.deltaTime * 8);
         bobPhase += distance * (Mathf.PI / 1.67f);
-        float hit = Mathf.Sin(swing * Mathf.PI);
         // The hand already follows camera bob. Keep its relative sway subtle.
         Vector3 bob = new Vector3(Mathf.Sin(bobPhase) * .008f, Mathf.Abs(Mathf.Cos(bobPhase)) * .008f, 0) * bobAmount;
         bool arm = shown == ItemType.Nothing || !hasModel;
         if(arm)FirstPersonArmPose.Apply(pivot,swing,equip,bob);
-        else
-        {
-            Vector3 position=new Vector3(.43f,-.33f,.72f);
-            Vector3 rotation=isBlock?new Vector3(-15,45,0):new Vector3(-12,-35,-15);
-            pivot.localPosition=position+bob+new Vector3(-hit*.18f,-(1-equip)*.8f+hit*.06f,-hit*.15f);
-            pivot.localRotation=Quaternion.Euler(rotation+new Vector3(-hit*35,-hit*25,hit*15));
-            pivot.localScale=Vector3.one*(isBlock?.38f:.55f);
-        }
+        else FirstPersonItemPose.Apply(pivot,isBlock,shown==ItemType.FishingRod,swing,equip,bob);
         if(player.IsEating)
         {
             float chew=Mathf.Abs(Mathf.Sin(player.EatingProgress*Mathf.PI*8));
-            pivot.localPosition=new Vector3(.12f,-.22f-chew*.035f,.42f);
-            pivot.localRotation=Quaternion.Euler(-15+chew*8,-25,15);
+            pivot.localPosition+=new Vector3(-.35f,.32f-chew*.035f,-.1f);
+            pivot.localRotation=Quaternion.Euler(chew*8,0,10)*pivot.localRotation;
         }
         UpdateLight();
     }
@@ -168,7 +160,7 @@ public sealed class FirstPersonView : MonoBehaviour
                 if (!isBlock)
                 {
                     if (mesh != null) Destroy(mesh);
-                    mesh = icon != null ? FirstPersonMesh.Sprite(icon.width, icon.height) : null;
+                    mesh = icon != null ? FirstPersonMesh.Sprite(icon.width, icon.height,true) : null;
                 }
                 itemMeshes.Add(type, mesh);
                 blockModels.Add(type, isBlock);
@@ -177,7 +169,7 @@ public sealed class FirstPersonView : MonoBehaviour
             hasModel = mesh != null;
         }
         filter.sharedMesh = hasModel ? mesh : armMesh;
-        geometry.localPosition = hasModel ? new Vector3(-.5f, -.5f, isBlock ? -.5f : 0) : Vector3.zero;
+        geometry.localPosition = hasModel ? isBlock?new Vector3(-.5f,-.5f,-.5f):new Vector3(-.9375f,-.0625f,0) : Vector3.zero;
         modelRenderer.sharedMaterial = isBlock ? blockMaterial : spriteMaterial;
         spriteMaterial.mainTexture = hasModel ? icon : skin;
     }

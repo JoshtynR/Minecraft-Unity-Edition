@@ -68,9 +68,18 @@ class FirstPersonCheck {
   var ownedArm=filter.sharedMesh;
   player.inventory.stack.type=ItemType.Stone;Step(view,30);
   Check((ItemType)Field(view,"shown")==ItemType.Stone&&(bool)Field(view,"isBlock"),"Block stays 3D despite assigned icon");
+  Check(Math.Abs(pose.localPosition.x-.56f)<.0001&&Math.Abs(pose.localPosition.y+.52f)<.0001&&Math.Abs(pose.localScale.x-.4f)<.0001,"reference held block translation and scale");
+  var blockUp=pose.localRotation*new Vector3(0,1,0);
+  var blockFront=pose.localRotation*new Vector3(0,0,-1);
+  Check(Math.Abs(blockUp.y-1)<.0001&&Math.Abs(blockFront.x-.70710678)<.0001,"held block remains upright with reference yaw");
   var stoneMesh=filter.sharedMesh;Step(view,100);Check(filter.sharedMesh==stoneMesh,"No mesh rebuild per frame");
   player.inventory.stack.type=ItemType.Pickaxe;Step(view,30);
   Check(!(bool)Field(view,"isBlock")&&filter.sharedMesh.vertexCount==264,"Extruded sprite tool");
+  var grip=(Transform)Field(view,"geometry");
+  Check(Math.Abs(grip.localPosition.x+.9375f)<.0001&&Math.Abs(grip.localPosition.y+.0625f)<.0001,"sprite rotates about reference grip instead of icon centre");
+  var imageCentre=pose.localPosition+pose.localRotation*((grip.localPosition+new Vector3(.5f,.5f,1f/32))*pose.localScale.x);
+  Check(Math.Abs(imageCentre.x-.55238738)<.0001&&Math.Abs(imageCentre.y+.29115691)<.0001&&Math.Abs(imageCentre.z-.59188048)<.0001,"reference held sprite image centre");
+  Check(filter.sharedMesh.uv[0].x==1&&Math.Abs(pose.localScale.x-.6f)<.0001,"reference sprite facing and scale");
   var toolMesh=filter.sharedMesh;
   player.inventory.stack.type=ItemType.Stone;Step(view,30);Check(filter.sharedMesh==stoneMesh,"Hotbar reuses cached mesh");
   Input.buttons[0]=true;Step(view);Check((float)Field(view,"swing")<1,"Mining starts swing");Input.buttons[0]=false;
