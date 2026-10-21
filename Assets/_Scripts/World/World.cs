@@ -26,6 +26,8 @@ public partial class World : MonoBehaviour
     [Space]
     public byte chunksPerFrame = 1;
     public int chunksGenerationPerFrame = 1;
+    [Tooltip("Maximum concurrent terrain/mesh workers per world. Lower values leave CPU time for rendering while exploring.")]
+    [Range(1, 8)] public int chunkWorkerThreads = 2;
     public WorldRenderer worldRenderer;
     
     public TerrainGenerator terrainGenerator;
@@ -194,16 +196,27 @@ public partial class World : MonoBehaviour
             .Select(chunk => new KeyValuePair<ChunkRenderer, ChunkData>(chunk, chunk.ChunkData)).ToArray();
         if (markModifiedByPlayer)
             foreach (var job in jobs) job.Value.modifiedByPlayer = true;
+        var options = ChunkWorkerOptions();
         return Task.Run(() =>
         {
             var dict = new ConcurrentDictionary<ChunkRenderer, MeshData>();
-            Parallel.ForEach(jobs, job =>
+            Parallel.ForEach(jobs, options, job =>
             {
                 worldCancellationToken.ThrowIfCancellationRequested();
                 dict.TryAdd(job.Key, job.Value.GetMeshData());
             });
             return dict;
         }, worldCancellationToken);
+    }
+
+    private ParallelOptions ChunkWorkerOptions()
+    {
+        return new ParallelOptions
+        {
+            MaxDegreeOfParallelism = System.Math.Max(1, System.Math.Min(chunkWorkerThreads,
+                System.Math.Max(1, System.Environment.ProcessorCount - 1))),
+            CancellationToken = worldCancellationToken
+        };
     }
 
     // public void UpdateChunk(Vector3Int chunkPos)

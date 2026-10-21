@@ -179,12 +179,19 @@ public class ChunkData
         
         if (HasPendingLighting) UpdateLight();
 
-        LoopThroughTheBlocks(this, (x, y, z,block) =>
+        // Match the original section/X/Y/Z order without LINQ's preliminary
+        // air scan, multidimensional enumerators or a delegate for every cell.
+        foreach (var section in sections)
+        for (int x = 0; x < chunkSize; x++)
+        for (int y = 0; y < chunkHeight; y++)
+        for (int z = 0; z < chunkSize; z++)
         {
-            meshData = BlockHelper.GetMeshData(this, new Vector3Int(x, y, z), meshData, block);
-        });
-        
-        
+            var block = section.blocks[x, y, z].type;
+            if (block == BlockType.Air || block == BlockType.Nothing) continue;
+            meshData = BlockHelper.GetMeshData(this, new Vector3Int(x, y + section.yOffset, z), meshData, block);
+        }
+        // All managed staging work happens on the mesh worker, before upload.
+        meshData.PrepareForRendering();
         return meshData;
     }
 

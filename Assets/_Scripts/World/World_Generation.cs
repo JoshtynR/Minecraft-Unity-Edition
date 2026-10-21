@@ -265,10 +265,11 @@ public partial class World
     
     public UniTask<ConcurrentDictionary<Vector3Int, MeshData>> CreateMeshDataAsync(List<ChunkData> dataToRender)
     {
+        var options = ChunkWorkerOptions();
         return UniTask.RunOnThreadPool(() =>
         {
             var dict = new ConcurrentDictionary<Vector3Int, MeshData>();
-            Parallel.ForEach(dataToRender, data =>
+            Parallel.ForEach(dataToRender, options, data =>
             {
                 worldCancellationToken.ThrowIfCancellationRequested();
                 var meshData = data.GetMeshData();
@@ -281,11 +282,12 @@ public partial class World
 
     private UniTask<ConcurrentDictionary<Vector3Int, ChunkData>> CalculateWorldChunkData(HashSet<Vector3Int> chunkDataPositionsToCreate)
     {
+        var options = ChunkWorkerOptions();
         return UniTask.RunOnThreadPool(() =>
         {
             Profiler.BeginThreadProfiling("MyThreads","CalculateWorldChunkData");
             var dataDict = new ConcurrentDictionary<Vector3Int, ChunkData>();
-            Parallel.ForEach(chunkDataPositionsToCreate, pos =>
+            Parallel.ForEach(chunkDataPositionsToCreate, options, pos =>
             {
                 if(taskTokenSource.IsCancellationRequested)
                 {

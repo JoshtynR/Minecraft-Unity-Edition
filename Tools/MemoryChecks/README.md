@@ -14,6 +14,9 @@ world. Native Mesh counts should stabilize; inactive chunk pooling intentionally
 retains meshes up to the pool's previous peak. Also check sky/block light changes,
 water flow, inventory icons, Steam lobby callbacks, and editor preview windows.
 
-Meshing still visits each visible block and recalculates normals. Neighbor lighting
+Mesh merging, lighting UV packing, normals and bounds are prepared on workers;
+uploads reuse these results without Unity normal/bounds recalculation. The checks
+cover submesh winding, negative-coordinate bounds, empty meshes and repeated upload.
+Neighbor lighting
 and block mutations still use the project's existing lighting implementation;
 this cleanup does not replace it with Jobs/Burst or alter terrain/tree RNG rules.

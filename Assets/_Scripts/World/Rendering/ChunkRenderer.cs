@@ -44,13 +44,13 @@ public class ChunkRenderer : MonoBehaviour
         mesh.SetUVs(3, meshData.smoothLightCorners);
         mesh.SetUVs(4, meshData.faceCoordinates);
         mesh.SetColors(meshData.colors);
-        mesh.SetTriangles(meshData.triangles, 0);
+        mesh.SetNormals(meshData.normals);
+        mesh.SetTriangles(meshData.triangles, 0, false);
         if (meshData.transparentMesh != null)
-            mesh.SetTriangles(meshData.transparentMesh.triangles, 1);
+            mesh.SetTriangles(meshData.transparentMesh.triangles, 1, false);
         if (meshData.waterMesh != null)
-            mesh.SetTriangles(meshData.waterMesh.triangles, 2);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
+            mesh.SetTriangles(meshData.waterMesh.triangles, 2, false);
+        mesh.bounds = new Bounds(meshData.boundsCenter, meshData.boundsSize);
         if(meshData.chests!=null||chestVisuals.Count>0)RefreshChestVisuals(meshData.chests);
         // MeshData is staging data; retaining it here doubles chunk geometry memory.
     }

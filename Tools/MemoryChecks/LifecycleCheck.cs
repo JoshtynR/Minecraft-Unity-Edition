@@ -14,6 +14,7 @@ namespace UnityEngine
  public struct Vector4 { public float x,y,z,w; public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
  public struct Vector2 { public float x,y; public Vector2(float x,float y){this.x=x;this.y=y;} }
  public struct Vector3 { public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z); }
+ public struct Bounds {public Vector3 center,size;public Bounds(Vector3 center,Vector3 size){this.center=center;this.size=size;}}
  public struct Vector3Int { public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static implicit operator Vector3(Vector3Int p)=>new Vector3(p.x,p.y,p.z);public static Vector3Int operator +(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z); }
  public struct Color {public Color(float r,float g,float b,float a){} public static Color Lerp(Color a,Color b,float t)=>a; }
  public static class Application { public static bool isPlaying=true; }
@@ -29,15 +30,16 @@ namespace UnityEngine
  public class Mesh:Object
  {
   public int vertexCount=4;public static int created;public int uploads;public int subMeshCount;public Rendering.IndexFormat indexFormat;
-  public List<Vector3> vertices;public List<Vector2> faceUVs;public List<Vector2> lightUVs;public List<Vector4> cornerUVs;public Dictionary<int,List<int>> indices=new Dictionary<int,List<int>>();
+  public List<Vector3> vertices,normals;public Bounds bounds;public List<Vector2> faceUVs;public List<Vector2> lightUVs;public List<Vector4> cornerUVs;public Dictionary<int,List<int>> indices=new Dictionary<int,List<int>>();
   public Mesh(){created++;}public void Clear(){}public void MarkDynamic(){}public void SetVertices(List<Vector3> list){vertices=new List<Vector3>(list);vertexCount=list.Count;uploads++;}
   public void SetUVs<T>(int channel,List<T> data){if(channel==4&&data.Count!=vertexCount)throw new Exception("UV5 count does not match mesh vertices");if(channel==4)faceUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==1)lightUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==3)cornerUVs=new List<Vector4>((IEnumerable<Vector4>)(object)data);}public void SetColors(List<Color> data){}
-  public void SetTriangles(List<int> data,int submesh){indices[submesh]=new List<int>(data);}public void RecalculateNormals(){}public void RecalculateBounds(){}
+  public void SetNormals(List<Vector3> data){normals=new List<Vector3>(data);}
+  public void SetTriangles(List<int> data,int submesh,bool calculateBounds=true){if(calculateBounds)throw new Exception("bounds calculated during upload");indices[submesh]=new List<int>(data);}
  }
  namespace Rendering { public enum IndexFormat{UInt32} }
 }
 public partial class ChunkData { public bool modifiedByPlayer;public Vector3Int worldPos;public World worldRef;public Block GetBlock(Vector3Int p)=>new Block(); }
-public enum BlockType {Chest}
+public enum BlockType {Chest,Air,Nothing}
 public static class SpecialBlockGeometry {public static byte State(BlockType t,int shape)=>0;}
 public class ModernChestVisual:MonoBehaviour {public void Initialize(World w,Vector3Int p,byte state){}}
 public class Block {public BlockType type;public int blockShape; public void OnBlockUpdate(){} }
@@ -79,6 +81,29 @@ public static class LifecycleCheck
  static void Invoke(object o,string method){o.GetType().GetMethod(method,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(o,null);}
  public static void Main()
  {
+  var optionsWorld=new World();
+  Check(optionsWorld.OptionsForTest().MaxDegreeOfParallelism<=2,"default workers leave CPU headroom");
+  optionsWorld.chunkWorkerThreads=0;Check(optionsWorld.OptionsForTest().MaxDegreeOfParallelism==1,"invalid worker limit clamps to one");
+  optionsWorld.chunkWorkerThreads=int.MaxValue;Check(optionsWorld.OptionsForTest().MaxDegreeOfParallelism==Math.Max(1,Environment.ProcessorCount-1),"worker cap reserves a logical CPU when available");
+  var scan=new ChunkData{sections=new[]{new ChunkSection(),new ChunkSection{yOffset=16}}};
+  foreach(var section in scan.sections)for(int x=0;x<2;x++)for(int y=0;y<2;y++)for(int z=0;z<2;z++)section.blocks[x,y,z]=new Block{type=BlockType.Air};
+  scan.sections[0].blocks[0,1,1].type=BlockType.Chest;
+  scan.sections[1].blocks[1,0,0].type=BlockType.Chest;
+  var scanned=scan.BuildForTest();
+  Check(BlockHelper.visited.Count==2&&BlockHelper.visited[0].x==0&&BlockHelper.visited[0].y==1&&BlockHelper.visited[1].x==1&&BlockHelper.visited[1].y==16,"production mesher skips air and preserves section/X/Y/Z order");
+  Check(scanned.normals.Count==2,"production mesher prepares geometry before returning to upload");
+  var geometry=new MeshData(true);
+  foreach(var part in new[]{geometry,geometry.transparentMesh,geometry.waterMesh})
+  {
+   part.vertices.AddRange(new[]{new Vector3(-2,3,0),new Vector3(2,3,0),new Vector3(2,5,0),new Vector3(-2,5,0)});
+   part.AddQuadTriangles();
+  }
+  Task.Run(()=>geometry.PrepareForRendering()).GetAwaiter().GetResult();
+  Check(geometry.normals.Count==12,"worker prepares normals for all submeshes");
+  foreach(var normal in geometry.normals)Check(normal.x==0&&normal.y==0&&normal.z==1,"triangle winding preserved across submeshes");
+  Check(geometry.boundsCenter.x==0&&geometry.boundsCenter.y==4&&geometry.boundsSize.x==4&&geometry.boundsSize.y==2,"worker computes bounds including negative coordinates");
+  geometry.PrepareForRendering();Check(geometry.normals.Count==12,"worker preparation remains idempotent");
+  var empty=new MeshData(true);empty.PrepareForRendering();Check(empty.normals.Count==0&&empty.boundsSize.x==0,"empty chunk bounds and normals");
   var data=new ChunkData();var renderer=new ChunkRenderer();renderer.Initialize(data);var mesh=renderer.filter.sharedMesh;
   renderer.Initialize(new ChunkData());Check(renderer.filter.sharedMesh==mesh&&Mesh.created==1,"pool reuse retains owned mesh");
   var staging=Quad(renderer.ChunkData);renderer.RenderMesh(staging);renderer.RenderMesh(staging);
@@ -89,6 +114,7 @@ public static class LifecycleCheck
   Check(staging.smoothLightCorners.Count==12&&mesh.cornerUVs.Count==12&&mesh.cornerUVs[7].z==0.3f,"smooth corner channel survives transparent merge and repeated upload");
   Check(mesh.subMeshCount==3&&mesh.indices[2][0]==8&&mesh.indices[2][2]==10,"water indices offset after opaque and cutout geometry exactly once");
   Check(mesh.lightUVs.Count==12&&mesh.cornerUVs[11].w==0.4f,"water retains brightness and corner channels");
+  Check(mesh.normals.Count==12&&mesh.bounds.size.x==3,"renderer uploads worker normals and bounds");
   renderer.RenderMesh(new MeshData(true){sourceChunk=renderer.ChunkData});
   Check(mesh.indices[2].Count==0,"dry rebuild clears previous water triangles");
   Check(staging.faceCoordinates.Count==12&&staging.faceCoordinates[2].x==1,"normalized face coordinates merge independently of cropped images");
