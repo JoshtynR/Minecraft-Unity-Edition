@@ -6,6 +6,7 @@ namespace UnityEngine
  public struct Vector3Int {public static Vector3Int down=>new Vector3Int(0,-1,0);public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));public static implicit operator Vector3(Vector3Int v)=>new Vector3(v.x,v.y,v.z);public static Vector3Int operator +(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;} }
  public struct Vector3
  {
+  public static Vector3 one=>new Vector3(1,1,1);
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
   public float magnitude=>(float)Math.Sqrt(x*x+y*y+z*z);
   public float sqrMagnitude=>x*x+y*y+z*z;

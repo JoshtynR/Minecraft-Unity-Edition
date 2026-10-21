@@ -20,7 +20,12 @@ public partial class World
     
     public async void SaveWorld()
     {
-        if(World.Instance.worldName == "")
+        try { await SaveDimensionAsync(); } catch (Exception error) { Debug.LogException(error); }
+    }
+
+    public async Task SaveDimensionAsync()
+    {
+        if(worldName == "")
         {
             Debug.Log("World name is empty - not saving");
             return;
@@ -32,79 +37,89 @@ public partial class World
             return;
         }
 
-        chests.SaveWorld(worldName);
-        furnaces.SaveWorld(worldName);
-        // Capture player stacks before yielding, at the same point as chest contents.
-        // A transfer during chunk IO must not be saved on just one side.
-        var chestPlayerSnapshots=GameManager.Instance==null?new WorldServer.SavePlayerMessage[0]:
-            GameManager.Instance.players.Where(player=>player!=null).Select(player=>player.SavePlayer()).ToArray();
+        await generationGate.WaitAsync(worldCancellationToken);
         isSaving = true;
-        var stopwatch = Stopwatch.StartNew();
-        var saveWatch = Stopwatch.StartNew();
-        // Create object with data to save
-        var worldSaveData = new WorldSaveData
+        try
         {
-            chunks = worldData.chunkDataDict.Values.Where(data => data.modifiedAfterSave).Select(ChunkSaveData.Serialize).ToArray(),
-            worldName = worldName,
-            seedOffset = mapSeedOffset,
-            betaWorldSeed = betaWorldSeed,
-            fluidTicks = CaptureFluidTicks(),
-            droppedItems = CaptureDroppedItems(),
-            cows = CaptureCows()
-        };
-        saveWatch.Stop();
-        Debug.Log($"Creating local save object took {saveWatch.ElapsedMilliseconds}ms");
-        
-        Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/"+worldSaveData.worldName+"/chunks"));
-        
-        // Save the chunks
-        await Task.Run(() =>
-        {
-            Parallel.ForEach(worldSaveData.chunks,new ParallelOptions() {MaxDegreeOfParallelism = 8}, chunk =>
+            chests.SaveWorld(StorageName);
+            furnaces.SaveWorld(StorageName);
+            // Capture player stacks before yielding, at the same point as chest contents.
+            // A transfer during chunk IO must not be saved on just one side.
+            var chestPlayerSnapshots=GameManager.Instance==null?new WorldServer.SavePlayerMessage[0]:
+                GameManager.Instance.players.Where(player=>player!=null&&player.inventory!=null&&!player.DimensionTransferInProgress).Select(player=>player.SavePlayer()).ToArray();
+            var stopwatch = Stopwatch.StartNew();
+            var saveWatch = Stopwatch.StartNew();
+            // Create object with data to save
+            var worldSaveData = new WorldSaveData
             {
-                var path = GetChunkPath(worldName, chunk.position);
-                string json;
-                if (binaryCompressSaves)
+                chunks = worldData.chunkDataDict.Values.Where(data => data.modifiedAfterSave).Select(ChunkSaveData.Serialize).ToArray(),
+                worldName = worldName,
+                dimension = dimension,
+                seedOffset = mapSeedOffset,
+                betaWorldSeed = betaWorldSeed,
+                fluidTicks = CaptureFluidTicks(),
+                droppedItems = CaptureDroppedItems(),
+                cows = CaptureCows()
+            };
+            saveWatch.Stop();
+            Debug.Log($"Creating local save object took {saveWatch.ElapsedMilliseconds}ms");
+
+            Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/"+StorageName+"/chunks"));
+
+            // Save the chunks
+            await Task.Run(() =>
+            {
+                Parallel.ForEach(worldSaveData.chunks,new ParallelOptions() {MaxDegreeOfParallelism = 8}, chunk =>
                 {
-                    json = Compress(JsonUtility.ToJson(chunk));
-                }
-                else
-                {
-                    json = JsonUtility.ToJson(chunk);
-                }
-                File.WriteAllText(path, json);
+                    var path = GetChunkPath(worldName, chunk.position, dimension);
+                    string json;
+                    if (binaryCompressSaves)
+                    {
+                        json = Compress(JsonUtility.ToJson(chunk));
+                    }
+                    else
+                    {
+                        json = JsonUtility.ToJson(chunk);
+                    }
+                    File.WriteAllText(path, json);
+                });
             });
-        });
-        
-        // Save the world data
-        var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/"+worldSaveData.worldName+"/world.json");
 
-        string worldJson;
-        
-        if (binaryCompressSaves)
-        {
-            worldJson = Compress(JsonUtility.ToJson(worldSaveData));
+            // Save the world data
+            var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/"+StorageName+"/world.json");
+
+            string worldJson;
+
+            if (binaryCompressSaves)
+            {
+                worldJson = Compress(JsonUtility.ToJson(worldSaveData));
+            }
+            else
+            {
+                worldJson = JsonUtility.ToJson(worldSaveData);
+            }
+
+            await File.WriteAllTextAsync(savePath, worldJson);
+
+            // Save all the player data
+
+            Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/"+worldSaveData.worldName+"/playerdata"));
+
+            foreach(var playerSnapshot in chestPlayerSnapshots)SavePlayer(playerSnapshot);
+
+            Debug.Log("Saved world in " + stopwatch.ElapsedMilliseconds + "ms");
         }
-        else
+        finally
         {
-            worldJson = JsonUtility.ToJson(worldSaveData);
+            isSaving = false;
+            generationGate.Release();
         }
-        
-        await File.WriteAllTextAsync(savePath, worldJson);
-        
-        // Save all the player data
-        
-        Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/"+worldSaveData.worldName+"/playerdata"));
-
-        foreach(var playerSnapshot in chestPlayerSnapshots)SavePlayer(playerSnapshot);
-
-        Debug.Log("Saved world in " + stopwatch.ElapsedMilliseconds + "ms");
-        isSaving = false;
     }
 
     public void SavePlayer(WorldServer.SavePlayerMessage message)
     {
         var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/" + worldName + $"/playerdata/{message.steamId}.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
         File.WriteAllText(path, JsonUtility.ToJson(message));
     }
 
@@ -124,7 +139,7 @@ public partial class World
                     worldCancellationToken.ThrowIfCancellationRequested();
                 }
                 
-                var path = GetChunkPath(worldName, chunkPos);
+                var path = GetChunkPath(worldName, chunkPos, dimension);
         
                 if (!File.Exists(path))
                 {
@@ -143,7 +158,7 @@ public partial class World
                 }
                 
                 var chunkSaveData = JsonUtility.FromJson<ChunkSaveData>(json);
-                dict.TryAdd(chunkPos, ChunkData.Deserialize(chunkSaveData));
+                dict.TryAdd(chunkPos, ChunkData.Deserialize(chunkSaveData, this));
             }
 
             // });
@@ -151,9 +166,9 @@ public partial class World
         }, cancellationToken: worldCancellationToken);
     }
 
-    public static string GetChunkPath(string worldName, Vector3Int chunkPos)
+    public static string GetChunkPath(string worldName, Vector3Int chunkPos, WorldDimension dimension = WorldDimension.Overworld)
     {
-        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),".minecraftUnity/saves/"+worldName+"/chunks/"+chunkPos.x+"_"+chunkPos.y+"_"+chunkPos.z+".json");
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),".minecraftUnity/saves/"+DimensionRules.StorageName(worldName,dimension)+"/chunks/"+chunkPos.x+"_"+chunkPos.y+"_"+chunkPos.z+".json");
     }
 
     public static string Compress(string s)

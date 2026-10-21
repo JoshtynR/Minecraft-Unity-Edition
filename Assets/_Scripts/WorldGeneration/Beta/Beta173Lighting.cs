@@ -3,12 +3,13 @@ using System;
 // Rendering/light transport math, independent of Unity and shader color space.
 public static class Beta173Lighting
 {
-    public static float Brightness(int sky, int block, int skyDarkness = 0, int emission = 0)
+    public static float Brightness(int sky, int block, int skyDarkness = 0, int emission = 0, bool nether = false)
     {
         int level = Math.Max(Math.Max(0, sky - skyDarkness), Math.Max(block, emission));
         level = Math.Max(0, Math.Min(15, level));
         float darkness = 1.0f - level / 15.0f;
-        return (1.0f - darkness) / (darkness * 3.0f + 1.0f) * 0.95f + 0.05f;
+        float ambient = nether ? .1f : .05f;
+        return (1.0f - darkness) / (darkness * 3.0f + 1.0f) * (1-ambient) + ambient;
     }
 
     public static float InterpolateCorners(float negativeAnegativeB, float negativeApositiveB,

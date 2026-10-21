@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class TerrainGenerator : MonoBehaviour
 {
@@ -13,6 +13,7 @@ public class TerrainGenerator : MonoBehaviour
     {
         if (data.chunkSize != 16 || data.worldRef.worldHeight < Beta173Terrain.TerrainHeight)
             throw new System.InvalidOperationException("Beta terrain requires 16-block chunks and a world height of at least 128.");
+        if (data.worldRef.dimension == WorldDimension.Nether) return GenerateNether(data);
         long betaSeed = data.worldRef.betaWorldSeed;
         var generation = GetGenerators(betaSeed);
 
@@ -61,6 +62,10 @@ public class TerrainGenerator : MonoBehaviour
         int bz = BetaCoordinateSpace.UnityChunkToBetaChunkZ(FloorDiv(data.worldPos.z, data.chunkSize));
         if (!Beta173Population.HasCompleteNeighborhood(data, bx, bz)) return;
 
+        if (data.worldRef.dimension == WorldDimension.Nether)
+        {
+            Beta173NetherPopulation.Populate(data,bx,bz); data.betaPopulationDone=true; data.modifiedAfterSave=true; return;
+        }
         var generation = GetGenerators(data.worldRef.betaWorldSeed);
         generation.population.PopulateComplete(data, generation.terrain, bx, bz);
         data.betaPopulationDone = true;
@@ -73,6 +78,16 @@ public class TerrainGenerator : MonoBehaviour
         int bx = BetaCoordinateSpace.UnityChunkToBetaChunkX(FloorDiv(data.worldPos.x, data.chunkSize));
         int bz = BetaCoordinateSpace.UnityChunkToBetaChunkZ(FloorDiv(data.worldPos.z, data.chunkSize));
         BetaParityDump.DumpDataChunk00(data, bx, bz, "population");
+    }
+
+    private ChunkData GenerateNether(ChunkData data)
+    {
+        int bx=BetaCoordinateSpace.UnityChunkToBetaChunkX(FloorDiv(data.worldPos.x,16));
+        int bz=BetaCoordinateSpace.UnityChunkToBetaChunkZ(FloorDiv(data.worldPos.z,16));
+        var raw=GetGenerators(data.worldRef.betaWorldSeed).nether.Generate(bx,bz);
+        for(int x=0;x<16;x++)for(int z=0;z<16;z++)for(int y=0;y<data.worldRef.worldHeight;y++)
+            data.SetBlock(new Vector3Int(15-x,y,z),y<128?raw[x,y,z]:BlockType.Air);
+        return data;
     }
 
     private Generators GetGenerators(long seed)
@@ -91,6 +106,7 @@ public class TerrainGenerator : MonoBehaviour
     {
         public readonly long seed;
         public readonly Beta173Terrain terrain;
+        public readonly Beta173NetherTerrain nether;
         public readonly Beta173Caves caves;
         public readonly Beta173Population population;
 
@@ -98,6 +114,7 @@ public class TerrainGenerator : MonoBehaviour
         {
             this.seed = seed;
             terrain = new Beta173Terrain(seed);
+            nether = new Beta173NetherTerrain(seed);
             caves = new Beta173Caves(seed);
             population = new Beta173Population(seed);
         }

@@ -27,7 +27,7 @@ def main():
         server = (ROOT / 'Assets/_Scripts/World/WorldServer.cs').read_text(encoding='utf-8-sig')
         server = server[server.index('    #region Block'):server.index('    #endregion')]
         server = server.replace('    #region Block', '')
-        server = server.replace('RpcWaterUpdates(positions, levels);', 'RecordSend(positions, levels); RpcWaterUpdates(positions, levels);')
+        server = server.replace('RpcWaterUpdates(dimension,positions,levels);', 'RecordSend(positions, levels); RpcWaterUpdates(dimension,positions,levels);')
         (tmp / 'WorldServer.cs').write_text('using UnityEngine; using Mirror; public partial class WorldServer {\n' + server + '\n}')
         helper=(ROOT/'Assets/_Scripts/World/Rendering/BlockHelper.cs').read_text(encoding='utf-8-sig')
         height=helper[helper.index('    private static void SetWaterFaceHeight'):helper.index('    public static void GetFaceLightingAndAO')]

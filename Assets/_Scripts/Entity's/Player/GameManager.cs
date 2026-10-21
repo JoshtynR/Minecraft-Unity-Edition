@@ -34,6 +34,7 @@ public class GameManager : MonoBehaviour
         playerChunkPosition = WorldDataHelper.GetChunkPosition(world, Vector3Int.RoundToInt(localPlayer.transform.position));
         currentChunkCenter.x = playerChunkPosition.x + world.chunkSize / 2;
         currentChunkCenter.y = playerChunkPosition.y + world.chunkHeight / 2;
+        currentChunkCenter.z = playerChunkPosition.z + world.chunkSize / 2;
     }
 
     public Vector3Int GetCurrentChunkCenter()
@@ -46,8 +47,7 @@ public class GameManager : MonoBehaviour
         yield return null;
         if (
             Mathf.Abs(currentChunkCenter.x - localPlayer.transform.position.x) > world.chunkSize / 2 ||
-            Mathf.Abs(currentChunkCenter.z - localPlayer.transform.position.z) > world.chunkSize / 2 ||
-            Mathf.Abs(playerChunkPosition.y - localPlayer.transform.position.y) > world.chunkHeight / 2
+            Mathf.Abs(currentChunkCenter.z - localPlayer.transform.position.z) > world.chunkSize / 2
         )
         {
             world.LoadAdditionalChunks(localPlayer.gameObject);

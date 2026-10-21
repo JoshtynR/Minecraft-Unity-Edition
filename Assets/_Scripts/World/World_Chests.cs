@@ -12,20 +12,20 @@ public partial class World
         chests.LidChanged+=(position,opened)=>
         {
             SetChestLid(position,opened);
-            if(NetworkServer.active&&WorldServer.instance!=null)WorldServer.instance.BroadcastChestLid(position,opened);
+            if(NetworkServer.active&&WorldServer.instance!=null)WorldServer.instance.BroadcastChestLid(dimension,position,opened);
         };
     }
     public void SetChestLid(Vector3Int position,bool opened)
     {
         bool changed=opened?openChestLids.Add(position):openChestLids.Remove(position);
-        if(changed)GameAudio.Play(opened?"random/chestopen":"random/chestclosed",(Vector3)position+Vector3.one*.5f,.5f);
+        if(changed&&Instance==this)GameAudio.Play(opened?"random/chestopen":"random/chestclosed",(Vector3)position+Vector3.one*.5f,.5f);
     }
     public bool CanReplaceChest(Vector3Int position,BlockType next)
     {
         if(NetworkClient.active&&!NetworkServer.active)return true;
         var block=GetBlock(position);
-        if(block!=null&&IsFurnace(block.type)&&!IsFurnace(next))return furnaces.CanRemove(worldName,position);
-        return block==null||block.type!=BlockType.Chest||next==BlockType.Chest||chests.CanRemove(worldName,position);
+        if(block!=null&&IsFurnace(block.type)&&!IsFurnace(next))return furnaces.CanRemove(StorageName,position);
+        return block==null||block.type!=BlockType.Chest||next==BlockType.Chest||chests.CanRemove(StorageName,position);
     }
     public bool ChestAccessible(Vector3 eye,Vector3Int position,float reach)
     {
@@ -51,8 +51,8 @@ public partial class WorldServer
     public void ReceiveChestRequest(NetworkConnectionToClient connection,ChestRequest request)
     {
         if(connection.identity==null||World.Instance==null)return;
-        var player=connection.identity.GetComponent<Player>();if(player==null)return;
-        var world=World.Instance;
+        var player=connection.identity.GetComponent<Player>();if(player==null||player.DimensionTransferInProgress)return;
+        var world=player.CurrentWorld;
         if(request.action==0&&world.furnaces.HasOwner(connection.connectionId))
         {connection.Send(new ChestReply{error="Close the furnace first."});return;}
         if(request.action==0&&!player.AcceptsItemRevision(request.itemWearRevision))
@@ -60,39 +60,43 @@ public partial class WorldServer
         if(world.isSaving&&request.action!=2)
         {connection.Send(new ChestReply{error="World is saving; try the chest again in a moment."});return;}
         bool accessible=player.health>0&&world.ChestAccessible(player.transform.position+Vector3.up*1.6f,request.position,player.reach);
-        var reply=world.chests.Process(world.worldName,connection.connectionId,request,accessible);
+        var reply=world.chests.Process(world.StorageName,connection.connectionId,request,accessible);
         if(reply.accepted)player.GetComponent<PlayerInventory>().ApplyChestPlayerSnapshot(reply.inventory,reply.cursor);
         connection.Send(reply);
         if(reply.accepted&&!reply.opened)world.SaveWorld();
     }
     public void CloseChestForDisconnect(NetworkConnectionToClient connection)
     {
-        if(World.Instance==null)return;
-        var reply=World.Instance.chests.Close(connection.connectionId);
-        if(!reply.accepted)return;
-        if(connection.identity!=null)connection.identity.GetComponent<PlayerInventory>().ApplyChestPlayerSnapshot(reply.inventory,reply.cursor);
-        World.Instance.SaveWorld();
+        foreach(var world in World.LoadedDimensions)
+        {
+            var reply=world.chests.Close(connection.connectionId);if(!reply.accepted)continue;
+            if(connection.identity!=null)connection.identity.GetComponent<PlayerInventory>().ApplyChestPlayerSnapshot(reply.inventory,reply.cursor);
+            world.SaveWorld();
+        }
     }
-    public void BroadcastChestLid(Vector3Int position,bool opened){RpcChestLid(position,opened);}
-    [ClientRpc] private void RpcChestLid(Vector3Int position,bool opened)
-    {if(World.Instance!=null)World.Instance.SetChestLid(position,opened);}
+    public void BroadcastChestLid(WorldDimension dimension,Vector3Int position,bool opened){RpcChestLid(dimension,position,opened);}
+    [ClientRpc] private void RpcChestLid(WorldDimension dimension,Vector3Int position,bool opened)
+    {var world=World.FindDimension(dimension);if(world!=null)world.SetChestLid(position,opened);}
     private void Update()
     {
         if(!isServer||World.Instance==null||Time.unscaledTime<chestCheckTime)return;
         chestCheckTime=Time.unscaledTime+.25f;
-        CheckFurnaceSessions();
-        foreach(int owner in World.Instance.chests.Owners())
+        foreach(var world in World.LoadedDimensions)
+        {
+        CheckFurnaceSessions(world);
+        foreach(int owner in world.chests.Owners())
         {
             NetworkConnectionToClient connection;
             bool connected=NetworkServer.connections.TryGetValue(owner,out connection)&&connection!=null&&connection.identity!=null;
             var player=connected?connection.identity.GetComponent<Player>():null;
-            bool valid=player!=null&&player.health>0&&World.Instance.ChestAccessible(player.transform.position+Vector3.up*1.6f,
-                World.Instance.chests.Position(owner),player.reach);
+            bool valid=player!=null&&player.dimension==world.dimension&&!player.DimensionTransferInProgress&&player.health>0&&world.ChestAccessible(player.transform.position+Vector3.up*1.6f,
+                world.chests.Position(owner),player.reach);
             if(valid)continue;
-            var reply=World.Instance.chests.Close(owner);
+            var reply=world.chests.Close(owner);
             if(player!=null)player.GetComponent<PlayerInventory>().ApplyChestPlayerSnapshot(reply.inventory,reply.cursor);
             if(connected)connection.Send(reply);
-            World.Instance.SaveWorld();
+            world.SaveWorld();
+        }
         }
     }
 }

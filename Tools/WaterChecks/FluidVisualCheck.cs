@@ -18,6 +18,7 @@ namespace UnityEngine
  public class Object {public string name;public bool destroyed;public static void Destroy(Object o){if(o!=null)o.destroyed=true;}}
  public class Component:Object {public GameObject gameObject;public Transform transform=>gameObject.transform;public T GetComponent<T>() where T:Component=>gameObject.GetComponent<T>();}
  public class MonoBehaviour:Component {}
+ public static class Debug {public static void LogException(Exception e){throw e;}}
  public class ScriptableObject:Object {}
  public class RequireComponent:Attribute {public RequireComponent(Type t){}}
  public class Tooltip:Attribute {public Tooltip(string t){}}
@@ -90,6 +91,7 @@ public class Block {public BlockType type;public byte waterLevel;}
 public static class SpecialBlockGeometry {public static bool NormalCube(BlockType t)=>t==BlockType.Stone;}
 public partial class World:MonoBehaviour
 {
+ public World worldRenderer=>this;public WorldDimension dimension;public static System.Threading.Tasks.Task SaveAllDimensionsAsync()=>System.Threading.Tasks.Task.CompletedTask;
  public static World Instance;public bool IsWorldCreated=true;public int worldHeight=12;
  public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();
  public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block{type=BlockType.Air};}
@@ -97,6 +99,7 @@ public partial class World:MonoBehaviour
 }
 public partial class Player:MonoBehaviour
 {
+ public WorldDimension dimension;public World CurrentWorld=>world??World.Instance;public float PortalOverlay;private void BeginDimensionTravel(WorldDimension target,Vector3 position,bool portal){}
  public World world;public bool networkStarted,isLocalPlayer=true,isFlying,serverFlying,InWater;
  public bool isServer;public Mirror.NetworkConnection connectionToClient;
  public bool escapeMenuOpen;
@@ -169,3 +172,8 @@ public static class FluidVisualCheck
   Console.WriteLine(count+" production player/camera/particle ownership and integration checks passed (Unity rendering mocked).");
  }
 }
+
+public enum WorldDimension {Nether=-1,Overworld=0}
+public class TextureData {public UnityEngine.Texture2D side,top;}
+public class BlockTypeData {public TextureData textureData=new TextureData();}
+public static class BlockDataManager {public static System.Collections.Generic.Dictionary<int,BlockTypeData> blockTypeDataDictionary=new System.Collections.Generic.Dictionary<int,BlockTypeData>();}

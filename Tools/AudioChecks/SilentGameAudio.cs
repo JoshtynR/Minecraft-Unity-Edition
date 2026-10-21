@@ -8,6 +8,6 @@ public static class GameAudio
  public static float Variation(float min,float max)=>min;
  public static void Play(string family,Vector3 position,float volume=1,float pitch=1){if(family!=null)plays++;}
  public static void PlayClip(AudioClip clip,Vector3 position,float volume,bool spatial=true,float pitch=1){}
- public static void Broadcast(string family,Vector3 position,float volume=1,float pitch=1){}
- public static void BroadcastBlock(BlockType type,Vector3Int position,bool broken){blockBroadcasts++;}
+ public static void Broadcast(string family,Vector3 position,float volume=1,float pitch=1,World world=null){}
+ public static void BroadcastBlock(BlockType type,Vector3Int position,bool broken,World world=null){blockBroadcasts++;}
 }

@@ -277,7 +277,7 @@ public static class Lighting
     {
         int worldH = chunkData.worldRef.worldHeight;
 
-        int level = 15;
+        int level = chunkData.worldRef.dimension == WorldDimension.Nether ? 0 : 15;
         for (int y = worldH - 1; y >= 0; y--)
         {
             var block = chunkData.GetBlock(new Vector3Int(startPos.x, y, startPos.z));

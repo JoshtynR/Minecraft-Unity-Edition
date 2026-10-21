@@ -31,7 +31,26 @@ public partial class World
         disabled = false;
     }
 
+    private readonly System.Threading.SemaphoreSlim generationGate = new System.Threading.SemaphoreSlim(1,1);
+    private bool requestPlayerSpawn;
     public async void GenerateWorld(Vector3Int position, Action onGenerateNewChunks = null)
+    {
+        try { await EnsureAreaAsync(position); onGenerateNewChunks?.Invoke(); }
+        catch (OperationCanceledException) { }
+        catch (Exception error) { Debug.LogException(error); }
+    }
+    public async Task EnsureAreaAsync(Vector3Int position, bool fullArea = false)
+    {
+        await generationGate.WaitAsync(worldCancellationToken);
+        try
+        {
+            while(chunkUpdateInProgress||waterMeshBuildInProgress)await Task.Yield();
+            PreparingDimensionArea=fullArea;
+            await GenerateWorldCore(position);
+        }
+        finally { PreparingDimensionArea=false; generationGate.Release(); }
+    }
+    private async Task GenerateWorldCore(Vector3Int position)
     {
         Profiler.BeginThreadProfiling("GenerateWorld", "GenerateWorld");
         if (!Application.isPlaying)
@@ -39,7 +58,7 @@ public partial class World
             fullStopwatch.Start();
         }
 
-        WorldGenerationData worldGenerationData = await Task.Run(() => GetPositionsInRenderDistance(position), worldCancellationToken);
+        WorldGenerationData worldGenerationData = GetPositionsInRenderDistance(position);
         if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Building terrain",.05f);
         
         foreach (var pos in worldGenerationData.chunkPositionsToRemove)
@@ -153,9 +172,7 @@ public partial class World
             Debug.Log($"Mesh generation took {visualStopWatch.ElapsedMilliseconds}ms");
         }
 
-        StartCoroutine(ChunkCreationCoroutine(meshDataDict, position));
-        
-        onGenerateNewChunks?.Invoke();
+        await ApplyGeneratedChunks(meshDataDict, position);
         
         Profiler.EndThreadProfiling();
     }
@@ -163,7 +180,7 @@ public partial class World
     public async void GenerateOnlyData(Vector3Int position, Action onDone = null)
     {
         
-        WorldGenerationData worldGenerationData = await Task.Run(() => GetPositionsInRenderDistance(position), worldCancellationToken);
+        WorldGenerationData worldGenerationData = GetPositionsInRenderDistance(position);
 
         // Generate data chunks
         ConcurrentDictionary<Vector3Int, ChunkData> dataDict = new ConcurrentDictionary<Vector3Int, ChunkData>();
@@ -318,7 +335,7 @@ public partial class World
             if (worldData.chunkDict.ContainsKey(origin) && worldData.chunkDataDict.TryGetValue(origin,out var chunk)) QueueWaterChunk(chunk);
     }
 
-    IEnumerator ChunkCreationCoroutine(ConcurrentDictionary<Vector3Int, MeshData> meshDataConDict, Vector3Int playerPos)
+    private async Task ApplyGeneratedChunks(ConcurrentDictionary<Vector3Int, MeshData> meshDataConDict, Vector3Int playerPos)
     {
         var meshDataDict = meshDataConDict.OrderBy(pair => Vector3Int.Distance(playerPos, pair.Key)).ToArray();
         for (var i = 0; i < meshDataDict.Length; i++)
@@ -328,7 +345,8 @@ public partial class World
             if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Building terrain",.8f+.15f*(i+1)/meshDataDict.Length);
             if (Application.isPlaying && (i + 1) % Math.Max(1, (int)chunksPerFrame) == 0)
             {
-                yield return new WaitForEndOfFrame();
+                await Task.Yield();
+                worldCancellationToken.ThrowIfCancellationRequested();
             }
         }
 
@@ -337,7 +355,11 @@ public partial class World
             IsWorldCreated = true;
             WorldLoadingScreen.ReportProgress("Loading player",.95f);
             OnWorldCreated?.Invoke();
-            NetworkClient.Send(new WorldServer.SpawnPlayerMessage(SteamClient.SteamId));
+            if (requestPlayerSpawn)
+            {
+                requestPlayerSpawn = false;
+                NetworkClient.Send(new WorldServer.SpawnPlayerMessage(SteamClient.SteamId));
+            }
         }
 
         if (!Application.isPlaying)

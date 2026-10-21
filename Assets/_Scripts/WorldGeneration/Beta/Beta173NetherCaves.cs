@@ -1,0 +1,162 @@
+using System;
+
+public sealed class Beta173NetherCaves
+{
+    private const int Range = 8;
+    private const float Pi = 3.1415927f;
+    private const float HalfPi = 1.5707964f;
+    private readonly long worldSeed;
+
+    public Beta173NetherCaves(long worldSeed) { this.worldSeed = worldSeed; }
+
+    public void Generate(BlockType[,,] chunk, int targetChunkX, int targetChunkZ)
+    {
+        var random = new JavaRandom(worldSeed);
+        long seedX = MakeOdd(random.NextLong());
+        long seedZ = MakeOdd(random.NextLong());
+        for (int sourceChunkX = targetChunkX - Range; sourceChunkX <= targetChunkX + Range; sourceChunkX++)
+        for (int sourceChunkZ = targetChunkZ - Range; sourceChunkZ <= targetChunkZ + Range; sourceChunkZ++)
+        {
+            random.SetSeed(unchecked((long)sourceChunkX * seedX + (long)sourceChunkZ * seedZ) ^ worldSeed);
+            GenerateFromSource(chunk, random, sourceChunkX, sourceChunkZ, targetChunkX, targetChunkZ);
+        }
+    }
+
+    private static long MakeOdd(long value) => unchecked(value / 2L * 2L + 1L);
+
+    private void GenerateFromSource(BlockType[,,] chunk, JavaRandom random, int sourceChunkX, int sourceChunkZ,
+        int targetChunkX, int targetChunkZ)
+    {
+        int caveCount = random.NextInt(random.NextInt(random.NextInt(10) + 1) + 1);
+        if (random.NextInt(5) != 0) caveCount = 0;
+        for (int i = 0; i < caveCount; i++)
+        {
+            double x = sourceChunkX * 16 + random.NextInt(16);
+            double y = random.NextInt(128);
+            double z = sourceChunkZ * 16 + random.NextInt(16);
+            int tunnels = 1;
+            if (random.NextInt(4) == 0)
+            {
+                CarveTunnel(chunk, random, targetChunkX, targetChunkZ, x, y, z,
+                    1.0f + random.NextFloat() * 6.0f, 0.0f, 0.0f, -1, -1, 0.5);
+                tunnels += random.NextInt(4);
+            }
+            for (int tunnel = 0; tunnel < tunnels; tunnel++)
+            {
+                float yaw = random.NextFloat() * Pi * 2.0f;
+                float pitch = (random.NextFloat() - 0.5f) * 2.0f / 8.0f;
+                float width = random.NextFloat() * 2.0f + random.NextFloat();
+                CarveTunnel(chunk, random, targetChunkX, targetChunkZ, x, y, z,
+                    width * 2.0f, yaw, pitch, 0, 0, 0.5);
+            }
+        }
+    }
+
+    private void CarveTunnel(BlockType[,,] chunk, JavaRandom parentRandom, int chunkX, int chunkZ,
+        double x, double y, double z, float width, float yaw, float pitch,
+        int step, int maxSteps, double verticalScale)
+    {
+        double centerX = chunkX * 16 + 8;
+        double centerZ = chunkZ * 16 + 8;
+        float yawVelocity = 0.0f, pitchVelocity = 0.0f;
+        var localRandom = new JavaRandom(parentRandom.NextLong());
+        if (maxSteps <= 0)
+        {
+            int distance = Range * 16 - 16;
+            maxSteps = distance - localRandom.NextInt(distance / 4);
+        }
+        bool room = false;
+        if (step == -1) { step = maxSteps / 2; room = true; }
+        int branchStep = localRandom.NextInt(maxSteps / 2) + maxSteps / 4;
+        bool gentlePitch = localRandom.NextInt(6) == 0;
+
+        for (; step < maxSteps; step++)
+        {
+            float angle = (float)step * Pi / (float)maxSteps;
+            double radiusXZ = 1.5 + BetaMathHelper.Sin(angle) * width;
+            double radiusY = radiusXZ * verticalScale;
+            float cosPitch = BetaMathHelper.Cos(pitch);
+            float sinPitch = BetaMathHelper.Sin(pitch);
+            x += BetaMathHelper.Cos(yaw) * cosPitch;
+            y += sinPitch;
+            z += BetaMathHelper.Sin(yaw) * cosPitch;
+            pitch *= gentlePitch ? 0.92f : 0.7f;
+            pitch += pitchVelocity * 0.1f;
+            yaw += yawVelocity * 0.1f;
+            pitchVelocity *= 0.9f;
+            yawVelocity *= 0.75f;
+            pitchVelocity += (localRandom.NextFloat() - localRandom.NextFloat()) * localRandom.NextFloat() * 2.0f;
+            yawVelocity += (localRandom.NextFloat() - localRandom.NextFloat()) * localRandom.NextFloat() * 4.0f;
+
+            if (!room && step == branchStep && width > 1.0f)
+            {
+                // Width comes from the tunnel RNG, but the recursive tunnel's
+                // seed comes from MapGenBase's source RNG, not that tunnel RNG.
+                CarveTunnel(chunk, parentRandom, chunkX, chunkZ, x, y, z,
+                    localRandom.NextFloat() * 0.5f + 0.5f, yaw - HalfPi,
+                    pitch / 3.0f, step, maxSteps, 1.0);
+                CarveTunnel(chunk, parentRandom, chunkX, chunkZ, x, y, z,
+                    localRandom.NextFloat() * 0.5f + 0.5f, yaw + HalfPi,
+                    pitch / 3.0f, step, maxSteps, 1.0);
+                return;
+            }
+            if (!room && localRandom.NextInt(4) == 0) continue;
+
+            double dx = x - centerX, dz = z - centerZ;
+            double remaining = maxSteps - step;
+            double maxReach = (double)(width + 2.0f + 16.0f);
+            if (dx * dx + dz * dz - remaining * remaining > maxReach * maxReach) return;
+            if (x < centerX - 16.0 - radiusXZ * 2.0 || z < centerZ - 16.0 - radiusXZ * 2.0 ||
+                x > centerX + 16.0 + radiusXZ * 2.0 || z > centerZ + 16.0 + radiusXZ * 2.0) continue;
+
+            int minX = Math.Max(BetaMathHelper.Floor(x - radiusXZ) - chunkX * 16 - 1, 0);
+            int maxX = Math.Min(BetaMathHelper.Floor(x + radiusXZ) - chunkX * 16 + 1, 16);
+            int minY = Math.Max(BetaMathHelper.Floor(y - radiusY) - 1, 1);
+            int maxY = Math.Min(BetaMathHelper.Floor(y + radiusY) + 1, 120);
+            int minZ = Math.Max(BetaMathHelper.Floor(z - radiusXZ) - chunkZ * 16 - 1, 0);
+            int maxZ = Math.Min(BetaMathHelper.Floor(z + radiusXZ) - chunkZ * 16 + 1, 16);
+
+            bool hitsWater = false;
+            for (int bx = minX; !hitsWater && bx < maxX; bx++)
+            for (int bz = minZ; !hitsWater && bz < maxZ; bz++)
+            for (int by = maxY + 1; !hitsWater && by >= minY - 1; by--)
+            {
+                if (by >= 0 && by < 128 && chunk[bx, by, bz] == BlockType.Lava)
+                    hitsWater = true;
+                if (by != minY - 1 && bx != minX && bx != maxX - 1 && bz != minZ && bz != maxZ - 1)
+                    by = minY;
+            }
+            if (hitsWater) continue;
+
+            for (int bx = minX; bx < maxX; bx++)
+            {
+                double nx = ((bx + chunkX * 16) + 0.5 - x) / radiusXZ;
+                for (int bz = minZ; bz < maxZ; bz++)
+                {
+                    double nz = ((bz + chunkZ * 16) + 0.5 - z) / radiusXZ;
+                    if (nx * nx + nz * nz >= 1.0) continue;
+
+                    // Exact Beta array behavior: cursor starts at maxY while geometric
+                    // test starts at maxY-1, so the block read/write is one Y above the
+                    // geometric sample. This is intentional and comes straight from
+                    // MapGenCaves' linear byte-array cursor semantics.
+                    for (int by = maxY - 1; by >= minY; by--)
+                    {
+                        double ny = (by + 0.5 - y) / radiusY;
+                        int blockY = by + 1;
+
+                        if (ny > -0.7 && nx * nx + ny * ny + nz * nz < 1.0)
+                        {
+                            BlockType block = chunk[bx, blockY, bz];
+                            if (block == BlockType.Netherrack || block == BlockType.Dirt || block == BlockType.Grass)
+                            {
+                                chunk[bx, blockY, bz] = BlockType.Air;
+                            }
+                        }
+                    }
+                }
+            }
+            if (room) break;
+        }
+    }
+}

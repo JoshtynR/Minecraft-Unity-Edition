@@ -44,7 +44,7 @@ public class Block
 }
 public class BlockLightNode {public Block block;public byte lightLevel;public BlockLightNode(Block b,byte l){block=b;lightLevel=l;}}
 public class ChunkRenderer {}
-public partial class World {public long betaWorldSeed;public int worldHeight=128,betaSkylightSubtracted,updates;public bool fullSmoothLighting=true;public void AddChunkToUpdate(ChunkRenderer c,bool first){updates++;}}
+public partial class World {public WorldDimension dimension;public long betaWorldSeed;public int worldHeight=128,betaSkylightSubtracted,updates;public bool fullSmoothLighting=true;public void AddChunkToUpdate(ChunkRenderer c,bool first){updates++;}}
 public static class ModernChestVisual {public static bool Enabled;}
 public class ChunkData
 {
@@ -210,3 +210,5 @@ public static partial class LightingCheck
   Console.WriteLine(aoCases+" Java six-face AO cases, "+orderedVertices+" positioned vertices; "+checks+" brightness/adapter/transport checks passed (Unity storage mocked).");
  }
 }
+
+public enum WorldDimension { Nether=-1,Overworld=0 }

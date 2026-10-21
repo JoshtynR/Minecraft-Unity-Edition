@@ -27,6 +27,7 @@ public partial class Player
  public class Objects {public Transform body=new Transform();}
  public Objects objects=new Objects();public Transform transform=new Transform(),cam=new Transform();public World world=new World();public Inventory inventory=new Inventory();public bool networkStarted,isCrouching;public float reach=5,entityWidth=.3f,entityHeight=1.8f;public Vector3Int aimed,placement;
  private object TargetedCow()=>null;
+ private bool TryUseNetherBed(Block block)=>false;
  private bool TryUseFarming(Block block,Vector3Int adjacent)=>false;
  public bool UseForCheck()=>TryUseBlock();
  public Block TargetedBlock(float reach,out Vector3Int adjacent){adjacent=placement;return world.GetBlock(aimed);}
@@ -74,3 +75,5 @@ public static class PlacementCheck
   Console.WriteLine("27 production stair/slab/torch/item/interaction placement checks passed (Unity/network mocked).");
  }
 }
+
+public static class GameAudio {public static void Play(string family,Vector3 p,float volume=1,float pitch=1){}public static void BroadcastBlock(BlockType t,Vector3Int p,bool broken,World world=null){}}

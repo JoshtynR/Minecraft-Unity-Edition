@@ -24,6 +24,8 @@ namespace UnityEngine
         public float x,y,z;
         public Vector3(float x,float y,float z) { this.x=x; this.y=y; this.z=z; }
         public static implicit operator Vector3(Vector3Int v)=>new Vector3(v.x,v.y,v.z);
+        public float sqrMagnitude=>x*x+y*y+z*z;
+        public static Vector3 operator -(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
         public static Vector3 one=>new Vector3(1,1,1);
         public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
         public static Vector3 operator *(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);
@@ -41,7 +43,8 @@ namespace Mirror
     public static class NetworkServer { public static bool active=true; }
     public class ServerAttribute : Attribute {}
     public class ClientRpcAttribute : Attribute {}
-    public class NetworkConnectionToClient {}
+    public class NetworkConnectionToClient {public NetworkIdentity identity=new NetworkIdentity();}
+    public class NetworkIdentity {public T GetComponent<T>()where T:new()=>new T();}
     public interface NetworkMessage {}
 }
 public class SlabBlock : Block { public SlabBlock(Block b):base(b) {} }
@@ -110,6 +113,7 @@ public class ChunkData
 }
 public partial class World
 {
+ public bool GenerationBusy;
     public void DropWheat(Vector3Int p,int age) {}
     private void TickFarming(WaterPosition p,Block block) {}
     private void ValidateFarmNeighbors(Vector3Int p) {}
@@ -122,6 +126,7 @@ public partial class World
     public class ChestStub { public void Removed(Vector3Int p) {} }
     public ChestStub chests=new ChestStub();
     public static World Instance;
+    public WorldDimension dimension;public bool isSaving;public static World FindDimension(WorldDimension id)=>Instance;private void QueuePortalValidation(Vector3Int p){}
     public long betaWorldSeed;
     public int chunkSize=2,worldHeight=4,playerEdits,meshRequests;
     public bool IsWorldCreated=true,disabled=false;
@@ -327,11 +332,11 @@ public static partial class IntegrationCheck
                 foreach(var parameter in method.GetParameters())
                     WaterCheck.Assert(!parameter.IsOptional,"Mirror RPC parameters must be explicit");
         int edits=w.playerEdits;
-        server.SetBlockMessageHandler(null,new WorldServer.SetBlockMessage(V(0,2,0),BlockType.Water));
+        server.SetBlockMessageHandler(new Mirror.NetworkConnectionToClient(),new WorldServer.SetBlockMessage(V(0,2,0),BlockType.Water));
         WaterCheck.Assert(w.playerEdits==edits+1,"host player edit applied twice or server omitted edit");
         for(byte facing=0;facing<4;facing++)
         {
-            server.SetBlockMessageHandler(null,new WorldServer.SetBlockMessage(V(0,2,0),BlockType.CobblestoneStairs,facing));
+            server.SetBlockMessageHandler(new Mirror.NetworkConnectionToClient(),new WorldServer.SetBlockMessage(V(0,2,0),BlockType.CobblestoneStairs,facing));
             WaterCheck.Assert(StairGeometry.Facing(w.GetBlock(V(0,2,0)).blockShape)==facing,"server receives placed stair direction");
             Mirror.NetworkServer.active=false;
             server.RpcSetBlock(V(1,2,0),BlockType.WoodenStairs,facing);
@@ -341,7 +346,7 @@ public static partial class IntegrationCheck
         foreach(var type in new[]{BlockType.Torch,BlockType.StandingSign,BlockType.Trapdoor,BlockType.Lever})
         for(byte state=0;state<16;state++)
         {
-            server.SetBlockMessageHandler(null,new WorldServer.SetBlockMessage(V(0,2,0),type,state));
+            server.SetBlockMessageHandler(new Mirror.NetworkConnectionToClient(),new WorldServer.SetBlockMessage(V(0,2,0),type,state));
             WaterCheck.Assert(SpecialBlockGeometry.State(type,w.GetBlock(V(0,2,0)).blockShape)==state,"server receives all four state bits");
             Mirror.NetworkServer.active=false;server.RpcSetBlock(V(1,2,0),type,state);
             WaterCheck.Assert(SpecialBlockGeometry.State(type,w.GetBlock(V(1,2,0)).blockShape)==state,"RPC replicates all four state bits");
@@ -371,3 +376,8 @@ public static partial class IntegrationCheck
 }
 
 public static class Lighting { internal static readonly object SyncRoot = new object(); public static void RecastSunLight(ChunkData c, UnityEngine.Vector3Int p, bool changedColumn = false) {} }
+
+public enum WorldDimension { Nether=-1,Overworld=0 }
+
+public class Player {public World CurrentWorld=>World.Instance;public bool DimensionTransferInProgress;public WorldDimension dimension;public Transform transform=new Transform();}
+public class Transform {public UnityEngine.Vector3 position;}

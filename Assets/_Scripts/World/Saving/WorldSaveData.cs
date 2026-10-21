@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,6 +7,7 @@ using UnityEngine;
 public class WorldSaveData
 {
     public string worldName;
+    public WorldDimension dimension;
     
     public Vector3Int seedOffset;
     public long betaWorldSeed;

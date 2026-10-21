@@ -70,13 +70,13 @@ public sealed class FluidEffects : MonoBehaviour
     {
         displayTime+=Time.deltaTime;if(displayTime<.05f)return;displayTime=0;
         var player=GameManager.Instance==null?null:GameManager.Instance.localPlayer;
-        if(player==null||World.Instance==null)return;
+        if(player==null||player.CurrentWorld==null)return;
         for(int i=0;i<16;i++)
         {
             var p=Vector3Int.FloorToInt(player.transform.position)+new Vector3Int(cosmetic.Next(-8,9),cosmetic.Next(-4,5),cosmetic.Next(-8,9));
-            var b=World.Instance.GetBlock(p);if(b==null)continue;
+            var b=player.CurrentWorld.GetBlock(p);if(b==null)continue;
             if(b.type==BlockType.Lava&&cosmetic.Next(100)==0)
-            {var above=World.Instance.GetBlock(p+Vector3Int.up);if(above!=null&&above.type==BlockType.Air)Emit((Vector3)p+Vector3.one*.5f,2);}
+            {var above=player.CurrentWorld.GetBlock(p+Vector3Int.up);if(above!=null&&above.type==BlockType.Air)Emit((Vector3)p+Vector3.one*.5f,2);}
             else if(b.type==BlockType.Fire&&cosmetic.Next(8)==0)Emit((Vector3)p+Vector3.up*.5f,4);
             else if(b.type==BlockType.Water&&b.waterLevel>0&&b.waterLevel<8&&cosmetic.Next(64)==0&&Time.unscaledTime>=nextFlowSound)
             {nextFlowSound=Time.unscaledTime+GameAudio.Variation(1,2);GameAudio.PlayClip(flow,p,.12f);}

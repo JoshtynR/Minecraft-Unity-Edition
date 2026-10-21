@@ -81,7 +81,7 @@ public partial class Player : BaseEntity
     private bool clientInitialized, loadingSavedPlayer;
     private bool savedPlayerApplied;
     [SyncVar, HideInInspector] public bool expectsSavedPlayerData;
-    public bool IsReadyForPlay => clientInitialized && !loadingSavedPlayer && (!expectsSavedPlayerData || savedPlayerApplied);
+    public bool IsReadyForPlay => clientInitialized && !dimensionTransfer && !loadingSavedPlayer && (!expectsSavedPlayerData || savedPlayerApplied);
 
     // INFO:
     // 530ms from jumping to landing on the ground
@@ -229,6 +229,8 @@ public partial class Player : BaseEntity
     public override void FixedUpdate()
     {
         if (!Application.isPlaying) return;
+        TickDimension();
+        if (dimensionTransfer) return;
         if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) return;
         if (!networkStarted || isLocalPlayer)
         {
@@ -262,6 +264,7 @@ public partial class Player : BaseEntity
         var block=TargetedBlock(reach,out adjacent);
         if(block==null)return false;
         if(isCrouching)return TryUseFarming(block,adjacent);
+        if(TryUseNetherBed(block))return true;
         if(block.type==BlockType.CraftingTable){inventory.OpenCraftingTable(block.globalWorldPosition);return true;}
         if(block.type==BlockType.Chest){inventory.RequestChest(block.globalWorldPosition);return true;}
         if(World.IsFurnace(block.type)){inventory.RequestFurnace(block.globalWorldPosition);return true;}
@@ -327,7 +330,7 @@ public partial class Player : BaseEntity
                     else
                     {
                         world.SetBlock(blockPos, type, facing);
-                        GameAudio.BroadcastBlock(type,blockPos,false);
+                        GameAudio.BroadcastBlock(type,blockPos,false,world);
                     }
                     inventory.RemoveHeldItem();
                     return true;
@@ -453,12 +456,13 @@ public partial class Player : BaseEntity
 
     public override void Update()
     {
+        if (dimensionTransfer) return;
         if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) return;
         base.Update();
         if (Application.isPlaying)
         {
-            var blockLight = World.Instance.GetBlock(transform.position).GetBlockLight();
-            var skyLight = World.Instance.GetBlock(transform.position).GetSkyLight();
+            var blockLight = world.GetBlock(transform.position).GetBlockLight();
+            var skyLight = world.GetBlock(transform.position).GetSkyLight();
             
             // Do mesh lighting
             if (blockLightLastFrame != blockLight || skyLightLastFrame != skyLight)
@@ -536,7 +540,7 @@ public partial class Player : BaseEntity
     public WorldServer.SavePlayerMessage SavePlayer()
     {
         return new WorldServer.SavePlayerMessage(transform.position, objects.body.rotation, objects.head.rotation, inventory.SavedInventory(), SteamId,
-            inventory.SavedCrafting(),inventory.SavedCursor(),inventory.SavedRecovery(),inventory.SavedEquipment());
+            inventory.SavedCrafting(),inventory.SavedCursor(),inventory.SavedRecovery(),inventory.SavedEquipment(), dimension);
     }
     
     [TargetRpc]
@@ -575,9 +579,9 @@ public partial class Player : BaseEntity
                 escapeMenu.Toggle();
                 escapeMenuOpen = escapeMenu.opened;
 
-                if (escapeMenuOpen && (isServer || !NetworkClient.active) && !World.Instance.isSaving)
+                if (escapeMenuOpen && (isServer || !NetworkClient.active) && !world.isSaving)
                 {
-                    World.Instance.SaveWorld();
+                    World.SaveAllDimensions();
                 }
             }
         }
@@ -722,6 +726,7 @@ public partial class Player : BaseEntity
 
     private void OnDestroy()
     {
+        CancelDimensionTransfer();
         DisposeFluidView();
         DisposeMining();
         foreach (var mesh in ownedLightingMeshes.Values)

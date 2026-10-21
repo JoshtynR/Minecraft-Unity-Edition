@@ -74,6 +74,7 @@ public partial class Player
     [Command] private void CmdFluidRespawn(){if(health<=0)RespawnAfterFluidDeath();}
     private void RespawnAfterFluidDeath()
     {
+        if(dimension==WorldDimension.Nether){BeginDimensionTravel(WorldDimension.Overworld,new Vector3(8.5f,80,8.5f),false);return;}
         if(world==null)return;
         Vector3 destination=lastFluidSafePosition;
         bool found=hasFluidSafePosition&&SafeFluidRespawn(destination);

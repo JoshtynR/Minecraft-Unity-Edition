@@ -8,7 +8,7 @@ public partial class World
     private void SetFarmBlock(Vector3Int position, BlockType type, byte state = 0)
     {
         SetBlock(position, type, state);
-        if (NetworkServer.active && WorldServer.instance != null) WorldServer.instance.RpcSetBlock(position, type, state);
+        if (NetworkServer.active && WorldServer.instance != null) WorldServer.instance.BroadcastBlock(this,position, type, state);
     }
 
     public void DropWheat(Vector3Int position, int age)
@@ -82,6 +82,25 @@ public partial class World
     public bool UseFarmItem(Vector3Int target, Vector3Int adjacent, ref InventoryStack held)
     {
         var block = GetBlock(target); if (block == null || held.Empty) return false;
+        var offset=adjacent-target;
+        if(System.Math.Abs(offset.x)+System.Math.Abs(offset.y)+System.Math.Abs(offset.z)!=1)return false;
+        if(held.type==ItemType.FlintAndSteel)
+        {
+            if(!TryIgnitePortal(adjacent))
+            {
+                if(GetBlock(adjacent).type!=BlockType.Air||!SpecialBlockGeometry.NormalCube(GetBlock(adjacent+Vector3Int.down).type))return false;
+                SetFarmBlock(adjacent,BlockType.Fire);
+            }
+            ItemDurability.Wear(ref held,1);GameAudio.Broadcast("fire/ignite",(Vector3)adjacent,.7f,1,this);return true;
+        }
+        if(held.type==ItemType.WaterBucket||held.type==ItemType.LavaBucket)
+        {
+            var type=GetBlock(adjacent).type;if(type!=BlockType.Air&&type!=BlockType.Fire)return false;
+            if(held.type==ItemType.WaterBucket&&dimension==WorldDimension.Nether)
+                GameAudio.Broadcast("random/fizz",(Vector3)adjacent,.5f,1,this);
+            else SetFarmBlock(adjacent,held.type==ItemType.WaterBucket?BlockType.Water:BlockType.Lava);
+            held=new InventoryStack(ItemType.Bucket,1);return true;
+        }
         var above = GetBlock(target + Vector3Int.up);
         bool seeds = held.type == ItemType.Seeds || WheatCropRules.IsCrop((BlockType)(int)held.type);
         if (seeds && WheatCropRules.IsSoil(block.type) && adjacent == target + Vector3Int.up && above.type == BlockType.Air)
@@ -106,5 +125,5 @@ public partial class World
 public static class FarmingItems
 {
     public static bool IsHoe(ItemType type) => type == ItemType.WoodenHoe || type == ItemType.StoneHoe || type == ItemType.IronHoe || type == ItemType.DiamondHoe || type == ItemType.GoldenHoe;
-    public static bool CanUse(ItemType type) => IsHoe(type) || type == ItemType.Seeds || type == ItemType.BoneMeal || WheatCropRules.IsCrop((BlockType)(int)type);
+    public static bool CanUse(ItemType type) => type == ItemType.FlintAndSteel || type == ItemType.WaterBucket || type == ItemType.LavaBucket || IsHoe(type) || type == ItemType.Seeds || type == ItemType.BoneMeal || WheatCropRules.IsCrop((BlockType)(int)type);
 }

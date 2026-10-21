@@ -51,7 +51,7 @@ public sealed class CowVisual
             var b=world.GetBlock(p+direction.GetVector());
             if(b==null)continue;sky=Mathf.Max(sky,b.GetSkyLight());light=Mathf.Max(light,b.GetBlockLight());
         }
-        properties.SetFloat("_Brightness",Beta173Lighting.Brightness(sky,light,world.betaSkylightSubtracted,0));
+        properties.SetFloat("_Brightness",Beta173Lighting.Brightness(sky,light,world.betaSkylightSubtracted,0,world.dimension == WorldDimension.Nether));
         properties.SetFloat("_Hurt",cow.hurtTicks>0?1:0);
         foreach(var renderer in renderers)renderer.SetPropertyBlock(properties);
     }

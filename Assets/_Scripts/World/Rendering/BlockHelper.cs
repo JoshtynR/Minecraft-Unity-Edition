@@ -353,8 +353,8 @@ public static class BlockHelper
     private static float SampleBrightness(ChunkData chunk, Vector3Int position, int darkness, int emission)
     {
         if (position.y >= chunk.worldRef.worldHeight)
-            return Beta173Lighting.Brightness(15, 0, darkness, emission);
-        if (position.y < 0) return Beta173Lighting.Brightness(0, 0, darkness, emission);
+            return Beta173Lighting.Brightness(chunk.worldRef.dimension == WorldDimension.Nether ? 0 : 15, 0, darkness, emission, chunk.worldRef.dimension == WorldDimension.Nether);
+        if (position.y < 0) return Beta173Lighting.Brightness(0, 0, darkness, emission, chunk.worldRef.dimension == WorldDimension.Nether);
         var block = chunk.GetBlock(position);
         if (BlockShapesExtensions.ForBlock(block.type) == BlockShapes.Slab || StairGeometry.IsStair(block.type))
         {
@@ -366,14 +366,14 @@ public static class BlockHelper
                 sky = Math.Max(sky, neighbor.GetSkyLight());
                 light = Math.Max(light, neighbor.GetBlockLight());
             }
-            return Beta173Lighting.Brightness(sky, light, darkness, emission);
+            return Beta173Lighting.Brightness(sky, light, darkness, emission, chunk.worldRef.dimension == WorldDimension.Nether);
         }
-        return Beta173Lighting.Brightness(block.GetSkyLight(), block.GetBlockLight(), darkness, emission);
+        return Beta173Lighting.Brightness(block.GetSkyLight(), block.GetBlockLight(), darkness, emission, chunk.worldRef.dimension == WorldDimension.Nether);
     }
 
     public static int GetLightIndex(Vector3Int pos, ChunkData chunk)
     {
-        return pos.x + pos.y * chunk.chunkSize + pos.z * chunk.chunkSize * World.Instance.worldHeight;
+        return pos.x + pos.y * chunk.chunkSize + pos.z * chunk.chunkSize * chunk.worldRef.worldHeight;
     }
 
     public static Vector3[] FaceUVs(Direction dir, BlockType type, BlockTypeData blockTypeData = null)

@@ -78,7 +78,7 @@ public class ChunkRenderer : MonoBehaviour
 
     public void UpdateChunkAsync()
     {
-        World.Instance.AddChunkToUpdate(this);
+        ChunkData.worldRef.AddChunkToUpdate(this);
     }
 
     private void OnDestroy()

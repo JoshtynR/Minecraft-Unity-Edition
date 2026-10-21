@@ -38,8 +38,8 @@ public sealed class DroppedItemVisual
         root.transform.rotation=Quaternion.Euler(0,flat&&camera!=null?camera.transform.eulerAngles.y:DroppedItemRules.Rotation(age,state.hover),0);
         int visible=DroppedItemRules.Copies(state.stack.count);
         var block=world.GetBlock(Vector3Int.FloorToInt(state.position+Vector3.up*.25f));
-        float brightness=block==null?1:Beta173Lighting.Brightness(block.GetSkyLight(),block.GetBlockLight(),world.betaSkylightSubtracted,0);
-        properties.SetFloat("_Brightness",flat?brightness:brightness/Mathf.Max(.05f,Beta173Lighting.Brightness(14,0,world.betaSkylightSubtracted,0)));
+        float brightness=block==null?1:Beta173Lighting.Brightness(block.GetSkyLight(),block.GetBlockLight(),world.betaSkylightSubtracted,0,world.dimension == WorldDimension.Nether);
+        properties.SetFloat("_Brightness",flat?brightness:brightness/Mathf.Max(.05f,Beta173Lighting.Brightness(14,0,world.betaSkylightSubtracted,0,world.dimension == WorldDimension.Nether)));
         for(int i=0;i<4;i++)
         {
             copies[i].gameObject.SetActive(i<visible);

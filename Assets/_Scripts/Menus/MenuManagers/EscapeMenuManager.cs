@@ -1,4 +1,4 @@
-﻿using Mirror;
+using Mirror;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -14,13 +14,22 @@ public class EscapeMenuManager : MonoBehaviour
     private void Quit()
     {ExitToTitle();}
 
-    public static void ExitToTitle()
+    private static bool exitInProgress;
+    public static async void ExitToTitle()
     {
+        if(exitInProgress)return;
+        exitInProgress=true;
+        try
+        {
+        if(NetworkServer.active||!NetworkClient.active)await World.SaveAllDimensionsAsync();
         if(LobbyManager.currentLobby.HasValue)  LobbyManager.currentLobby.Value.Leave();
         Cursor.lockState=CursorLockMode.None;Cursor.visible=true;
         if(NetworkManager.singleton!=null&&NetworkServer.active)NetworkManager.singleton.StopHost();
         else if(NetworkManager.singleton!=null&&NetworkClient.active)NetworkManager.singleton.StopClient();
         else SceneManager.LoadScene("MainMenu");
+        }
+        catch(System.Exception error){Debug.LogException(error);}
+        finally{exitInProgress=false;}
     }
     
     private void Return()

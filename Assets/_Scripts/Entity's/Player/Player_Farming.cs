@@ -24,7 +24,7 @@ public partial class Player
         if (request == lastServerDropRequest && lastServerDropReply != null)
         { CompleteDropAction(request,lastServerDropReply,lastServerDropAccepted,network); return; }
         bool accepted = false;
-        if (request > lastServerDropRequest && world != null && world.IsWorldCreated && !world.isSaving && health > 0 &&
+        if (request > lastServerDropRequest && !dimensionTransfer && world != null && world.IsWorldCreated && !world.isSaving && health > 0 &&
             slot >= 0 && slot < 9 && ChestTransactions.Valid(snapshot,new InventoryStack()) && InMiningReach(target) &&
             MiningLineOfSight(target,(Vector3)target+Vector3.one*.5f))
         {

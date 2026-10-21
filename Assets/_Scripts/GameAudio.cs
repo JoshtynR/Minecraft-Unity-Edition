@@ -66,14 +66,14 @@ public sealed class GameAudio : MonoBehaviour
         voice.Stop();voice.transform.position=position;voice.clip=clip;voice.spatialBlend=spatial?1:0;
         voice.volume=Mathf.Clamp01(volume);voice.pitch=Mathf.Clamp(pitch,.25f,2);voice.Play();
     }
-    public static void Broadcast(string family,Vector3 position,float volume=1,float pitch=1)
+    public static void Broadcast(string family,Vector3 position,float volume=1,float pitch=1,World world=null)
     {
         if(string.IsNullOrEmpty(family))return;
-        if(NetworkServer.active&&WorldServer.instance!=null)WorldServer.instance.RpcGameplaySound(family,position,volume,pitch);
+        if(NetworkServer.active&&WorldServer.instance!=null)WorldServer.instance.RpcGameplaySound((world??World.Instance).dimension,family,position,volume,pitch);
         else Play(family,position,volume,pitch);
     }
-    public static void BroadcastBlock(BlockType type,Vector3Int position,bool broken)
-    {Broadcast(broken?BlockSoundRules.Break(type):BlockSoundRules.Place(type),(Vector3)position+Vector3.one*.5f,1,broken?1:.8f);}
+    public static void BroadcastBlock(BlockType type,Vector3Int position,bool broken,World world=null)
+    {Broadcast(broken?BlockSoundRules.Break(type):BlockSoundRules.Place(type),(Vector3)position+Vector3.one*.5f,1,broken?1:.8f,world);}
     private void Awake()
     {
         for(int i=0;i<voices.Length;i++)
@@ -90,6 +90,6 @@ public sealed class GameAudio : MonoBehaviour
 
 public partial class WorldServer
 {
-    [ClientRpc] public void RpcGameplaySound(string family,Vector3 position,float volume,float pitch)
-    {GameAudio.Play(family,position,volume,pitch);}
+    [ClientRpc] public void RpcGameplaySound(WorldDimension dimension,string family,Vector3 position,float volume,float pitch)
+    {if(World.Instance!=null&&World.Instance.dimension==dimension)GameAudio.Play(family,position,volume,pitch);}
 }

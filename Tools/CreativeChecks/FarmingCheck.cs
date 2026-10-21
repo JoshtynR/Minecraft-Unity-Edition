@@ -6,6 +6,7 @@ using Mirror;
 // Storage/raycast doubles isolate the production farming and inventory commands.
 public partial class World
 {
+ public bool TryIgnitePortal(Vector3Int p)=>false;
  private JavaRandom fluidRandom=new JavaRandom(173);
  private static Vector3Int BlockPos(WaterPosition p)=>new Vector3Int(p.x,p.y,p.z);
  private bool TryGetWaterBlock(Vector3Int p,out Block block){block=GetBlock(p);return block.type!=BlockType.Nothing;}

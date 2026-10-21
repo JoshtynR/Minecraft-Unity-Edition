@@ -20,7 +20,7 @@ public static class WorldDataHelper
 public partial class WorldServer
 {
  public int furnaceBroadcasts;public byte lastFurnaceFacing;
- public void RpcSetBlock(Vector3Int position,BlockType type,byte facing){furnaceBroadcasts++;lastFurnaceFacing=facing;}
+ public void BroadcastBlock(World world,Vector3Int position,BlockType type,byte facing){furnaceBroadcasts++;lastFurnaceFacing=facing;}
 }
 public partial class PlayerInventory
 {

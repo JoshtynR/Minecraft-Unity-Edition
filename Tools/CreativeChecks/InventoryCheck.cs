@@ -76,7 +76,7 @@ namespace UnityEngine
  {
   public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static Vector3Int zero=>new Vector3Int();public static Vector3Int up=>new Vector3Int(0,1,0);public static Vector3Int down=>new Vector3Int(0,-1,0);
   public static implicit operator Vector3(Vector3Int v)=>new Vector3(v.x,v.y,v.z);
-  public static Vector3Int operator+(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);
+  public static Vector3Int operator+(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3Int operator-(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x-b.x,a.y-b.y,a.z-b.z);
   public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));
   public static bool operator==(Vector3Int a,Vector3Int b)=>a.x==b.x&&a.y==b.y&&a.z==b.z;public static bool operator!=(Vector3Int a,Vector3Int b)=>!(a==b);public override bool Equals(object value)=>value is Vector3Int&&(Vector3Int)value==this;public override int GetHashCode()=>x*31+y*17+z;
  }
@@ -173,6 +173,7 @@ public class ChunkData
 }
 public partial class Player:MonoBehaviour
 {
+ public World CurrentWorld=>World.Instance;public WorldDimension dimension;public bool DimensionTransferInProgress;private bool dimensionTransfer;
  private bool serverMining;
  public bool escapeMenuOpen,networkStarted,isServer=true;public float reach=4.5f,eyeHeight=1.578f;public int health=20;
  public PlayerInventory inventory=>GetComponent<PlayerInventory>();public World world=>World.Instance;

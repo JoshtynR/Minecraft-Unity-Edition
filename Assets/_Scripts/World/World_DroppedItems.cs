@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 
-public struct DropStateMessage : NetworkMessage { public DroppedItemState item;public bool pickedUp;public Vector3 collector; }
+public struct DropStateMessage : NetworkMessage { public WorldDimension dimension;public DroppedItemState item;public bool pickedUp;public Vector3 collector; }
 public struct DropSyncRequest : NetworkMessage {}
 
 public partial class World
@@ -24,8 +24,9 @@ public partial class World
         NetworkClient.RegisterHandler<DropStateMessage>(message=>
         {
             if(NetworkServer.active)return;
-            if(message.pickedUp&&message.item!=null)BeginItemPickup(message.item.id,message.collector);
-            droppedItems.Apply(message.item);
+            var world=FindDimension(message.dimension);if(world==null)return;
+            if(message.pickedUp&&message.item!=null)world.BeginItemPickup(message.item.id,message.collector);
+            world.droppedItems.Apply(message.item);
         });
     }
     public InventoryStack MiningItemDrop(BlockType type,ItemType tool=ItemType.Nothing,int damage=0)
@@ -60,7 +61,7 @@ public partial class World
     public void RestoreDroppedItems(DroppedItemState[] saved)
     {ResetDroppedItems();dropRestore=DropAuthority?saved:null;}
     public void BroadcastDrop(DroppedItemState item)
-    {if(NetworkServer.active)NetworkServer.SendToAll(new DropStateMessage{item=item.Copy()});}
+    {if(NetworkServer.active)NetworkServer.SendToAll(new DropStateMessage{dimension=dimension,item=item.Copy()});}
     public void BroadcastDropRemoval(int id)
     {BroadcastDrop(new DroppedItemState{id=id,stack=new InventoryStack()});}
     public int PickupItemDrop(int id,Vector3 position,InventoryStack[] inventory)
@@ -75,7 +76,7 @@ public partial class World
             {
                 Vector3 collector=position+Vector3.up;
                 BeginItemPickup(id,collector);
-                if(NetworkServer.active)NetworkServer.SendToAll(new DropStateMessage{item=new DroppedItemState{id=id},pickedUp=true,collector=collector});
+                if(NetworkServer.active)NetworkServer.SendToAll(new DropStateMessage{dimension=dimension,item=new DroppedItemState{id=id},pickedUp=true,collector=collector});
             }
             else BroadcastDrop(item);
         }
@@ -83,6 +84,7 @@ public partial class World
     }
     private void BeginItemPickup(int id,Vector3 target)
     {
+        if(Instance!=this)return;
         if(NetworkServer.active&&!NetworkClient.active)return;
         if(dropVisuals.TryGetValue(id,out var visual))visual.BeginPickup(target);
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
@@ -96,7 +98,7 @@ public partial class World
     }
     private void UpdateDroppedItems()
     {
-        if(!Application.isPlaying||disabled||!IsWorldCreated)return;
+        if(!Application.isPlaying||disabled||!IsWorldCreated||GenerationBusy)return;
         EnsureDroppedItemsRestored();
         if(!DropAuthority&&!dropSyncRequested&&NetworkClient.ready)
         {dropSyncRequested=true;NetworkClient.Send(new DropSyncRequest());}
@@ -131,7 +133,7 @@ public partial class World
                 }
             }
         }
-        if(!NetworkServer.active||NetworkClient.active)UpdateDropVisuals();
+        if(Instance==this&&(!NetworkServer.active||NetworkClient.active))UpdateDropVisuals();
     }
     private void PushDropOutOfBlock(DroppedItemState item,Vector3Int cell,BlockType type)
     {
@@ -179,7 +181,7 @@ public partial class World
                     if(flat)material.mainTexture=definition.icon!=null?definition.icon:Texture2D.whiteTexture;
                     dropMaterials[item.stack.type]=material;
                 }
-                visual=new DroppedItemVisual(transform,item.stack,mesh,material,flat);dropVisuals.Add(item.id,visual);
+                visual=new DroppedItemVisual(worldRenderer.transform,item.stack,mesh,material,flat);dropVisuals.Add(item.id,visual);
             }
             if(visual!=null){visual.root.SetActive(visible);if(visible)visual.Update(item,this,DropCamera());}
         }

@@ -12,7 +12,9 @@ public partial class World
 
     private void UpdateBetaLightingSettings()
     {
-        int darkness = Mathf.Clamp(betaSkylightSubtracted, 0, 11);
+        if (Instance != this) return;
+        Shader.SetGlobalFloat("_BetaNether", dimension == WorldDimension.Nether ? 1 : 0);
+        int darkness = dimension == WorldDimension.Nether ? 0 : Mathf.Clamp(betaSkylightSubtracted, 0, 11);
         int smoothMode = fullSmoothLighting ? 1 : 0;
         bool rebuild = lastBetaSkyDarkness != darkness || lastFullSmoothLighting != smoothMode;
         lastFullSmoothLighting = smoothMode;

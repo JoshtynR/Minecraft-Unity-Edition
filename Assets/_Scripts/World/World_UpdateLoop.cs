@@ -23,7 +23,7 @@ public partial class World
     // but there is no idle polling thread and no concurrent upload from it.
     public async void UpdateChunks()
     {
-        if (chunkUpdateInProgress || disabled || !IsWorldCreated) return;
+        if (chunkUpdateInProgress || disabled || !IsWorldCreated || GenerationBusy) return;
         lock (chunkUpdateThreadLock)
             if (chunksToUpdate.Count == 0) return;
         var chunks = new List<ChunkRenderer>();
@@ -73,11 +73,14 @@ public partial class World
         UpdateDroppedItems();
         UpdateFurnaces();
         UpdateCows();
-        UpdateBetaLightingSettings();
+        UpdatePortals();
+        StreamDimensionPlayers();
         if (Application.isPlaying) UpdateChunks();
+        if (Instance != this) return;
+        UpdateBetaLightingSettings();
         if (backgroundCamera == null) backgroundCamera = Camera.main;
         if (backgroundCamera != null)
-            backgroundCamera.backgroundColor = Color.Lerp(nightColor, dayColor, skyLightMultiplier * (1 + 1 / 9f));
+            backgroundCamera.backgroundColor = dimension == WorldDimension.Nether ? new Color(.2f,.03f,.03f,1) : Color.Lerp(nightColor, dayColor, skyLightMultiplier * (1 + 1 / 9f));
     }
 
     public void UpdateBlocks()

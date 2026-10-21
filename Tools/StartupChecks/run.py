@@ -19,7 +19,7 @@ with tempfile.TemporaryDirectory() as tmp:
 
 # Verify the production entry points remain connected to the persistent screen.
 player = (root / "Assets/_Scripts/Entity's/Player/Player.cs").read_text()
-assert 'public bool IsReadyForPlay => clientInitialized && !loadingSavedPlayer && (!expectsSavedPlayerData || savedPlayerApplied);' in player
+assert 'public bool IsReadyForPlay => clientInitialized && !dimensionTransfer && !loadingSavedPlayer && (!expectsSavedPlayerData || savedPlayerApplied);' in player
 assert player.index('clientInitialized = true;') > player.index('_normalFOV = _camComponent.fieldOfView;')
 load = player[player.index('    public void LoadPlayer('):player.index('    private float lastForwardTapTime')]
 assert load.index('loadingSavedPlayer = true;') < load.index('ExecuteAfterFrames')
@@ -28,6 +28,7 @@ assert load.index('savedPlayerApplied = true;') > load.index('inventory.LoadInve
 server = (root / 'Assets/_Scripts/World/WorldServer.cs').read_text()
 spawn = server[server.index('    public void SpawnPlayerMessageHandler('):server.index('    public struct SpawnPlayerMessage')]
 assert spawn.index('expectsSavedPlayerData = true;') < spawn.index('NetworkServer.AddPlayerForConnection(')
+assert spawn.index('PrepareDimensionJoin();') < spawn.index('NetworkServer.AddPlayerForConnection(')
 assert player.count('if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) return;') == 2
 assert 'if (WorldLoadingScreen.IsLoading) return;' in (root / "Assets/_Scripts/Entity's/Player/PlayerInventory.cs").read_text()
 network = (root / 'Assets/_Scripts/Networking/MinecraftNetworkManager.cs').read_text()

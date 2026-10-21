@@ -14,7 +14,7 @@ public sealed class PlayerGameplayAudio : MonoBehaviour
     {
         if(Application.isBatchMode)return;
         var world=World.Instance;
-        if(player==null||world==null||!world.IsWorldCreated||WorldLoadingScreen.IsLoading){initialized=false;return;}
+        if(player==null||world==null||player.dimension!=world.dimension||player.DimensionTransferInProgress||!world.IsWorldCreated||WorldLoadingScreen.IsLoading){initialized=false;return;}
         var position=transform.position;
         if(!initialized){previous=position;previousHealth=player.health;previousLevel=player.experienceLevel;initialized=true;return;}
         if(player.health<previousHealth)GameAudio.Play("random/classic_hurt",position+Vector3.up,.7f,GameAudio.Variation(.9f,1.1f));

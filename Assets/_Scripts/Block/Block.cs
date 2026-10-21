@@ -197,7 +197,7 @@ public class Block
             }
 
 
-            if (localChunkPosition.y == World.Instance.worldHeight - 1 || chunkData.GetBlock(localChunkPosition + Vector3Int.up).GetSkyLight() == 15)
+            if (chunkData.worldRef.dimension != WorldDimension.Nether && (localChunkPosition.y == chunkData.worldRef.worldHeight - 1 || chunkData.GetBlock(localChunkPosition + Vector3Int.up).GetSkyLight() == 15))
             {
                 SetSkyLight(15);
                 chunkData.skyExtendList.Insert(chunkData.skyExtendList.Count, this);
@@ -228,7 +228,7 @@ public class Block
         if(!section.dataRef.worldRef.IsWorldCreated) return;
         
         // Debug.Log($"Block {type.ToString()} placed");
-        World.Instance.ExecuteAfterFrames(1, () => World.Instance.blockToUpdate.Enqueue(this));
+        chunkData.worldRef.ExecuteAfterFrames(1, () => chunkData.worldRef.blockToUpdate.Enqueue(this));
         UpdateNeighbours();
     }
     
@@ -250,7 +250,7 @@ public class Block
             var neighbour = section.dataRef.GetBlock(pos);
             if (neighbour != null)
             {
-                World.Instance.ExecuteAfterFrames(1, () => World.Instance.blockToUpdate.Enqueue(neighbour));
+                chunkData.worldRef.ExecuteAfterFrames(1, () => chunkData.worldRef.blockToUpdate.Enqueue(neighbour));
             }
         }
     }

@@ -3,7 +3,7 @@
             #include "BlockFaceAnimation.cginc"
             float _TextureOn, _LightingOn, _AOOn, _FaceShadeOn;
             float _ShadeUp, _ShadeSideNS, _ShadeSideEW, _ShadeDown, _Debug;
-            float _BetaSkyDarkness, _BetaBrightnessBoost;
+            float _BetaSkyDarkness, _BetaBrightnessBoost, _BetaNether;
             float4 _FluidFog;
             #ifdef VOXEL_WATER
                 float _WaterOpacity;
@@ -36,7 +36,8 @@
             {
                 float level = max(max(0, floor(sky + 0.5) - _BetaSkyDarkness), floor(block + 0.5));
                 float darkness = 1 - saturate(level / 15);
-                return (1 - darkness) / (darkness * 3 + 1) * 0.95 + 0.05;
+                float ambient=lerp(.05,.1,saturate(_BetaNether));
+                return (1 - darkness) / (darkness * 3 + 1) * (1-ambient) + ambient;
             }
             v2f vert(appdata v)
             {

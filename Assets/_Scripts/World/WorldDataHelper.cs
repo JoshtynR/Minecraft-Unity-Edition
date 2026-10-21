@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,10 +19,10 @@ public static class WorldDataHelper
 
     public static List<Vector3Int> GetChunkPositionsInRenderDistance(World world, Vector3Int playerPos)
     {
-        var startX = playerPos.x - Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8) * world.chunkSize;
-        var startZ = playerPos.z - Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8) * world.chunkSize;
-        var endX = playerPos.x + Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8) * world.chunkSize;
-        var endZ = playerPos.z + Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8) * world.chunkSize;
+        var startX = playerPos.x - Mathf.Min(world.renderDistance, world.IsWorldCreated ? world.renderDistance : 8) * world.chunkSize;
+        var startZ = playerPos.z - Mathf.Min(world.renderDistance, world.IsWorldCreated ? world.renderDistance : 8) * world.chunkSize;
+        var endX = playerPos.x + Mathf.Min(world.renderDistance, world.IsWorldCreated ? world.renderDistance : 8) * world.chunkSize;
+        var endZ = playerPos.z + Mathf.Min(world.renderDistance, world.IsWorldCreated ? world.renderDistance : 8) * world.chunkSize;
         
         return GetPositionsInRenderDistance(world,playerPos, startX, startZ, endX, endZ);
     }
@@ -31,10 +31,10 @@ public static class WorldDataHelper
     {
         // Full Beta population needs raw terrain two chunks beyond the visible area.
         const int halo = 2;
-        var startX = playerPos.x - (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
-        var startZ = playerPos.z - (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
-        var endX = playerPos.x +   (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
-        var endZ = playerPos.z +   (Mathf.Min(world.renderDistance, World.Instance.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
+        var startX = playerPos.x - (Mathf.Min(world.renderDistance, world.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
+        var startZ = playerPos.z - (Mathf.Min(world.renderDistance, world.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
+        var endX = playerPos.x +   (Mathf.Min(world.renderDistance, world.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
+        var endZ = playerPos.z +   (Mathf.Min(world.renderDistance, world.IsWorldCreated ? world.renderDistance : 8)+halo) * world.chunkSize;
         
         return GetPositionsInRenderDistance(world,playerPos, startX, startZ, endX, endZ);
     }
@@ -72,7 +72,7 @@ public static class WorldDataHelper
     {
         return allChunkPositionsNeeded
             .Where(pos => !worldData.chunkDict.ContainsKey(pos) && !DoesChunkFileExist(worldData,pos))
-            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(World.Instance.IsWorldCreated ? World.Instance.chunksGenerationPerFrame : allChunkPositionsNeeded.Count)
+            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? worldData.owner.chunksGenerationPerFrame : allChunkPositionsNeeded.Count)
             .ToHashSet();
     }
 
@@ -80,7 +80,7 @@ public static class WorldDataHelper
     {
         return allChunkDataPositionsNeeded
             .Where(pos => !worldData.chunkDataDict.ContainsKey(pos) && !DoesChunkFileExist(worldData,pos))
-            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(World.Instance.IsWorldCreated ? 9 + World.Instance.chunksGenerationPerFrame*3 : allChunkDataPositionsNeeded.Count)
+            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? 9 + worldData.owner.chunksGenerationPerFrame*3 : allChunkDataPositionsNeeded.Count)
             .ToHashSet();
     }
     
@@ -88,7 +88,7 @@ public static class WorldDataHelper
     {
         return allChunkPositionsNeeded
             .Where(pos => !worldData.chunkDict.ContainsKey(pos) && DoesChunkFileExist(worldData,pos))
-            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(World.Instance.IsWorldCreated ? World.Instance.chunksGenerationPerFrame : allChunkPositionsNeeded.Count)
+            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? worldData.owner.chunksGenerationPerFrame : allChunkPositionsNeeded.Count)
             .ToHashSet();
     }
     
@@ -96,7 +96,7 @@ public static class WorldDataHelper
     {
         return allChunkDataPositionsNeeded
             .Where(pos => !worldData.chunkDataDict.ContainsKey(pos) && DoesChunkFileExist(worldData,pos))
-            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(World.Instance.IsWorldCreated ? 9 + World.Instance.chunksGenerationPerFrame*3 : allChunkDataPositionsNeeded.Count)
+            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? 9 + worldData.owner.chunksGenerationPerFrame*3 : allChunkDataPositionsNeeded.Count)
             .ToHashSet();
     }
     
@@ -118,9 +118,9 @@ public static class WorldDataHelper
     
     public static bool DoesChunkFileExist(WorldData worldData, Vector3Int chunkPos)
     {
-        if (NetworkServer.active || !World.Instance.isInPlayMode)
+        if (NetworkServer.active || !worldData.owner.isInPlayMode)
         {
-            return File.Exists(World.GetChunkPath(worldData.worldName, chunkPos));
+            return File.Exists(World.GetChunkPath(worldData.worldName, chunkPos, worldData.owner.dimension));
         }
         else
         {

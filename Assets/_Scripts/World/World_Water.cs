@@ -169,7 +169,7 @@ public partial class World : IWaterWorld
         if (block.type == type && (!liquid || block.waterLevel == level)) return false;
         bool hardening=block.type==BlockType.Lava&&(type==BlockType.Obsidian||type==BlockType.Cobblestone);
         var chunk = block.chunkData;
-        if (block.type != type) WorldDataHelper.SetBlock(this,position,type);
+        if (block.type != type) { WorldDataHelper.SetBlock(this,position,type); QueuePortalValidation(position); }
         if(washedCrop&&NetworkServer.active)DropWheat(position,cropAge);
         chunk.GetBlock(position - chunk.worldPos).waterLevel = liquid ? (byte)(level&15) : (byte)0;
         chunk.modifiedAfterSave = true;
@@ -239,7 +239,7 @@ public partial class World : IWaterWorld
 
     private void UpdateWater()
     {
-        if (!Application.isPlaying || !IsWorldCreated || disabled || System.Threading.Volatile.Read(ref betaPopulationJobs) > 0) return;
+        if (!Application.isPlaying || !IsWorldCreated || disabled || GenerationBusy || System.Threading.Volatile.Read(ref betaPopulationJobs) > 0) return;
         if (waterSimulation == null)
         {
             // Runtime hesitation has its own RNG; never consume the terrain or
@@ -247,7 +247,7 @@ public partial class World : IWaterWorld
             fluidTicks=new FluidTickScheduler();fluidRandom=new JavaRandom(betaWorldSeed);
             fluidRandomTickState=unchecked((int)betaWorldSeed);
             waterSimulation=new WaterSimulation(this,scheduler:fluidTicks);
-            lavaSimulation=new WaterSimulation(new LavaWorld(this),true,false,()=>fluidRandom.NextInt(4),fluidTicks);
+            lavaSimulation=new WaterSimulation(new LavaWorld(this),true,dimension == WorldDimension.Nether,()=>fluidRandom.NextInt(4),fluidTicks);
             InitializeFluidRuntime();
             if(fluidRestore!=null)
             {
@@ -282,10 +282,10 @@ public partial class World : IWaterWorld
                     positions.Add(change.Key);
                     levels.Add(change.Value);
                     if (positions.Count < 256) continue;
-                    WorldServer.instance.BroadcastWaterUpdates(positions.ToArray(), levels.ToArray());
+                    WorldServer.instance.BroadcastWaterUpdates(dimension,positions.ToArray(), levels.ToArray());
                     positions.Clear(); levels.Clear();
                 }
-                if (positions.Count > 0) WorldServer.instance.BroadcastWaterUpdates(positions.ToArray(), levels.ToArray());
+                if (positions.Count > 0) WorldServer.instance.BroadcastWaterUpdates(dimension,positions.ToArray(), levels.ToArray());
                 waterChanges.Clear();
             }
         }

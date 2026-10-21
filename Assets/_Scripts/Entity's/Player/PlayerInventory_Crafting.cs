@@ -23,7 +23,7 @@ public partial class PlayerInventory
 
     private bool TableAccessible()
     {
-        var world=World.Instance;
+        var world=player.CurrentWorld;
         if(world==null||(player!=null&&player.health<=0))return false;
         var block=world.GetBlock(tablePosition);
         // ContainerWorkbench remains usable within eight blocks of its center.

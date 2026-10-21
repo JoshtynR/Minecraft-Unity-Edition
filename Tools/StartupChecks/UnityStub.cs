@@ -145,11 +145,11 @@ public class PlayerHudAssets{public TMPro.TMP_FontAsset levelFont;public UnityEn
 public static class MinecraftUIText{public static UnityEngine.Material CreateMaterial(TMPro.TMP_FontAsset font,float size,bool shadow)=>new UnityEngine.Material();}
 public class Menu {public static Menu currentMenu,lastMenu;public static void CloseCurrentMenu(){}}
 public class Block {public BlockType type=BlockType.Stone;public int sky=15,light;public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
-public class World {public static World Instance;public bool IsWorldCreated,disabled;public WorldData worldData=new WorldData();public Func<UnityEngine.Vector3,Block> blockAt;public Block GetBlock(UnityEngine.Vector3 p)=>blockAt==null?new Block():blockAt(p);}
+public class World {public WorldDimension dimension;public static World Instance;public bool IsWorldCreated,disabled;public WorldData worldData=new WorldData();public Func<UnityEngine.Vector3,Block> blockAt;public Block GetBlock(UnityEngine.Vector3 p)=>blockAt==null?new Block():blockAt(p);}
 public class WorldData{public Dictionary<UnityEngine.Vector3Int,ChunkRenderer> chunkDict=new Dictionary<UnityEngine.Vector3Int,ChunkRenderer>();}
 public class ChunkRenderer:UnityEngine.Component{public object ChunkData;}
 public class GameManager {public static GameManager Instance;public bool playerSpawned;public Player localPlayer;}
-public class Player:UnityEngine.Component {public bool IsReadyForPlay,isFlying,isCrouching,isLocalPlayer,InWater;public int health=20,experienceLevel;public float eyeHeight=1.6f;public object inventory;public object SavePlayer()=>new object();}
+public class Player:UnityEngine.Component {public WorldDimension dimension;public bool DimensionTransferInProgress;public bool IsReadyForPlay,isFlying,isCrouching,isLocalPlayer,InWater;public int health=20,experienceLevel;public float eyeHeight=1.6f;public object inventory;public object SavePlayer()=>new object();}
 public static class WorldDataHelper
 {
  public static UnityEngine.Vector3Int GetChunkPosition(World w,UnityEngine.Vector3Int p)=>new UnityEngine.Vector3Int((int)Math.Floor(p.x/16f)*16,0,(int)Math.Floor(p.z/16f)*16);
@@ -167,3 +167,5 @@ public partial class WorldServer
  public void SavePlayerMessageHandler(Mirror.NetworkConnectionToClient conn,object data){saves++;}
  public struct StartPlayerMessage{public StartPlayerMessage(ulong steamId){}}
 }
+
+public enum WorldDimension {Nether=-1,Overworld=0}

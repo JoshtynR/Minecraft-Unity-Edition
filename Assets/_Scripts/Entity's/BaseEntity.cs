@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using Mirror;
 using Popcron;
@@ -49,7 +49,7 @@ public abstract partial class BaseEntity : NetworkBehaviour
 
     public virtual void Start()
     {
-        world = World.Instance;
+        world = this is Player p ? World.GetDimension(p.dimension) : World.Instance;
         direction = transform;
 
         var rayColl = GetComponentInChildren<BoxCollider>();

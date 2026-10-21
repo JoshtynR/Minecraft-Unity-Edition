@@ -45,7 +45,7 @@ public partial class Player
         if(request==lastServerDropRequest&&lastServerDropReply!=null)
         {CompleteDropAction(request,lastServerDropReply,lastServerDropAccepted,network);return;}
         bool accepted=false;
-        if(request>lastServerDropRequest&&world!=null&&world.IsWorldCreated&&!world.isSaving&&health>0&&
+        if(request>lastServerDropRequest&&!dimensionTransfer&&world!=null&&world.IsWorldCreated&&!world.isSaving&&health>0&&
             ChestTransactions.Valid(snapshot,new InventoryStack()))
         {
             if(dropping&&id>=0&&id<9&&!snapshot[id].Empty)

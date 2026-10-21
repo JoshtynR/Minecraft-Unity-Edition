@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 
-public struct CowStateMessage : NetworkMessage { public CowState cow; public bool removed; }
-public struct CowBatchMessage : NetworkMessage { public CowState[] cows; public bool reset; }
+public struct CowStateMessage : NetworkMessage { public WorldDimension dimension;public CowState cow; public bool removed; }
+public struct CowBatchMessage : NetworkMessage { public WorldDimension dimension;public CowState[] cows; public bool reset; }
 public struct CowSyncRequest : NetworkMessage { }
 
 public partial class World
@@ -32,13 +32,15 @@ public partial class World
         NetworkClient.RegisterHandler<CowStateMessage>(message =>
         {
             if (DropAuthority || message.cow == null) return;
-            if (message.removed) cows.Remove(message.cow.id); else cows.Apply(message.cow);
+            var world=FindDimension(message.dimension);if(world==null)return;
+            if (message.removed) world.cows.Remove(message.cow.id); else world.cows.Apply(message.cow);
         });
         NetworkClient.RegisterHandler<CowBatchMessage>(message =>
         {
             if (DropAuthority) return;
-            if (message.reset) cows.Restore(null);
-            if (message.cows != null) foreach (var cow in message.cows) cows.Apply(cow);
+            var world=FindDimension(message.dimension);if(world==null)return;
+            if (message.reset) world.cows.Restore(null);
+            if (message.cows != null) foreach (var cow in message.cows) world.cows.Apply(cow);
         });
     }
     private void EnsureCowsRestored()
@@ -72,13 +74,13 @@ public partial class World
         {
             batch.Add(cow.Copy());
             if (batch.Count != 32) continue;
-            connection.Send(new CowBatchMessage { cows = batch.ToArray(), reset = first }); first = false; batch.Clear();
+            connection.Send(new CowBatchMessage { dimension=dimension,cows = batch.ToArray(), reset = first }); first = false; batch.Clear();
         }
-        if (batch.Count > 0 || first) connection.Send(new CowBatchMessage { cows = batch.ToArray(), reset = first });
+        if (batch.Count > 0 || first) connection.Send(new CowBatchMessage { dimension=dimension,cows = batch.ToArray(), reset = first });
     }
     private void BroadcastCow(CowState cow, bool removed = false)
     {
-        if (NetworkServer.active) NetworkServer.SendToAll(new CowStateMessage { cow = cow.Copy(), removed = removed });
+        if (NetworkServer.active) NetworkServer.SendToAll(new CowStateMessage { dimension=dimension,cow = cow.Copy(), removed = removed });
     }
     private void RefreshCowPlayers()
     {
@@ -89,10 +91,10 @@ public partial class World
                 if (connection != null && connection.identity != null)
                 {
                     var player = connection.identity.GetComponent<Player>();
-                    if (player != null && player.health > 0) cowPlayers.Add(player);
+                    if (player != null && player.dimension == dimension && player.health > 0) cowPlayers.Add(player);
                 }
         }
-        else if (GameManager.Instance != null && GameManager.Instance.localPlayer != null && GameManager.Instance.localPlayer.health > 0)
+        else if (GameManager.Instance != null && GameManager.Instance.localPlayer != null && GameManager.Instance.localPlayer.health > 0 && GameManager.Instance.localPlayer.dimension == dimension)
             cowPlayers.Add(GameManager.Instance.localPlayer);
     }
     private bool CowAreaLoaded(Vector3 position)
@@ -194,7 +196,7 @@ public partial class World
     private bool DamageCow(CowState cow,int damage,Vector3 away)
     {
         if (!CowRules.Hurt(cow,damage,away)) return false;
-        GameAudio.Broadcast("mob/cow/hurt",cow.position,.5f,GameAudio.Variation(.9f,1.1f));
+        GameAudio.Broadcast("mob/cow/hurt",cow.position,.5f,GameAudio.Variation(.9f,1.1f),this);
         if (cow.health == 0)
         {
             // Remove first: repeated attacks/packets cannot duplicate the drop.
@@ -288,7 +290,7 @@ public partial class World
     }
     private void UpdateCows()
     {
-        if(!Application.isPlaying || disabled || !IsWorldCreated)return;
+        if(!Application.isPlaying || disabled || !IsWorldCreated || GenerationBusy)return;
         if(DropAuthority)
         {
             EnsureCowsRestored();
@@ -307,7 +309,7 @@ public partial class World
         }
         else if(!cowSyncRequested && NetworkClient.ready && NetworkClient.localPlayer!=null)
         {cowSyncRequested=true;NetworkClient.Send(new CowSyncRequest());}
-        if(!NetworkServer.active || NetworkClient.active)UpdateCowVisuals();
+        if(Instance==this&&(!NetworkServer.active || NetworkClient.active))UpdateCowVisuals();
     }
     private void UpdateCowVisuals()
     {
@@ -324,7 +326,7 @@ public partial class World
             if(!cowVisuals.TryGetValue(cow.id,out var visual) && visible)
             {
                 if(!EnsureCowMeshes())continue;
-                visual=new CowVisual(transform,cow,cowMeshes,cowMaterial);cowVisuals.Add(cow.id,visual);
+                visual=new CowVisual(worldRenderer.transform,cow,cowMeshes,cowMaterial);cowVisuals.Add(cow.id,visual);
             }
             if(visual!=null){visual.root.SetActive(visible);if(visible)visual.Update(cow,this,Time.deltaTime);}
         }

@@ -8,13 +8,16 @@ namespace UnityEngine {
  public class HideInInspectorAttribute:Attribute {}
  public class HeaderAttribute:Attribute { public HeaderAttribute(string s){} }
  public class TooltipAttribute:Attribute { public TooltipAttribute(string s){} }
- public struct Vector3Int { public int x,y,z; public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;} }
+ public struct Vector3Int {
+ public static Vector3Int left=>new Vector3Int(-1,0,0);public static Vector3Int right=>new Vector3Int(1,0,0);public static Vector3Int up=>new Vector3Int(0,1,0);public static Vector3Int down=>new Vector3Int(0,-1,0);
+ public static Vector3Int operator+(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);
+ public int x,y,z; public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;} }
  public struct Vector3 {}
  public static class Application { public static string dataPath="/tmp"; }
  public static class Debug { public static void Log(string s){} }
 }
 public class Block {public ChunkData chunkData; public BlockType type; public Block(BlockType t){type=t;} }
-public class World {
+public class World {public WorldDimension dimension;
  public long betaWorldSeed;public int worldHeight=240;public int meshNotifications;
  public Dictionary<UnityEngine.Vector3Int,ChunkData> chunks=new Dictionary<UnityEngine.Vector3Int,ChunkData>();
  public void NotifyTreeChunkChanged(UnityEngine.Vector3Int p){meshNotifications++;}
@@ -85,6 +88,26 @@ public class IntegrationCheck {
   if(ore==0||populationWorld.meshNotifications==0)throw new Exception("population omitted ore/dirty neighbors");checks++;
   int before=populationWorld.meshNotifications;full.PopulateChunk(owner);
   if(before!=populationWorld.meshNotifications)throw new Exception("complete population ran twice");checks++;
+  if(args.Length>1)foreach(string line in File.ReadAllLines(args[1]))
+  {
+   var row=line.Split('\t');if(row[3]!="caves")continue;
+   var world=new World{betaWorldSeed=long.Parse(row[0]),dimension=WorldDimension.Nether};
+   int cx=int.Parse(row[1]),cz=int.Parse(row[2]);
+   var chunk=new ChunkData{worldRef=world,worldPos=new UnityEngine.Vector3Int((-cx-1)*16,0,cz*16)};
+   sharedGenerator.GenerateChunkData(chunk);
+   var bytes=new byte[32768];
+   for(int x=0;x<16;x++)for(int z=0;z<16;z++)for(int y=0;y<128;y++)
+   {
+    var type=chunk.blocks[15-x,y,z];BetaBlockCatalog.Entry entry;
+    bytes[(x*16+z)*128+y]=type==BlockType.Air?(byte)0:BetaBlockCatalog.TryGet(type,out entry)?(byte)entry.SourceId:(byte)255;
+   }
+   string hash;using(var sha=SHA256.Create())hash=BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-","").ToLowerInvariant();
+   if(hash!=row[4])throw new Exception("Nether adapter mismatch "+line);
+   for(int x=0;x<16;x++)for(int z=0;z<16;z++)for(int y=128;y<240;y++)if(chunk.blocks[x,y,z]!=BlockType.Air)throw new Exception("Nether ceiling above height");
+   checks++;
+  }
   Console.WriteLine(checks+" production TerrainGenerator boundary checks passed (Unity storage mocked).");return 0;
  }
 }
+
+public enum WorldDimension {Nether=-1,Overworld=0}

@@ -21,13 +21,14 @@ public sealed class FluidCameraEffects : MonoBehaviour
     private void Awake(){view=GetComponent<Camera>();assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");}
     private void OnPreCull()
     {
-        Restore();if(player==null||World.Instance==null)return;
-        medium=FluidWorldQueries.AtEye(World.Instance,transform.position);
+        Restore();if(player==null||player.CurrentWorld==null)return;
+        medium=FluidWorldQueries.AtEye(player.CurrentWorld,transform.position);
         previousFog=Shader.GetGlobalVector("_FluidFog");previousBackground=view.backgroundColor;
         previousClearFlags=view.clearFlags;
         previousFogEnabled=RenderSettings.fog;previousFogColor=RenderSettings.fogColor;
         previousDensity=RenderSettings.fogDensity;previousMode=RenderSettings.fogMode;applied=true;
         Vector4 fog=medium==BlockType.Water?new Vector4(.02f,.02f,.2f,.1f):medium==BlockType.Lava?new Vector4(.6f,.1f,0,2):Vector4.zero;
+        if (fog.w<=0 && player.CurrentWorld.dimension==WorldDimension.Nether) fog=new Vector4(.2f,.03f,.03f,.025f);
         Shader.SetGlobalVector("_FluidFog",fog);
         if(fog.w<=0)return;
         view.backgroundColor=new Color(fog.x,fog.y,fog.z,1);
@@ -54,6 +55,18 @@ public sealed class FluidCameraEffects : MonoBehaviour
         deathShownAt=-1;confirmTitle=false;
         if(player==null||assets==null||Event.current.type!=EventType.Repaint)return;
         var old=GUI.color;int depth=GUI.depth;GUI.depth=100;
+        if(player.PortalOverlay>0)
+        {
+            var data=BlockDataManager.blockTypeDataDictionary[(int)BlockType.NetherPortal].textureData;
+            var texture=data.side!=null?data.side:data.top;
+            if(texture!=null)
+            {
+                int rows=Mathf.Max(1,texture.height/texture.width);
+                int frame=Mathf.FloorToInt(Time.time*20)%rows;
+                GUI.color=new Color(1,1,1,.15f+player.PortalOverlay*.65f);
+                GUI.DrawTextureWithTexCoords(new Rect(0,0,Screen.width,Screen.height),texture,new Rect(0,1-(frame+1f)/rows,1,1f/rows));
+            }
+        }
         if(medium==BlockType.Water&&assets.waterOverlay!=null)
         {
             GUI.color=new Color(1,1,1,.1f);var offset=player.transform.eulerAngles;

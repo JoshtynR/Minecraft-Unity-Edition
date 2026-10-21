@@ -43,9 +43,10 @@ public class ChunkData
         }
     }
 
-    public static ChunkData Deserialize(ChunkSaveData saveData)
+    public static ChunkData Deserialize(ChunkSaveData saveData, World owner = null)
     {
-        var chunkData = new ChunkData(World.Instance.chunkSize, World.Instance.chunkSize, World.Instance, saveData.position);
+        var world = owner ?? World.Instance;
+        var chunkData = new ChunkData(world.chunkSize, world.chunkHeight, world, saveData.position);
         var sections = new ChunkSection[saveData.sections.Length];
         // sections = saveData.sections.Select(s => new ChunkSection(s, this)).ToArray();
         for (var i = 0; i < sections.Length; i++)
@@ -84,13 +85,13 @@ public class ChunkData
         return axisCoord >= 0 && axisCoord < chunkData.chunkSize;
     }
 
-    public static bool IsInRange(Vector3Int pos)
+    public static bool IsInRange(Vector3Int pos, World owner = null)
     {
         var x = pos.x;
         var y = pos.y;
         var z = pos.z;
 
-        var world = World.Instance;
+        var world = owner ?? World.Instance;
         
         return x>= 0 && x < world.chunkSize && y >= 0 && y < world.worldHeight && z >= 0 && z < world.chunkSize;
     }
@@ -113,7 +114,7 @@ public class ChunkData
             return BlockHelper.NOTHING;
         }
         
-        if (IsInRange(localPos))
+        if (localPos.x>=0 && localPos.x<chunkSize && localPos.z>=0 && localPos.z<chunkSize)
         {
             return GetSection(localPos.y).GetBlock(localPos);
         }
@@ -128,7 +129,7 @@ public class ChunkData
             return;
         }
         
-        if (IsInRange(localPos))
+        if (localPos.x>=0 && localPos.x<chunkSize && localPos.z>=0 && localPos.z<chunkSize)
         {
             GetSection(localPos.y).SetBlock(localPos, block);
             modifiedAfterSave = true;
@@ -245,7 +246,7 @@ public class ChunkData
             foreach (var direction in BlockHelper.directions)
             {
                 var neighborPos = blockPos + direction.GetVector();
-                if (IsInRange(neighborPos))
+                if (IsInRange(neighborPos, worldRef))
                 {
                     var neighborBlock = GetBlock(neighborPos);
                     if (neighborBlock.BlockData.opacity < 15 && neighborBlock.GetBlockLight() < lightLevel - 1)
@@ -293,7 +294,7 @@ public class ChunkData
             {
                 var block = GetBlock(blockPos);
                 var neighborPos = blockPos + dir.GetVector();
-                if (IsInRange(neighborPos))
+                if (IsInRange(neighborPos, worldRef))
                 {
                     var neighborBlock = GetBlock(neighborPos);
                     if (neighborBlock.BlockData.opacity < 15 && neighborBlock.GetSkyLight() < block.GetSkyLight()-1)

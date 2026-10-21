@@ -23,7 +23,7 @@ public partial class Player
         if(request==lastServerDropRequest&&lastServerDropReply!=null)
         {CompleteDropAction(request,lastServerDropReply,lastServerDropAccepted,network);return;}
         bool accepted=false;
-        if(request>lastServerDropRequest&&world!=null&&!world.isSaving&&health>0&&target!=null&&target!=this&&target.health>0&&
+        if(request>lastServerDropRequest&&!dimensionTransfer&&world!=null&&!world.isSaving&&health>0&&target!=null&&target!=this&&target.dimension==dimension&&target.health>0&&
             (target.transform.position-transform.position).sqrMagnitude<=reach*reach&&slot>=0&&slot<9&&ChestTransactions.Valid(snapshot,new InventoryStack()))
         {
             int amount=ItemDurability.HitWear(snapshot[slot].type);

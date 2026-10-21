@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.IO;
 using Mirror;
@@ -25,13 +25,14 @@ public partial class WorldServer : NetworkBehaviour
         NetworkServer.RegisterHandler<FurnaceRequest>(ReceiveFurnaceRequest);
         NetworkServer.RegisterHandler<DropSyncRequest>((connection,request)=>
         {
-            if(connection.identity==null||World.Instance==null)return;
-            foreach(var item in World.Instance.CaptureDroppedItems())connection.Send(new DropStateMessage{item=item});
+            if(connection.identity==null)return;
+            var world=connection.identity.GetComponent<Player>().CurrentWorld;
+            foreach(var item in world.CaptureDroppedItems())connection.Send(new DropStateMessage{item=item,dimension=world.dimension});
         });
 
         NetworkServer.RegisterHandler<CowSyncRequest>((connection,request)=>
         {
-            if(World.Instance!=null)World.Instance.SendCowSnapshot(connection);
+            if(connection.identity!=null)connection.identity.GetComponent<Player>().CurrentWorld.SendCowSnapshot(connection);
         });
 
         StartCoroutine(SaveLoop());
@@ -41,49 +42,41 @@ public partial class WorldServer : NetworkBehaviour
 
     public void SetBlockMessageHandler(NetworkConnectionToClient conn, SetBlockMessage message)
     {
-        // Survival removal is authorized by Player's timed mining commands.
+        if(conn.identity==null)return;
+        var player=conn.identity.GetComponent<Player>();
+        if(player==null||player.DimensionTransferInProgress||message.dimension!=player.dimension)return;
+        var world=player.CurrentWorld;
+        if(world==null||world.isSaving)return;
         if (message.blockType == BlockType.Air || message.blockType == BlockType.Nothing) return;
-        if(WheatCropRules.IsCrop(message.blockType))return; // Seeds use the inventory-authorized farming command.
-        if(!World.Instance.CanReplaceChest(message.position,message.blockType))return;
-        var previous=World.Instance.GetBlock(message.position);
-        var previousType=previous!=null?previous.type:BlockType.Nothing;
-        World.Instance.SetBlock(message.position, message.blockType, message.stairFacing);
-        RpcSetBlock(message.position, message.blockType, message.stairFacing);
-        if(previousType!=message.blockType)GameAudio.BroadcastBlock(message.blockType,message.position,false);
-        else GameAudio.Broadcast(BlockSoundRules.Use(message.blockType,message.stairFacing),(Vector3)message.position+Vector3.one*.5f,.7f);
+        if(WheatCropRules.IsCrop(message.blockType))return;
+        if((player.transform.position-((Vector3)message.position+Vector3.one*.5f)).sqrMagnitude>64)return;
+        if(!world.CanReplaceChest(message.position,message.blockType))return;
+        world.SetBlock(message.position,message.blockType,message.stairFacing);
+        BroadcastBlock(world,message.position,message.blockType,message.stairFacing);
+        GameAudio.BroadcastBlock(message.blockType,message.position,false,world);
     }
+    public void BroadcastBlock(World world,Vector3Int position,BlockType type,byte state)
+    {RpcDimensionBlock(world.dimension,position,type,state);}
+    // Retained for integrations that explicitly target the visible world.
+    public void RpcSetBlock(Vector3Int position,BlockType blockType,byte stairFacing)
+    {BroadcastBlock(World.Instance,position,blockType,stairFacing);}
+    [ClientRpc] private void RpcDimensionBlock(WorldDimension dimension,Vector3Int position,BlockType type,byte state)
+    {if(!NetworkServer.active){var world=World.FindDimension(dimension);if(world!=null)world.SetBlock(position,type,state);}}
 
-    [ClientRpc]
-    public void RpcSetBlock(Vector3Int position, BlockType blockType, byte stairFacing)
+    [Server] public void BroadcastWaterUpdates(WorldDimension dimension,Vector3Int[] positions,byte[] levels)
+    {RpcWaterUpdates(dimension,positions,levels);}
+    [ClientRpc] private void RpcWaterUpdates(WorldDimension dimension,Vector3Int[] positions,byte[] levels)
     {
-        if (!NetworkServer.active) World.Instance.SetBlock(position, blockType, stairFacing);
+        if(NetworkServer.active)return;var world=World.FindDimension(dimension);if(world==null)return;
+        for(int i=0;i<positions.Length;i++)world.ReceiveWaterState(positions[i],levels[i]);
     }
-    [Server]
-    public void BroadcastWaterUpdates(Vector3Int[] positions, byte[] levels)
-    {
-        // Legacy name: levels also encodes lava and fluid hardening products.
-        RpcWaterUpdates(positions, levels);
-    }
-
-    [ClientRpc]
-    private void RpcWaterUpdates(Vector3Int[] positions, byte[] levels)
-    {
-        if (NetworkServer.active || World.Instance == null) return;
-        for (int i = 0; i < positions.Length; i++)
-            World.Instance.ReceiveWaterState(positions[i], levels[i]);
-    }
-
     public struct SetBlockMessage : NetworkMessage
     {
-        public Vector3Int position;
-        public BlockType blockType;
-        public byte stairFacing;
-        
-        public SetBlockMessage(Vector3Int position, BlockType blockType, byte stairFacing = 0)
+        public Vector3Int position;public BlockType blockType;public byte stairFacing;public WorldDimension dimension;
+        public SetBlockMessage(Vector3Int position,BlockType blockType,byte stairFacing=0)
         {
-            this.position = position;
-            this.blockType = blockType;
-            this.stairFacing = (byte)(stairFacing & 15);
+            this.position=position;this.blockType=blockType;this.stairFacing=(byte)(stairFacing&15);
+            this.dimension=World.Instance!=null?World.Instance.dimension:WorldDimension.Overworld;
         }
     }
     
@@ -93,7 +86,9 @@ public partial class WorldServer : NetworkBehaviour
     
     public void SavePlayerMessageHandler(NetworkConnectionToClient conn, SavePlayerMessage message)
     {
-        World.Instance.SavePlayer(message);
+        if(conn.identity==null)return;
+        var player=conn.identity.GetComponent<Player>();
+        if(player!=null)player.CurrentWorld.SavePlayer(player.SavePlayer());
     }
     
     public IEnumerator SaveLoop()
@@ -101,7 +96,7 @@ public partial class WorldServer : NetworkBehaviour
         while (true)
         {
             yield return new WaitForSecondsRealtime(5*60);
-            World.Instance.SaveWorld();
+            World.SaveAllDimensions();
         }
     }
     
@@ -117,9 +112,10 @@ public partial class WorldServer : NetworkBehaviour
         public PlayerInventory.Slot[] recovery;
         public PlayerInventory.Slot[] equipment;
         public ulong steamId;
+        public WorldDimension dimension;
 
         public SavePlayerMessage(Vector3 position, Quaternion bodyRotation, Quaternion headRotation, PlayerInventory.Slot[] inventory, ulong steamId,
-            PlayerInventory.Slot[] crafting = null, PlayerInventory.Slot cursor = null, PlayerInventory.Slot[] recovery = null, PlayerInventory.Slot[] equipment = null)
+            PlayerInventory.Slot[] crafting = null, PlayerInventory.Slot cursor = null, PlayerInventory.Slot[] recovery = null, PlayerInventory.Slot[] equipment = null, WorldDimension dimension = WorldDimension.Overworld)
         {
             this.position = position;
             this.bodyRotation = bodyRotation;
@@ -130,6 +126,7 @@ public partial class WorldServer : NetworkBehaviour
             this.recovery = recovery;
             this.equipment = equipment;
             this.steamId = steamId;
+            this.dimension = DimensionRules.Valid(dimension);
         }
     }
     
@@ -139,29 +136,37 @@ public partial class WorldServer : NetworkBehaviour
     
     public void SpawnPlayerMessageHandler(NetworkConnectionToClient conn, SpawnPlayerMessage message)
     {
-        if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/" + World.Instance.worldName + $"/playerdata/{message.steamId}.json")))
+        if (conn.identity != null) return;
+        if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/" + World.Overworld.worldName + $"/playerdata/{message.steamId}.json")))
         {
             var playerData =  JsonUtility.FromJson<SavePlayerMessage>(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
-                ".minecraftUnity/saves/" + World.Instance.worldName + $"/playerdata/{message.steamId}.json")));
+                ".minecraftUnity/saves/" + World.Overworld.worldName + $"/playerdata/{message.steamId}.json")));
             
             var player = Instantiate(NetworkManager.singleton.playerPrefab, playerData.position, Quaternion.identity);
             // Included in the initial spawn state: the loading UI must wait even
             // if the saved-player TargetRpc arrives several frames after spawn.
+            player.GetComponent<Player>().dimension = DimensionRules.Valid(playerData.dimension);
             player.GetComponent<Player>().expectsSavedPlayerData = true;
+            player.GetComponent<Player>().SteamId = message.steamId;
+            player.GetComponent<Player>().PrepareDimensionJoin();
             NetworkServer.AddPlayerForConnection(conn, player);
             player.GetComponent<Player>().RpcLoadPlayer(conn, playerData);
+            player.GetComponent<Player>().SynchronizeDimensionOnJoin();
             conn.identity.AssignClientAuthority(conn);
         }
         else
         {
-            var world = World.Instance;
+            var world = World.Overworld;
             for (var i = world.worldHeight - 1; i >= 0; i--)
             {
                 if (world.GetBlock(new Vector3Int(8, i, 8)).type != BlockType.Air)
                 {
                     var player = Instantiate(NetworkManager.singleton.playerPrefab, new Vector3(world.chunkSize/2+0.5f, i + 1, world.chunkSize/2+0.5f), Quaternion.identity);
+                    player.GetComponent<Player>().SteamId = message.steamId;
+                    player.GetComponent<Player>().PrepareDimensionJoin();
                     NetworkServer.AddPlayerForConnection(conn, player);
                     conn.identity.AssignClientAuthority(conn);
+                    player.GetComponent<Player>().SynchronizeDimensionOnJoin();
                     break;
                 }
             }
@@ -182,20 +187,23 @@ public partial class WorldServer : NetworkBehaviour
     
     #region StartPlayer
     
-    public void StartPlayerMessageHandler(NetworkConnectionToClient conn, StartPlayerMessage message)
+    public async void StartPlayerMessageHandler(NetworkConnectionToClient conn, StartPlayerMessage message)
     {
         if (File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                ".minecraftUnity/saves/" + World.Instance.worldName + $"/playerdata/{message.steamId}.json")))
+                ".minecraftUnity/saves/" + World.Overworld.worldName + $"/playerdata/{message.steamId}.json")))
         {
             var playerData = JsonUtility.FromJson<SavePlayerMessage>(File.ReadAllText(Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                ".minecraftUnity/saves/" + World.Instance.worldName + $"/playerdata/{message.steamId}.json")));
+                ".minecraftUnity/saves/" + World.Overworld.worldName + $"/playerdata/{message.steamId}.json")));
             
-            conn.Send(new StartWorldMessage(Vector3Int.RoundToInt(playerData.position), World.Instance.betaWorldSeed));
+            var destination=World.GetDimension(playerData.dimension);
+            await destination.EnsureAreaAsync(Vector3Int.RoundToInt(playerData.position),true);
+            conn.Send(new StartWorldMessage(Vector3Int.RoundToInt(playerData.position), destination.betaWorldSeed, destination.dimension));
         }
         else
         {
-            conn.Send(new StartWorldMessage(Vector3Int.zero, World.Instance.betaWorldSeed));
+            await World.Overworld.EnsureAreaAsync(Vector3Int.zero,true);
+            conn.Send(new StartWorldMessage(Vector3Int.zero, World.Overworld.betaWorldSeed));
         }
     }
     

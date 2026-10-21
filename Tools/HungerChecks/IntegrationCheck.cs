@@ -23,8 +23,10 @@ public class BaseEntity
  public virtual void FixedUpdate(){transform.position=new Vector3(transform.position.x+actualStep,0,0);}
  protected virtual void OnJumpPerformed(){}
 }
+public static class WorldLoadingScreen {public static bool IsLoading;}
 public partial class Player:BaseEntity
 {
+ private bool dimensionTransfer;private void TickDimension(){}
  public bool networkStarted,isLocalPlayer=true,isServer=true;public int health=20,hunger=20;public World world=new World();
  private void AdvanceMining(float dt){}
  private void AdvanceFluidHazards(float dt){}

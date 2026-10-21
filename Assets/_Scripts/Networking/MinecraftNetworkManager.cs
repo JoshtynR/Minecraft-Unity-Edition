@@ -72,7 +72,7 @@ public class MinecraftNetworkManager : NetworkManager
             server.CloseFurnaceForDisconnect(conn);
             var player = conn.identity != null ? conn.identity.GetComponent<Player>() : null;
             // Cancelling during loading can disconnect before any player exists or Start has run.
-            if (player != null && player.inventory != null) server.SavePlayerMessageHandler(conn, player.SavePlayer());
+            if (player != null && player.inventory != null && !player.DimensionTransferInProgress) server.SavePlayerMessageHandler(conn, player.SavePlayer());
         }
         
         base.OnServerDisconnect(conn);

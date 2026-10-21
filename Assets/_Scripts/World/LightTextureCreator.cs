@@ -10,6 +10,7 @@ public static class LightTextureCreator
     public static readonly Vector4[] lightColors = new Vector4[16 * 16];
 
     public static int skyDarkness;
+    public static bool nether;
     private static float[] lightBrightnessTable = new float[16];
 
     [Range(0f, 1f)] public static float gamma = 0f;     // 0 = none, 1 = full shaping
@@ -49,7 +50,7 @@ public static class LightTextureCreator
         for (int sky = 0; sky < 16; sky++)
         for (int block = 0; block < 16; block++)
         {
-            float brightness = Beta173Lighting.Brightness(sky, block, skyDarkness);
+            float brightness = Beta173Lighting.Brightness(sky, block, skyDarkness,0,nether);
             brightness = Mathf.Lerp(brightness, 1f, Mathf.Clamp01(gamma));
             int index = sky * 16 + block;
             LightColors[index] = new Color(brightness, brightness, brightness, 1f);
@@ -73,7 +74,7 @@ public static class LightTextureCreator
 
     public static void GenerateLightBrightnessTable()
     {
-        float ambient = 0.05f; // expose later if you add dimensions
+        float ambient = nether ? .1f : .05f; // expose later if you add dimensions
         var fs = new float[16];
         for (int i = 0; i <= 15; ++i)
         {

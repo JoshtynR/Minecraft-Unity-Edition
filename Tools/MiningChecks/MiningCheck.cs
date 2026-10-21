@@ -71,7 +71,7 @@ public class World
  public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block{type=BlockType.Air,globalWorldPosition=p};}
  public void SetBlock(Vector3Int p,BlockType type){edits++;blocks[p].type=type;}
 }
-public class WorldServer {public static WorldServer instance;public void RpcSetBlock(Vector3Int p,BlockType t,byte facing){} }
+public class WorldServer {public static WorldServer instance;public void BroadcastBlock(World world,Vector3Int p,BlockType t,byte facing){} }
 public class Inventory
 {
  public void ApplyCompletedMiningWear(int i,InventoryStack expected,int amount){ApplyItemWear(i,expected,amount);}

@@ -67,9 +67,10 @@ public partial class World : MonoBehaviour
 
     private void Awake()
     {
-        WorldLoadingScreen.Begin();
+        if (!secondaryDimension) WorldLoadingScreen.Begin();
         worldCancellationToken = taskTokenSource.Token;
-        Instance = this;
+        if (!secondaryDimension) { Instance = this; Overworld = this; }
+        RegisterDimension();
         InitializeChests();
         validateDone = false;
         isInPlayMode = Application.isPlaying;
@@ -77,6 +78,7 @@ public partial class World : MonoBehaviour
 
     private void Start()
     {
+        if (secondaryDimension) return;
         OnValidate();
         Clear();
         InitializeDroppedItems();
@@ -95,12 +97,13 @@ public partial class World : MonoBehaviour
         
         NetworkClient.RegisterHandler<StartWorldMessage>(message =>
         {
-            // Clients must use the server's seed before generating any chunks.
             betaWorldSeed = message.betaWorldSeed;
-            if (WorldSettingsManager.Instance != null)
-                WorldSettingsManager.Instance.betaWorldSeed = message.betaWorldSeed;
-            StartWorld();
-            GenerateWorld(message.position);
+            if (WorldSettingsManager.Instance != null) WorldSettingsManager.Instance.betaWorldSeed = message.betaWorldSeed;
+            var destination = GetDimension(message.dimension);
+            destination.requestPlayerSpawn = true;
+            ActivateDimension(destination);
+            destination.StartWorld();
+            destination.GenerateWorld(message.position);
         });
         
         // NetworkClient.RegisterHandler<WorldServer.ChunkReceiveMessage>(message =>
@@ -117,6 +120,7 @@ public partial class World : MonoBehaviour
 
     private void OnValidate()
     {
+        if (worldRenderer == null || terrainGenerator == null) return;
         worldCancellationToken = taskTokenSource.Token;
         Update();
         if (!Application.isPlaying || !validateDone)
@@ -125,9 +129,9 @@ public partial class World : MonoBehaviour
             {
                 chunkDataDict = new Dictionary<Vector3Int, ChunkData>(),
                 chunkDict = new Dictionary<Vector3Int, ChunkRenderer>(),
-                worldName = worldName,
+                worldName = worldName, owner = this,
             };
-            Instance = this;
+            if (!secondaryDimension && Instance == null) Instance = this;
             
 
             validateDone = true;
@@ -138,6 +142,7 @@ public partial class World : MonoBehaviour
     public void UpadteLightTexture()
     {
         UpdateBetaLightingSettings();
+        LightTextureCreator.nether = dimension == WorldDimension.Nether;
         LightTextureCreator.gamma = gamma;
         LightTextureCreator.skyLightMultiplier = skyLightMultiplier;
         LightTextureCreator.blockLightMultiplier = blockLightMultiplier;
@@ -149,6 +154,16 @@ public partial class World : MonoBehaviour
     {
         var allChunkPositionsNeeded = WorldDataHelper.GetChunkPositionsInRenderDistance(this, playerPos);
         var allChunkDataPositionsNeeded = WorldDataHelper.GetDataPositionsInRenderDistance(this, playerPos);
+        if (NetworkServer.active && GameManager.Instance != null)
+            foreach (var resident in GameManager.Instance.players)
+            {
+                if (resident == null || resident.dimension != dimension) continue;
+                var center = Vector3Int.FloorToInt(resident.transform.position);
+                allChunkPositionsNeeded.AddRange(WorldDataHelper.GetChunkPositionsInRenderDistance(this,center));
+                allChunkDataPositionsNeeded.AddRange(WorldDataHelper.GetDataPositionsInRenderDistance(this,center));
+            }
+        allChunkPositionsNeeded = allChunkPositionsNeeded.Distinct().ToList();
+        allChunkDataPositionsNeeded = allChunkDataPositionsNeeded.Distinct().ToList();
         
         var chunkPositionsToCreate = WorldDataHelper.GetPositionsToCreate(worldData, allChunkPositionsNeeded,playerPos);
         var chunkDataPositionsToCreate = WorldDataHelper.GetDataPositionsToCreate(worldData, allChunkDataPositionsNeeded,playerPos);
@@ -291,6 +306,7 @@ public partial class World : MonoBehaviour
             // {
                 WorldDataHelper.SetBlock(chunk.ChunkData.worldRef, pos, blockType);
                 GetBlock(pos).blockShape = SpecialBlockGeometry.Shape(blockType, stairFacing);
+                QueuePortalValidation(pos);
                 if(removingChest)chests.Removed(pos);
                 if(removingFurnace)RemoveFurnace(pos);
                 if(removingCrop)DropWheat(pos,cropAge);
@@ -402,7 +418,7 @@ public partial class World : MonoBehaviour
         {
             chunkDataDict = new Dictionary<Vector3Int, ChunkData>(),
             chunkDict = new Dictionary<Vector3Int, ChunkRenderer>(),
-            worldName = worldName
+            worldName = worldName, owner = this
         };
         worldData.chunkDataDict?.Clear();
         worldData.chunkDict?.Clear();
@@ -412,7 +428,7 @@ public partial class World : MonoBehaviour
         ResetChunkUpdates();
         
 
-        foreach (var chunk in FindObjectsOfType<ChunkRenderer>())
+        foreach (var chunk in worldRenderer.GetComponentsInChildren<ChunkRenderer>(true))
         {
             DestroyImmediate(chunk.gameObject);
         }
@@ -429,9 +445,10 @@ public partial class World : MonoBehaviour
     {
         taskTokenSource.Cancel();
         taskTokenSource.Dispose();
+        UnregisterDimension();
         ResetDroppedItems(true);
         ResetCows(true);
-        if (Instance == this)
+        if (!secondaryDimension)
         {
             NetworkClient.UnregisterHandler<StartWorldMessage>();
             NetworkClient.UnregisterHandler<ChestReply>();
@@ -490,17 +507,20 @@ public struct StartWorldMessage : NetworkMessage
 {
     public Vector3Int position;
     public long betaWorldSeed;
+    public WorldDimension dimension;
     
-    public StartWorldMessage(Vector3Int position, long betaWorldSeed)
+    public StartWorldMessage(Vector3Int position, long betaWorldSeed, WorldDimension dimension = WorldDimension.Overworld)
     {
         this.position = position;
         this.betaWorldSeed = betaWorldSeed;
+        this.dimension = dimension;
     }
 }
 
 public struct WorldData
 {
     public string worldName;
+    public World owner;
     public Dictionary<Vector3Int, ChunkData> chunkDataDict;
     public Dictionary<Vector3Int, ChunkRenderer> chunkDict;
 }

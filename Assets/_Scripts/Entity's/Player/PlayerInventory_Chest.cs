@@ -23,7 +23,7 @@ public partial class PlayerInventory
         if(NetworkClient.active)NetworkClient.Send(request);
         else
         {
-            var world=World.Instance;
+            var world=player.CurrentWorld;
             bool accessible=world!=null&&world.ChestAccessible(transform.position+Vector3.up*1.6f,request.position,player.reach);
             if(world==null){chestPending=false;return;}
             if(world.isSaving&&request.action!=2)
@@ -113,13 +113,13 @@ public partial class PlayerInventory
         if(chestNetworkSession&&!NetworkClient.active)
         {chestPending=false;EndChestPanel();CloseInventory();return;}
         chestPanel.anchoredPosition=new Vector2(inventoryRect.anchoredPosition.x,0);
-        if(!NetworkClient.active&&!World.Instance.ChestAccessible(transform.position+Vector3.up*1.6f,chestPosition,player.reach))
-            ReceiveChestReply(World.Instance.chests.Close(-1));
+        if(!NetworkClient.active&&!player.CurrentWorld.ChestAccessible(transform.position+Vector3.up*1.6f,chestPosition,player.reach))
+            ReceiveChestReply(player.CurrentWorld.chests.Close(-1));
     }
     private void ReleaseChest()
     {
         if(!chestOpen)return;
         if(NetworkClient.active)NetworkClient.Send(new ChestRequest{action=2,position=chestPosition});
-        else if(World.Instance!=null)World.Instance.chests.Close(-1);
+        else if(player.CurrentWorld!=null)player.CurrentWorld.chests.Close(-1);
     }
 }
