@@ -7,15 +7,11 @@ class FirstPersonCheck {
  static void Check(bool ok,string message){assertions++;if(!ok)throw new Exception(message);}
  static int VisibleArmVertices(Mesh mesh,Transform pivot,Vector3 inheritedScale,float aspect)
  {
-  int visible=0;var e=pivot.localRotation.euler;
-  double rz=e.z*Math.PI/180,rx=e.x*Math.PI/180,ry=e.y*Math.PI/180;
+  int visible=0;
   foreach(var vertex in mesh.vertices)
   {
-   double x=vertex.x*pivot.localScale.x,y=vertex.y*pivot.localScale.y,z=vertex.z*pivot.localScale.z;
-   double tx=x*Math.Cos(rz)-y*Math.Sin(rz);y=x*Math.Sin(rz)+y*Math.Cos(rz);x=tx;
-   double ty=y*Math.Cos(rx)-z*Math.Sin(rx);z=y*Math.Sin(rx)+z*Math.Cos(rx);y=ty;
-   tx=x*Math.Cos(ry)+z*Math.Sin(ry);z=-x*Math.Sin(ry)+z*Math.Cos(ry);x=tx;
-   x=(x+pivot.localPosition.x)*inheritedScale.x;y=(y+pivot.localPosition.y)*inheritedScale.y;z=(z+pivot.localPosition.z)*inheritedScale.z;
+   var point=pivot.localRotation*new Vector3(vertex.x*pivot.localScale.x,vertex.y*pivot.localScale.y,vertex.z*pivot.localScale.z);
+   double x=(point.x+pivot.localPosition.x)*inheritedScale.x,y=(point.y+pivot.localPosition.y)*inheritedScale.y,z=(point.z+pivot.localPosition.z)*inheritedScale.z;
    double halfHeight=z*Math.Tan(35*Math.PI/180);
    if(z>.01&&z<4&&Math.Abs(y)<halfHeight&&Math.Abs(x)<halfHeight*aspect)visible++;
   }
@@ -50,6 +46,7 @@ class FirstPersonCheck {
   var hand=(Camera)Field(view,"handCamera");var filter=(MeshFilter)Field(view,"filter");
   Check(hand.enabled,"Ready player sees hand");Check(source.depth<hand.depth&&hand.depth<ui.depth,"HUD draws after hand");
   Check(hand.cullingMask==128&&(source.cullingMask&128)==0,"Camera layer isolation");
+  Check((source.cullingMask&64)==0,"local third-person arm cannot overlay the first-person hand");
   Check(hand.clearFlags==CameraClearFlags.Depth&&hand.nearClipPlane==.01f,"Hand cannot clip into world depth");
   Check(filter.sharedMesh.name=="First person right arm","Empty hand skin mesh");
   var root=(GameObject)Field(view,"cameraObject");var pose=(Transform)Field(view,"pivot");
@@ -58,12 +55,13 @@ class FirstPersonCheck {
   Check(VisibleArmVertices(filter.sharedMesh,pose,player.cam.lossyScale,16f/9)==0,"original scaled hierarchy moves the actual arm outside the view");
   Check(VisibleArmVertices(filter.sharedMesh,pose,root.transform.lossyScale,16f/9)>=4,"unscaled arm intersects widescreen frustum");
   Check(VisibleArmVertices(filter.sharedMesh,pose,root.transform.lossyScale,4f/3)>=4,"unscaled arm intersects standard aspect frustum");
-  var armEuler=pose.localRotation.euler;
-  double wristDepth=-.75*pose.localScale.y*Math.Cos(armEuler.z*Math.PI/180)*Math.Sin(armEuler.x*Math.PI/180);
-  Check(wristDepth>0,"empty wrist extends into the scene, beyond the shoulder");
-  double wristHeight=-.75*pose.localScale.y*Math.Cos(armEuler.z*Math.PI/180)*Math.Cos(armEuler.x*Math.PI/180);
+  var wrist=pose.localRotation*new Vector3(0,-.75f,0);
+  Check(wrist.z>0,"empty wrist extends into the scene, beyond the shoulder");
   double shoulderHalfHeight=pose.localPosition.z*Math.Tan(35*Math.PI/180);
-  Check(wristHeight>0&&pose.localPosition.y < -shoulderHalfHeight,"shoulder exits below view while hand extends upward");
+  Check(wrist.y>0&&pose.localPosition.y < -shoulderHalfHeight,"shoulder exits below view while hand extends upward");
+  Check(Math.Abs(pose.localPosition.x-.47867263)<.0001&&Math.Abs(pose.localPosition.y+.84348354)<.0001&&Math.Abs(pose.localPosition.z-.52812314)<.0001,"reference shoulder translation");
+  var fist=pose.localPosition+wrist;
+  Check(Math.Abs(fist.x-.75517044)<.0001&&Math.Abs(fist.y+.43795376)<.0001&&Math.Abs(fist.z-1.09521622)<.0001,"reference fist position and arm rotation");
   player.cam.position=new Vector3(-20,90,50);player.cam.rotation=Quaternion.Euler(new Vector3(-30,180,0));source.targetDisplay=1;
   Step(view);Check(root.transform.position.x==-20&&root.transform.rotation.euler.x==-30&&hand.targetDisplay==1,"camera follows movement/looking and display changes");
   player.cam.localScale=new Vector3(10,20,.01f);Step(view);Check(root.transform.lossyScale.x==1&&root.transform.lossyScale.z==1,"later source scale changes do not distort hand");

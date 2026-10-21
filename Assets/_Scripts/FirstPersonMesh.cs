@@ -72,3 +72,28 @@ public static class FirstPersonMesh
             new Vector2((u+w)/64,1-v/skinHeight),new Vector2((u+w)/64,1-(v+h)/skinHeight));
     }
 }
+
+// Beta ItemRenderer's empty-hand transform, followed by ModelBiped's right-arm
+// pivot and idle roll. Reflect OpenGL camera Z into Unity camera Z; the mesh's
+// downward -Y arm also needs the model-space Y reflection (together Rx180).
+public static class FirstPersonArmPose
+{
+    public static void Apply(Transform pose,float swing,float equip,Vector3 bob)
+    {
+        float rootSwing=Mathf.Sin(Mathf.Sqrt(swing)*Mathf.PI);
+        float arc=Mathf.Sin(swing*Mathf.PI);
+        var yaw=Quaternion.Euler(0,-45,0);
+        var attack=yaw*Quaternion.Euler(0,-rootSwing*70,0)*
+            Quaternion.Euler(0,0,-Mathf.Sin(swing*swing*Mathf.PI)*20);
+        var model=attack*Quaternion.Euler(0,0,120)*Quaternion.Euler(-200,0,0)*Quaternion.Euler(0,135,0);
+        var arm=model*Quaternion.Euler(0,0,5.729578f);
+        var position=new Vector3(.64f,-.6f-(1-equip)*.6f,.72f)+
+            new Vector3(-rootSwing*.3f,Mathf.Sin(Mathf.Sqrt(swing)*Mathf.PI*2)*.4f,arc*.4f);
+        position+=attack*new Vector3(-1,3.6f,-3.5f);
+        position+=model*new Vector3(5.6f-5f/16,2f/16,0);
+        position+=arm*new Vector3(-1f/16,-2f/16,0);
+        pose.localPosition=position+bob;
+        pose.localRotation=arm*Quaternion.Euler(180,0,0);
+        pose.localScale=Vector3.one;
+    }
+}

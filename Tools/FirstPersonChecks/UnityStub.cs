@@ -16,7 +16,13 @@ namespace UnityEngine {
  public class Transform:Component { public Vector3 position,localPosition,localScale=Vector3.one; public Quaternion localRotation,rotation; public Transform parent;public void SetParent(Transform p,bool world){parent=p;}public void SetPositionAndRotation(Vector3 p,Quaternion q){position=p;rotation=q;}public Vector3 lossyScale {get{var p=parent==null?Vector3.one:parent.lossyScale;return new Vector3(localScale.x*p.x,localScale.y*p.y,localScale.z*p.z);}} }
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public struct Vector3 {public float x,y,z; public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;} public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);public static Vector3 operator*(Vector3 a,float s)=>new Vector3(a.x*s,a.y*s,a.z*s);}
- public struct Quaternion {public Vector3 euler;public static Quaternion Euler(Vector3 p)=>new Quaternion{euler=p};public static Quaternion Euler(float x,float y,float z)=>Euler(new Vector3(x,y,z));}
+ public struct Quaternion {
+  public Vector3 euler;public double x,y,z,w;
+  public static Quaternion Euler(Vector3 p){double k=Math.PI/360;var q=new Quaternion{y=Math.Sin(p.y*k),w=Math.Cos(p.y*k)}*new Quaternion{x=Math.Sin(p.x*k),w=Math.Cos(p.x*k)}*new Quaternion{z=Math.Sin(p.z*k),w=Math.Cos(p.z*k)};q.euler=p;return q;}
+  public static Quaternion Euler(float x,float y,float z)=>Euler(new Vector3(x,y,z));
+  public static Quaternion operator*(Quaternion a,Quaternion b)=>new Quaternion{x=a.w*b.x+a.x*b.w+a.y*b.z-a.z*b.y,y=a.w*b.y-a.x*b.z+a.y*b.w+a.z*b.x,z=a.w*b.z+a.x*b.y-a.y*b.x+a.z*b.w,w=a.w*b.w-a.x*b.x-a.y*b.y-a.z*b.z};
+  public static Vector3 operator*(Quaternion q,Vector3 p){var v=q*new Quaternion{x=p.x,y=p.y,z=p.z}*new Quaternion{x=-q.x,y=-q.y,z=-q.z,w=q.w};return new Vector3((float)v.x,(float)v.y,(float)v.z);}
+ }
  public struct Rect { public float x,y,width,height; }
  public enum CameraClearFlags {Depth}
  public class Camera:Component {public int cullingMask,targetDisplay;public bool enabled=true,useOcclusionCulling,allowHDR,allowMSAA;public float depth,nearClipPlane,farClipPlane,fieldOfView;public Rect rect;public object targetTexture;public CameraClearFlags clearFlags;}
@@ -31,7 +37,7 @@ namespace UnityEngine {
  public static class Mathf {public const float PI=(float)Math.PI;public static int Clamp(int x,int a,int b)=>Math.Max(a,Math.Min(b,x));public static float Max(float a,float b)=>Math.Max(a,b);public static int Max(int a,int b)=>Math.Max(a,b);public static float Min(float a,float b)=>Math.Min(a,b);public static float Sqrt(float f)=>(float)Math.Sqrt(f);public static float Sin(float f)=>(float)Math.Sin(f);public static float Cos(float f)=>(float)Math.Cos(f);public static float Abs(float f)=>Math.Abs(f);public static float MoveTowards(float a,float b,float step)=>Math.Abs(a-b)<=step?b:a+Math.Sign(b-a)*step;}
  public static class Time {public static float deltaTime=.02f;}
  public static class Input {public static bool[] buttons=new bool[2];public static bool GetMouseButton(int i)=>buttons[i];}
- public static class Debug {public static void LogError(string s){throw new Exception(s);}}
+ public static class Debug {public static void Log(string s){}public static void LogError(string s){throw new Exception(s);}}
 }
 namespace UnityEngine.Rendering {public enum ShadowCastingMode {Off}}
 public enum ItemType {Nothing,Stone,Pickaxe,Missing}
