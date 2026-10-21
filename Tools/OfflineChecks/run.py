@@ -24,3 +24,10 @@ for name in ['WorldCreationMenuManager','WorldListMenuManager']:
     assert 'NetworkManager.singleton.StartHost();' not in source,name
     assert 'MinecraftNetworkManager.StartGameHost();' in source,name
 print('World creation/loading, spawn and player identity wiring verified.')
+
+world=(root/'Assets/_Scripts/World/World.cs').read_text()
+assert world.index('IsInitialized = true;') > world.index('NetworkClient.RegisterHandler<StartWorldMessage>')
+server=(root/'Assets/_Scripts/World/WorldServer.cs').read_text()
+start=server[server.index('public override void OnStartServer()'):server.index('#region Block')]
+assert start.index('instance = this;') > start.index('NetworkServer.RegisterHandler<StartPlayerMessage>')
+print('Client/server initialization is published after startup handlers are registered.')

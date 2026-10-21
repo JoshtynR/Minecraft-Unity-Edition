@@ -21,6 +21,7 @@ public partial class WorldServer : NetworkBehaviour
         NetworkServer.RegisterHandler<SavePlayerMessage>(SavePlayerMessageHandler, false);
         NetworkServer.RegisterHandler<SpawnPlayerMessage>(SpawnPlayerMessageHandler, false);
         NetworkServer.RegisterHandler<StartPlayerMessage>(StartPlayerMessageHandler, false);
+        instance = this;
         NetworkServer.RegisterHandler<ChestRequest>(ReceiveChestRequest);
         NetworkServer.RegisterHandler<FurnaceRequest>(ReceiveFurnaceRequest);
         NetworkServer.RegisterHandler<DropSyncRequest>((connection,request)=>

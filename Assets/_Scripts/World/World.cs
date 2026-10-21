@@ -61,6 +61,7 @@ public partial class World : MonoBehaviour
     
     public WorldData worldData;
     public bool IsWorldCreated { get; private set; }
+    public bool IsInitialized { get; private set; }
     
     private Stopwatch fullStopwatch = new Stopwatch();
     
@@ -115,6 +116,7 @@ public partial class World : MonoBehaviour
             destination.StartWorld();
             destination.GenerateWorld(message.position);
         });
+        IsInitialized = true;
         
         // NetworkClient.RegisterHandler<WorldServer.ChunkReceiveMessage>(message =>
         // {
@@ -457,6 +459,7 @@ public partial class World : MonoBehaviour
 
     public void OnDisable()
     {
+        IsInitialized = false;
         taskTokenSource.Cancel();
         disabled = true;
         ResetChunkUpdates();

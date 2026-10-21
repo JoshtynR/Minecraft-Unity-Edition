@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.IO;
 using kcp2k;
 using Mirror;
@@ -13,13 +14,24 @@ public class MinecraftNetworkManager : NetworkManager
     [Space] 
     public GameObject WorldServerPrefab;
     private Transport steamTransport;
+    private Coroutine worldRequestRoutine;
+    private bool worldRequested;
 
     // All local host entry points go through this before Mirror starts listening.
     public static void StartGameHost()
     {
-        if (NetworkServer.active || NetworkClient.active) return;
+        if (NetworkServer.active || NetworkClient.active)
+        {
+            Debug.LogWarning("World startup requested while a network session is already active. Stop the current session before starting another world.");
+            return;
+        }
         PrepareClientSession();
         if (singleton != null) singleton.StartHost();
+        else
+        {
+            Debug.LogError("Cannot start world: the scene has no active NetworkManager.");
+            WorldLoadingScreen.Cancel();
+        }
     }
 
     public static void PrepareClientSession()
@@ -51,6 +63,9 @@ public class MinecraftNetworkManager : NetworkManager
 
     public override void OnStopClient()
     {
+        if(worldRequestRoutine!=null)StopCoroutine(worldRequestRoutine);
+        worldRequestRoutine=null;
+        worldRequested=false;
         base.OnStopClient();
         PlayerIdentity.EndSession();
     }
@@ -60,7 +75,50 @@ public class MinecraftNetworkManager : NetworkManager
     {
         WorldLoadingScreen.Begin();
         base.OnClientConnect();
-        NetworkClient.Send(new WorldServer.StartPlayerMessage(PlayerIdentity.Id));
+        QueueWorldRequest();
+    }
+
+    public override void OnClientSceneChanged()
+    {
+        base.OnClientSceneChanged();
+        QueueWorldRequest();
+    }
+
+    private void QueueWorldRequest()
+    {
+        if(!worldRequested&&worldRequestRoutine==null)
+            worldRequestRoutine=StartCoroutine(RequestWorldWhenReady());
+    }
+
+    private IEnumerator RequestWorldWhenReady()
+    {
+        // Mirror can connect before the online scene's Start methods have run.
+        // Let World register its reply handler, and the host register its server
+        // handlers, before sending a request which otherwise has no receiver.
+        yield return null;
+        float warningAt=Time.realtimeSinceStartup+15;
+        while(NetworkClient.active)
+        {
+            var world=World.Overworld;
+            bool sceneReady=world!=null&&world.IsInitialized&&!NetworkClient.isLoadingScene;
+            bool serverReady=!NetworkServer.active||WorldServer.instance!=null;
+            if(NetworkClient.isConnected&&sceneReady&&serverReady)
+            {
+                worldRequested=true;
+                WorldLoadingScreen.ReportProgress("Building terrain",.01f);
+                Debug.Log("[WorldStartup] World initialized; requesting terrain from server.");
+                NetworkClient.Send(new WorldServer.StartPlayerMessage(PlayerIdentity.Id));
+                break;
+            }
+            WorldLoadingScreen.ReportProgress(sceneReady?"Waiting for world server":"Loading world scene",0);
+            if(Time.realtimeSinceStartup>=warningAt)
+            {
+                Debug.LogWarning($"[WorldStartup] Waiting for startup: connected={NetworkClient.isConnected}, worldInitialized={sceneReady}, serverReady={serverReady}.");
+                warningAt=Time.realtimeSinceStartup+15;
+            }
+            yield return null;
+        }
+        worldRequestRoutine=null;
     }
 
     public override void OnStartServer()

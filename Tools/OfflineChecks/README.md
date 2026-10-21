@@ -26,3 +26,16 @@ For player validation, build normally and launch on a PC without Steam. Create,
 save and reopen a world; check the Windows player name and restored inventory.
 Repeat with Steam running: check Steam name, Steam-ID saves and multiplayer.
 Also test cancel/rejoin and starting the World scene directly in the editor.
+
+## World startup ordering
+
+The harness compiles production identity and network-manager code against Unity,
+Steam and Mirror test doubles. It checks offline transport selection, stable
+account identity, and the startup coroutine when the client connects before the
+world scene and message handlers are ready. It also covers the scene callback
+initiating a request, duplicate callbacks, cancellation while waiting, and a
+remote client without a local server. Source checks verify that world/server
+readiness is published after registering the startup message handlers.
+
+This does not run Unity's actual scene loading or network transport. Confirm
+Create World and reopening a save in the editor and a standalone build.

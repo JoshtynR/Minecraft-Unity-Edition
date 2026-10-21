@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 namespace UnityEngine
 {
+ public static class Debug {public static void Log(object value){}public static void LogWarning(object value){}public static void LogError(object value){}}
  public class Object
  {
   public string name;
@@ -75,7 +76,7 @@ namespace UnityEngine
  public static class AudioListener{public static bool pause;}
  public enum AudioRolloffMode{Linear}
  public class Camera:Behaviour{public static Camera main;}
- public static class Time{public static float unscaledDeltaTime=.1f,deltaTime=.1f;public static int frameCount;}
+ public static class Time{public static float unscaledDeltaTime=.1f,deltaTime=.1f,realtimeSinceStartup;public static int frameCount;}
  public static class Application{public static bool isBatchMode;}
  public static class Screen{public static int width=1920,height=1080;}
  public static class Cursor{public static bool visible;public static CursorLockMode lockState;}
@@ -131,7 +132,7 @@ namespace Mirror
  public enum SceneOperation{Normal,LoadAdditive,UnloadAdditive}
  public class NetworkConnectionToClient{public UnityEngine.GameObject identity;}
  public static class NetworkServer{public static bool active,isLoadingScene;public static void Spawn(UnityEngine.GameObject go){}}
- public static class NetworkClient{public static bool active,isLoadingScene;public static void Send<T>(T value){}}
+ public static class NetworkClient{public static bool active,isLoadingScene,isConnected;public static void Send<T>(T value){}}
  public class Transport:UnityEngine.Behaviour{public static Transport activeTransport;}
  public class NetworkManager:UnityEngine.MonoBehaviour
  {
@@ -140,6 +141,7 @@ namespace Mirror
   public virtual void OnStopClient(){}
   public void StopHost(){stopped=true;}public void StopClient(){stopped=true;}
   public virtual void OnClientConnect(){}public virtual void OnStartServer(){}public virtual void OnServerSceneChanged(string name){}
+  public virtual void OnClientSceneChanged(){}
   public virtual void OnServerChangeScene(string name){}public virtual void OnClientChangeScene(string name,SceneOperation operation,bool customHandling){}
   public virtual void OnClientDisconnect(){stopped=true;}public virtual void OnServerDisconnect(NetworkConnectionToClient conn){disconnects++;}
  }
@@ -148,7 +150,7 @@ public class PlayerHudAssets{public TMPro.TMP_FontAsset levelFont;public UnityEn
 public static class MinecraftUIText{public static UnityEngine.Material CreateMaterial(TMPro.TMP_FontAsset font,float size,bool shadow)=>new UnityEngine.Material();}
 public class Menu {public static Menu currentMenu,lastMenu;public static void CloseCurrentMenu(){}}
 public class Block {public BlockType type=BlockType.Stone;public int sky=15,light;public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
-public class World {public WorldDimension dimension;public static World Instance;public bool IsWorldCreated,disabled;public WorldData worldData=new WorldData();public Func<UnityEngine.Vector3,Block> blockAt;public Block GetBlock(UnityEngine.Vector3 p)=>blockAt==null?new Block():blockAt(p);}
+public class World {public WorldDimension dimension;public static World Instance,Overworld;public bool IsWorldCreated,disabled,IsInitialized;public WorldData worldData=new WorldData();public Func<UnityEngine.Vector3,Block> blockAt;public Block GetBlock(UnityEngine.Vector3 p)=>blockAt==null?new Block():blockAt(p);}
 public class WorldData{public Dictionary<UnityEngine.Vector3Int,ChunkRenderer> chunkDict=new Dictionary<UnityEngine.Vector3Int,ChunkRenderer>();}
 public class ChunkRenderer:UnityEngine.Component{public object ChunkData;}
 public class GameManager {public static GameManager Instance;public bool playerSpawned;public Player localPlayer;}

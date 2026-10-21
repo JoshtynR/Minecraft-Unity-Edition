@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Mirror;
 using Steamworks;
@@ -17,9 +18,14 @@ namespace UnityEngine
         public GameObject gameObject=new GameObject();
         public T GetComponent<T>() where T:class=>gameObject.GetComponent<T>();
         public static GameObject Instantiate(GameObject prefab)=>new GameObject();
+        public Coroutine StartCoroutine(IEnumerator iterator){var c=new Coroutine{iterator=iterator};if(iterator.MoveNext())Scheduler.running.Add(c);return c;}
+        public void StopCoroutine(Coroutine c){Scheduler.running.Remove(c);}
     }
+    public class Coroutine {public IEnumerator iterator;}
+    public static class Scheduler {public static List<Coroutine> running=new List<Coroutine>();public static void Step(){foreach(var c in running.ToArray())if(!c.iterator.MoveNext())running.Remove(c);}}
+    public static class Time {public static float realtimeSinceStartup;}
     public class SpaceAttribute:Attribute {}
-    public static class Debug {public static readonly List<string> warnings=new List<string>();public static void LogWarning(object message){warnings.Add(message.ToString());}}
+    public static class Debug {public static readonly List<string> warnings=new List<string>();public static void LogWarning(object message){warnings.Add(message.ToString());}public static void Log(object m){}public static void LogError(object m){warnings.Add(m.ToString());}}
     public static class PlayerPrefs
     {
         public static readonly Dictionary<string,string> values=new Dictionary<string,string>();
@@ -65,7 +71,7 @@ namespace Mirror
     public static class NetworkServer {public static bool active;public static void Spawn(GameObject obj){}}
     public static class NetworkClient
     {
-        public static bool active;
+        public static bool active,isConnected=true,isLoadingScene;
         public static readonly List<object> messages=new List<object>();
         public static void Send<T>(T message){messages.Add(message);}
     }
@@ -75,6 +81,7 @@ namespace Mirror
         public Transport transport;public string networkAddress="localhost";public int starts;
         public void StartHost(){starts++;NetworkServer.active=NetworkClient.active=true;}
         public virtual void OnClientConnect(){}
+        public virtual void OnClientSceneChanged(){}
         public virtual void OnStartServer(){}
         public virtual void OnServerSceneChanged(string name){}
         public virtual void OnServerChangeScene(string name){}
@@ -86,7 +93,8 @@ namespace Mirror
 }
 namespace Mirror.FizzySteam {public class FizzyFacepunch:Transport {}}
 namespace kcp2k {public class KcpTransport:Transport {}}
-public static class WorldLoadingScreen {public static void Begin(){}public static void Cancel(){}}
+public static class WorldLoadingScreen {public static void Begin(){}public static void Cancel(){}public static void ReportProgress(string s,float value){}}
+public class World {public static World Overworld;public bool IsInitialized;}
 public static class LobbyManager {public static Lobby? currentLobby;public struct Lobby {public void Leave(){}}}
 public class PlayerInventory {}
 public class Player {public PlayerInventory inventory;public bool DimensionTransferInProgress;public object SavePlayer()=>null;}
@@ -109,6 +117,8 @@ public static class OfflineCheck
         SteamClient.throwName=false;SteamClient.throwInit=false;SteamClient.name="Steam Josh";
         SteamClient.steamId=76561198000000123;SteamClient.nameReads=0;
         NetworkServer.active=NetworkClient.active=false;
+        NetworkClient.isConnected=true;NetworkClient.isLoadingScene=false;
+        Scheduler.running.Clear();World.Overworld=null;WorldServer.instance=null;
     }
     public static void Main()
     {
@@ -145,17 +155,30 @@ public static class OfflineCheck
         Check(manager.starts==1&&manager.transport==kcp&&Transport.activeTransport==kcp,"offline host selects KCP before starting Mirror");
         Check(kcp.enabled&&manager.networkAddress=="localhost","local transport enabled");
         manager.OnClientConnect();
+        Scheduler.Step();Check(NetworkClient.messages.Count==0,"connect before world scene does not send an unhandled request");
+        World.Overworld=new World();Scheduler.Step();Check(NetworkClient.messages.Count==0,"world Awake alone is insufficient");
+        World.Overworld.IsInitialized=true;Scheduler.Step();Check(NetworkClient.messages.Count==0,"host waits for server handlers");
+        WorldServer.instance=new WorldServer();NetworkClient.isLoadingScene=true;Scheduler.Step();Check(NetworkClient.messages.Count==0,"request waits for scene activation");
+        NetworkClient.isLoadingScene=false;Scheduler.Step();
         Check((ulong)((WorldServer.StartPlayerMessage)NetworkClient.messages[0]).steamId==1,"world startup sends offline ID without Steam");
+        manager.OnClientSceneChanged();Scheduler.Step();Check(NetworkClient.messages.Count==1,"connect and scene callbacks send only one request");
         MinecraftNetworkManager.StartGameHost();Check(manager.starts==1,"active host is not restarted");
         manager.OnStopClient();NetworkServer.active=NetworkClient.active=false;SteamClient.valid=true;
         MinecraftNetworkManager.StartGameHost();
         Check(manager.transport==steam&&Transport.activeTransport==steam&&PlayerIdentity.UsingSteam,"next Steam session restores configured Steam transport");
         manager.OnClientConnect();
+        Scheduler.Step();
         Check((ulong)((WorldServer.StartPlayerMessage)NetworkClient.messages[1]).steamId==SteamClient.steamId,"Steam startup retains the real account ID");
         manager.OnStopClient();NetworkServer.active=NetworkClient.active=false;SteamClient.valid=false;
         var oldScene=new MinecraftNetworkManager{transport=new Mirror.FizzySteam.FizzyFacepunch()};
         NetworkManager.singleton=oldScene;MinecraftNetworkManager.StartGameHost();
         Check(oldScene.transport is kcp2k.KcpTransport,"older scene without KCP receives a local transport");
+        NetworkClient.messages.Clear();World.Overworld=new World{IsInitialized=true};WorldServer.instance=new WorldServer();
+        oldScene.OnClientSceneChanged();Scheduler.Step();Check(NetworkClient.messages.Count==1,"scene callback can initiate startup without connect callback");
+        oldScene.OnStopClient();World.Overworld=null;oldScene.OnClientConnect();oldScene.OnStopClient();
+        World.Overworld=new World{IsInitialized=true};Scheduler.Step();Check(NetworkClient.messages.Count==1,"cancel while waiting never sends a stale request");
+        NetworkServer.active=false;NetworkClient.active=true;NetworkClient.messages.Clear();WorldServer.instance=null;
+        oldScene.OnClientConnect();Scheduler.Step();Check(NetworkClient.messages.Count==1,"remote client does not require a local WorldServer");
         Console.WriteLine(checks+" production offline identity / Steam / host transport checks passed (native Steam and Unity mocked).");
     }
 }
