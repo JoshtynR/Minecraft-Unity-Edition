@@ -7,7 +7,7 @@ public sealed class OverworldAtmosphere : MonoBehaviour
 {
     public Player player;
     private Camera view;
-    private GameObject root,sun,moon,clouds;
+    private GameObject root,sun,moon,clouds,cloudVolume;
     private Mesh quad,cloudQuad;
     private Material sunMaterial,moonMaterial,cloudMaterial;
     private Texture2D ownedSun,ownedMoon,ownedClouds;
@@ -29,6 +29,18 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         go.layer=0;go.AddComponent<MeshFilter>().sharedMesh=mesh;
         var renderer=go.AddComponent<MeshRenderer>();renderer.sharedMaterial=material;
         renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;return go;
+    }
+    private static Mesh BuildCloudVolumeMesh()
+    {
+        var v=new System.Collections.Generic.List<Vector3>();var t=new System.Collections.Generic.List<int>();
+        for(int z=-4;z<=4;z++)for(int x=-5;x<=5;x++)
+        {
+            int h=unchecked((x*92837111)^(z*689287499));if((h&7)>4)continue;
+            float px=x*42f+((h>>4)&15)-7f,pz=z*42f+((h>>9)&15)-7f,sx=16f+((h>>14)&15),sz=12f+((h>>18)&15),sy=5f+((h>>22)&7),py=(h>>25)&3;int b=v.Count;
+            v.AddRange(new[]{new Vector3(px-sx,py,pz-sz),new Vector3(px-sx,py+sy,pz-sz),new Vector3(px+sx,py+sy,pz-sz),new Vector3(px+sx,py,pz-sz),new Vector3(px-sx,py,pz+sz),new Vector3(px-sx,py+sy,pz+sz),new Vector3(px+sx,py+sy,pz+sz),new Vector3(px+sx,py,pz+sz)});
+            int[] f={0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,3,2,6,3,6,7,1,5,6,1,6,2,0,3,7,0,7,4};for(int i=0;i<f.Length;i++)t.Add(b+f[i]);
+        }
+        var m=new Mesh{name="Beta 3D cloud puffs"};m.indexFormat=UnityEngine.Rendering.IndexFormat.UInt32;m.SetVertices(v);m.SetTriangles(t,0);m.RecalculateNormals();m.RecalculateBounds();return m;
     }
     private Texture2D Fallback(int kind)
     {
@@ -66,6 +78,8 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         cloudMaterial.renderQueue=2900;cloudMaterial.SetFloat("_FogOn",1);
         root=new GameObject("Overworld sky visuals");quad=Quad(false);cloudQuad=Quad(true);
         sun=Surface("Sun",sunMaterial,quad);moon=Surface("Moon",moonMaterial,quad);clouds=Surface("Clouds",cloudMaterial,cloudQuad);
+        var shader=Shader.Find("Unlit/Transparent");
+        if(shader!=null){var mat=new Material(shader){name="Beta 3D cloud material",color=new Color(1,1,1,.82f)};mat.renderQueue=3000;cloudVolume=new GameObject("3D cloud puffs");cloudVolume.transform.SetParent(root.transform,false);cloudVolume.AddComponent<MeshFilter>().sharedMesh=BuildCloudVolumeMesh();var r=cloudVolume.AddComponent<MeshRenderer>();r.sharedMaterial=mat;r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;r.receiveShadows=false;clouds.SetActive(false);}
         return true;
     }
     private void LateUpdate()
@@ -96,7 +110,8 @@ public sealed class OverworldAtmosphere : MonoBehaviour
             moonMaterial.mainTextureScale=new Vector2(.25f,.5f);
             moonMaterial.mainTextureOffset=new Vector2((phase%4)*.25f,phase<4?.5f:0);
         }
-        clouds.SetActive(world.showClouds);
+        clouds.SetActive(world.showClouds&&cloudVolume==null);
+        if(cloudVolume!=null){cloudVolume.SetActive(world.showClouds);float drift=(float)((ticks*.015)%420.0);cloudVolume.transform.position=new Vector3(transform.position.x+drift,128,transform.position.z+drift*.22f);}
         clouds.transform.position=new Vector3(transform.position.x,128,transform.position.z);
         clouds.transform.localScale=new Vector3(1024,1,1024);
         float tileSize=Mathf.Max(256,cloudMaterial.mainTexture.width*8);
