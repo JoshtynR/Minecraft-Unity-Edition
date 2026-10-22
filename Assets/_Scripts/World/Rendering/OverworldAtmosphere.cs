@@ -36,7 +36,9 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         for(int z=-4;z<=4;z++)for(int x=-5;x<=5;x++)
         {
             int h=unchecked((x*92837111)^(z*689287499));if((h&7)>4)continue;
-            float px=x*42f+((h>>4)&15)-7f,pz=z*42f+((h>>9)&15)-7f,sx=16f+((h>>14)&15),sz=12f+((h>>18)&15),sy=5f+((h>>22)&7),py=(h>>25)&3;int b=v.Count;
+            // Beta clouds are broad, low, blocky banks rather than round
+            // volumetric cumulus. Keep the layer four blocks tall.
+            float px=x*48f+((h>>4)&15)-7f,pz=z*48f+((h>>9)&15)-7f,sx=22f+((h>>14)&15),sz=16f+((h>>18)&15),sy=4f,py=0f;int b=v.Count;
             v.AddRange(new[]{new Vector3(px-sx,py,pz-sz),new Vector3(px-sx,py+sy,pz-sz),new Vector3(px+sx,py+sy,pz-sz),new Vector3(px+sx,py,pz-sz),new Vector3(px-sx,py,pz+sz),new Vector3(px-sx,py+sy,pz+sz),new Vector3(px+sx,py+sy,pz+sz),new Vector3(px+sx,py,pz+sz)});
             int[] f={0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,3,2,6,3,6,7,1,5,6,1,6,2,0,3,7,0,7,4};for(int i=0;i<f.Length;i++)t.Add(b+f[i]);
         }
@@ -111,7 +113,16 @@ public sealed class OverworldAtmosphere : MonoBehaviour
             moonMaterial.mainTextureOffset=new Vector2((phase%4)*.25f,phase<4?.5f:0);
         }
         clouds.SetActive(world.showClouds&&cloudVolume==null);
-        if(cloudVolume!=null){cloudVolume.SetActive(world.showClouds);float drift=(float)((ticks*.015)%420.0);cloudVolume.transform.position=new Vector3(transform.position.x+drift,128,transform.position.z+drift*.22f);}
+        if(cloudVolume!=null)
+        {
+            cloudVolume.SetActive(world.showClouds);
+            // EntityRenderer's classic cloud layer advances steadily eastward
+            // at roughly 0.03 blocks per game tick and wraps periodically.
+            float drift=(float)((ticks*.03)%2048.0);
+            float wrapX=Mathf.Floor((transform.position.x-drift)/432f)*432f+drift;
+            float wrapZ=Mathf.Floor(transform.position.z/432f)*432f;
+            cloudVolume.transform.position=new Vector3(wrapX,128,wrapZ);
+        }
         clouds.transform.position=new Vector3(transform.position.x,128,transform.position.z);
         clouds.transform.localScale=new Vector3(1024,1,1024);
         float tileSize=Mathf.Max(256,cloudMaterial.mainTexture.width*8);
