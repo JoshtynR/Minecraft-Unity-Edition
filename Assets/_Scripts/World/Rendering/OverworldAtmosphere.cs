@@ -132,7 +132,9 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         var color=Color.Lerp(new Color(.025f,.03f,.06f),new Color(.50f,.70f,.96f),SkyClock.Daylight(world.CurrentWorldTicks));
         float end=Mathf.Max(16,Mathf.Min(view.farClipPlane*.9f,(world.renderDistance-.5f)*world.chunkSize));
         Shader.SetGlobalVector("_WorldFogColor",new Vector4(color.r,color.g,color.b,1));
-        Shader.SetGlobalVector("_WorldFogRange",new Vector4(end*.35f,end,1,0));
+        // Beta's overworld haze is subtle; it should only soften the far edge,
+        // not wash the playable terrain in blue-gray.
+        Shader.SetGlobalVector("_WorldFogRange",new Vector4(end*.55f,end,.62f,0));
     }
     private void OnPostRender(){RestoreFog();}
     private void RestoreFog()
