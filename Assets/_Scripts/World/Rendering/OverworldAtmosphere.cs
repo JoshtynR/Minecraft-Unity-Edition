@@ -80,8 +80,6 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         cloudMaterial.renderQueue=2900;cloudMaterial.SetFloat("_FogOn",1);
         root=new GameObject("Overworld sky visuals");quad=Quad(false);cloudQuad=Quad(true);
         sun=Surface("Sun",sunMaterial,quad);moon=Surface("Moon",moonMaterial,quad);clouds=Surface("Clouds",cloudMaterial,cloudQuad);
-        var shader=Shader.Find("Unlit/Transparent");
-        if(shader!=null){var mat=new Material(shader){name="Beta 3D cloud material",color=new Color(.86f,.90f,.96f,.68f)};mat.renderQueue=3000;cloudVolume=new GameObject("3D cloud puffs");cloudVolume.transform.SetParent(root.transform,false);cloudVolume.AddComponent<MeshFilter>().sharedMesh=BuildCloudVolumeMesh();var r=cloudVolume.AddComponent<MeshRenderer>();r.sharedMaterial=mat;r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;r.receiveShadows=false;clouds.SetActive(false);}
         return true;
     }
     private void LateUpdate()
@@ -112,22 +110,16 @@ public sealed class OverworldAtmosphere : MonoBehaviour
             moonMaterial.mainTextureScale=new Vector2(.25f,.5f);
             moonMaterial.mainTextureOffset=new Vector2((phase%4)*.25f,phase<4?.5f:0);
         }
-        clouds.SetActive(world.showClouds&&cloudVolume==null);
-        if(cloudVolume!=null)
-        {
-            cloudVolume.SetActive(world.showClouds);
-            // EntityRenderer's classic cloud layer advances steadily eastward
-            // at roughly 0.03 blocks per game tick and wraps periodically.
-            float drift=(float)((ticks*.03)%2048.0);
-            float wrapX=Mathf.Floor((transform.position.x-drift)/432f)*432f+drift;
-            float wrapZ=Mathf.Floor(transform.position.z/432f)*432f;
-            cloudVolume.transform.position=new Vector3(wrapX,128,wrapZ);
-        }
-        clouds.transform.position=new Vector3(transform.position.x,128,transform.position.z);
+        clouds.SetActive(world.showClouds);
+        // EntityRenderer's classic cloud layer is a large, horizontal tiled
+        // sheet at Y=128. The texture supplies the pixel-stepped silhouettes;
+        // only its world offset moves over time.
+        float drift=(float)((ticks*.03)%2048.0);
+        clouds.transform.position=new Vector3(transform.position.x+drift,128,transform.position.z);
         clouds.transform.localScale=new Vector3(1024,1,1024);
         float tileSize=Mathf.Max(256,cloudMaterial.mainTexture.width*8);
         cloudMaterial.mainTextureScale=new Vector2(2048/tileSize,2048/tileSize);
-        cloudMaterial.mainTextureOffset=new Vector2(transform.position.x/tileSize+(float)((ticks*.01)%tileSize)/tileSize,transform.position.z/tileSize);
+        cloudMaterial.mainTextureOffset=new Vector2(transform.position.x/tileSize,transform.position.z/tileSize);
         cloudMaterial.SetColor("_Tint",Color.Lerp(new Color(.15f,.18f,.25f,1),Color.white,daylight));
     }
     private void OnPreCull()
