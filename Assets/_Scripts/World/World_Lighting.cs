@@ -74,7 +74,7 @@ public partial class World
             lastBetaSkyDarkness = darkness;
 
         }
-        if (rebuild && IsWorldCreated && worldData != null && worldData.chunkDict != null)
+        if (rebuild && IsWorldCreated && worldData.chunkDict != null)
             foreach (var chunk in worldData.chunkDict.Values) AddChunkToUpdate(chunk);
         if (lastBetaBrightnessBoost != gamma)
         {

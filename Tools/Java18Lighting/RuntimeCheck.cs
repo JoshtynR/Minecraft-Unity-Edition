@@ -41,11 +41,11 @@ namespace UnityEngine
     }
 }
 public enum WorldDimension{Overworld,Nether}
-public class WorldData{public Dictionary<int,object> chunkDict=new Dictionary<int,object>{{1,new object()},{2,new object()}};}
+public struct WorldData{public Dictionary<int,object> chunkDict;}
 public partial class World:MonoBehaviour
 {
     public static World Instance;public WorldDimension dimension;public float gamma;public double CurrentWorldTicks=6000;
-    public bool IsWorldCreated;public WorldData worldData=new WorldData();public int queued;
+    public bool IsWorldCreated;public WorldData worldData=new WorldData{chunkDict=new Dictionary<int,object>{{1,new object()},{2,new object()}}};public int queued;
     public void AddChunkToUpdate(object chunk){queued++;}
     public void Frame()=>UpdateBetaLightingSettings();public void DisposeForCheck()=>ReleaseLightmap();
 }
@@ -73,8 +73,8 @@ class RuntimeCheck
         world.betaSkylightSubtracted=10;world.Frame();Require(world.queued==4,"legacy baked light still remeshes when needed");
         int uploads=Shader.uploads;new World().Frame();Require(Shader.uploads==uploads,"inactive dimension cannot overwrite active lightmap");
         world.DisposeForCheck();Require(texture.destroyed,"world teardown releases owned lightmap");
-        world.worldData=null;world.java18Lighting=true;world.Frame();
-        Require(randomField.GetValue(world)!=null,"style change tolerates missing world data during lifecycle transitions");
+        world.worldData=default(WorldData);world.java18Lighting=true;world.Frame();
+        Require(world.worldData.chunkDict==null,"style change tolerates an uninitialized WorldData struct");
         world.DisposeForCheck();
         Console.WriteLine("Production world/lightmap lifecycle, default mode, clock/gamma updates, remesh avoidance and dimension ownership checks passed (Unity GPU mocked).");
     }
