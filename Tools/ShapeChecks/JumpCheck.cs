@@ -38,5 +38,16 @@ public static partial class ShapeCheck
   }
   var flying=Jumper();flying.isFlying=true;flying.Press(true);flying.FixedUpdate();
   Check(flying.jumps==0,"flight ascent cannot queue a ground jump");
+
+  var held=Jumper();
+  for(int tick=0;tick<320&&held.jumps<3;tick++)
+  {
+   // Simulate Space remaining held across one or more render frames.
+   held.Press(true);held.Press(true);
+   bool groundedBefore=held.isGrounded;int jumpsBefore=held.jumps;
+   held.FixedUpdate();
+   if(held.jumps>jumpsBefore)Check(groundedBefore,"held jump only takes off from grounded state");
+  }
+  Check(held.jumps==3,"holding jump automatically jumps again after each landing");
  }
 }

@@ -720,7 +720,10 @@ public partial class Player : BaseEntity
         }
 
         swimJumpHeld=Input.GetButton("Jump");
-        RequestJump(Input.GetButtonDown("Jump"));
+        // Match Minecraft's held-jump behavior: queue another jump as soon as
+        // the player has landed. RequestJump and BaseEntity.FixedUpdate both
+        // require grounded state, so holding Space cannot create an air jump.
+        RequestJump(swimJumpHeld);
     }
 
 
