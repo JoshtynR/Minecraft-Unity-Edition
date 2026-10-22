@@ -256,4 +256,9 @@ public enum ItemType
     MagentaDye = 1112,
     OrangeDye = 1113,
     BoneMeal = 1114,
+    RawBeef = 1115,
+    CookedBeef = 1116,
+    RawChicken = 1117,
+    CookedChicken = 1118,
+    RottenFlesh = 1119,
 }

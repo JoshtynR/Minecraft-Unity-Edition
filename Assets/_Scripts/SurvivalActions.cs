@@ -13,6 +13,11 @@ public static class FoodRules
             case ItemType.Bread: food=5;modifier=.6f;break;
             case ItemType.MushroomStew: food=6;modifier=.6f;break;
             case ItemType.RawPorkchop: food=3;modifier=.3f;break;
+            case ItemType.RawBeef: food=3;modifier=.3f;break;
+            case ItemType.CookedBeef: food=8;modifier=.8f;break;
+            case ItemType.RawChicken: food=2;modifier=.3f;break;
+            case ItemType.CookedChicken: food=6;modifier=.6f;break;
+            case ItemType.RottenFlesh: food=4;modifier=.1f;break;
             case ItemType.CookedPorkchop: food=8;modifier=.8f;break;
             case ItemType.RawFish: food=2;modifier=.3f;break;
             case ItemType.CookedFish: food=5;modifier=.6f;break;

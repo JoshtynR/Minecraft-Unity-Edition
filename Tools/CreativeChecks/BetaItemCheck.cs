@@ -23,7 +23,7 @@ public partial class PlayerInventory
   }
   Check(types.Count==122&&nativeIds.Count==106,"all 106 native items plus coal and dye variants covered");
   Check(Enumerable.Range(256,104).All(nativeIds.Contains)&&nativeIds.Contains(2256)&&nativeIds.Contains(2257),"native source IDs include all registered Beta items and both records");
-  Check(BetaItemCatalog.Entries.Length==122&&ItemCatalog.All.Count()==246,"catalogue includes all block counterparts and standalone variants");
+  Check(BetaItemCatalog.Entries.Length==122&&ItemCatalog.All.Count()==251,"catalogue includes Beta counterparts plus five survival foods");
   Check(variants.Count(x=>x.StartsWith("351:"))==16&&variants.Contains("263:1"),"all sixteen dyes and charcoal are separate assignable images");
   Check(ItemCatalog.Get(ItemType.Bow).maxDamage==0&&ItemCatalog.Get(ItemType.Cookie).maxStack==8&&ItemCatalog.Get(ItemType.Map).maxStack==64,"Beta-specific bow, cookie and map defaults retained");
   var inv=new UnityEngine.GameObject("NewItemsSave").AddComponent<PlayerInventory>();

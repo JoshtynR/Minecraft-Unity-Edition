@@ -1,6 +1,6 @@
 Shader "Voxel/Cow"
 {
-    Properties { _MainTex ("Cow skin",2D)="white" {} _Brightness ("Voxel light",Float)=1 _Hurt ("Hurt flash",Float)=0 }
+    Properties { _MainTex ("Animal skin",2D)="white" {} _Tint("Tint",Color)=(1,1,1,1) _Brightness ("Voxel light",Float)=1 _Hurt ("Hurt flash",Float)=0 }
     SubShader
     {
         Tags { "RenderType"="Opaque" }
@@ -11,7 +11,7 @@ Shader "Voxel/Cow"
             #pragma fragment frag
             #include "UnityCG.cginc"
             #include "WorldFog.cginc"
-            sampler2D _MainTex;float _Brightness,_Hurt;float4 _FluidFog;
+            sampler2D _MainTex;float _Brightness,_Hurt;float4 _FluidFog,_Tint;
             struct appdata {float4 vertex:POSITION;float2 uv:TEXCOORD0;float3 normal:NORMAL;};
             struct v2f {float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float light:TEXCOORD1;float distance:TEXCOORD2;};
             v2f vert(appdata v)
@@ -23,7 +23,7 @@ Shader "Voxel/Cow"
             }
             fixed4 frag(v2f i):SV_Target
             {
-                fixed4 c=tex2D(_MainTex,i.uv);clip(c.a-.1);
+                fixed4 c=tex2D(_MainTex,i.uv)*_Tint;clip(c.a-.1);
                 float3 rgb=lerp(c.rgb*i.light,float3(1,.2,.2),_Hurt*.45);
                 return fixed4(ApplyWorldFog(rgb,i.distance,_FluidFog),1);
             }

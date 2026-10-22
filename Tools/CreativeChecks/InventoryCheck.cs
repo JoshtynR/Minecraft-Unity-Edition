@@ -311,7 +311,7 @@ public partial class PlayerInventory
   Check(!inv.creativePanel.gameObject.activeSelf&&inv.inventoryRect.anchoredPosition.x==0,"second F1 hides catalogue and recenters without resize");
   inv.CloseInventory();inv.OpenInventory();Check(!inv.creativePanel.gameObject.activeSelf,"reopening inventory preserves disabled catalogue");
   Input.down=KeyCode.F1;inv.Update();Input.down=null;
-  Check(inv.creativeBlocks.Count==239&&inv.creativePageSize<inv.creativeBlocks.Count&&inv.nextPage.interactable,"complete item catalogue pages on a normal 1080p GUI screen");
+  Check(inv.creativeBlocks.Count==244&&inv.creativePageSize<inv.creativeBlocks.Count&&inv.nextPage.interactable,"complete item catalogue pages on a normal 1080p GUI screen");
   Check(inv.inventoryRect.anchoredPosition.x+88<=inv.creativePanel.anchoredPosition.x-inv.creativePanel.sizeDelta.x/2-8,"sidebar does not overlap survival panel");
   for(int i=0;i<131;i++)
   {

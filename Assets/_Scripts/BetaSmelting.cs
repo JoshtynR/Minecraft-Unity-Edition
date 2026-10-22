@@ -13,6 +13,8 @@ public static class BetaSmelting
             case ItemType.DiamondOre: return ItemType.Diamond;
             case ItemType.Sand: return ItemType.Glass;
             case ItemType.RawPorkchop: return ItemType.CookedPorkchop;
+            case ItemType.RawBeef: return ItemType.CookedBeef;
+            case ItemType.RawChicken: return ItemType.CookedChicken;
             case ItemType.RawFish: return ItemType.CookedFish;
             case ItemType.Cobblestone: return ItemType.Stone;
             case ItemType.ClayBall: return ItemType.Brick;

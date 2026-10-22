@@ -2,9 +2,15 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum PassiveAnimal { Cow, Pig, Sheep, Chicken }
+
 [Serializable]
 public sealed class CowState
 {
+    // Missing fields in old cow saves default to an adult cow.
+    public PassiveAnimal species;
+    public int ageTicks, loveTicks, breedCooldown, eggTicks=6000, fleeceColor;
+    public bool sheared;
     public int id, health = 10, hurtTicks, hurtCooldown, fleeTicks, decisionTicks, air = 300, fireTicks;
     public Vector3 position, motion;
     public float yaw, targetYaw, fallDistance;
@@ -24,15 +30,33 @@ public sealed class CowSaveData
 
 public static class CowRules
 {
+    private static readonly int[] fleeceColors={0xE6E6E6,0xD97F33,0xB24CD8,0x6699D8,0xE5E533,0x7FCC19,0xF27FA5,0x4C4C4C,0x999999,0x4C7F99,0x7F3FB2,0x334CB2,0x664C33,0x667F33,0x993333,0x191919};
     public const float HalfWidth = .45f, Height = 1.3f;
     public const int MaximumHealth = 10;
     public static bool Finite(float n) => !float.IsNaN(n) && !float.IsInfinity(n);
     public static bool Finite(Vector3 v) => Finite(v.x) && Finite(v.y) && Finite(v.z);
     public static bool Valid(CowState cow) => cow != null && cow.id > 0 && cow.id < int.MaxValue &&
-        cow.health > 0 && cow.health <= MaximumHealth && Finite(cow.position) && Finite(cow.motion) &&
+        (int)cow.species>=0 && (int)cow.species<=3 && cow.ageTicks>=0 && cow.ageTicks<=24000 && cow.loveTicks>=0 && cow.loveTicks<=600 && cow.breedCooldown>=0 && cow.breedCooldown<=6000 &&
+        cow.fleeceColor>=0&&cow.fleeceColor<16&&cow.health > 0 && cow.health <= MaximumHealth && Finite(cow.position) && Finite(cow.motion) &&
         Finite(cow.yaw) && Finite(cow.targetYaw) && Finite(cow.fallDistance);
-    public static Bounds Bounds(CowState cow) => new Bounds(cow.position + Vector3.up * (Height * .5f), new Vector3(HalfWidth * 2, Height, HalfWidth * 2));
+    public static float Width(CowState cow)=>(cow.species==PassiveAnimal.Chicken?.15f:.45f)*(cow.ageTicks>0?.5f:1);
+    public static float BodyHeight(CowState cow)=>(cow.species==PassiveAnimal.Chicken?.7f:cow.species==PassiveAnimal.Pig?.9f:1.3f)*(cow.ageTicks>0?.5f:1);
+    public static Bounds Bounds(CowState cow) => new Bounds(cow.position + Vector3.up * (BodyHeight(cow) * .5f), new Vector3(Width(cow) * 2, BodyHeight(cow), Width(cow) * 2));
     public static int LeatherCount(Func<int,int> next) => next(3); // Beta: 0-2 leather, before beef existed.
+    public static ItemType BreedingFood(CowState cow)=>cow.species==PassiveAnimal.Chicken?ItemType.Seeds:ItemType.Wheat;
+    public static int DyeColor(ItemType item)
+    {return BetaItemCatalog.TryGet(item,out var dye)&&dye.SourceId==351?15-dye.Metadata:-1;}
+    public static ItemType Wool(CowState cow)=>cow.fleeceColor==0?ItemType.WhiteWool:(ItemType)((int)ItemType.OrangeWool+cow.fleeceColor-1);
+    public static Color FleeceTint(int color)
+    {
+        int value=fleeceColors[System.Math.Max(0,System.Math.Min(15,color))];return new Color(((value>>16)&255)/255f,((value>>8)&255)/255f,(value&255)/255f,1);
+    }
+    public static bool Feed(CowState cow)
+    {
+        if(cow==null||cow.health<=0||cow.ageTicks>0||cow.breedCooldown>0||cow.loveTicks>0)return false;
+        cow.loveTicks=600;return true;
+    }
+    public static bool CanBreed(CowState a,CowState b)=>a!=null&&b!=null&&a.id!=b.id&&a.species==b.species&&a.ageTicks==0&&b.ageTicks==0&&a.loveTicks>0&&b.loveTicks>0&&a.breedCooldown==0&&b.breedCooldown==0;
     public static int AttackDamage(ItemType item)
     {
         switch (item)
@@ -87,9 +111,11 @@ public sealed class CowStore
     public IEnumerable<CowState> Animals => animals.Values;
     public CowState Get(int id) { animals.TryGetValue(id, out var cow); return cow; }
     public CowState Spawn(Vector3 position, float yaw)
+    {return Spawn(position,yaw,PassiveAnimal.Cow);}
+    public CowState Spawn(Vector3 position,float yaw,PassiveAnimal species)
     {
-        if (!CowRules.Finite(position) || !CowRules.Finite(yaw) || Count >= Capacity || NextId >= int.MaxValue) return null;
-        var cow = new CowState { id = NextId++, position = position, yaw = yaw, targetYaw = yaw };
+        if ((int)species<0||(int)species>3||!CowRules.Finite(position) || !CowRules.Finite(yaw) || Count >= Capacity || NextId >= int.MaxValue) return null;
+        var cow = new CowState { id = NextId++, position = position, yaw = yaw, targetYaw = yaw,species=species,health=species==PassiveAnimal.Chicken?4:species==PassiveAnimal.Sheep?8:10 };
         animals.Add(cow.id, cow); return cow;
     }
     public bool Remove(int id) => animals.Remove(id);

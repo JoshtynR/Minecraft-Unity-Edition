@@ -13,7 +13,7 @@ public partial class Player
     {
         var cow=TargetedCow();if(cow==null)return false;
         // A cow blocks mining/placement behind it, even when the held item has no interaction.
-        if(milk && inventory.HeldItem().type!=ItemType.Bucket)return true;
+        if(milk && inventory.HeldItem().type!=ItemType.Bucket && inventory.HeldItem().type!=CowRules.BreedingFood(cow) && inventory.HeldItem().type!=ItemType.Shears && CowRules.DyeColor(inventory.HeldItem().type)<0)return true;
         if(inventory.DropRequestPending || Time.unscaledTime<nextLocalCowAction)return true;
         nextLocalCowAction=Time.unscaledTime+.25f;CancelMining();
         int request=++dropRequestId;inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted;
@@ -30,12 +30,12 @@ public partial class Player
         if(request==lastServerDropRequest && lastServerDropReply!=null)
         {CompleteDropAction(request,lastServerDropReply,lastServerDropAccepted,network);return;}
         bool accepted=false;
-        if(request>lastServerDropRequest && world!=null && world.IsWorldCreated && !world.isSaving && health>0 &&
+        if(request>lastServerDropRequest && !dimensionTransfer && world!=null && world.IsWorldCreated && !world.isSaving && health>0 &&
             NetworkTime.time>=nextServerCowAction && slot>=0 && slot<9 && ChestTransactions.Valid(snapshot,new InventoryStack()) &&
             world.CowAccessible(id,transform.position+Vector3.up*eyeHeight,reach))
         {
             serverMining=false;
-            if(milk)accepted=CowRules.Milk(snapshot,slot);
+            if(milk)accepted=world.InteractAnimal(id,snapshot,slot);
             else if(world.HitCow(id,CowRules.AttackDamage(snapshot[slot].type),transform.position))
             {ItemDurability.Wear(ref snapshot[slot],ItemDurability.HitWear(snapshot[slot].type));accepted=true;}
             if(accepted){nextServerCowAction=NetworkTime.time+.25;inventory.ApplyDropInventory(snapshot);}

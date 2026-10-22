@@ -227,6 +227,11 @@ public static class MinecraftTextureAutoAssign
                 case ItemType.RedstoneRepeater:case ItemType.PoweredRepeater:return "repeater";
                 case ItemType.RedstoneDust:return "redstone|redstone_dust";
                 case ItemType.RawPorkchop:return "porkchop|porkchop_raw";
+                case ItemType.RawBeef:return "beef|beef_raw";
+                case ItemType.CookedBeef:return "cooked_beef|beef_cooked";
+                case ItemType.RawChicken:return "chicken|chicken_raw";
+                case ItemType.CookedChicken:return "cooked_chicken|chicken_cooked";
+                case ItemType.RottenFlesh:return "rotten_flesh";
                 case ItemType.CookedPorkchop:return "cooked_porkchop|porkchop_cooked";
                 case ItemType.RawFish:return "cod|fish_cod_raw|fish|fish_raw";
                 case ItemType.CookedFish:return "cooked_cod|fish_cod_cooked|cooked_fish|fish_cooked";

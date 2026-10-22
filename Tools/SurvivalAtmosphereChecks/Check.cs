@@ -6,6 +6,11 @@ class Check {
  static void Call(object o,string name)=>o.GetType().GetMethod(name,BindingFlags.Instance|BindingFlags.NonPublic).Invoke(o,null);
  static Player Player(){var p=new GameObject("player").AddComponent<Player>();p.world=p.CurrentWorld=new World();p.cam=new GameObject("camera").transform;p.cam.gameObject.AddComponent<Camera>();return p;}
  static void Main(){
+  Assert(FoodRules.TryGet(ItemType.RawBeef,out int beefFood,out float beefSat)&&beefFood==3&&Math.Abs(beefSat-1.8f)<.001f,"raw beef nutrition");
+  Assert(FoodRules.TryGet(ItemType.CookedBeef,out int steakFood,out float steakSat)&&steakFood==8&&Math.Abs(steakSat-12.8f)<.001f,"cooked beef nutrition");
+  Assert(FoodRules.TryGet(ItemType.RawChicken,out int chickenFood,out float chickenSat)&&chickenFood==2,"raw chicken nutrition");
+  Assert(FoodRules.TryGet(ItemType.CookedChicken,out int cookedFood,out float cookedSat)&&cookedFood==6,"cooked chicken nutrition");
+  Assert(FoodRules.TryGet(ItemType.RottenFlesh,out int rottenFood,out float rottenSat)&&rottenFood==4,"rotten flesh base nutrition");
   var motion=new BetaPlayerMotion();motion.Advance(.2f,0,0,.05f,true,true,false);var one=motion.Sample(.05f);
   Assert(Math.Abs(one.X-Math.Sin(-.24*Math.PI)*.02)<.00001&&Math.Abs(one.Y+Math.Abs(Math.Cos(-.24*Math.PI)*.04))<.00001,"reference first camera-bob tick");
   Assert(Math.Abs(one.RightArm+Math.Cos(.32*.6662)*.32)<.00001&&Math.Abs(one.RightLeg-Math.Cos(.32*.6662)*.448)<.00001,"reference first model-limb tick");
@@ -34,7 +39,7 @@ class Check {
   var parts=new PlayerObjects{leftArm=new GameObject("leftArm").transform,rightArm=new GameObject("rightArm").transform,leftLeg=new GameObject("leftLeg").transform,rightLeg=new GameObject("rightLeg").transform};
   var walk=p.gameObject.AddComponent<MinecraftWalkAnimator>();walk.Initialize(p,parts);Call(walk,"LateUpdate");var left=parts.leftLeg.localRotation*Vector3.up;var right=parts.rightLeg.localRotation*Vector3.up;Assert(left.z*right.z<0,"walking legs swing in opposite directions");
   Resources.items["SkyMaterial"]=new Material(null);var sky=p.cam.GetComponent<OverworldAtmosphere>();sky.player=p;Call(sky,"Awake");Call(sky,"LateUpdate");
-  Assert(GameObject.all.Exists(g=>g.name=="Sun")&&GameObject.all.Exists(g=>g.name=="Clouds"),"sky builds without source textures");Call(sky,"OnPreCull");Assert(Shader.GetGlobalVector("_WorldFogRange").z==1,"overworld fog enabled");Call(sky,"OnPostRender");Assert(Shader.GetGlobalVector("_WorldFogRange").z==0,"fog does not leak into UI/hand camera");
+  Assert(GameObject.all.Exists(g=>g.name=="Sun")&&GameObject.all.Exists(g=>g.name=="Clouds"),"sky builds without source textures");Call(sky,"OnPreCull");Assert(Math.Abs(Shader.GetGlobalVector("_WorldFogRange").z-.62f)<.001f,"overworld fog uses published reduced strength");Call(sky,"OnPostRender");Assert(Shader.GetGlobalVector("_WorldFogRange").z==0,"fog does not leak into UI/hand camera");
   p.CurrentWorld.dimension=WorldDimension.Nether;Call(sky,"LateUpdate");Assert(!GameObject.all.Find(g=>g.name=="Overworld sky visuals").activeSelf,"nether hides overworld sky");Call(sky,"OnDestroy");Assert(GameObject.all.Find(g=>g.name=="Overworld sky visuals").destroyed,"owned sky root released");
   Console.WriteLine(checks+" production food/fall/bob/sky lifecycle checks passed (Unity/Mirror mocked).");
  }

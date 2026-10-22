@@ -15,6 +15,24 @@ public partial class PlayerInventory
  static void CheckCows()
  {
   var store=new CowStore();var cow=store.Spawn(new Vector3(2,64,-3),90);
+  Check(CowRules.DyeColor(ItemType.InkSac)==15&&CowRules.DyeColor(ItemType.BoneMeal)==0&&CowRules.DyeColor(ItemType.Wheat)==-1,"dye metadata maps to wool color without treating food as dye");
+  Check(CowRules.Wool(new CowState{fleeceColor=15})==ItemType.BlackWool&&CowRules.Wool(new CowState())==ItemType.WhiteWool,"colored sheep drop matching wool");
+  foreach(PassiveAnimal species in Enum.GetValues(typeof(PassiveAnimal)))
+  {
+   var herd=new CowStore();var a=herd.Spawn(Vector3.zero,0,species);var b=herd.Spawn(Vector3.zero,0,species);
+   Check(a.species==species&&CowRules.Feed(a)&&CowRules.Feed(b)&&CowRules.CanBreed(a,b),"all passive species accept feeding and same-species breeding");
+   Check(!CowRules.Feed(a),"already loving animals cannot consume another breeding item");
+   b.ageTicks=24000;Check(!CowRules.CanBreed(a,b)&&!CowRules.Feed(b),"babies cannot breed");
+   b.ageTicks=0;b.breedCooldown=6000;Check(!CowRules.CanBreed(a,b),"breeding cooldown prevents immediate repeat births");
+   Check(CowRules.BreedingFood(a)==(species==PassiveAnimal.Chicken?ItemType.Seeds:ItemType.Wheat),"chickens use seeds; other farm animals use wheat");
+   var data=new CowSaveData{animals=herd.Capture()};var loaded=new CowStore();loaded.Restore(JsonUtility.FromJson<CowSaveData>(JsonUtility.ToJson(data)));
+   Check(loaded.Get(b.id).species==species&&loaded.Get(b.id).breedCooldown==6000,"species and breeding state survive saves");
+   for(int part=0;part<CowModelGeometry.PartCount;part++)
+   {
+    var model=CowModelGeometry.Build(part,32,species);
+    foreach(var uv in model.uv)Check(uv.x>=0&&uv.x<=1&&uv.y>=0&&uv.y<=1,"passive animal UVs stay within the skin");
+   }
+  }
   Check(cow.id==1&&cow.health==10&&store.Count==1,"cow spawns with ten health and a persistent identity");
   Check(CowRules.Bounds(cow).size.x==.9f&&CowRules.Bounds(cow).size.y==1.3f,"classic cow collision size");
   var capture=store.Capture();capture[0].position.x=900;

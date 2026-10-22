@@ -3,6 +3,15 @@ using UnityEngine;
 
 public static class CowTools
 {
+    [MenuItem("Minecraft/Entities/Spawn Pig Near Player")]public static void SpawnPig(){Spawn(PassiveAnimal.Pig);}
+    [MenuItem("Minecraft/Entities/Spawn Sheep Near Player")]public static void SpawnSheep(){Spawn(PassiveAnimal.Sheep);}
+    [MenuItem("Minecraft/Entities/Spawn Chicken Near Player")]public static void SpawnChicken(){Spawn(PassiveAnimal.Chicken);}
+    private static void Spawn(PassiveAnimal species)
+    {
+        var player=GameManager.Instance!=null?GameManager.Instance.localPlayer:null;
+        if(!Application.isPlaying||player==null||player.CurrentWorld==null)return;
+        if(!player.CurrentWorld.SpawnAnimalNear(player.transform.position+player.transform.forward*4,species))Debug.LogWarning("No loaded clear ground available for "+species);
+    }
     [MenuItem("Minecraft/Entities/Spawn Cow Near Player")]
     public static void SpawnNearPlayer()
     {
