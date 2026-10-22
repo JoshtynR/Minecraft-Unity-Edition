@@ -214,7 +214,7 @@ public partial class Player
                    Math.Abs(chunk.worldPos.z-transferDestination.z)>(realm.renderDistance+3)*16)continue;
                 TargetDimensionChunk(connectionToClient,sequence,chunk.worldPos,World.Compress(JsonUtility.ToJson(ChunkSaveData.Serialize(chunk))));
             }
-            realm.SendCowSnapshot(connectionToClient);
+            realm.SendMobSnapshot(connectionToClient);
             foreach(var item in realm.CaptureDroppedItems())connectionToClient.Send(new DropStateMessage{dimension=dimension,item=item});
         }
         TargetCompleteDimension(connectionToClient,sequence,transferDestination);

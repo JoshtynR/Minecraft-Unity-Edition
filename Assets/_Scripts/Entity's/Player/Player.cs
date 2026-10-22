@@ -286,7 +286,7 @@ public partial class Player : BaseEntity
 
     public bool PlaceBlock()
     {
-        if(inventory.DropRequestPending || TargetedCow()!=null)return false;
+        if(inventory.DropRequestPending || TargetedMob()!=null)return false;
         var held = inventory.slots[inventory.selectedSlotIndex];
         BlockType type;
         if (held.count <= 0 || !ItemCatalog.TryPlacedBlock(held.type, out type)) return false;
@@ -485,7 +485,7 @@ public partial class Player : BaseEntity
         UpdateEating();
         if(IsEating){horizontal*=.2f;vertical*=.2f;isSprinting=false;}
         UpdateFluidView();
-        if(!IsEating&&TargetedCow()==null)UpdateMining();else CancelMining();
+        if(!IsEating&&TargetedMob()==null)UpdateMining();else CancelMining();
         DoHeadRotation();
         UpdateCameraBobbing();
 
@@ -639,7 +639,7 @@ public partial class Player : BaseEntity
 
         if (Input.GetMouseButtonDown(0))
         {
-            if(TryUseCow(false))return;
+            if(TryUseMob(false))return;
             RaycastHit ray;
             if (Physics.Raycast(objects.cam.position, objects.cam.forward, out ray, reach, LayerMask.GetMask("Default")))
             {
@@ -661,7 +661,7 @@ public partial class Player : BaseEntity
         }
         if (Input.GetMouseButtonDown(1))
         {
-            if(TryUseCow(true))return;
+            if(TryUseMob(true))return;
             if (TryUseBlock()) return;
             if (TryStartEating()) return;
             if (placeCoroutine == null)

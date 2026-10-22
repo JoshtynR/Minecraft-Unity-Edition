@@ -55,7 +55,7 @@ public partial class World
  public int jobs;public TaskCompletionSource<Dictionary<ChunkRenderer,MeshData>> pending;
  private void UpdateWater(){}
  private void UpdateFurnaces(){}
- private void UpdateCows(){}
+ private void UpdateMobs(){}
  private void UpdateDroppedItems(){}
  private void UpdateBetaLightingSettings(){}
  private Task<Dictionary<ChunkRenderer,MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> chunks,bool markModifiedByPlayer)

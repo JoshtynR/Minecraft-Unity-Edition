@@ -32,9 +32,9 @@ public partial class WorldServer : NetworkBehaviour
             foreach(var item in world.CaptureDroppedItems())connection.Send(new DropStateMessage{item=item,dimension=world.dimension});
         });
 
-        NetworkServer.RegisterHandler<CowSyncRequest>((connection,request)=>
+        NetworkServer.RegisterHandler<MobSyncRequest>((connection,request)=>
         {
-            if(connection.identity!=null)connection.identity.GetComponent<Player>().CurrentWorld.SendCowSnapshot(connection);
+            if(connection.identity!=null)connection.identity.GetComponent<Player>().CurrentWorld.SendMobSnapshot(connection);
         });
 
         StartCoroutine(SaveLoop());

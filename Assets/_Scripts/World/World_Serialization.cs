@@ -82,7 +82,7 @@ public partial class World
                 hasWorldTime = true, worldTimeTicks = CurrentWorldTicks,
                 fluidTicks = CaptureFluidTicks(),
                 droppedItems = CaptureDroppedItems(),
-                cows = CaptureCows()
+                mobs = CaptureMobs()
             };
             // Capture/clear synchronously. Changes arriving during asynchronous
             // IO set dirty again and must remain eligible for the next save.

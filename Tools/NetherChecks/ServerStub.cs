@@ -18,7 +18,7 @@ namespace Steamworks {public struct SteamId {public ulong value;public static im
 public struct ChestRequest {}
 public struct FurnaceRequest {}
 public struct DropSyncRequest {}
-public struct CowSyncRequest {}
+public struct MobSyncRequest {}
 public partial class WorldServer {
  private void InitializeWorldClock(){}
  public void ReceiveChestRequest(NetworkConnectionToClient c,ChestRequest r){}

@@ -291,7 +291,7 @@ public partial class PlayerInventory
  }
  public static void Main(string[] args)
  {
-  CheckRules();CheckDurability();CheckDrops();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckFurnaces();CheckFarming();CheckCows();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
+  CheckRules();CheckDurability();CheckDrops();CheckCraftingReference(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(args[0]),"beta-crafting.tsv"));CheckCrafting();CheckFurnaces();CheckFarming();CheckMobs();CheckItems();CheckBetaItems();var inv=BuildMenu();CheckItemUI(inv);CheckChests(inv);
   var headless=new GameObject("DedicatedInventory").AddComponent<PlayerInventory>();
   Check(headless.AddItem(ItemType.Stone,64)&&headless.slots[0].count==64,"storage logic works without a canvas on nonlocal/server players");
   headless.LoadInventory(null);headless.AddItem(ItemType.Stone,63);headless.AddItem(ItemType.Dirt,35*64);

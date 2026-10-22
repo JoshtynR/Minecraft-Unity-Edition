@@ -12,7 +12,7 @@ The 15-second cooldown counts down after leaving portal blocks.
 - Overworld files retain their original locations. Nether chunks and metadata live
   under `DIM-1`; chest/furnace stores use that same dimension key. Player data stays
   shared and includes a dimension ID. Old player JSON defaults to the Overworld.
-- Client block/fluid/drop/cow packets and chest lid RPCs carry dimension identity.
+- Client block/fluid/drop/mob packets and chest lid RPCs carry dimension identity.
   The server resolves player actions against their world. Inactive render roots,
   particles, sounds, avatars, colliders and nameplate canvases stay hidden.
 - Generation/meshing handoffs are awaited. Portal travel pauses movement, hazards,

@@ -26,7 +26,7 @@ public partial class Player
 {
  public class Objects {public Transform body=new Transform();}
  public Objects objects=new Objects();public Transform transform=new Transform(),cam=new Transform();public World world=new World();public Inventory inventory=new Inventory();public bool networkStarted,isCrouching;public float reach=5,entityWidth=.3f,entityHeight=1.8f;public Vector3Int aimed,placement;
- private object TargetedCow()=>null;
+ private object TargetedMob()=>null;
  private bool TryUseNetherBed(Block block)=>false;
  private bool TryUseFarming(Block block,Vector3Int adjacent)=>false;
  public bool UseForCheck()=>TryUseBlock();

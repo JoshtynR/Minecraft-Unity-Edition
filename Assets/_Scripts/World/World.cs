@@ -87,7 +87,7 @@ public partial class World : MonoBehaviour
         OnValidate();
         Clear();
         InitializeDroppedItems();
-        InitializeCows();
+        InitializeMobs();
         NetworkClient.RegisterHandler<FurnaceReply>(message =>
         {
             if(GameManager.Instance!=null&&GameManager.Instance.localPlayer!=null)
@@ -434,7 +434,7 @@ public partial class World : MonoBehaviour
     {
         ResetWater();
         ResetDroppedItems();
-        ResetCows();
+        ResetMobs();
         furnaceClock=0;
         ResetTreeMeshChanges();
         worldData = new WorldData
@@ -471,15 +471,15 @@ public partial class World : MonoBehaviour
         taskTokenSource.Dispose();
         UnregisterDimension();
         ResetDroppedItems(true);
-        ResetCows(true);
+        ResetMobs(true);
         if (!secondaryDimension)
         {
             NetworkClient.UnregisterHandler<StartWorldMessage>();
             NetworkClient.UnregisterHandler<ChestReply>();
             NetworkClient.UnregisterHandler<FurnaceReply>();
             NetworkClient.UnregisterHandler<DropStateMessage>();
-            NetworkClient.UnregisterHandler<CowStateMessage>();
-            NetworkClient.UnregisterHandler<CowBatchMessage>();
+            NetworkClient.UnregisterHandler<MobStateMessage>();
+            NetworkClient.UnregisterHandler<MobBatchMessage>();
             NetworkClient.UnregisterHandler<MobArrowMessage>();
             Instance = null;
         }

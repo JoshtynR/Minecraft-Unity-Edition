@@ -94,7 +94,7 @@ public static class DimensionCheck {
   Check((bool)validator.Invoke(null,new object[]{validState}),"Bounded arrival inventory accepted");
   var factorySource=Realm(WorldDimension.Overworld);factorySource.worldName="NetherChecks-"+Guid.NewGuid().ToString("N");factorySource.isSaving=true;
   var made=World.GetDimension(WorldDimension.Nether);
-  Check(made!=factorySource&&made.dimension==WorldDimension.Nether&&!made.spawnCows,"Lazy dimension factory uses separate world and disables Nether animals");
+  Check(made!=factorySource&&made.dimension==WorldDimension.Nether&&!made.spawnPassiveMobs,"Lazy dimension factory uses separate world and disables Nether animals");
   GameManager.Instance.localPlayer=player;World.ActivateDimension(made);int restarts=GameManager.Instance.streamRestarts;made.OnNewChunksGenerated.Invoke();Check(GameManager.Instance.streamRestarts==restarts+1,"Nether streaming restarts after additional chunks finish");
   Check(!made.isSaving&&made.worldData.owner==made,"Factory does not inherit runtime save state or chunk ownership");
   Check(made.StorageName==factorySource.worldName+"/DIM-1"&&World.GetDimension(WorldDimension.Nether)==made,"Factory cache retains shared save root");

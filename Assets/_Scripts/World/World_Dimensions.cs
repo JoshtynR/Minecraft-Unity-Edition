@@ -43,7 +43,7 @@ public partial class World
         var world=root.AddComponent<World>();
         JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(source),world);
         world.dimension=id;world.secondaryDimension=true;
-        world.spawnCows=false;
+        world.spawnPassiveMobs=false;
         world.isSaving=false;world.disabled=false;
         world.chunksToUpdate=new List<ChunkRenderer>();world.blockToUpdate=new Queue<Block>();
         world.OnWorldCreated=new UnityEvent();world.OnNewChunksGenerated=new UnityEvent();
@@ -71,7 +71,7 @@ public partial class World
         string json=File.ReadAllText(path);
         if(!json.TrimStart().StartsWith("{"))json=Decompress(json);
         var saved=JsonUtility.FromJson<WorldSaveData>(json);
-        RestoreFluidTicks(saved.fluidTicks);RestoreDroppedItems(saved.droppedItems);RestoreCows(saved.cows);
+        RestoreFluidTicks(saved.fluidTicks);RestoreDroppedItems(saved.droppedItems);RestoreMobs(saved.SavedMobs);
     }
     public static void ActivateDimension(World world)
     {

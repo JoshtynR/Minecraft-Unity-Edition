@@ -32,7 +32,7 @@ public partial class Player
             {
                 nextPlayerAttack=NetworkTime.time+.25;
                 target.hurtUntil=NetworkTime.time+.5;
-                int damage=CowRules.AttackDamage(snapshot[slot].type);
+                int damage=MobRules.AttackDamage(snapshot[slot].type);
                 target.health=Mathf.Max(0,target.health-damage);
                 var push=target.transform.position-transform.position+Vector3.up;
                 if(network)target.RpcAddForce(target.connectionToClient,push,6);

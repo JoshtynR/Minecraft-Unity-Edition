@@ -56,7 +56,7 @@ public class Block {public UnityEngine.Vector3Int globalWorldPosition;public Blo
 public class ChunkData {public UnityEngine.Vector3Int worldPos;public bool modifiedByPlayer,modifiedAfterSave,HasPendingLighting,betaPopulationDone;public World worldRef;public Dictionary<UnityEngine.Vector3Int,Block> blocks=new Dictionary<UnityEngine.Vector3Int,Block>();public static ChunkData Deserialize(ChunkSaveData s,World w)=>new ChunkData{worldRef=w,worldPos=s.position};public void UpdateLight(){HasPendingLighting=false;}}
 public class ChunkSaveData {public static int serializations;public UnityEngine.Vector3Int position;public static ChunkSaveData Serialize(ChunkData d){serializations++;return new ChunkSaveData{position=d.worldPos};}}
 public class ChunkRenderer:UnityEngine.MonoBehaviour {public ChunkData ChunkData;public void Initialize(ChunkData d){ChunkData=d;}public void UpdateChunk(object mesh){}}
-public class WorldSaveData {public object fluidTicks,droppedItems,cows;}
+public class WorldSaveData {public object fluidTicks,droppedItems,mobs;public object SavedMobs=>mobs;}
 public struct DropStateMessage {public WorldDimension dimension;public object item;}
 public class GameManager {public static GameManager Instance;public List<Player> players=new List<Player>();public World world;public Player localPlayer;public int streamRestarts;public void StartCheckingForChunks(){streamRestarts++;}}
 public static class WorldLoadingScreen {public static bool IsLoading;public static void Begin(){IsLoading=true;}public static void Cancel(){IsLoading=false;}}
@@ -71,7 +71,7 @@ public static class WorldDataHelper {
  public static void SetBlock(World w,UnityEngine.Vector3Int p,BlockType t){var block=w.GetBlock(p);block.type=t;w.blocks[p]=block;}
 }
 public partial class World:UnityEngine.MonoBehaviour {
- public static World Instance;public string worldName="test";public long betaWorldSeed;public bool spawnCows=true,DropAuthority=true,GenerateMoreChunks=true,isSaving,disabled,IsWorldCreated=true;public int worldHeight=128,renderDistance=1,chunkSize=16,chunksPerFrame=1;
+ public static World Instance;public string worldName="test";public long betaWorldSeed;public bool spawnPassiveMobs=true,DropAuthority=true,GenerateMoreChunks=true,isSaving,disabled,IsWorldCreated=true;public int worldHeight=128,renderDistance=1,chunkSize=16,chunksPerFrame=1;
  public WorldData worldData;public WorldRenderer worldRenderer;public TerrainGenerator terrainGenerator;public UnityEngine.Events.UnityEvent OnWorldCreated,OnNewChunksGenerated;
  private int lastBetaSkyDarkness,lastBetaBrightnessBoost;private readonly SemaphoreSlim generationGate=new SemaphoreSlim(1,1);private readonly CancellationToken worldCancellationToken=CancellationToken.None;private bool chunkUpdateInProgress,waterMeshBuildInProgress;
  public List<ChunkRenderer> chunksToUpdate=new List<ChunkRenderer>();public Queue<Block> blockToUpdate=new Queue<Block>();
@@ -91,8 +91,8 @@ public partial class World:UnityEngine.MonoBehaviour {
  public static string GetChunkPath(string name,UnityEngine.Vector3Int p,WorldDimension dimension=WorldDimension.Overworld)=>"/nonexistent/test-chunk";
  public Task<Dictionary<UnityEngine.Vector3Int,ChunkData>> LoadChunksAsync(IEnumerable<UnityEngine.Vector3Int> positions,string name)=>Task.FromResult(new Dictionary<UnityEngine.Vector3Int,ChunkData>());
  public void UpadteLightTexture(){}
- public void RestoreFluidTicks(object x){}public void RestoreDroppedItems(object x){}public void RestoreCows(object x){}
- public void SendCowSnapshot(Mirror.NetworkConnectionToClient c){}
+ public void RestoreFluidTicks(object x){}public void RestoreDroppedItems(object x){}public void RestoreMobs(object x){}
+ public void SendMobSnapshot(Mirror.NetworkConnectionToClient c){}
  public object[] CaptureDroppedItems()=>new object[0];
  public static string Compress(string s)=>s;public static string Decompress(string s)=>s;
  private void ResetChunkUpdates(){}

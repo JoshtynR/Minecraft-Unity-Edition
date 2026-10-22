@@ -73,7 +73,7 @@ public partial class World
         UpdateWater();
         UpdateDroppedItems();
         UpdateFurnaces();
-        UpdateCows();
+        UpdateMobs();
         UpdatePortals();
         StreamDimensionPlayers();
         if (Application.isPlaying) UpdateChunks();

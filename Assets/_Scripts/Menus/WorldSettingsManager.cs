@@ -12,7 +12,7 @@ public class WorldSettingsManager : MonoBehaviour
     public double worldTimeTicks=1000;
     private FluidTickSave fluidTicks;
     private DroppedItemState[] droppedItems;
-    private CowSaveData cows;
+    private MobSaveData mobs;
     private string fluidWorldName;
     
     private void Awake()
@@ -42,7 +42,7 @@ public class WorldSettingsManager : MonoBehaviour
             worldTimeTicks=worldSaveData.hasWorldTime?worldSaveData.worldTimeTicks:1000;
             fluidTicks=worldSaveData.fluidTicks;
             droppedItems=worldSaveData.droppedItems;
-            cows=worldSaveData.cows;
+            mobs=worldSaveData.SavedMobs;
             fluidWorldName=worldSaveData.worldName;
         });
     }
@@ -56,7 +56,7 @@ public class WorldSettingsManager : MonoBehaviour
             World.Instance.worldTimeTicks=worldTimeTicks;
             World.Instance.RestoreFluidTicks(fluidWorldName==worldName?fluidTicks:null);
             World.Instance.RestoreDroppedItems(fluidWorldName==worldName?droppedItems:null);
-            World.Instance.RestoreCows(fluidWorldName==worldName?cows:null);
+            World.Instance.RestoreMobs(fluidWorldName==worldName?mobs:null);
         }
     }
 

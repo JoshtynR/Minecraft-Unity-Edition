@@ -15,7 +15,10 @@ public class WorldSaveData
     public double worldTimeTicks;
     public FluidTickSave fluidTicks;
     public DroppedItemState[] droppedItems;
-    public CowSaveData cows;
+    public MobSaveData mobs;
+    // Read-only compatibility with releases that stored every species as cows.
+    public MobSaveData cows;
+    public MobSaveData SavedMobs => mobs ?? cows;
     
     [NonSerialized]
     public ChunkSaveData[] chunks;
