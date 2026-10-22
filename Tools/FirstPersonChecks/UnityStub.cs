@@ -29,7 +29,8 @@ namespace UnityEngine {
  public class Canvas:Component {public Camera worldCamera;}
  public class Texture:Object {public int width=64,height=64;}
  public class Texture2D:Texture {public static Texture2D whiteTexture=new Texture2D();}
- public class Material:Object {public Texture mainTexture;public Dictionary<string,float> values=new Dictionary<string,float>();public Material(){}public Material(Material m){mainTexture=m.mainTexture;}public void SetFloat(string key,float value){values[key]=value;}}
+ public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}}
+ public class Material:Object {public Texture mainTexture;public Dictionary<string,float> values=new Dictionary<string,float>();public Dictionary<string,Vector4> vectors=new Dictionary<string,Vector4>();public Material(){}public Material(Material m){mainTexture=m.mainTexture;}public void SetFloat(string key,float value){values[key]=value;}public void SetVector(string key,Vector4 value){vectors[key]=value;}}
  public class Mesh:Object {public List<Vector3> vertices;public List<Vector2> uv;public List<int> triangles;public int vertexCount=>vertices==null?0:vertices.Count; public void SetVertices(List<Vector3> v){vertices=v;}public void SetUVs(int ch,List<Vector2> v){uv=v;}public void SetTriangles(List<int> t,int sub){triangles=t;}public void RecalculateNormals(){}public void RecalculateBounds(){} }
  public class MeshFilter:Component {public Mesh sharedMesh;}
  public class MeshRenderer:Component {public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public bool receiveShadows;}

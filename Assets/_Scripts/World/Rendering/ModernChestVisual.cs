@@ -53,6 +53,7 @@ public class ModernChestVisual : MonoBehaviour
             sky=Mathf.Max(sky,block.GetSkyLight());light=Mathf.Max(light,block.GetBlockLight());
         }
         properties.SetFloat("_Brightness",Beta173Lighting.Brightness(sky,light,world.betaSkylightSubtracted,0,world.dimension == WorldDimension.Nether));
+        properties.SetVector("_LightLevels",new Vector4(sky,light,1,0));
         foreach(var renderer in renderers)renderer.SetPropertyBlock(properties);
     }
     private void OnDestroy()

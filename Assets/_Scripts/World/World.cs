@@ -154,12 +154,7 @@ public partial class World : MonoBehaviour
     public void UpadteLightTexture()
     {
         UpdateBetaLightingSettings();
-        LightTextureCreator.nether = dimension == WorldDimension.Nether;
-        LightTextureCreator.gamma = gamma;
-        LightTextureCreator.skyLightMultiplier = skyLightMultiplier;
-        LightTextureCreator.blockLightMultiplier = blockLightMultiplier;
-        LightTextureCreator.CreateLightTexture();
-        Shader.SetGlobalVectorArray("lightColors", LightTextureCreator.lightColors);
+        if(Instance==this)PublishLightmap();
     }
 
     private WorldGenerationData GetPositionsInRenderDistance(Vector3Int playerPos)
@@ -470,6 +465,7 @@ public partial class World : MonoBehaviour
         taskTokenSource.Cancel();
         taskTokenSource.Dispose();
         UnregisterDimension();
+        ReleaseLightmap();
         ResetDroppedItems(true);
         ResetMobs(true);
         if (!secondaryDimension)

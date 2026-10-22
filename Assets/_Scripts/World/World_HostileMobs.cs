@@ -224,7 +224,7 @@ public partial class World
         }
         visual.transform.position=message.position;
         if(message.direction.sqrMagnitude>.0001f)visual.transform.rotation=Quaternion.LookRotation(message.direction);
-        var light=GetBlock(message.position);mobArrowProperties.SetFloat("_Brightness",Beta173Lighting.Brightness(light.GetSkyLight(),light.GetBlockLight(),betaSkylightSubtracted,0,dimension==WorldDimension.Nether));visual.GetComponent<MeshRenderer>().SetPropertyBlock(mobArrowProperties);
+        var light=GetBlock(message.position);mobArrowProperties.SetVector("_LightLevels",new Vector4(light.GetSkyLight(),light.GetBlockLight(),1,0));mobArrowProperties.SetFloat("_Brightness",Beta173Lighting.Brightness(light.GetSkyLight(),light.GetBlockLight(),betaSkylightSubtracted,0,dimension==WorldDimension.Nether));visual.GetComponent<MeshRenderer>().SetPropertyBlock(mobArrowProperties);
     }
     private void SendMobArrows(NetworkConnectionToClient connection)
     {foreach(var arrow in mobArrows)connection.Send(new MobArrowMessage{dimension=dimension,id=arrow.id,position=arrow.position,direction=arrow.motion,embedded=arrow.embedded});}

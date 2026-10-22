@@ -18,6 +18,7 @@ def main():
   sources.append('Assets/_Scripts/WheatCropRules.cs')
   binary=t/'lighting.exe'
   sources.append('Tools/LightingParity/SpecialMeshCheck.cs')
+  sources.append('Tools/LightingParity/ModernLightingCheck.cs')
   sources.append('Assets/_Scripts/World/FluidTickScheduler.cs')
   sources.extend(['Assets/_Scripts/World/Rendering/BiomeColorPalette.cs','Assets/_Scripts/World/Rendering/BiomeBlockColors.cs','Assets/_Scripts/WorldGeneration/Beta/BetaClimate.cs','Assets/_Scripts/WorldGeneration/Beta/JavaRandom.cs','Tools/LightingParity/BiomeColorCheck.cs'])
   sources.append('Assets/_Scripts/WorldGeneration/Beta/BetaMathHelper.cs')

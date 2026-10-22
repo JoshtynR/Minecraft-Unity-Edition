@@ -9,8 +9,10 @@ Shader "Voxel/Mob"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma target 3.5
             #include "UnityCG.cginc"
             #include "WorldFog.cginc"
+            #include "Java18Lighting.cginc"
             sampler2D _MainTex;float _Brightness,_Hurt,_Flash,_Unlit;float4 _FluidFog,_Tint;
             struct appdata {float4 vertex:POSITION;float2 uv:TEXCOORD0;float3 normal:NORMAL;};
             struct v2f {float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float light:TEXCOORD1;float distance:TEXCOORD2;};
@@ -19,7 +21,7 @@ Shader "Voxel/Mob"
                 v2f o;o.pos=UnityObjectToClipPos(v.vertex);o.uv=v.uv;o.distance=length(UnityObjectToViewPos(v.vertex));
                 float3 n=UnityObjectToWorldNormal(v.normal);
                 float shade=n.x*n.x*.6+n.z*n.z*.8+n.y*n.y*(n.y<0?.5:1);
-                o.light=lerp(_Brightness*shade,1,_Unlit);return o;
+                o.light=shade;return o;
             }
             fixed4 frag(v2f i):SV_Target
             {
@@ -29,7 +31,7 @@ Shader "Voxel/Mob"
                     c.rgb=LinearToGammaSpace(c.rgb);
                 #endif
                 c.rgb*=_Tint.rgb;
-                float3 rgb=lerp(c.rgb*i.light,float3(1,.2,.2),_Hurt*.45);
+                float3 rgb=lerp(c.rgb*lerp(EntityLight(_Brightness)*i.light,1,_Unlit),float3(1,.2,.2),_Hurt*.45);
                 rgb=lerp(rgb,float3(1,1,1),_Flash);
                 rgb=ApplyWorldFog(rgb,i.distance,_FluidFog);
                 #ifndef UNITY_COLORSPACE_GAMMA

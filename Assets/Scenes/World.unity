@@ -3548,6 +3548,7 @@ MonoBehaviour:
   mapSeedOffset: {x: -251, y: 150, z: 0}
   betaWorldSeed: 0
   GenerateMoreChunks: 1
+  java18Lighting: 1
   gamma: 0
   skyLightMultiplier: 1
   blockLightMultiplier: 1.5

@@ -11,6 +11,8 @@ public static class LightTextureCreator
 
     public static int skyDarkness;
     public static bool nether;
+    public static bool java18 = true;
+    public static float sunlight = 1, torchFlicker;
     private static float[] lightBrightnessTable = new float[16];
 
     [Range(0f, 1f)] public static float gamma = 0f;     // 0 = none, 1 = full shaping
@@ -19,7 +21,6 @@ public static class LightTextureCreator
 
     public static void CreateLightTexture()
     {
-        GenerateLightBrightnessTable();
         GenerateLightMapColors();
     }
 
@@ -50,6 +51,14 @@ public static class LightTextureCreator
         for (int sky = 0; sky < 16; sky++)
         for (int block = 0; block < 16; block++)
         {
+            if(java18)
+            {
+                var rgb=Java18Lighting.Sample(sky,block,sunlight,gamma,nether,torchFlicker);
+                int at=sky*16+block;
+                LightColors[at]=new Color(rgb.r,rgb.g,rgb.b,1);
+                lightColors[at]=new Vector4(rgb.r,rgb.g,rgb.b,255);
+                continue;
+            }
             float brightness = Beta173Lighting.Brightness(sky, block, skyDarkness,0,nether);
             brightness = Mathf.Lerp(brightness, 1f, Mathf.Clamp01(gamma));
             int index = sky * 16 + block;

@@ -20,7 +20,8 @@ namespace UnityEngine {
  public class Material:Object{public Texture2D mainTexture=new Texture2D();public Material(){}public Material(Material source){mainTexture=source.mainTexture;}}
  public class Collider:Object{}
  public class MeshRenderer {public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public bool receiveShadows;public void SetPropertyBlock(MaterialPropertyBlock p){}}
- public class MaterialPropertyBlock {public void SetFloat(string name,float value){}public void SetColor(string name,Color value){}}
+ public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}}
+ public class MaterialPropertyBlock {public void SetVector(string name,Vector4 value){}public void SetFloat(string name,float value){}public void SetColor(string name,Color value){}}
  public class MeshFilter {public Mesh sharedMesh;}
  public class Mesh:Object {public static List<Mesh> all=new List<Mesh>();public Vector3[] vertices=new Vector3[0];public Vector2[] uv;public int[] triangles;public int vertexCount=>vertices.Length;public Mesh(){all.Add(this);}public void SetVertices(List<Vector3> v){vertices=v.ToArray();}public void SetTriangles(List<int> t,int sub){triangles=t.ToArray();}public void SetUVs(int channel,List<Vector2> uv){}public void SetUVs(int channel,Vector2[] uv){}public void RecalculateNormals(){}public void RecalculateBounds(){}}
  public enum PrimitiveType{Cube}
