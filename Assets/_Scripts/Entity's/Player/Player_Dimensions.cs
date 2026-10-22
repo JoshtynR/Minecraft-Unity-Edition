@@ -24,7 +24,7 @@ public partial class Player
     private readonly Dictionary<Renderer,bool> hiddenRenderers=new Dictionary<Renderer,bool>();
     private readonly Dictionary<Canvas,bool> hiddenCanvases=new Dictionary<Canvas,bool>();
     private readonly Dictionary<Collider,bool> hiddenColliders=new Dictionary<Collider,bool>();
-    private bool otherDimensionHidden,arrivalSoundPending;
+    private bool otherDimensionHidden,arrivalSoundPending,portalTravelInProgress;
     public float PortalOverlay => Mathf.Clamp01(portalTime / 4);
 
     private void OnDimensionChanged(WorldDimension previous,WorldDimension next)
@@ -96,6 +96,7 @@ public partial class Player
     private async void BeginDimensionTravel(WorldDimension target,Vector3 desired,bool createPortal)
     {
         if(dimensionTransfer)return;
+        portalTravelInProgress=createPortal;
         dimensionTransfer=true;PauseDimensionTransforms();serverMining=localMining=false;portalTime=0;
         int sequence=++transferSequence;
         var source=CurrentWorld;WorldDimension previous=dimension;Vector3 previousPosition=transform.position;
@@ -155,6 +156,7 @@ public partial class Player
             Debug.LogException(error);
             if(this==null)return;
             dimension=previous;world=source;transform.position=previousPosition;dimensionTransfer=false;ResumeDimensionTransforms();portalCooldown=15;
+            portalTravelInProgress=false;
             if(!networkStarted||isLocalPlayer){World.ActivateDimension(source);WorldLoadingScreen.Cancel();}
             if(connectionToClient!=null)TargetCancelDimension(connectionToClient,previous,previousPosition);
         }
@@ -306,7 +308,8 @@ public partial class Player
         velocity=extraForce=Vector3.zero;verticalMomentum=0;jumpRequest=false;
         hasFluidSafePosition=false;ResetFluidMovement();
         survivalPositionKnown=false;localWalkDistance=localSprintDistance=0;
-        if(isLocalPlayer||!networkStarted)arrivalSoundPending=true;
+        if(isLocalPlayer||!networkStarted)arrivalSoundPending=portalTravelInProgress;
+        portalTravelInProgress=false;
         if(isLocalPlayer||!networkStarted)
         {
             World.ActivateDimension(CurrentWorld);

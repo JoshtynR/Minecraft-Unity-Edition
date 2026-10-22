@@ -7,7 +7,7 @@ public sealed class OverworldAtmosphere : MonoBehaviour
 {
     public Player player;
     private Camera view;
-    private GameObject root,sun,moon,clouds,cloudVolume;
+    private GameObject root,sun,moon,clouds;
     private Mesh quad,cloudQuad;
     private Material sunMaterial,moonMaterial,cloudMaterial;
     private Texture2D ownedSun,ownedMoon,ownedClouds;
@@ -29,20 +29,6 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         go.layer=0;go.AddComponent<MeshFilter>().sharedMesh=mesh;
         var renderer=go.AddComponent<MeshRenderer>();renderer.sharedMaterial=material;
         renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;return go;
-    }
-    private static Mesh BuildCloudVolumeMesh()
-    {
-        var v=new System.Collections.Generic.List<Vector3>();var t=new System.Collections.Generic.List<int>();
-        for(int z=-4;z<=4;z++)for(int x=-5;x<=5;x++)
-        {
-            int h=unchecked((x*92837111)^(z*689287499));if((h&7)>4)continue;
-            // Beta clouds are broad, low, blocky banks rather than round
-            // volumetric cumulus. Keep the layer four blocks tall.
-            float px=x*48f+((h>>4)&15)-7f,pz=z*48f+((h>>9)&15)-7f,sx=22f+((h>>14)&15),sz=16f+((h>>18)&15),sy=4f,py=0f;int b=v.Count;
-            v.AddRange(new[]{new Vector3(px-sx,py,pz-sz),new Vector3(px-sx,py+sy,pz-sz),new Vector3(px+sx,py+sy,pz-sz),new Vector3(px+sx,py,pz-sz),new Vector3(px-sx,py,pz+sz),new Vector3(px-sx,py+sy,pz+sz),new Vector3(px+sx,py+sy,pz+sz),new Vector3(px+sx,py,pz+sz)});
-            int[] f={0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,3,2,6,3,6,7,1,5,6,1,6,2,0,3,7,0,7,4};for(int i=0;i<f.Length;i++)t.Add(b+f[i]);
-        }
-        var m=new Mesh{name="Beta 3D cloud puffs"};m.indexFormat=UnityEngine.Rendering.IndexFormat.UInt32;m.SetVertices(v);m.SetTriangles(t,0);m.RecalculateNormals();m.RecalculateBounds();return m;
     }
     private Texture2D Fallback(int kind)
     {

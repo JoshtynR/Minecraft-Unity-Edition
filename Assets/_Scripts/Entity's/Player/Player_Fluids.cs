@@ -76,8 +76,10 @@ public partial class Player
     {
         if(dimension==WorldDimension.Nether){BeginDimensionTravel(WorldDimension.Overworld,new Vector3(8.5f,80,8.5f),false);return;}
         if(world==null)return;
-        Vector3 destination=lastFluidSafePosition;
-        bool found=hasFluidSafePosition&&SafeFluidRespawn(destination);
+        // Beta has no Nether respawn anchor: every death returns to the
+        // overworld spawn, rather than the last safe fluid position.
+        Vector3 destination=new Vector3(8.5f,80,8.5f);
+        bool found=false;
         for(int radius=0;!found&&radius<=8;radius++)
         for(int x=-radius;!found&&x<=radius;x++)for(int z=-radius;!found&&z<=radius;z++)
         {
