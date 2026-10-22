@@ -4,7 +4,8 @@ using UnityEngine;
 public partial class World : IFireWorld
 {
     private BetaFireSimulation fluidFire;
-    private readonly List<ChunkData> fluidRuntimeChunks=new List<ChunkData>();
+    [System.NonSerialized] private List<ChunkData> runtimeFluidRuntimeChunks;
+    private List<ChunkData> fluidRuntimeChunks => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeFluidRuntimeChunks, () => new List<ChunkData>());
     private void InitializeFluidRuntime()
     {
         fluidFire=new BetaFireSimulation(this,bound=>fluidRandom.NextInt(bound));

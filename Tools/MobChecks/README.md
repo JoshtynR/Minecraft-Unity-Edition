@@ -17,6 +17,12 @@ species values, IDs and random state. Inspector renames retain serialization
 aliases and script/resource GUIDs. All multiplayer peers need this version
 because network message types changed.
 
+World-owned stores use thread-safe lazy initialization and nonserialized backing
+fields. Save restoration and repeated resets are tested with field initializers
+deliberately bypassed, covering scene-loaded callbacks before Start and missing
+runtime caches after script reload. WaterChecks also verifies concurrent first
+use of the water notification queue.
+
 Run `python3 Tools/MobChecks/run.py --mcs <compiler> --mono <runtime>`.
 The suite compiles the production hostile AI/projectile/damage module and shared
 mob state against controlled Unity/Mirror/world-query doubles. It exercises melee

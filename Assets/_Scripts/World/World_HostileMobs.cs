@@ -13,11 +13,14 @@ public partial class World
     [Range(0,128)] public int maximumActiveHostiles=32;
     private sealed class MobArrow
     {public int id,owner,ticks;public Vector3 position,motion;public Vector3Int block;public bool embedded;}
-    private readonly List<MobArrow> mobArrows=new List<MobArrow>();
-    private readonly Dictionary<int,GameObject> mobArrowVisuals=new Dictionary<int,GameObject>();
+    [System.NonSerialized] private List<MobArrow> runtimeMobArrows;
+    private List<MobArrow> mobArrows => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobArrows, () => new List<MobArrow>());
+    [System.NonSerialized] private Dictionary<int,GameObject> runtimeMobArrowVisuals;
+    private Dictionary<int,GameObject> mobArrowVisuals => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobArrowVisuals, () => new Dictionary<int,GameObject>());
     private int nextMobArrowId;
     private Mesh mobArrowMesh;
-    private readonly MaterialPropertyBlock mobArrowProperties=new MaterialPropertyBlock();
+    [System.NonSerialized] private MaterialPropertyBlock runtimeMobArrowProperties;
+    private MaterialPropertyBlock mobArrowProperties => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobArrowProperties, () => new MaterialPropertyBlock());
     private void DropHostileLoot(MobState mob)
     {
         ItemType type=mob.species==MobType.Zombie?ItemType.RottenFlesh:mob.species==MobType.Skeleton?ItemType.Arrow:mob.species==MobType.Creeper?ItemType.Gunpowder:ItemType.String;

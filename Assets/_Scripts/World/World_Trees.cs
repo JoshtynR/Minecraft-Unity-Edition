@@ -5,7 +5,8 @@ using UnityEngine;
 
 public partial class World
 {
-    private readonly ConcurrentDictionary<Vector3Int, byte> treeMeshChanges = new ConcurrentDictionary<Vector3Int, byte>();
+    [System.NonSerialized] private ConcurrentDictionary<Vector3Int, byte> runtimeTreeMeshChanges;
+    private ConcurrentDictionary<Vector3Int, byte> treeMeshChanges => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeTreeMeshChanges, () => new ConcurrentDictionary<Vector3Int, byte>());
     public void NotifyTreeChunkChanged(Vector3Int origin) { treeMeshChanges.TryAdd(origin, 0); }
     private void ResetTreeMeshChanges() { treeMeshChanges.Clear(); }
 

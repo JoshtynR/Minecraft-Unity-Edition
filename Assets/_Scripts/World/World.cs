@@ -53,7 +53,8 @@ public partial class World : MonoBehaviour
     public bool disabled;
     public bool binaryCompressSaves = true;
 
-    private CancellationTokenSource taskTokenSource = new CancellationTokenSource();
+    [System.NonSerialized] private CancellationTokenSource runtimeTaskTokenSource;
+    private CancellationTokenSource taskTokenSource => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeTaskTokenSource, () => new CancellationTokenSource());
     private CancellationToken worldCancellationToken;
 
     public UnityEvent OnWorldCreated;

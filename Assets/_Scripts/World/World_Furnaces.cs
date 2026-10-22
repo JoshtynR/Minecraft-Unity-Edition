@@ -3,7 +3,8 @@ using UnityEngine;
 
 public partial class World
 {
-    public readonly FurnaceStorage furnaces = new FurnaceStorage();
+    [System.NonSerialized] private FurnaceStorage runtimeFurnaces;
+    public FurnaceStorage furnaces => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeFurnaces, () => new FurnaceStorage());
     private double furnaceClock;
     public static bool IsFurnace(BlockType type) => type == BlockType.Furnace || type == BlockType.LitFurnace;
     public bool FurnaceAccessible(Vector3 eye, Vector3Int position)

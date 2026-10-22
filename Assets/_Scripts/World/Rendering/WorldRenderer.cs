@@ -4,7 +4,8 @@ using UnityEngine;
 public class WorldRenderer : MonoBehaviour
 {
     public GameObject chunkPrefab;
-    public Queue<ChunkRenderer> chunkPool = new();
+    [System.NonSerialized] private Queue<ChunkRenderer> runtimeChunkPool;
+    public Queue<ChunkRenderer> chunkPool => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeChunkPool, () => new Queue<ChunkRenderer>());
 
     public ChunkRenderer RenderChunk(WorldData worldData, Vector3Int pos, MeshData meshData)
     {

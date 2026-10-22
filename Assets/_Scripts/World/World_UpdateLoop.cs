@@ -4,16 +4,20 @@ using UnityEngine;
 
 public partial class World
 {
-    public Queue<Block> blockToUpdate = new Queue<Block>();
+    [NonSerialized] private Queue<Block> runtimeBlockToUpdate;
+    public Queue<Block> blockToUpdate
+    {get=>System.Threading.LazyInitializer.EnsureInitialized(ref runtimeBlockToUpdate, () => new Queue<Block>());set=>runtimeBlockToUpdate=value;}
     [HideInInspector] public List<ChunkRenderer> chunksToUpdate = new List<ChunkRenderer>();
-    public object chunkUpdateThreadLock = new object();
+    [NonSerialized] private object runtimeChunkUpdateLock;
+    public object chunkUpdateThreadLock=>System.Threading.LazyInitializer.EnsureInitialized(ref runtimeChunkUpdateLock, () => new object());
     private bool chunkUpdateInProgress;
     private int chunkUpdateSession;
     private Camera backgroundCamera;
 
     private void ResetChunkUpdates()
     {
-        lock (chunkUpdateThreadLock) chunksToUpdate.Clear();
+        lock (chunkUpdateThreadLock)
+        {if(chunksToUpdate==null)chunksToUpdate=new List<ChunkRenderer>();else chunksToUpdate.Clear();}
         blockToUpdate.Clear();
         chunkUpdateSession++;
         chunkUpdateInProgress = false;
@@ -25,7 +29,10 @@ public partial class World
     {
         if (chunkUpdateInProgress || disabled || !IsWorldCreated || GenerationBusy) return;
         lock (chunkUpdateThreadLock)
+        {
+            if(chunksToUpdate==null)chunksToUpdate=new List<ChunkRenderer>();
             if (chunksToUpdate.Count == 0) return;
+        }
         var chunks = new List<ChunkRenderer>();
         lock (chunkUpdateThreadLock)
         {
@@ -59,6 +66,7 @@ public partial class World
         lock (chunkUpdateThreadLock)
         {
             if (disabled) return;
+            if(chunksToUpdate==null)chunksToUpdate=new List<ChunkRenderer>();
             if (!chunksToUpdate.Contains(chunk))
             {
                 if (first) chunksToUpdate.Insert(0, chunk);

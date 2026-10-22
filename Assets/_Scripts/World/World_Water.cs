@@ -23,12 +23,16 @@ public partial class World : IWaterWorld
     }
     private int betaPopulationJobs;
     private bool waitForBetaPopulation;
-    private readonly ConcurrentQueue<Vector3Int> waterNotifications = new ConcurrentQueue<Vector3Int>();
-    private readonly Queue<ChunkData> waterChunksToActivate = new Queue<ChunkData>();
-    private readonly Dictionary<Vector3Int, byte> waterChanges = new Dictionary<Vector3Int, byte>();
-    private readonly Dictionary<Vector3Int, Dictionary<Vector3Int, byte>> pendingWaterStates =
-        new Dictionary<Vector3Int, Dictionary<Vector3Int, byte>>();
-    private readonly HashSet<ChunkRenderer> waterDirtyChunks = new HashSet<ChunkRenderer>();
+    [System.NonSerialized] private ConcurrentQueue<Vector3Int> runtimeWaterNotifications;
+    private ConcurrentQueue<Vector3Int> waterNotifications => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeWaterNotifications, () => new ConcurrentQueue<Vector3Int>());
+    [System.NonSerialized] private Queue<ChunkData> runtimeWaterChunksToActivate;
+    private Queue<ChunkData> waterChunksToActivate => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeWaterChunksToActivate, () => new Queue<ChunkData>());
+    [System.NonSerialized] private Dictionary<Vector3Int, byte> runtimeWaterChanges;
+    private Dictionary<Vector3Int, byte> waterChanges => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeWaterChanges, () => new Dictionary<Vector3Int, byte>());
+    [System.NonSerialized] private Dictionary<Vector3Int, Dictionary<Vector3Int, byte>> runtimePendingWaterStates;
+    private Dictionary<Vector3Int, Dictionary<Vector3Int, byte>> pendingWaterStates => System.Threading.LazyInitializer.EnsureInitialized(ref runtimePendingWaterStates, () => new Dictionary<Vector3Int, Dictionary<Vector3Int, byte>>());
+    [System.NonSerialized] private HashSet<ChunkRenderer> runtimeWaterDirtyChunks;
+    private HashSet<ChunkRenderer> waterDirtyChunks => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeWaterDirtyChunks, () => new HashSet<ChunkRenderer>());
     private float waterTickTime;
     private bool waterMeshBuildInProgress;
     private int waterSession;

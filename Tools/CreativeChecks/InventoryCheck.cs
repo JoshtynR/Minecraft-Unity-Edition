@@ -50,7 +50,7 @@ namespace UnityEngine
  }
  public class MeshFilter:Component {public Mesh sharedMesh;}
  public class MeshRenderer:Component {public UnityEngine.Rendering.ShadowCastingMode shadowCastingMode;public Material sharedMaterial;public void SetPropertyBlock(MaterialPropertyBlock properties){}}
- public class MaterialPropertyBlock {public void SetFloat(string key,float value){}}
+ public class MaterialPropertyBlock {public void SetFloat(string key,float value){}public void SetVector(string key,Vector4 value){}}
  public static class Application {public static bool isPlaying=true;}
  public static class Random {public static int Range(int a,int b)=>a;public static float Range(float a,float b)=>(a+b)/2;}
  public static class Time {public static float deltaTime=.05f,unscaledTime;}

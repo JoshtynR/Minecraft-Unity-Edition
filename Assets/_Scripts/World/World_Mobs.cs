@@ -15,19 +15,30 @@ public partial class World
     public bool spawnPassiveMobs = true;
     [UnityEngine.Serialization.FormerlySerializedAs("maximumActiveCows")]
     [Range(0,64)] public int maximumActivePassiveMobs = 24;
-    private readonly MobEntitySystem mobEntities=new MobEntitySystem();
+    // sceneLoaded can restore saves before Start. Keep runtime stores outside
+    // Unity serialization and initialize on access, including after script reload.
+    [System.NonSerialized] private MobEntitySystem runtimeMobEntities;
+    private MobEntitySystem mobEntities => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobEntities, () => new MobEntitySystem());
     public MobEntitySystem MobEntities=>mobEntities;
     public MobStore mobs=>mobEntities.Store;
-    private readonly Dictionary<Vector3Int,int> mobSpawnCooldowns=new Dictionary<Vector3Int,int>();
-    private readonly Dictionary<int,MobVisual> mobVisuals = new Dictionary<int,MobVisual>();
-    private readonly List<MobState> activeMobs = new List<MobState>();
-    private readonly List<Player> mobPlayers = new List<Player>();
-    private readonly List<Vector3Int> mobSpawnCandidates = new List<Vector3Int>();
-    private readonly List<int> mobVisualRemovals = new List<int>();
+    [System.NonSerialized] private Dictionary<Vector3Int,int> runtimeMobSpawnCooldowns;
+    private Dictionary<Vector3Int,int> mobSpawnCooldowns => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobSpawnCooldowns, () => new Dictionary<Vector3Int,int>());
+    [System.NonSerialized] private Dictionary<int,MobVisual> runtimeMobVisuals;
+    private Dictionary<int,MobVisual> mobVisuals => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobVisuals, () => new Dictionary<int,MobVisual>());
+    [System.NonSerialized] private List<MobState> runtimeActiveMobs;
+    private List<MobState> activeMobs => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeActiveMobs, () => new List<MobState>());
+    [System.NonSerialized] private List<Player> runtimeMobPlayers;
+    private List<Player> mobPlayers => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobPlayers, () => new List<Player>());
+    [System.NonSerialized] private List<Vector3Int> runtimeMobSpawnCandidates;
+    private List<Vector3Int> mobSpawnCandidates => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobSpawnCandidates, () => new List<Vector3Int>());
+    [System.NonSerialized] private List<int> runtimeMobVisualRemovals;
+    private List<int> mobVisualRemovals => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobVisualRemovals, () => new List<int>());
     private MobSaveData mobRestore;
     private JavaRandom mobRandom;
-    private readonly Dictionary<MobType,Mesh[]> mobMeshesByType=new Dictionary<MobType,Mesh[]>();
-    private readonly Dictionary<MobType,Material> mobMaterialsByType=new Dictionary<MobType,Material>();
+    [System.NonSerialized] private Dictionary<MobType,Mesh[]> runtimeMobMeshesByType;
+    private Dictionary<MobType,Mesh[]> mobMeshesByType => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobMeshesByType, () => new Dictionary<MobType,Mesh[]>());
+    [System.NonSerialized] private Dictionary<MobType,Material> runtimeMobMaterialsByType;
+    private Dictionary<MobType,Material> mobMaterialsByType => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobMaterialsByType, () => new Dictionary<MobType,Material>());
     private float mobSpawnClock;
     private int mobTick;
     private bool mobSyncRequested;

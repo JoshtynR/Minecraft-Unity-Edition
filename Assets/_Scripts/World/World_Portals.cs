@@ -8,7 +8,8 @@ using UnityEngine;
 
 public partial class World
 {
-    private readonly Queue<Vector3Int> portalChecks=new Queue<Vector3Int>();
+    [System.NonSerialized] private Queue<Vector3Int> runtimePortalChecks;
+    private Queue<Vector3Int> portalChecks => System.Threading.LazyInitializer.EnsureInitialized(ref runtimePortalChecks, () => new Queue<Vector3Int>());
     private static readonly Vector3Int[] portalNeighbors={Vector3Int.zero,Vector3Int.left,Vector3Int.right,Vector3Int.up,Vector3Int.down,new Vector3Int(0,0,-1),new Vector3Int(0,0,1)};
     private BlockType PortalBlock(Vector3Int p)=>GetBlock(p).type;
     public bool TryIgnitePortal(Vector3Int p)

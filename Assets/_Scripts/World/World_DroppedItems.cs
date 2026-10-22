@@ -7,12 +7,18 @@ public struct DropSyncRequest : NetworkMessage {}
 
 public partial class World
 {
-    public readonly DroppedItemStore droppedItems=new DroppedItemStore();
-    private readonly Dictionary<int,DroppedItemVisual> dropVisuals=new Dictionary<int,DroppedItemVisual>();
-    private readonly Dictionary<ItemType,Material> dropMaterials=new Dictionary<ItemType,Material>();
-    private readonly Dictionary<BlockType,Mesh> dropMeshes=new Dictionary<BlockType,Mesh>();
-    private readonly List<DroppedItemState> dropTickBuffer=new List<DroppedItemState>();
-    private readonly List<int> removedDropVisuals=new List<int>();
+    [System.NonSerialized] private DroppedItemStore runtimeDroppedItems;
+    public DroppedItemStore droppedItems => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeDroppedItems, () => new DroppedItemStore());
+    [System.NonSerialized] private Dictionary<int,DroppedItemVisual> runtimeDropVisuals;
+    private Dictionary<int,DroppedItemVisual> dropVisuals => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeDropVisuals, () => new Dictionary<int,DroppedItemVisual>());
+    [System.NonSerialized] private Dictionary<ItemType,Material> runtimeDropMaterials;
+    private Dictionary<ItemType,Material> dropMaterials => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeDropMaterials, () => new Dictionary<ItemType,Material>());
+    [System.NonSerialized] private Dictionary<BlockType,Mesh> runtimeDropMeshes;
+    private Dictionary<BlockType,Mesh> dropMeshes => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeDropMeshes, () => new Dictionary<BlockType,Mesh>());
+    [System.NonSerialized] private List<DroppedItemState> runtimeDropTickBuffer;
+    private List<DroppedItemState> dropTickBuffer => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeDropTickBuffer, () => new List<DroppedItemState>());
+    [System.NonSerialized] private List<int> runtimeRemovedDropVisuals;
+    private List<int> removedDropVisuals => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeRemovedDropVisuals, () => new List<int>());
     private Mesh dropBillboard;
     private DroppedItemState[] dropRestore;
     private float dropClock;

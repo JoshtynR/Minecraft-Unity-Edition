@@ -155,6 +155,7 @@ public partial class World
         betaPopulationJobs=0;return paused;
     }
     public void TestReset() { ResetWater(); ResetTreeMeshChanges(); }
+    public int TestNotificationCount=>waterNotifications.Count;
     public void TestRefreshTrees() { RefreshTreeMeshes().GetAwaiter().GetResult(); }
     public void TestActivate(ChunkData c) { QueueWaterChunk(c); }
 }
@@ -177,6 +178,12 @@ public static partial class IntegrationCheck
     }
     public static void Run()
     {
+        var cold=(World)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(typeof(World));
+        cold.TestReset();cold.TestReset();
+        WaterCheck.Assert(cold.TestNotificationCount==0,"cold world can reset water, fluid runtime and tree queues before field initializers");
+        System.Threading.Tasks.Parallel.For(0,256,i=>cold.NotifyWaterBlockChanged(V(i,0,0)));
+        WaterCheck.Assert(cold.TestNotificationCount==256,"concurrent first-use water notifications share one safely initialized queue");
+        cold.TestReset();WaterCheck.Assert(cold.TestNotificationCount==0,"reset clears notifications after cold initialization");
         var w = World.Instance = new World();
         WaterCheck.Assert(w.TestPopulationPausesWater(),"population holds authoritative water ticks until the worker completes");
         var c = AddChunk(w,V(0,0,0));

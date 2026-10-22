@@ -31,7 +31,8 @@ public partial class World
         disabled = false;
     }
 
-    private readonly System.Threading.SemaphoreSlim generationGate = new System.Threading.SemaphoreSlim(1,1);
+    [System.NonSerialized] private System.Threading.SemaphoreSlim runtimeGenerationGate;
+    private System.Threading.SemaphoreSlim generationGate => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeGenerationGate, () => new System.Threading.SemaphoreSlim(1,1));
     private bool requestPlayerSpawn;
     public async void GenerateWorld(Vector3Int position, Action onGenerateNewChunks = null)
     {

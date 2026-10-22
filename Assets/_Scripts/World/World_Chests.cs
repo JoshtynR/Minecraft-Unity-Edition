@@ -4,8 +4,10 @@ using UnityEngine;
 
 public partial class World
 {
-    public readonly ChestStorage chests=new ChestStorage();
-    public readonly HashSet<Vector3Int> openChestLids=new HashSet<Vector3Int>();
+    [System.NonSerialized] private ChestStorage runtimeChests;
+    public ChestStorage chests => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeChests, () => new ChestStorage());
+    [System.NonSerialized] private HashSet<Vector3Int> runtimeOpenChestLids;
+    public HashSet<Vector3Int> openChestLids => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeOpenChestLids, () => new HashSet<Vector3Int>());
     private void InitializeChests()
     {
         ModernChestVisual.Prepare();
