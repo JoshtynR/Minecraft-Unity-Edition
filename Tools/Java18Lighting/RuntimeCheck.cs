@@ -65,11 +65,17 @@ class RuntimeCheck
         var dark=texture.pixels[0].r;world.gamma=1;world.Frame();
         Require(texture.pixels[0].r>dark&&world.queued==0,"gamma changes update map without remeshing");
         for(int i=0;i<30;i++)world.Frame();Require(Texture2D.created==1,"lightmap texture is reused");
+        var randomField=typeof(World).GetField("lightmapRandom",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+        randomField.SetValue(world,null);world.Frame();
+        Require(randomField.GetValue(world)!=null,"lighting recreates missing visual RNG after script reload");
         world.java18Lighting=false;world.Frame();Require(world.queued==2,"style switch remeshes exactly once");
         world.Frame();Require(world.queued==2,"unchanged style does not keep remeshing");
         world.betaSkylightSubtracted=10;world.Frame();Require(world.queued==4,"legacy baked light still remeshes when needed");
         int uploads=Shader.uploads;new World().Frame();Require(Shader.uploads==uploads,"inactive dimension cannot overwrite active lightmap");
         world.DisposeForCheck();Require(texture.destroyed,"world teardown releases owned lightmap");
+        world.worldData=null;world.java18Lighting=true;world.Frame();
+        Require(randomField.GetValue(world)!=null,"style change tolerates missing world data during lifecycle transitions");
+        world.DisposeForCheck();
         Console.WriteLine("Production world/lightmap lifecycle, default mode, clock/gamma updates, remesh avoidance and dimension ownership checks passed (Unity GPU mocked).");
     }
 }

@@ -13,7 +13,9 @@ public partial class World
     private float lastBetaBrightnessBoost = -1;
     private int lastJava18Lighting = -1;
     private float lightmapClock,torchFlicker,torchVelocity;
-    private readonly System.Random lightmapRandom = new System.Random();
+    // Unity does not serialize System.Random across script reloads. Recreate
+    // this visual-only stream on demand, including for restored components.
+    private System.Random lightmapRandom;
     private Texture2D java18Lightmap;
 
     private void ReleaseLightmap()
@@ -61,6 +63,7 @@ public partial class World
         if(lightmapClock>=.05f||lastBetaSkyDarkness!=darkness||lastBetaBrightnessBoost!=gamma||rebuild)
         {
             lightmapClock=0;
+            if(lightmapRandom==null)lightmapRandom=new System.Random();
             torchVelocity+=(float)((lightmapRandom.NextDouble()-lightmapRandom.NextDouble())*lightmapRandom.NextDouble()*lightmapRandom.NextDouble());
             torchVelocity*=.9f;torchFlicker=torchVelocity;
             PublishLightmap();
@@ -71,7 +74,7 @@ public partial class World
             lastBetaSkyDarkness = darkness;
 
         }
-        if (rebuild && IsWorldCreated && worldData.chunkDict != null)
+        if (rebuild && IsWorldCreated && worldData != null && worldData.chunkDict != null)
             foreach (var chunk in worldData.chunkDict.Values) AddChunkToUpdate(chunk);
         if (lastBetaBrightnessBoost != gamma)
         {
