@@ -103,6 +103,19 @@ public static class FirstPersonArmPose
 
 public static class FirstPersonItemPose
 {
+    public static void ApplyEating(Transform pose,bool block,bool reversed,float progress,float durationTicks,float equip,Vector3 bob)
+    {
+        // ItemRenderer applies use-item transforms before the held-item/grip
+        // transform. Reflect camera Z from OpenGL to Unity: negate X/Y angles.
+        Apply(pose,block,reversed,0,equip,Vector3.zero);
+        float remaining=1-Mathf.Min(1,Mathf.Max(0,progress));
+        float chew=remaining>=.8f?0:Mathf.Abs(Mathf.Cos(remaining*durationTicks/4*Mathf.PI)*.1f);
+        float pull=1-(float)System.Math.Pow(remaining,27);
+        var eating=Quaternion.Euler(0,-90*pull,0)*Quaternion.Euler(-10*pull,0,0)*Quaternion.Euler(0,0,30*pull);
+        pose.localPosition=new Vector3(.6f*pull,-.5f*pull+chew,0)+eating*pose.localPosition+bob;
+        pose.localRotation=eating*pose.localRotation;
+    }
+
     public static void Apply(Transform pose,bool block,bool reversed,float swing,float equip,Vector3 bob)
     {
         float rootSwing=Mathf.Sin(Mathf.Sqrt(swing)*Mathf.PI);

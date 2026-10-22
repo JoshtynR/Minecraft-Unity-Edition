@@ -5,6 +5,15 @@ using UnityEngine;
 class FirstPersonCheck {
  static int assertions;
  static void Check(bool ok,string message){assertions++;if(!ok)throw new Exception(message);}
+ static Vector3 EatingReferenceRotation(Vector3 p,double pull)
+ {
+  // Independent column-vector matrix evaluation: RY(-90p) RX(-10p) RZ(30p).
+  double rz=pull*30*Math.PI/180,rx=-pull*10*Math.PI/180,ry=-pull*90*Math.PI/180;
+  double x=p.x*Math.Cos(rz)-p.y*Math.Sin(rz),y=p.x*Math.Sin(rz)+p.y*Math.Cos(rz),z=p.z;
+  double yy=y*Math.Cos(rx)-z*Math.Sin(rx),zz=y*Math.Sin(rx)+z*Math.Cos(rx);
+  return new Vector3((float)(x*Math.Cos(ry)+zz*Math.Sin(ry)),(float)yy,(float)(-x*Math.Sin(ry)+zz*Math.Cos(ry)));
+ }
+ static bool Near(Vector3 a,Vector3 b)=>Math.Abs(a.x-b.x)<.0001&&Math.Abs(a.y-b.y)<.0001&&Math.Abs(a.z-b.z)<.0001;
  static int VisibleArmVertices(Mesh mesh,Transform pivot,Vector3 inheritedScale,float aspect)
  {
   int visible=0;
@@ -81,6 +90,20 @@ class FirstPersonCheck {
   Check(Math.Abs(imageCentre.x-.55238738)<.0001&&Math.Abs(imageCentre.y+.29115691)<.0001&&Math.Abs(imageCentre.z-.59188048)<.0001,"reference held sprite image centre");
   Check(filter.sharedMesh.uv[0].x==1&&Math.Abs(pose.localScale.x-.6f)<.0001,"reference sprite facing and scale");
   var toolMesh=filter.sharedMesh;
+  var idlePosition=pose.localPosition;var idleAxis=pose.localRotation*new Vector3(1,0,0);
+  player.IsEating=true;Input.buttons[0]=true;
+  foreach(float progress in new[]{0f,.02f,.05f,.1f,.2f,.25f,.5f,.75f,1f})
+  {
+   player.EatingProgress=progress;Step(view);
+   double remaining=1-progress,pull=1-Math.Pow(remaining,27);
+   double chew=remaining>=.8?0:Math.Abs(Math.Cos(remaining*32/4*Math.PI)*.1);
+   var expected=new Vector3((float)(.6*pull),(float)(-.5*pull+chew),0)+EatingReferenceRotation(idlePosition,pull);
+   Check(Near(pose.localPosition,expected),"eating translates before the item grip and rotates its position about the camera");
+   Check(Near(pose.localRotation*new Vector3(1,0,0),EatingReferenceRotation(idleAxis,pull)),"eating keeps reference axis order and Unity handedness");
+   Check((float)Field(view,"swing")==1&&Math.Abs(pose.localScale.x-.6f)<.0001,"eating suppresses attack swing and preserves sprite scale");
+  }
+  player.IsEating=false;Input.buttons[0]=false;Step(view);
+  Check(Near(pose.localPosition,idlePosition)&&Near(pose.localRotation*new Vector3(1,0,0),idleAxis),"cancelling eating restores the normal held-item transform without accumulation");
   player.inventory.stack.type=ItemType.Stone;Step(view,30);Check(filter.sharedMesh==stoneMesh,"Hotbar reuses cached mesh");
   Input.buttons[0]=true;Step(view);Check((float)Field(view,"swing")<1,"Mining starts swing");Input.buttons[0]=false;
   player.inventory.isOpen=true;Step(view);Check(!hand.enabled,"Inventory hides hand");player.inventory.isOpen=false;

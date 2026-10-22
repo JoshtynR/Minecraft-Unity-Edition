@@ -115,14 +115,14 @@ public sealed class FirstPersonView : MonoBehaviour
         swing = Mathf.Min(1, swing + Time.deltaTime / .3f);
         Vector3 bob = Vector3.zero;
         bool arm = shown == ItemType.Nothing || !hasModel;
-        if(arm)FirstPersonArmPose.Apply(pivot,swing,equip,bob);
-        else FirstPersonItemPose.Apply(pivot,isBlock,shown==ItemType.FishingRod,swing,equip,bob);
-        if(player.IsEating)
+        if(player.IsEating&&!arm)
         {
-            float chew=Mathf.Abs(Mathf.Sin(player.EatingProgress*Mathf.PI*8));
-            pivot.localPosition+=new Vector3(-.35f,.32f-chew*.035f,-.1f);
-            pivot.localRotation=Quaternion.Euler(chew*8,0,10)*pivot.localRotation;
+            swing=1;
+            FirstPersonItemPose.ApplyEating(pivot,isBlock,shown==ItemType.FishingRod,
+                player.EatingProgress,FoodRules.EatSeconds*20,equip,bob);
         }
+        else if(arm)FirstPersonArmPose.Apply(pivot,swing,equip,bob);
+        else FirstPersonItemPose.Apply(pivot,isBlock,shown==ItemType.FishingRod,swing,equip,bob);
         player.ApplyFirstPersonBob(pivot);
         UpdateLight();
     }
