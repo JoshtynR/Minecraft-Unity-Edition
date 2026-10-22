@@ -6,7 +6,7 @@ public sealed partial class Beta173Population
     {
         var world = new TreeWorld(owner);
         PopulateComplete(world, chunkX, chunkZ, terrain.GetBiome(chunkX*16+16,chunkZ*16+16),
-            terrain.GetTreeCountNoise(chunkX*16,chunkZ*16),terrain.GetPopulationTemperatures(chunkX*16+8,chunkZ*16+8));
+            terrain.GetTreeCountNoise(chunkX*16,chunkZ*16),terrain.GetPopulationTemperaturesForChunk(chunkX*16+8,chunkZ*16+8));
         world.MarkDirtyChunks();
     }
     public void PopulateComplete(IBetaPopulationWorld w,int chunkX,int chunkZ,BetaBiomeType biome,double treeNoise,

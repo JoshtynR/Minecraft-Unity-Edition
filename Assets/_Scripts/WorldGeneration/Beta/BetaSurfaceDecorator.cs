@@ -11,7 +11,7 @@ public static class BetaSurfaceDecorator
         int betaWorldX = betaChunkX * 16;
         int betaWorldZ = betaChunkZ * 16;
 
-        terrain.GenerateSurfaceNoise(betaWorldX, betaWorldZ,
+        terrain.GenerateSurfaceNoiseForChunk(betaWorldX, betaWorldZ,
             out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise);
         observe?.Invoke("sand", sandNoise);
         observe?.Invoke("gravel", gravelNoise);

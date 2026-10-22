@@ -262,9 +262,10 @@ public partial class World
     public UniTask CastLightFirstTime(List<ChunkData> dataToCast)
     {
         var loadedLightingChunks = worldData.chunkDataDict.Values.ToList();
+        int workers=ChunkWorkerOptions().MaxDegreeOfParallelism;
         return UniTask.RunOnThreadPool(() =>
         {
-            Lighting.InitializeLoadedChunks(loadedLightingChunks, worldCancellationToken);
+            Lighting.InitializeLoadedChunks(loadedLightingChunks, worldCancellationToken, workers);
         }, true, worldCancellationToken);
     }
     
@@ -273,14 +274,19 @@ public partial class World
         var options = ChunkWorkerOptions();
         return UniTask.RunOnThreadPool(() =>
         {
-            var dict = new ConcurrentDictionary<Vector3Int, MeshData>();
-            Parallel.ForEach(dataToRender, options, data =>
+            // Each worker owns one result slot. Publishing into the concurrent
+            // map afterward avoids lock/resize contention in the expensive mesh
+            // phase while preserving the existing return type.
+            var results = new MeshData[dataToRender.Count];
+            Parallel.For(0, dataToRender.Count, options, index =>
             {
                 worldCancellationToken.ThrowIfCancellationRequested();
-                var meshData = data.GetMeshData();
-                dict.TryAdd(data.worldPos, meshData);
+                results[index] = dataToRender[index].GetMeshData();
             });
 
+            var dict = new ConcurrentDictionary<Vector3Int, MeshData>();
+            for (int i = 0; i < results.Length; i++)
+                dict.TryAdd(dataToRender[i].worldPos, results[i]);
             return dict;
         }, true, worldCancellationToken);
     }
@@ -291,20 +297,24 @@ public partial class World
         return UniTask.RunOnThreadPool(() =>
         {
             Profiler.BeginThreadProfiling("MyThreads","CalculateWorldChunkData");
-            var dataDict = new ConcurrentDictionary<Vector3Int, ChunkData>();
-            Parallel.ForEach(chunkDataPositionsToCreate, options, pos =>
+            var positions = chunkDataPositionsToCreate.ToArray();
+            var generated = new ChunkData[positions.Length];
+            Parallel.For(0, positions.Length, options, index =>
             {
                 if(taskTokenSource.IsCancellationRequested)
                 {
                     worldCancellationToken.ThrowIfCancellationRequested();
                 }
 
+                var pos = positions[index];
                 var data = new ChunkData(chunkSize, chunkHeight, this, pos);
-                var newData = terrainGenerator.GenerateChunkData(data);
-                dataDict.TryAdd(pos, newData);
+                generated[index] = terrainGenerator.GenerateChunkData(data);
 
             });
-            
+
+            var dataDict = new ConcurrentDictionary<Vector3Int, ChunkData>();
+            for (int i = 0; i < generated.Length; i++)
+                dataDict.TryAdd(positions[i], generated[i]);
             Profiler.EndThreadProfiling();
             return dataDict;
         }, true, worldCancellationToken);

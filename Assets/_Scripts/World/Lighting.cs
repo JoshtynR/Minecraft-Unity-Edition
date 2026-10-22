@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public static class Lighting
@@ -9,17 +10,18 @@ public static class Lighting
 
     // Seed the entire loaded lighting halo before propagating or sampling. The
     // outer data ring has no renderer yet, but AO samples its light values.
-    public static void InitializeLoadedChunks(IList<ChunkData> chunks, CancellationToken token = default(CancellationToken))
+    public static void InitializeLoadedChunks(IList<ChunkData> chunks, CancellationToken token = default(CancellationToken), int workerCount = 1)
     {
         lock (SyncRoot)
         {
-            foreach (var chunk in chunks)
+            var options=new ParallelOptions{CancellationToken=token,MaxDegreeOfParallelism=System.Math.Max(1,workerCount)};
+            Parallel.ForEach(chunks,options,chunk =>
             {
                 token.ThrowIfCancellationRequested();
-                if (chunk.lightingInitialized) continue;
+                if (chunk.lightingInitialized) return;
                 RecastSunLightFirstTime(chunk);
                 chunk.lightingInitialized = true;
-            }
+            });
             // One sequential transport phase prevents adjacent meshing workers
             // from racing writes to packed sky/block light or observing half-
             // initialized neighbors during the first mesh build.

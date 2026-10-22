@@ -69,38 +69,50 @@ public static class WorldDataHelper
     }
 
     public static HashSet<Vector3Int> GetPositionsToCreate(WorldData worldData, List<Vector3Int> allChunkPositionsNeeded, Vector3Int playerPos)
+    { return GetPositionsToCreate(worldData,allChunkPositionsNeeded,playerPos,new Dictionary<Vector3Int,bool>()); }
+
+    public static HashSet<Vector3Int> GetPositionsToCreate(WorldData worldData, List<Vector3Int> allChunkPositionsNeeded, Vector3Int playerPos, IDictionary<Vector3Int,bool> fileCache)
     {
         return allChunkPositionsNeeded
-            .Where(pos => !worldData.chunkDict.ContainsKey(pos) && !DoesChunkFileExist(worldData,pos))
-            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? worldData.owner.chunksGenerationPerFrame : allChunkPositionsNeeded.Count)
+            .Where(pos => !worldData.chunkDict.ContainsKey(pos) && !DoesChunkFileExist(worldData,pos,fileCache))
+            .OrderBy(pos => DistanceSquared(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? worldData.owner.chunksGenerationPerFrame : allChunkPositionsNeeded.Count)
             .ToHashSet();
     }
 
     public static HashSet<Vector3Int> GetDataPositionsToCreate(WorldData worldData, List<Vector3Int> allChunkDataPositionsNeeded, Vector3Int playerPos)
+    { return GetDataPositionsToCreate(worldData,allChunkDataPositionsNeeded,playerPos,new Dictionary<Vector3Int,bool>()); }
+
+    public static HashSet<Vector3Int> GetDataPositionsToCreate(WorldData worldData, List<Vector3Int> allChunkDataPositionsNeeded, Vector3Int playerPos, IDictionary<Vector3Int,bool> fileCache)
     {
         return allChunkDataPositionsNeeded
-            .Where(pos => !worldData.chunkDataDict.ContainsKey(pos) && !DoesChunkFileExist(worldData,pos))
-            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? 9 + worldData.owner.chunksGenerationPerFrame*3 : allChunkDataPositionsNeeded.Count)
+            .Where(pos => !worldData.chunkDataDict.ContainsKey(pos) && !DoesChunkFileExist(worldData,pos,fileCache))
+            .OrderBy(pos => DistanceSquared(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? 9 + worldData.owner.chunksGenerationPerFrame*3 : allChunkDataPositionsNeeded.Count)
             .ToHashSet();
     }
     
     public static HashSet<Vector3Int> GetPositionsToLoad(WorldData worldData, List<Vector3Int> allChunkPositionsNeeded, Vector3Int playerPos)
+    { return GetPositionsToLoad(worldData,allChunkPositionsNeeded,playerPos,new Dictionary<Vector3Int,bool>()); }
+
+    public static HashSet<Vector3Int> GetPositionsToLoad(WorldData worldData, List<Vector3Int> allChunkPositionsNeeded, Vector3Int playerPos, IDictionary<Vector3Int,bool> fileCache)
     {
         return allChunkPositionsNeeded
-            .Where(pos => !worldData.chunkDict.ContainsKey(pos) && DoesChunkFileExist(worldData,pos))
-            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? worldData.owner.chunksGenerationPerFrame : allChunkPositionsNeeded.Count)
+            .Where(pos => !worldData.chunkDict.ContainsKey(pos) && DoesChunkFileExist(worldData,pos,fileCache))
+            .OrderBy(pos => DistanceSquared(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? worldData.owner.chunksGenerationPerFrame : allChunkPositionsNeeded.Count)
             .ToHashSet();
     }
     
     public static HashSet<Vector3Int> GetDataPositionsToLoad(WorldData worldData, List<Vector3Int> allChunkDataPositionsNeeded, Vector3Int playerPos)
+    { return GetDataPositionsToLoad(worldData,allChunkDataPositionsNeeded,playerPos,new Dictionary<Vector3Int,bool>()); }
+
+    public static HashSet<Vector3Int> GetDataPositionsToLoad(WorldData worldData, List<Vector3Int> allChunkDataPositionsNeeded, Vector3Int playerPos, IDictionary<Vector3Int,bool> fileCache)
     {
         return allChunkDataPositionsNeeded
-            .Where(pos => !worldData.chunkDataDict.ContainsKey(pos) && DoesChunkFileExist(worldData,pos))
-            .OrderBy(pos => Vector3.Distance(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? 9 + worldData.owner.chunksGenerationPerFrame*3 : allChunkDataPositionsNeeded.Count)
+            .Where(pos => !worldData.chunkDataDict.ContainsKey(pos) && DoesChunkFileExist(worldData,pos,fileCache))
+            .OrderBy(pos => DistanceSquared(playerPos, pos)).Take(worldData.owner.IsWorldCreated && !worldData.owner.PreparingDimensionArea ? 9 + worldData.owner.chunksGenerationPerFrame*3 : allChunkDataPositionsNeeded.Count)
             .ToHashSet();
     }
     
-    public static HashSet<Vector3Int> GetUnneededChunkPositions(WorldData worldData, List<Vector3Int> allChunkPositionsNeeded)
+    public static HashSet<Vector3Int> GetUnneededChunkPositions(WorldData worldData, ICollection<Vector3Int> allChunkPositionsNeeded)
     {
         var positionsToRemove = new HashSet<Vector3Int>();
         foreach (var pos in worldData.chunkDict.Keys.Where(pos => !allChunkPositionsNeeded.Contains(pos)))
@@ -111,9 +123,9 @@ public static class WorldDataHelper
         return positionsToRemove;
     }
     
-    public static HashSet<Vector3Int> GetUnneededDataPositions(WorldData worldData, List<Vector3Int> allChunkDataPositionsNeeded)
+    public static HashSet<Vector3Int> GetUnneededDataPositions(WorldData worldData, ICollection<Vector3Int> allChunkDataPositionsNeeded)
     {
-        return worldData.chunkDataDict.Keys.Where(pos => !allChunkDataPositionsNeeded.Contains(pos) && !worldData.chunkDataDict[pos].modifiedAfterSave).ToHashSet();
+        return worldData.chunkDataDict.Where(pair => !allChunkDataPositionsNeeded.Contains(pair.Key) && !pair.Value.modifiedAfterSave).Select(pair=>pair.Key).ToHashSet();
     }
     
     public static bool DoesChunkFileExist(WorldData worldData, Vector3Int chunkPos)
@@ -126,6 +138,21 @@ public static class WorldDataHelper
         {
             return false;
         }
+    }
+
+    private static bool DoesChunkFileExist(WorldData worldData, Vector3Int chunkPos, IDictionary<Vector3Int,bool> cache)
+    {
+        bool exists;
+        if (cache.TryGetValue(chunkPos, out exists)) return exists;
+        exists = DoesChunkFileExist(worldData, chunkPos);
+        cache[chunkPos] = exists;
+        return exists;
+    }
+
+    private static long DistanceSquared(Vector3Int a, Vector3Int b)
+    {
+        long dx=(long)a.x-b.x, dy=(long)a.y-b.y, dz=(long)a.z-b.z;
+        return dx*dx+dy*dy+dz*dz;
     }
 
     public static void RemoveChunk(World world, Vector3Int pos)

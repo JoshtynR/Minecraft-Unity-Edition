@@ -7,6 +7,12 @@ public sealed partial class Beta173Population
     private sealed partial class TreeWorld
     {
         private readonly Dictionary<Vector3Int,int[]> skyColumns = new Dictionary<Vector3Int,int[]>();
+        private readonly Queue<Vector3Int> lightQueue = new Queue<Vector3Int>();
+        private readonly Dictionary<Vector3Int,int> lightCosts = new Dictionary<Vector3Int,int>();
+        private static readonly Vector3Int[] LightDirections = {
+            new Vector3Int(-1,0,0),new Vector3Int(1,0,0),new Vector3Int(0,-1,0),
+            new Vector3Int(0,1,0),new Vector3Int(0,0,-1),new Vector3Int(0,0,1)
+        };
         private static Vector3Int UnityPosition(int x,int y,int z) => new Vector3Int(unchecked(-x-1),y,z);
         private void Record(int x,int y,int z,string kind,int slot=0,int item=0,int count=0,int damage=0,int metadata=0,string mob=null)
         {
@@ -61,23 +67,22 @@ public sealed partial class Beta173Population
             if(direct==15)return 15;
             // Reverse light propagation: find the brightest source reachable
             // through the same opacity costs as Beta, within light's 15-cell range.
-            var queue=new Queue<Vector3Int>();var costs=new Dictionary<Vector3Int,int>();
-            var start=new Vector3Int(x,y,z);queue.Enqueue(start);costs[start]=0;int best=direct;
-            int[] dx={-1,1,0,0,0,0},dy={0,0,-1,1,0,0},dz={0,0,0,0,-1,1};
-            while(queue.Count>0)
+            lightQueue.Clear();lightCosts.Clear();
+            var start=new Vector3Int(x,y,z);lightQueue.Enqueue(start);lightCosts[start]=0;int best=direct;
+            while(lightQueue.Count>0)
             {
-                var p=queue.Dequeue();int cost=costs[p];
+                var p=lightQueue.Dequeue();int cost=lightCosts[p];
                 int source=DirectSky(p.x,p.y,p.z);
                 if(emissions)source=Math.Max(source,Emission(Get(p.x,p.y,p.z)));
                 best=Math.Max(best,source-cost);if(best==15)return 15;
                 int nextCost=cost+Math.Max(1,BetaPopulationFeatures.Opacity(Get(p.x,p.y,p.z)));
                 if(nextCost>=15-best)continue;
-                for(int i=0;i<6;i++)
+                for(int i=0;i<LightDirections.Length;i++)
                 {
-                    var next=new Vector3Int(p.x+dx[i],p.y+dy[i],p.z+dz[i]);
+                    var next=p+LightDirections[i];
                     if(next.y<0||next.y>=128)continue;
-                    int old;if(costs.TryGetValue(next,out old)&&old<=nextCost)continue;
-                    costs[next]=nextCost;queue.Enqueue(next);
+                    int old;if(lightCosts.TryGetValue(next,out old)&&old<=nextCost)continue;
+                    lightCosts[next]=nextCost;lightQueue.Enqueue(next);
                 }
             }
             return best;

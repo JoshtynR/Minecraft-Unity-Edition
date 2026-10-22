@@ -154,7 +154,7 @@ public static partial class LightingCheck
   foreach(var data in new[]{visible,halo})
    for(int y=0;y<8;y++)Add(data,new Vector3Int(0,y,0),y==0?BlockType.Stone:BlockType.Air,y==0?15:0);
   visible.GetBlock(new Vector3Int(0,6,0)).BlockData.opacity=15;
-  Lighting.InitializeLoadedChunks(new[]{visible,halo});
+  Lighting.InitializeLoadedChunks(new[]{visible,halo},default(System.Threading.CancellationToken),4);
   Check(visible.GetBlock(new Vector3Int(0,5,0)).sky==14,"halo propagates sideways below visible roof before first mesh");
   Check(visible.lightingInitialized&&halo.lightingInitialized,"renderer-less lighting halo initialized");
   Check(halo.GetBlock(new Vector3Int(0,7,0)).sky==15,"halo sky available before first geometry");

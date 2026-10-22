@@ -27,7 +27,7 @@ public class TerrainGenerator : MonoBehaviour
         System.Action<string, double[]> observe = null;
         if (dumpBetaParity && betaChunkX == 0 && betaChunkZ == 0)
             observe = (stage, values) => BetaParityDump.DumpNoiseChunk00(stage, values, betaSeed);
-        BlockType[,,] rawTerrain = generation.terrain.GenerateRawTerrain(betaWorldX, betaWorldZ, observe);
+        BlockType[,,] rawTerrain = generation.terrain.GenerateRawTerrainForChunk(betaWorldX, betaWorldZ, observe);
         if (dumpBetaParity) BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ);
 
         // Complete all chunk-local passes in canonical Beta coordinates, then

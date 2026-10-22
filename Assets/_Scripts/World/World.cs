@@ -172,15 +172,20 @@ public partial class World : MonoBehaviour
             }
         allChunkPositionsNeeded = allChunkPositionsNeeded.Distinct().ToList();
         allChunkDataPositionsNeeded = allChunkDataPositionsNeeded.Distinct().ToList();
-        
-        var chunkPositionsToCreate = WorldDataHelper.GetPositionsToCreate(worldData, allChunkPositionsNeeded,playerPos);
-        var chunkDataPositionsToCreate = WorldDataHelper.GetDataPositionsToCreate(worldData, allChunkDataPositionsNeeded,playerPos);
-        
-        var chunkPositionsToLoad = WorldDataHelper.GetPositionsToLoad(worldData, allChunkPositionsNeeded,playerPos);
-        var chunkDataPositionsToLoad = WorldDataHelper.GetDataPositionsToLoad(worldData, allChunkDataPositionsNeeded,playerPos);
-        
-        var chunkPositionsToRemove = WorldDataHelper.GetUnneededChunkPositions(worldData, allChunkPositionsNeeded);
-        var chunkDataToRemove = WorldDataHelper.GetUnneededDataPositions(worldData, allChunkDataPositionsNeeded);
+
+        // Creation and loading used to probe the same path independently (and
+        // visible positions are also in the data halo). Share one result per
+        // planning pass so streaming does at most one filesystem lookup/chunk.
+        var fileCache = new Dictionary<Vector3Int,bool>();
+        var chunkPositionsToCreate = WorldDataHelper.GetPositionsToCreate(worldData, allChunkPositionsNeeded,playerPos,fileCache);
+        var chunkDataPositionsToCreate = WorldDataHelper.GetDataPositionsToCreate(worldData, allChunkDataPositionsNeeded,playerPos,fileCache);
+        var chunkPositionsToLoad = WorldDataHelper.GetPositionsToLoad(worldData, allChunkPositionsNeeded,playerPos,fileCache);
+        var chunkDataPositionsToLoad = WorldDataHelper.GetDataPositionsToLoad(worldData, allChunkDataPositionsNeeded,playerPos,fileCache);
+
+        var visibleSet = new HashSet<Vector3Int>(allChunkPositionsNeeded);
+        var dataSet = new HashSet<Vector3Int>(allChunkDataPositionsNeeded);
+        var chunkPositionsToRemove = WorldDataHelper.GetUnneededChunkPositions(worldData, visibleSet);
+        var chunkDataToRemove = WorldDataHelper.GetUnneededDataPositions(worldData, dataSet);
         
 
         var data = new WorldGenerationData
@@ -205,12 +210,14 @@ public partial class World : MonoBehaviour
         var options = ChunkWorkerOptions();
         return Task.Run(() =>
         {
-            var dict = new ConcurrentDictionary<ChunkRenderer, MeshData>();
-            Parallel.ForEach(jobs, options, job =>
+            var results = new MeshData[jobs.Length];
+            Parallel.For(0, jobs.Length, options, index =>
             {
                 worldCancellationToken.ThrowIfCancellationRequested();
-                dict.TryAdd(job.Key, job.Value.GetMeshData());
+                results[index] = jobs[index].Value.GetMeshData();
             });
+            var dict = new ConcurrentDictionary<ChunkRenderer, MeshData>();
+            for (int i = 0; i < jobs.Length; i++) dict.TryAdd(jobs[i].Key, results[i]);
             return dict;
         }, worldCancellationToken);
     }

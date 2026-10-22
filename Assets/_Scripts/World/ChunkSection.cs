@@ -67,6 +67,15 @@ public class ChunkSection
         blocks[pos.x, pos.y, pos.z].SetType(type);
     }
 
+    /// <summary>Initializes a cell before this chunk joins the live world.</summary>
+    public void SetGeneratedBlock(Vector3Int pos, BlockType type)
+    {
+        pos.y -= yOffset;
+        var block = blocks[pos.x, pos.y, pos.z];
+        block.InitializeGeneratedType(type);
+        blocks[pos.x, pos.y, pos.z] = BlockMapping.MapGeneratedTypeToBlock(block);
+    }
+
     #region Lighting (packed into a char: XXXX0000 = skylight, 0000XXXX = blocklight)
 
     // Get XXXX0000

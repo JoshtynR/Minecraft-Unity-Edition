@@ -1,5 +1,18 @@
 public static class BlockMapping
 {
+    public static Block MapGeneratedTypeToBlock(Block block)
+    {
+        switch (block.type)
+        {
+            case BlockType.Water: return block is WaterBlock ? block : new WaterBlock(block);
+            case BlockType.WoodenSlab:
+            case BlockType.StoneSlab:
+            case BlockType.SandstoneSlab:
+            case BlockType.CobblestoneSlab: return block is SlabBlock ? block : new SlabBlock(block);
+            default: return block;
+        }
+    }
+
     public static Block MapTypeToBlock(BlockType type, Block block)
     {
         switch (type)

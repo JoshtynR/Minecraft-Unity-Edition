@@ -8,6 +8,10 @@ public partial class World
     public Queue<Block> blockToUpdate
     {get=>System.Threading.LazyInitializer.EnsureInitialized(ref runtimeBlockToUpdate, () => new Queue<Block>());set=>runtimeBlockToUpdate=value;}
     [HideInInspector] public List<ChunkRenderer> chunksToUpdate = new List<ChunkRenderer>();
+    [NonSerialized] private HashSet<ChunkRenderer> runtimeQueuedChunks;
+    private HashSet<ChunkRenderer> queuedChunks => System.Threading.LazyInitializer.EnsureInitialized(
+        ref runtimeQueuedChunks, () => chunksToUpdate == null
+            ? new HashSet<ChunkRenderer>() : new HashSet<ChunkRenderer>(chunksToUpdate));
     [NonSerialized] private object runtimeChunkUpdateLock;
     public object chunkUpdateThreadLock=>System.Threading.LazyInitializer.EnsureInitialized(ref runtimeChunkUpdateLock, () => new object());
     private bool chunkUpdateInProgress;
@@ -17,7 +21,10 @@ public partial class World
     private void ResetChunkUpdates()
     {
         lock (chunkUpdateThreadLock)
-        {if(chunksToUpdate==null)chunksToUpdate=new List<ChunkRenderer>();else chunksToUpdate.Clear();}
+        {
+            if(chunksToUpdate==null)chunksToUpdate=new List<ChunkRenderer>();else chunksToUpdate.Clear();
+            queuedChunks.Clear();
+        }
         blockToUpdate.Clear();
         chunkUpdateSession++;
         chunkUpdateInProgress = false;
@@ -41,6 +48,7 @@ public partial class World
             {
                 var chunk = chunksToUpdate[0];
                 chunksToUpdate.RemoveAt(0);
+                queuedChunks.Remove(chunk);
                 if (chunk != null && worldData.chunkDict.TryGetValue(chunk.ChunkData.worldPos, out var current) && current == chunk)
                     chunks.Add(chunk);
             }
@@ -67,7 +75,7 @@ public partial class World
         {
             if (disabled) return;
             if(chunksToUpdate==null)chunksToUpdate=new List<ChunkRenderer>();
-            if (!chunksToUpdate.Contains(chunk))
+            if (chunk != null && queuedChunks.Add(chunk))
             {
                 if (first) chunksToUpdate.Insert(0, chunk);
                 else chunksToUpdate.Add(chunk);

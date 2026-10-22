@@ -25,11 +25,18 @@ public sealed class BetaClimate
     public void SampleRegion(int startX, int startZ, int width, int depth,
         out double[] temperatures, out double[] humidities)
     {
-        temperatures = temperature.Generate(null, startX, startZ, width, depth,
+        SampleRegion(startX,startZ,width,depth,null,null,null,out temperatures,out humidities);
+    }
+
+    internal void SampleRegion(int startX, int startZ, int width, int depth,
+        double[] temperatureBuffer, double[] humidityBuffer, double[] precipitationBuffer,
+        out double[] temperatures, out double[] humidities)
+    {
+        temperatures = temperature.Generate(temperatureBuffer, startX, startZ, width, depth,
             0.02500000037252903, 0.02500000037252903, 0.25);
-        humidities = humidity.Generate(null, startX, startZ, width, depth,
+        humidities = humidity.Generate(humidityBuffer, startX, startZ, width, depth,
             0.05000000074505806, 0.05000000074505806, 1.0 / 3.0);
-        double[] precipitationValues = precipitation.Generate(null, startX, startZ, width, depth,
+        double[] precipitationValues = precipitation.Generate(precipitationBuffer, startX, startZ, width, depth,
             0.25, 0.25, 0.5882352941176471);
 
         int count = width * depth;

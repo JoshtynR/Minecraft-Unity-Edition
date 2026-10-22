@@ -5,6 +5,23 @@ public sealed class Beta173Terrain
     public const int SeaLevel = 64;
     private readonly BetaOctaveNoise minLimit, maxLimit, selector, sandGravel, stoneDepth, scale, depth, treeCount;
     private readonly BetaClimate climate;
+    [System.ThreadStatic] private static TerrainScratch threadScratch;
+    private static TerrainScratch Scratch => threadScratch ?? (threadScratch = new TerrainScratch());
+
+    // Noise objects are immutable; only their output buffers are mutable. Keep
+    // one buffer set per worker so neighboring chunks do not allocate tens of
+    // thousands of short-lived doubles during streaming.
+    private sealed class TerrainScratch
+    {
+        public readonly double[] rawTemperature=new double[256],rawHumidity=new double[256],rawPrecipitation=new double[256];
+        public readonly BlockType[,,] blocks=new BlockType[16,TerrainHeight,16];
+        public readonly double[] scale=new double[25],depth=new double[25],selector=new double[425],min=new double[425],max=new double[425];
+        public readonly double[,,] density=new double[5,17,5];
+        public readonly double[] surfaceSand=new double[256],surfaceGravel=new double[256],surfaceStone=new double[256];
+        public readonly double[] biomeTemperature=new double[256],biomeHumidity=new double[256],biomePrecipitation=new double[256];
+        public readonly double[] populationTemperature=new double[256],populationHumidity=new double[256],populationPrecipitation=new double[256];
+        public readonly double[] pointTemperature=new double[1],pointHumidity=new double[1],pointPrecipitation=new double[1];
+    }
 
     public Beta173Terrain(long seed)
     {
@@ -31,15 +48,26 @@ public sealed class Beta173Terrain
         return temperatures;
     }
 
+    internal double[] GetPopulationTemperaturesForChunk(int worldX, int worldZ)
+    {
+        var s=Scratch;
+        climate.SampleRegion(worldX, worldZ, 16, 16,s.populationTemperature,s.populationHumidity,s.populationPrecipitation,
+            out double[] temperatures, out double[] humidity);
+        return temperatures;
+    }
+
     public BetaBiomeType GetBiome(int worldX, int worldZ)
     {
-        climate.Sample(worldX, worldZ, out double temperature, out double humidity);
-        return BetaBiome.FromClimate(temperature, humidity);
+        var s=Scratch;
+        climate.SampleRegion(worldX,worldZ,1,1,s.pointTemperature,s.pointHumidity,s.pointPrecipitation,
+            out double[] temperature,out double[] humidity);
+        return BetaBiome.FromClimate(temperature[0], humidity[0]);
     }
 
     public BetaBiomeType[] GenerateBiomeRegion(int worldX, int worldZ, int width, int depthSize)
     {
-        climate.SampleRegion(worldX, worldZ, width, depthSize,
+        var s=Scratch;
+        climate.SampleRegion(worldX, worldZ, width, depthSize,s.biomeTemperature,s.biomeHumidity,s.biomePrecipitation,
             out double[] temperatures, out double[] humidities);
         var biomes = new BetaBiomeType[width * depthSize];
         for (int i = 0; i < biomes.Length; i++)
@@ -50,14 +78,28 @@ public sealed class Beta173Terrain
     public void GenerateSurfaceNoise(int chunkWorldX, int chunkWorldZ,
         out double[] sandNoise, out double[] gravelNoise, out double[] stoneNoise)
     {
-        const double s = 0.03125;
-        sandNoise = sandGravel.GenerateNoiseOctaves(null,
+        GenerateSurfaceNoiseCore(chunkWorldX,chunkWorldZ,null,null,null,out sandNoise,out gravelNoise,out stoneNoise);
+    }
+
+    internal void GenerateSurfaceNoiseForChunk(int chunkWorldX,int chunkWorldZ,
+        out double[] sandNoise,out double[] gravelNoise,out double[] stoneNoise)
+    {
+        var scratch=Scratch;
+        GenerateSurfaceNoiseCore(chunkWorldX,chunkWorldZ,scratch.surfaceSand,scratch.surfaceGravel,scratch.surfaceStone,
+            out sandNoise,out gravelNoise,out stoneNoise);
+    }
+
+    private void GenerateSurfaceNoiseCore(int chunkWorldX,int chunkWorldZ,double[] sandBuffer,double[] gravelBuffer,double[] stoneBuffer,
+        out double[] sandNoise,out double[] gravelNoise,out double[] stoneNoise)
+    {
+        const double s=0.03125;
+        sandNoise = sandGravel.GenerateNoiseOctaves(sandBuffer,
             chunkWorldX, chunkWorldZ, 0.0,
             16, 16, 1, s, s, 1.0);
-        gravelNoise = sandGravel.GenerateNoiseOctaves(null,
+        gravelNoise = sandGravel.GenerateNoiseOctaves(gravelBuffer,
             chunkWorldX, 109.0134, chunkWorldZ,
             16, 1, 16, s, 1.0, s);
-        stoneNoise = stoneDepth.GenerateNoiseOctaves(null,
+        stoneNoise = stoneDepth.GenerateNoiseOctaves(stoneBuffer,
             chunkWorldX, chunkWorldZ, 0.0,
             16, 16, 1, s * 2.0, s * 2.0, s * 2.0);
     }
@@ -65,16 +107,29 @@ public sealed class Beta173Terrain
     public BlockType[,,] GenerateRawTerrain(int chunkWorldX, int chunkWorldZ,
         System.Action<string, double[]> observe = null)
     {
+        return GenerateRawTerrainCore(chunkWorldX,chunkWorldZ,observe,new BlockType[16,TerrainHeight,16]);
+    }
+
+    internal BlockType[,,] GenerateRawTerrainForChunk(int chunkWorldX,int chunkWorldZ,
+        System.Action<string,double[]> observe=null)
+    {
+        return GenerateRawTerrainCore(chunkWorldX,chunkWorldZ,observe,Scratch.blocks);
+    }
+
+    private BlockType[,,] GenerateRawTerrainCore(int chunkWorldX, int chunkWorldZ,
+        System.Action<string,double[]> observe, BlockType[,,] blocks)
+    {
         const int gridX = 5, gridZ = 5, gridY = 17;
-        climate.SampleRegion(chunkWorldX, chunkWorldZ, 16, 16,
+        var scratch=Scratch;
+        climate.SampleRegion(chunkWorldX, chunkWorldZ, 16, 16,scratch.rawTemperature,scratch.rawHumidity,scratch.rawPrecipitation,
             out double[] temperatures, out double[] humidities);
 
         int coarseX = FloorDiv(chunkWorldX, 4), coarseZ = FloorDiv(chunkWorldZ, 4);
-        double[] scaleNoise = scale.Generate2D(null, coarseX, coarseZ, gridX, gridZ, 1.121, 1.121);
-        double[] depthNoise = depth.Generate2D(null, coarseX, coarseZ, gridX, gridZ, 200.0, 200.0);
-        double[] selectorNoise = selector.GenerateNoiseOctaves(null, coarseX, 0.0, coarseZ, gridX, gridY, gridZ, 684.412 / 80.0, 684.412 / 160.0, 684.412 / 80.0);
-        double[] minNoise = minLimit.GenerateNoiseOctaves(null, coarseX, 0.0, coarseZ, gridX, gridY, gridZ, 684.412, 684.412, 684.412);
-        double[] maxNoise = maxLimit.GenerateNoiseOctaves(null, coarseX, 0.0, coarseZ, gridX, gridY, gridZ, 684.412, 684.412, 684.412);
+        double[] scaleNoise = scale.Generate2D(scratch.scale, coarseX, coarseZ, gridX, gridZ, 1.121, 1.121);
+        double[] depthNoise = depth.Generate2D(scratch.depth, coarseX, coarseZ, gridX, gridZ, 200.0, 200.0);
+        double[] selectorNoise = selector.GenerateNoiseOctaves(scratch.selector, coarseX, 0.0, coarseZ, gridX, gridY, gridZ, 684.412 / 80.0, 684.412 / 160.0, 684.412 / 80.0);
+        double[] minNoise = minLimit.GenerateNoiseOctaves(scratch.min, coarseX, 0.0, coarseZ, gridX, gridY, gridZ, 684.412, 684.412, 684.412);
+        double[] maxNoise = maxLimit.GenerateNoiseOctaves(scratch.max, coarseX, 0.0, coarseZ, gridX, gridY, gridZ, 684.412, 684.412, 684.412);
 
         observe?.Invoke("temperature", temperatures);
         observe?.Invoke("humidity", humidities);
@@ -84,7 +139,7 @@ public sealed class Beta173Terrain
         observe?.Invoke("min", minNoise);
         observe?.Invoke("max", maxNoise);
 
-        var density = new double[gridX, gridY, gridZ];
+        var density = scratch.density;
         // Beta intentionally uses 16/5 == 3, not the interpolation cell width.
         int densityIndex = 0, columnIndex = 0, sampleStride = 16 / gridX;
         for (int gx = 0; gx < gridX; gx++)
@@ -143,7 +198,6 @@ public sealed class Beta173Terrain
             observe("density", values);
         }
 
-        var blocks = new BlockType[16, TerrainHeight, 16];
         for (int cellX = 0; cellX < 4; cellX++)
         for (int cellZ = 0; cellZ < 4; cellZ++)
         for (int cellY = 0; cellY < 16; cellY++)

@@ -131,7 +131,9 @@ public class ChunkData
         
         if (localPos.x>=0 && localPos.x<chunkSize && localPos.z>=0 && localPos.z<chunkSize)
         {
-            GetSection(localPos.y).SetBlock(localPos, block);
+            var section = GetSection(localPos.y);
+            if (isGenerated) section.SetBlock(localPos, block);
+            else section.SetGeneratedBlock(localPos, block);
             modifiedAfterSave = true;
         }
         else

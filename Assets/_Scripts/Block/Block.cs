@@ -104,6 +104,20 @@ public class Block
         else SetTypeCore(type);
     }
 
+    // Raw terrain and population for a chunk that has never gone live do not
+    // need placement callbacks or incremental lighting. The complete lighting
+    // pass runs after population, so doing that work for every one of the
+    // chunk's 32,768 cells only creates queues and garbage that are discarded.
+    internal void InitializeGeneratedType(BlockType type)
+    {
+        byte cropAge = WheatCropRules.LegacyAge(type);
+        this.type = WheatCropRules.Canonical(type);
+        waterLevel = 0;
+        blockShape = WheatCropRules.IsCrop(this.type)
+            ? SpecialBlockGeometry.Shape(this.type, cropAge)
+            : BlockShapesExtensions.ForBlock(this.type);
+    }
+
     private void SetTypeCore(BlockType type)
     {
         byte cropAge = WheatCropRules.LegacyAge(type);
