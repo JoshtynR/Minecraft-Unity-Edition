@@ -61,6 +61,8 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         sunMaterial.mainTexture=assets!=null&&assets.sunTexture!=null?assets.sunTexture:ownedSun=Fallback(0);
         moonMaterial.mainTexture=assets!=null&&assets.moonTexture!=null?assets.moonTexture:ownedMoon=Fallback(1);
         cloudMaterial.mainTexture=assets!=null&&assets.cloudTexture!=null?assets.cloudTexture:ownedClouds=Fallback(2);
+        sunMaterial.SetFloat("_BlackTransparent",1);
+        moonMaterial.SetFloat("_BlackTransparent",1);
         cloudMaterial.renderQueue=2900;cloudMaterial.SetFloat("_FogOn",1);
         root=new GameObject("Overworld sky visuals");quad=Quad(false);cloudQuad=Quad(true);
         sun=Surface("Sun",sunMaterial,quad);moon=Surface("Moon",moonMaterial,quad);clouds=Surface("Clouds",cloudMaterial,cloudQuad);
@@ -75,7 +77,9 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         root.SetActive(true);
         double ticks=world.CurrentWorldTicks;float daylight=SkyClock.Daylight(ticks);
         view.clearFlags=CameraClearFlags.SolidColor;
-        view.backgroundColor=Color.Lerp(new Color(.01f,.015f,.035f),new Color(.47f,.65f,1),daylight);
+        // Beta 1.7.3's clear sky is a saturated but not neon blue. Keep the
+        // same palette for the camera clear color and the distance fog.
+        view.backgroundColor=Color.Lerp(new Color(.015f,.02f,.045f),new Color(.50f,.70f,1f),daylight);
         float angle=SkyClock.Angle(ticks)*Mathf.Deg2Rad;
         var direction=new Vector3(Mathf.Sin(angle),Mathf.Cos(angle),0);
         float radius=Mathf.Min(200,view.farClipPlane*.75f);
@@ -107,7 +111,7 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         fogApplied=true;
         bool active=world!=null&&world.dimension==WorldDimension.Overworld&&world.overworldFog;
         if(!active){Shader.SetGlobalVector("_WorldFogRange",Vector4.zero);return;}
-        var color=Color.Lerp(new Color(.025f,.03f,.06f),new Color(.65f,.77f,.9f),SkyClock.Daylight(world.CurrentWorldTicks));
+        var color=Color.Lerp(new Color(.025f,.03f,.06f),new Color(.50f,.70f,.96f),SkyClock.Daylight(world.CurrentWorldTicks));
         float end=Mathf.Max(16,Mathf.Min(view.farClipPlane*.9f,(world.renderDistance-.5f)*world.chunkSize));
         Shader.SetGlobalVector("_WorldFogColor",new Vector4(color.r,color.g,color.b,1));
         Shader.SetGlobalVector("_WorldFogRange",new Vector4(end*.35f,end,1,0));
