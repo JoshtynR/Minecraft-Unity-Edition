@@ -38,7 +38,7 @@ namespace UnityEngine
 namespace UnityEngine.SceneManagement
 {
     public struct Scene {public string name;}
-    public static class SceneManager {public static Scene GetActiveScene()=>new Scene{name="MainMenu"};}
+    public static class SceneManager {public static Scene GetActiveScene()=>new Scene{name="MainMenu"};public static void LoadScene(string name){}}
 }
 namespace Unity.Mathematics {}
 namespace Unity.VisualScripting {}
@@ -68,7 +68,7 @@ namespace Mirror
     public class Transport {public static Transport activeTransport;public bool enabled;}
     public class NetworkIdentity:MonoBehaviour {}
     public class NetworkConnectionToClient {public NetworkIdentity identity;}
-    public static class NetworkServer {public static bool active;public static void Spawn(GameObject obj){}}
+    public static class NetworkServer {public static bool active,dontListen;public static int shutdowns;public static void Spawn(GameObject obj){}public static void Shutdown(){shutdowns++;active=false;dontListen=false;}}
     public static class NetworkClient
     {
         public static bool active,isConnected=true,isLoadingScene;
@@ -78,8 +78,9 @@ namespace Mirror
     public class NetworkManager:MonoBehaviour
     {
         public static NetworkManager singleton;
-        public Transport transport;public string networkAddress="localhost";public int starts;
-        public void StartHost(){starts++;NetworkServer.active=NetworkClient.active=true;}
+        public Transport transport;public string networkAddress="localhost",offlineScene="MainMenu";public int starts,bindAttempts;public bool portOccupied;public Action duringStart;
+        public void StartHost(){starts++;duringStart?.Invoke();if(!NetworkServer.dontListen){bindAttempts++;if(portOccupied)throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.AddressAlreadyInUse);}NetworkServer.active=NetworkClient.active=true;}
+        public void StopHost(){NetworkServer.Shutdown();StopClient();}public void StopClient(){NetworkClient.active=false;OnStopClient();}
         public virtual void OnClientConnect(){}
         public virtual void OnClientSceneChanged(){}
         public virtual void OnStartServer(){}
@@ -93,7 +94,8 @@ namespace Mirror
 }
 namespace Mirror.FizzySteam {public class FizzyFacepunch:Transport {}}
 namespace kcp2k {public class KcpTransport:Transport {}}
-public static class WorldLoadingScreen {public static void Begin(){}public static void Cancel(){}public static void ReportProgress(string s,float value){}}
+public class Menu{public static Menu currentMenu,lastMenu;public static int returns;public static void CloseCurrentMenu(){returns++;}}
+public static class WorldLoadingScreen {public static int cancels;public static void Begin(){}public static void Cancel(){cancels++;}public static void ReportProgress(string s,float value){}}
 public class World {public static World Overworld;public bool IsInitialized;}
 public static class LobbyManager {public static Lobby? currentLobby;public struct Lobby {public void Leave(){}}}
 public class PlayerInventory {}
@@ -179,6 +181,18 @@ public static class OfflineCheck
         World.Overworld=new World{IsInitialized=true};Scheduler.Step();Check(NetworkClient.messages.Count==1,"cancel while waiting never sends a stale request");
         NetworkServer.active=false;NetworkClient.active=true;NetworkClient.messages.Clear();WorldServer.instance=null;
         oldScene.OnClientConnect();Scheduler.Step();Check(NetworkClient.messages.Count==1,"remote client does not require a local WorldServer");
+        Reset();var occupied=new MinecraftNetworkManager{transport=new kcp2k.KcpTransport(),portOccupied=true};
+        NetworkManager.singleton=occupied;
+        occupied.duringStart=()=>MinecraftNetworkManager.StartGameHost();
+        MinecraftNetworkManager.StartGameHost();
+        Check(occupied.starts==1&&occupied.bindAttempts==0&&NetworkServer.active&&NetworkServer.dontListen,"single-player bypasses occupied ports and rejects reentrant startup");
+        occupied.StopHost();occupied.duringStart=null;
+        Menu.currentMenu=new Menu();Menu.lastMenu=new Menu();int cancels=WorldLoadingScreen.cancels,returns=Menu.returns,shutdowns=NetworkServer.shutdowns;
+        MinecraftNetworkManager.StartGameHost(false);
+        Check(occupied.bindAttempts==1&&!NetworkServer.active&&!NetworkClient.active,"multiplayer bind failure leaves no active network session");
+        Check(NetworkServer.shutdowns==shutdowns+1&&WorldLoadingScreen.cancels==cancels+1&&Menu.returns==returns+1,"partial listen failure cleans up and restores the menu");
+        occupied.portOccupied=false;MinecraftNetworkManager.StartGameHost(false);
+        Check(NetworkServer.active&&!NetworkServer.dontListen&&occupied.bindAttempts==2,"multiplayer can retry after failure and still listens externally");
         Console.WriteLine(checks+" production offline identity / Steam / host transport checks passed (native Steam and Unity mocked).");
     }
 }

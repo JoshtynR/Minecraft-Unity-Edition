@@ -131,7 +131,7 @@ namespace Mirror
  public class ClientRpcAttribute:Attribute{}
  public enum SceneOperation{Normal,LoadAdditive,UnloadAdditive}
  public class NetworkConnectionToClient{public UnityEngine.GameObject identity;}
- public static class NetworkServer{public static bool active,isLoadingScene;public static void Spawn(UnityEngine.GameObject go){}}
+ public static class NetworkServer{public static bool active,isLoadingScene,dontListen;public static void Spawn(UnityEngine.GameObject go){}public static void Shutdown(){active=false;dontListen=false;}}
  public static class NetworkClient{public static bool active,isLoadingScene,isConnected;public static void Send<T>(T value){}}
  public class Transport:UnityEngine.Behaviour{public static Transport activeTransport;}
  public class NetworkManager:UnityEngine.MonoBehaviour

@@ -16,22 +16,51 @@ public class MinecraftNetworkManager : NetworkManager
     private Transport steamTransport;
     private Coroutine worldRequestRoutine;
     private bool worldRequested;
+    private static bool startingHost;
 
     // All local host entry points go through this before Mirror starts listening.
-    public static void StartGameHost()
+    public static void StartGameHost(bool localOnly = true)
     {
-        if (NetworkServer.active || NetworkClient.active)
+        if (startingHost || NetworkServer.active || NetworkClient.active)
         {
             Debug.LogWarning("World startup requested while a network session is already active. Stop the current session before starting another world.");
             return;
         }
-        PrepareClientSession();
-        if (singleton != null) singleton.StartHost();
-        else
+        startingHost=true;
+        try
         {
-            Debug.LogError("Cannot start world: the scene has no active NetworkManager.");
-            WorldLoadingScreen.Cancel();
+            if(singleton==null)throw new InvalidOperationException("The scene has no active NetworkManager.");
+            PrepareClientSession();
+            // Mirror's host client connects in-process. Single-player must not
+            // reserve a public KCP/Steam endpoint (or collide with another build).
+            NetworkServer.dontListen=localOnly;
+            singleton.StartHost();
         }
+        catch(Exception error)
+        {
+            Debug.LogError("Cannot start world host: "+error);
+            try
+            {
+                if(singleton!=null)
+                {
+                    if(NetworkServer.active)singleton.StopHost();
+                    else
+                    {
+                        // Listen can throw after Initialize but before active=true.
+                        // Shutdown still releases the partially created socket.
+                        NetworkServer.Shutdown();
+                        singleton.StopClient();
+                    }
+                }
+            }
+            catch(Exception cleanupError){Debug.LogWarning("Host startup cleanup: "+cleanupError.Message);}
+            WorldLoadingScreen.Cancel();
+            PlayerIdentity.EndSession();
+            bool inWorld=SceneManager.GetActiveScene().name.Contains("World");
+            if(inWorld&&(singleton==null||string.IsNullOrEmpty(singleton.offlineScene)))SceneManager.LoadScene("MainMenu");
+            else if(!inWorld&&Menu.currentMenu!=null&&Menu.lastMenu!=null)Menu.CloseCurrentMenu();
+        }
+        finally{startingHost=false;}
     }
 
     public static void PrepareClientSession()

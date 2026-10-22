@@ -60,7 +60,7 @@ public class WorldCreationMenuManager : MonoBehaviour
             lobby.SetData("name", $"{LobbyCreationMenu.lobbyName}\n<color=#808080>{PlayerIdentity.DisplayName} playing on {worldName}</color>");
             lobby.SetData("seed", JsonConvert.SerializeObject(seedOffset));
             lobby.SetData("minecraft", "TRUE");
-            MinecraftNetworkManager.StartGameHost();
+            MinecraftNetworkManager.StartGameHost(false);
         }
     }
 
