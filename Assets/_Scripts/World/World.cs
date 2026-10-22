@@ -480,6 +480,7 @@ public partial class World : MonoBehaviour
             NetworkClient.UnregisterHandler<DropStateMessage>();
             NetworkClient.UnregisterHandler<CowStateMessage>();
             NetworkClient.UnregisterHandler<CowBatchMessage>();
+            NetworkClient.UnregisterHandler<MobArrowMessage>();
             Instance = null;
         }
     }

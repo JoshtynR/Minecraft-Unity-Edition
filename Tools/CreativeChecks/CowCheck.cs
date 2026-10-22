@@ -20,6 +20,15 @@ public partial class PlayerInventory
   foreach(PassiveAnimal species in Enum.GetValues(typeof(PassiveAnimal)))
   {
    var herd=new CowStore();var a=herd.Spawn(Vector3.zero,0,species);var b=herd.Spawn(Vector3.zero,0,species);
+   if(CowRules.Hostile(species))
+   {
+    Check(!CowRules.Feed(a)&&!CowRules.CanBreed(a,b),"hostiles cannot consume breeding food or reproduce");
+    Check(a.health==(species==PassiveAnimal.Spider?16:20),"hostile species spawn with reference health");
+    Check(CowRules.Valid(a)&&CowRules.BreedingFood(a)==ItemType.Nothing,"hostile snapshots validate without inheriting passive food");
+    for(int part=0;part<CowModelGeometry.PartCount;part++)foreach(var uv in CowModelGeometry.Build(part,32,species).uv)Check(uv.x>=0&&uv.x<=1&&uv.y>=0&&uv.y<=1,"hostile model UVs remain within skin");
+    var restoredHostile=new CowStore();restoredHostile.Restore(new CowSaveData{animals=herd.Capture()});Check(restoredHostile.Get(a.id).species==species,"hostile identity and species survive store restore");
+    continue;
+   }
    Check(a.species==species&&CowRules.Feed(a)&&CowRules.Feed(b)&&CowRules.CanBreed(a,b),"all passive species accept feeding and same-species breeding");
    Check(!CowRules.Feed(a),"already loving animals cannot consume another breeding item");
    b.ageTicks=24000;Check(!CowRules.CanBreed(a,b)&&!CowRules.Feed(b),"babies cannot breed");

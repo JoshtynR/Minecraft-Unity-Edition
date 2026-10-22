@@ -8,6 +8,14 @@ public static class CowModelGeometry
     public static Vector3 Pivot(int part,PassiveAnimal species)
     {
         if(species==PassiveAnimal.Cow)return Pivot(part);
+        if(CowRules.Hostile(species))
+        {
+            if(species==PassiveAnimal.Spider)return part==0?Point(0,15,0):Point((part%2)==1?-4:4,15,2-(part-1)/2);
+            if(species==PassiveAnimal.Skeleton&&part==4)return Point(-5,6,-10);
+            if(part==0||part==1)return Point(0,species==PassiveAnimal.Creeper?4:0,0);
+            if(part==2||part==3)return Point(part==2?-5:5,2,0);
+            return Point((part==5||part==7)?-2:2,species==PassiveAnimal.Creeper?16:12,species==PassiveAnimal.Creeper?(part<7?4:-4):0);
+        }
         if(species==PassiveAnimal.Chicken)
         {
             if(part==0)return Point(0,16,0);
@@ -27,6 +35,35 @@ public static class CowModelGeometry
     {
         if(species==PassiveAnimal.Cow)return Build(part,textureHeight);
         var data=new MeshData(false);
+        if(CowRules.Hostile(species))
+        {
+            if(species==PassiveAnimal.Spider)
+            {
+                if(part==0)
+                {
+                    Box(data,-4,-4,-11,8,8,8,32,4,textureHeight);
+                    Box(data,-3,-3,-3,6,6,6,0,0,textureHeight);
+                    Box(data,-5,-4,3,10,8,12,0,12,textureHeight);
+                }
+                else Box(data,(part%2)==1?-15:-1,-1,-1,16,2,2,18,0,textureHeight);
+            }
+            else
+            {
+                bool skeleton=species==PassiveAnimal.Skeleton,creeper=species==PassiveAnimal.Creeper;
+                if(skeleton&&part==4)
+                {
+                    var vertices=new[]{new Vector3(-.25f,-.5f,0),new Vector3(-.25f,.5f,0),new Vector3(.25f,.5f,0),new Vector3(.25f,-.5f,0)};
+                    foreach(var vertex in vertices)data.AddVertex(vertex);data.AddQuadTriangles();
+                    data.triangles.Add(2);data.triangles.Add(1);data.triangles.Add(0);data.triangles.Add(3);data.triangles.Add(2);data.triangles.Add(0);
+                    data.uv.Add(new Vector3(0,0,0));data.uv.Add(new Vector3(0,1,0));data.uv.Add(new Vector3(1,1,0));data.uv.Add(new Vector3(1,0,0));
+                }
+                else if(part==0)Box(data,-4,0,-2,8,12,4,16,16,textureHeight);
+                else if(part==1)Box(data,-4,-8,-4,8,8,8,0,0,textureHeight);
+                else if(!creeper&&(part==2||part==3))Box(data,skeleton?-1:part==2?-3:-1,-2,skeleton?-1:-2,skeleton?2:4,12,skeleton?2:4,40,16,textureHeight);
+                else if(part==5||part==6||(creeper&&part>=7))Box(data,skeleton?-1:-2,0,skeleton?-1:-2,skeleton?2:4,creeper?6:12,skeleton?2:4,0,16,textureHeight);
+            }
+            return data;
+        }
         if(species==PassiveAnimal.Chicken)
         {
             if(part==0)Box(data,-3,-4,-3,6,8,6,0,9,textureHeight);

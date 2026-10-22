@@ -12,8 +12,9 @@ sheep shearing, dye colors, and grass-based fleece regrowth. New food entries
 support eating and beef/chicken smelting. Rotten flesh is registered for the
 later zombie batch; food-poisoning effects are not implemented here.
 
-Remaining: pig saddle/riding, breeding heart particles, food-following AI,
-full pathfinding, and hostile mobs. Visual/transport behavior needs Unity testing.
+Remaining: pig saddle/riding, breeding heart particles, food-following AI and
+full pathfinding. The first hostile batch is documented in ../MobChecks/README.md.
+Visual/transport behavior needs Unity testing.
 
 Run `python Tools/CreativeChecks/run.py --mcs mcs --mono mono`.
 CowCheck.cs covers the production cow state/store, save copying and serialization,

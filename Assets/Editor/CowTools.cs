@@ -3,6 +3,10 @@ using UnityEngine;
 
 public static class CowTools
 {
+    [MenuItem("Minecraft/Entities/Spawn Zombie Near Player")]public static void SpawnZombie(){Spawn(PassiveAnimal.Zombie);}
+    [MenuItem("Minecraft/Entities/Spawn Skeleton Near Player")]public static void SpawnSkeleton(){Spawn(PassiveAnimal.Skeleton);}
+    [MenuItem("Minecraft/Entities/Spawn Creeper Near Player")]public static void SpawnCreeper(){Spawn(PassiveAnimal.Creeper);}
+    [MenuItem("Minecraft/Entities/Spawn Spider Near Player")]public static void SpawnSpider(){Spawn(PassiveAnimal.Spider);}
     [MenuItem("Minecraft/Entities/Spawn Pig Near Player")]public static void SpawnPig(){Spawn(PassiveAnimal.Pig);}
     [MenuItem("Minecraft/Entities/Spawn Sheep Near Player")]public static void SpawnSheep(){Spawn(PassiveAnimal.Sheep);}
     [MenuItem("Minecraft/Entities/Spawn Chicken Near Player")]public static void SpawnChicken(){Spawn(PassiveAnimal.Chicken);}

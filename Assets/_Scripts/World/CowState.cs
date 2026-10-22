@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum PassiveAnimal { Cow, Pig, Sheep, Chicken }
+// Append only: these values are stored in existing animal saves and messages.
+public enum PassiveAnimal { Cow, Pig, Sheep, Chicken, Zombie, Skeleton, Creeper, Spider }
 
 [Serializable]
 public sealed class CowState
@@ -10,6 +11,7 @@ public sealed class CowState
     // Missing fields in old cow saves default to an adult cow.
     public PassiveAnimal species;
     public int ageTicks, loveTicks, breedCooldown, eggTicks=6000, fleeceColor;
+    public int attackTicks, fuseTicks, angerTicks;
     public bool sheared;
     public int id, health = 10, hurtTicks, hurtCooldown, fleeTicks, decisionTicks, air = 300, fireTicks;
     public Vector3 position, motion;
@@ -36,14 +38,16 @@ public static class CowRules
     public static bool Finite(float n) => !float.IsNaN(n) && !float.IsInfinity(n);
     public static bool Finite(Vector3 v) => Finite(v.x) && Finite(v.y) && Finite(v.z);
     public static bool Valid(CowState cow) => cow != null && cow.id > 0 && cow.id < int.MaxValue &&
-        (int)cow.species>=0 && (int)cow.species<=3 && cow.ageTicks>=0 && cow.ageTicks<=24000 && cow.loveTicks>=0 && cow.loveTicks<=600 && cow.breedCooldown>=0 && cow.breedCooldown<=6000 &&
-        cow.fleeceColor>=0&&cow.fleeceColor<16&&cow.health > 0 && cow.health <= MaximumHealth && Finite(cow.position) && Finite(cow.motion) &&
+        (int)cow.species>=0 && (int)cow.species<=7 && cow.ageTicks>=0 && cow.ageTicks<=24000 && cow.loveTicks>=0 && cow.loveTicks<=600 && cow.breedCooldown>=0 && cow.breedCooldown<=6000 &&
+        cow.fleeceColor>=0&&cow.fleeceColor<16&&cow.health > 0 && cow.health <= MaxHealth(cow.species) && cow.fuseTicks>=0&&cow.fuseTicks<=30&&Finite(cow.position) && Finite(cow.motion) &&
         Finite(cow.yaw) && Finite(cow.targetYaw) && Finite(cow.fallDistance);
-    public static float Width(CowState cow)=>(cow.species==PassiveAnimal.Chicken?.15f:.45f)*(cow.ageTicks>0?.5f:1);
-    public static float BodyHeight(CowState cow)=>(cow.species==PassiveAnimal.Chicken?.7f:cow.species==PassiveAnimal.Pig?.9f:1.3f)*(cow.ageTicks>0?.5f:1);
+    public static bool Hostile(PassiveAnimal species)=>(int)species>=4;
+    public static int MaxHealth(PassiveAnimal species)=>species==PassiveAnimal.Spider?16:Hostile(species)?20:species==PassiveAnimal.Chicken?4:species==PassiveAnimal.Sheep?8:10;
+    public static float Width(CowState cow)=>(cow.species==PassiveAnimal.Spider?.7f:Hostile(cow.species)?.3f:cow.species==PassiveAnimal.Chicken?.15f:.45f)*(cow.ageTicks>0?.5f:1);
+    public static float BodyHeight(CowState cow)=>(cow.species==PassiveAnimal.Spider?.9f:Hostile(cow.species)?1.8f:cow.species==PassiveAnimal.Chicken?.7f:cow.species==PassiveAnimal.Pig?.9f:1.3f)*(cow.ageTicks>0?.5f:1);
     public static Bounds Bounds(CowState cow) => new Bounds(cow.position + Vector3.up * (BodyHeight(cow) * .5f), new Vector3(Width(cow) * 2, BodyHeight(cow), Width(cow) * 2));
     public static int LeatherCount(Func<int,int> next) => next(3); // Beta: 0-2 leather, before beef existed.
-    public static ItemType BreedingFood(CowState cow)=>cow.species==PassiveAnimal.Chicken?ItemType.Seeds:ItemType.Wheat;
+    public static ItemType BreedingFood(CowState cow)=>Hostile(cow.species)?ItemType.Nothing:cow.species==PassiveAnimal.Chicken?ItemType.Seeds:ItemType.Wheat;
     public static int DyeColor(ItemType item)
     {return BetaItemCatalog.TryGet(item,out var dye)&&dye.SourceId==351?15-dye.Metadata:-1;}
     public static ItemType Wool(CowState cow)=>cow.fleeceColor==0?ItemType.WhiteWool:(ItemType)((int)ItemType.OrangeWool+cow.fleeceColor-1);
@@ -53,10 +57,10 @@ public static class CowRules
     }
     public static bool Feed(CowState cow)
     {
-        if(cow==null||cow.health<=0||cow.ageTicks>0||cow.breedCooldown>0||cow.loveTicks>0)return false;
+        if(cow==null||Hostile(cow.species)||cow.health<=0||cow.ageTicks>0||cow.breedCooldown>0||cow.loveTicks>0)return false;
         cow.loveTicks=600;return true;
     }
-    public static bool CanBreed(CowState a,CowState b)=>a!=null&&b!=null&&a.id!=b.id&&a.species==b.species&&a.ageTicks==0&&b.ageTicks==0&&a.loveTicks>0&&b.loveTicks>0&&a.breedCooldown==0&&b.breedCooldown==0;
+    public static bool CanBreed(CowState a,CowState b)=>a!=null&&b!=null&&!Hostile(a.species)&&a.id!=b.id&&a.species==b.species&&a.ageTicks==0&&b.ageTicks==0&&a.loveTicks>0&&b.loveTicks>0&&a.breedCooldown==0&&b.breedCooldown==0;
     public static int AttackDamage(ItemType item)
     {
         switch (item)
@@ -83,7 +87,7 @@ public static class CowRules
     {
         if (cow == null || cow.health <= 0 || damage <= 0 || cow.hurtCooldown > 0) return false;
         cow.health = Math.Max(0, cow.health - damage);
-        cow.hurtTicks = cow.hurtCooldown = 10; cow.fleeTicks = 100; cow.walking = true;
+        cow.hurtTicks = cow.hurtCooldown = 10; cow.fleeTicks = Hostile(cow.species)?0:100; cow.angerTicks=600;cow.walking = true;
         away.y = 0;
         if (away.sqrMagnitude > .00001f) away = away.normalized;
         cow.motion += away * .25f + Vector3.up * .3f;
@@ -114,10 +118,11 @@ public sealed class CowStore
     {return Spawn(position,yaw,PassiveAnimal.Cow);}
     public CowState Spawn(Vector3 position,float yaw,PassiveAnimal species)
     {
-        if ((int)species<0||(int)species>3||!CowRules.Finite(position) || !CowRules.Finite(yaw) || Count >= Capacity || NextId >= int.MaxValue) return null;
-        var cow = new CowState { id = NextId++, position = position, yaw = yaw, targetYaw = yaw,species=species,health=species==PassiveAnimal.Chicken?4:species==PassiveAnimal.Sheep?8:10 };
+        if ((int)species<0||(int)species>7||!CowRules.Finite(position) || !CowRules.Finite(yaw) || Count >= Capacity || NextId >= int.MaxValue) return null;
+        var cow = new CowState { id = NextId++, position = position, yaw = yaw, targetYaw = yaw,species=species,health=MaxHealthForSpawn(species) };
         animals.Add(cow.id, cow); return cow;
     }
+    private static int MaxHealthForSpawn(PassiveAnimal species)=>CowRules.MaxHealth(species);
     public bool Remove(int id) => animals.Remove(id);
     public void Apply(CowState cow)
     {

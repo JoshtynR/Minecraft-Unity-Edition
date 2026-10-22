@@ -19,9 +19,10 @@ public sealed class CowVisual
         {
             var child=new GameObject(i==0?"Body":i==1?"Head":i<4?"Horn":i==4?"Udder":"Leg",typeof(MeshFilter),typeof(MeshRenderer));
             parts[i]=child.transform;parts[i].SetParent(root.transform,false);parts[i].localPosition=CowModelGeometry.Pivot(i,cow.species);
-            if(i==0||(i==4&&cow.species==PassiveAnimal.Cow))parts[i].localRotation=Quaternion.Euler(90,0,0);
+            if((i==0&&!CowRules.Hostile(cow.species))||(i==4&&cow.species==PassiveAnimal.Cow))parts[i].localRotation=Quaternion.Euler(90,0,0);
             child.GetComponent<MeshFilter>().sharedMesh=meshes[i];
             renderers[i]=child.GetComponent<MeshRenderer>();renderers[i].sharedMaterial=material;
+            if(cow.species==PassiveAnimal.Skeleton&&i==4)renderers[i].sharedMaterial=Resources.Load<Material>("SkeletonBowMaterial");
             if(cow.species==PassiveAnimal.Sheep&&(i==2||i==3))
             {
                 var fur=Resources.Load<Material>("SheepFurMaterial");if(fur!=null)renderers[i].sharedMaterial=fur;
@@ -57,6 +58,14 @@ public sealed class CowVisual
             parts[7].localRotation=Quaternion.Euler(0,0,cow.grounded?0:Mathf.Sin(Time.time*20)*45);
             parts[4].localRotation=Quaternion.Euler(0,0,cow.grounded?0:-Mathf.Sin(Time.time*20)*45);
         }
+        if(cow.species==PassiveAnimal.Zombie||cow.species==PassiveAnimal.Skeleton)
+        {parts[2].localRotation=Quaternion.Euler(-90+angle*.1f,0,0);parts[3].localRotation=Quaternion.Euler(-90-angle*.1f,0,0);}
+        if(cow.species==PassiveAnimal.Spider)
+        {
+            for(int i=1;i<=8;i++)
+            {float side=i%2==1?1:-1;parts[i].localRotation=Quaternion.Euler(0,side*(45-(i-1)/2*30)+Mathf.Sin(walk*.6662f+i)*15,side*35);}
+        }
+        if(cow.species==PassiveAnimal.Creeper)root.transform.localScale=Vector3.one*(1+cow.fuseTicks/30f*.15f);
         int sky=0,light=0;
         var p=Vector3Int.FloorToInt(cow.position+Vector3.up);
         foreach(var direction in BlockHelper.directions)
@@ -66,6 +75,7 @@ public sealed class CowVisual
         }
         properties.SetFloat("_Brightness",Beta173Lighting.Brightness(sky,light,world.betaSkylightSubtracted,0,world.dimension == WorldDimension.Nether));
         properties.SetFloat("_Hurt",cow.hurtTicks>0?1:0);
+        properties.SetFloat("_Flash",cow.species==PassiveAnimal.Creeper&&cow.fuseTicks>0&&(cow.fuseTicks/3)%2==0?.8f:0);
         for(int i=0;i<renderers.Length;i++)
         {
             properties.SetColor("_Tint",cow.species==PassiveAnimal.Sheep&&(i==2||i==3)?CowRules.FleeceTint(cow.fleeceColor):Color.white);

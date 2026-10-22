@@ -32,6 +32,8 @@ public partial class World
 
     private void InitializeCows()
     {
+        NetworkClient.RegisterHandler<MobArrowMessage>(message=>
+        {var realm=FindDimension(message.dimension);if(realm!=null)realm.ReceiveMobArrow(message);});
         NetworkClient.RegisterHandler<CowStateMessage>(message =>
         {
             if (DropAuthority || message.cow == null) return;
@@ -172,7 +174,8 @@ public partial class World
     }
     private void SpawnNaturalCows()
     {
-        if (!spawnCows || betaSkylightSubtracted >= 7 || maximumActiveCows <= activeCows.Count || cows.Count >= CowStore.Capacity || cowPlayers.Count == 0) return;
+        int passiveCount=0;foreach(var animal in activeCows)if(!CowRules.Hostile(animal.species))passiveCount++;
+        if (!spawnCows || betaSkylightSubtracted >= 7 || maximumActiveCows <= passiveCount || cows.Count >= CowStore.Capacity || cowPlayers.Count == 0) return;
         cowSpawnCandidates.Clear();
         foreach (var p in worldData.chunkDict.Keys)
         {
@@ -189,7 +192,7 @@ public partial class World
             if(cowRandom.NextInt(4)!=0)continue;
             int herd=2+cowRandom.NextInt(3),spawned=0;
             var species=(PassiveAnimal)cowRandom.NextInt(4);
-            for(int attempt=0;attempt<24 && spawned<herd && activeCows.Count+spawned<maximumActiveCows;attempt++)
+            for(int attempt=0;attempt<24 && spawned<herd && passiveCount+spawned<maximumActiveCows;attempt++)
             {
                 int x=chunk.x+cowRandom.NextInt(chunkSize),z=chunk.z+cowRandom.NextInt(chunkSize);
                 if(!FindCowGround(x,z,true,out var feet) || CowPlayerDistance(feet)<24*24)continue;
@@ -208,7 +211,8 @@ public partial class World
             // Remove first: repeated attacks/packets cannot duplicate the drop.
             if (cows.Remove(cow.id))
             {
-                if(cow.ageTicks==0)
+                if(CowRules.Hostile(cow.species))DropHostileLoot(cow);
+                else if(cow.ageTicks==0)
                 {
                     bool cooked=cow.fireTicks>0;
                     if(cow.species==PassiveAnimal.Cow)
@@ -318,6 +322,7 @@ public partial class World
             cow.decisionTicks=40+cowRandom.NextInt(100);cow.walking=cowRandom.NextInt(3)!=0;
             if(cow.fleeTicks<=0)cow.targetYaw=cowRandom.NextInt(360);
         }
+        if(CowRules.Hostile(cow.species)&&!TickHostile(cow))return;
         cow.yaw=Mathf.MoveTowardsAngle(cow.yaw,cow.targetYaw,15);
         float speed=cow.fleeTicks>0?.12f:cow.walking?.065f:0;
         float angle=cow.yaw*Mathf.Deg2Rad;
@@ -344,6 +349,7 @@ public partial class World
         bool blocked=Mathf.Abs(move.x-cow.motion.x)>.0001f||Mathf.Abs(move.z-cow.motion.z)>.0001f;
         if(blocked && (cow.grounded||landed))
         {cow.motion.y=.42f;cow.targetYaw+=cowRandom.NextInt(61)-30;}
+        if(blocked&&cow.species==PassiveAnimal.Spider)cow.motion.y=.2f;
         if(cow.position.y<-64){cows.Remove(cow.id);BroadcastCow(cow,true);return;}
         if(FluidWorldQueries.AtEye(this,cow.position+Vector3.up*(height*.9f))==BlockType.Water)
         {
@@ -368,10 +374,16 @@ public partial class World
                 while(cowClock+.000001f>=.05f)
                 {
                     cowClock=Mathf.Max(0,cowClock-.05f);cowTick=unchecked(cowTick+1);activeCows.Clear();
-                    foreach(var cow in cows.Animals)if(CowAreaLoaded(cow.position)&&CowPlayerDistance(cow.position)<80*80)activeCows.Add(cow);
-                    foreach(var cow in activeCows){TickCow(cow);if(cow.health>0&&cows.Get(cow.id)!=null&&cowTick%3==0)BroadcastCow(cow);}
+                    foreach(var cow in cows.Animals)if(CowAreaLoaded(cow.position)&&(CowPlayerDistance(cow.position)<80*80||CowRules.Hostile(cow.species)))activeCows.Add(cow);
+                    foreach(var cow in activeCows)
+                    {
+                        if(CowRules.Hostile(cow.species)&&CowPlayerDistance(cow.position)>128*128){cows.Remove(cow.id);BroadcastCow(cow,true);continue;}
+                        if(CowPlayerDistance(cow.position)>=80*80)continue;
+                        TickCow(cow);if(cow.health>0&&cows.Get(cow.id)!=null&&cowTick%3==0)BroadcastCow(cow);
+                    }
+                    TickMobArrows();
                     cowSpawnClock+=.05f;
-                    if(cowSpawnClock>=1){cowSpawnClock=0;SpawnNaturalCows();}
+                    if(cowSpawnClock>=1){cowSpawnClock=0;SpawnNaturalCows();SpawnNaturalHostiles();}
                 }
             }
         }
@@ -434,6 +446,7 @@ public partial class World
     }
     private void ResetCows(bool discardSave=false)
     {
+        ResetMobArrows();
         foreach(var pair in animalMeshes)if(pair.Key!=PassiveAnimal.Cow)foreach(var mesh in pair.Value)if(mesh!=null)Destroy(mesh);
         foreach(var pair in animalMaterials)if(pair.Key!=PassiveAnimal.Cow&&pair.Value!=null)Destroy(pair.Value);
         animalMeshes.Clear();animalMaterials.Clear();
