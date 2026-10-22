@@ -81,7 +81,7 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         root=new GameObject("Overworld sky visuals");quad=Quad(false);cloudQuad=Quad(true);
         sun=Surface("Sun",sunMaterial,quad);moon=Surface("Moon",moonMaterial,quad);clouds=Surface("Clouds",cloudMaterial,cloudQuad);
         var shader=Shader.Find("Unlit/Transparent");
-        if(shader!=null){var mat=new Material(shader){name="Beta 3D cloud material",color=new Color(1,1,1,.82f)};mat.renderQueue=3000;cloudVolume=new GameObject("3D cloud puffs");cloudVolume.transform.SetParent(root.transform,false);cloudVolume.AddComponent<MeshFilter>().sharedMesh=BuildCloudVolumeMesh();var r=cloudVolume.AddComponent<MeshRenderer>();r.sharedMaterial=mat;r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;r.receiveShadows=false;clouds.SetActive(false);}
+        if(shader!=null){var mat=new Material(shader){name="Beta 3D cloud material",color=new Color(.86f,.90f,.96f,.68f)};mat.renderQueue=3000;cloudVolume=new GameObject("3D cloud puffs");cloudVolume.transform.SetParent(root.transform,false);cloudVolume.AddComponent<MeshFilter>().sharedMesh=BuildCloudVolumeMesh();var r=cloudVolume.AddComponent<MeshRenderer>();r.sharedMaterial=mat;r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;r.receiveShadows=false;clouds.SetActive(false);}
         return true;
     }
     private void LateUpdate()
