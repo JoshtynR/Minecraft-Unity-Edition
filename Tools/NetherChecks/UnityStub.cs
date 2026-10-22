@@ -105,7 +105,7 @@ public partial class World:UnityEngine.MonoBehaviour {
 }
 public partial class Player:UnityEngine.MonoBehaviour {
  protected World world;public bool isLocalPlayer=true,isServer=true,networkStarted;private bool loadingSavedPlayer;private int knownItemWearRevision;public bool AcceptsItemRevision(int revision)=>revision==0;public ulong SteamId;public bool expectsSavedPlayerData;public void RpcLoadPlayer(Mirror.NetworkConnection c,object data){}public int health=20;public PlayerInventory inventory=new PlayerInventory();public Mirror.NetworkConnectionToClient connectionToClient;
- private bool serverMining,localMining,hasFluidSafePosition,jumpRequest,survivalPositionKnown;private float verticalMomentum,localWalkDistance,localSprintDistance;private UnityEngine.Vector3 velocity,extraForce;
+ private bool serverMining,localMining,jumpRequest,survivalPositionKnown;private float verticalMomentum,localWalkDistance,localSprintDistance;private UnityEngine.Vector3 velocity,extraForce;
  public void ResetFluidMovement(){}public void ApplyFluidRespawn(UnityEngine.Vector3 p){health=20;}
  public WorldServer.SavePlayerMessage SavePlayer()=>new WorldServer.SavePlayerMessage{inventory=new PlayerInventory.Slot[36]};private bool InMiningReach(UnityEngine.Vector3Int p)=>true;
  public void ForTestAssignWorld(World w){world=w;dimension=w.dimension;}

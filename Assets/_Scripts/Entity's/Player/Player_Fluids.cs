@@ -10,11 +10,9 @@ public partial class Player
     private FluidCameraEffects fluidView;
     private bool fluidViewContactKnown,fluidViewWater;
     private float fluidBubbleTime;
-    private Vector3 lastFluidSafePosition;
-    private bool hasFluidSafePosition,deathCursorReleased;
+    private bool deathCursorReleased;
     private CursorLockMode previousDeathCursor;
     private bool previousDeathCursorVisible;
-    public bool fluidRespawnUnavailable {get;private set;}
     private void AdvanceFluidHazards(float dt)
     {
         if(world==null||!world.IsWorldCreated||health<=0)return;
@@ -24,8 +22,6 @@ public partial class Player
         bool lava=FluidWorldQueries.Touches(world,transform.position,entityWidth,entityHeight,BlockType.Lava,out _);
         bool fire=FluidWorldQueries.Touches(world,transform.position,entityWidth,entityHeight,BlockType.Fire,out _);
         bool head=FluidWorldQueries.AtEye(world,transform.position+Vector3.up*eyeHeight)==BlockType.Water;
-        if(!water&&!lava&&!fire&&!immune&&SafeFluidRespawn(transform.position))
-        {lastFluidSafePosition=transform.position;hasFluidSafePosition=true;}
         while(fluidHazardTime+.000001f>=.05f)
         {
             fluidHazardTime=Mathf.Max(0,fluidHazardTime-.05f);
@@ -57,14 +53,6 @@ public partial class Player
     }
     private void RestoreDeathCursor()
     {if(!deathCursorReleased)return;Cursor.lockState=previousDeathCursor;Cursor.visible=previousDeathCursorVisible;deathCursorReleased=false;}
-    private bool SafeFluidRespawn(Vector3 p)
-    {
-        if(world==null)return false;
-        var below=world.GetBlock(Vector3Int.FloorToInt(p+new Vector3(0,-.05f,0)));
-        var feet=world.GetBlock(Vector3Int.FloorToInt(p));
-        var head=world.GetBlock(Vector3Int.FloorToInt(p+Vector3.up*entityHeight));
-        return below!=null&&SpecialBlockGeometry.NormalCube(below.type)&&feet!=null&&feet.type==BlockType.Air&&head!=null&&head.type==BlockType.Air;
-    }
     public void RequestFluidRespawn()
     {
         if(health>0)return;
@@ -74,24 +62,11 @@ public partial class Player
     [Command] private void CmdFluidRespawn(){if(health<=0)RespawnAfterFluidDeath();}
     private void RespawnAfterFluidDeath()
     {
-        if(dimension==WorldDimension.Nether){BeginDimensionTravel(WorldDimension.Overworld,new Vector3(8.5f,80,8.5f),false);return;}
+        if(dimension==WorldDimension.Nether){BeginDimensionTravel(WorldDimension.Overworld,new Vector3(.5f,80,.5f),false);return;}
         if(world==null)return;
         // Beta has no Nether respawn anchor: every death returns to the
         // overworld spawn, rather than the last safe fluid position.
-        Vector3 destination=new Vector3(8.5f,80,8.5f);
-        bool found=false;
-        for(int radius=0;!found&&radius<=8;radius++)
-        for(int x=-radius;!found&&x<=radius;x++)for(int z=-radius;!found&&z<=radius;z++)
-        {
-            if(Mathf.Abs(x)!=radius&&Mathf.Abs(z)!=radius)continue;
-            for(int y=world.worldHeight-2;y>=1;y--)
-            {
-                var p=new Vector3(8+x+.5f,y,8+z+.5f);
-                if(!SafeFluidRespawn(p))continue;
-                destination=p;found=true;break;
-            }
-        }
-        if(!found){fluidRespawnUnavailable=true;return;}
+        Vector3 destination=WorldSpawnRules.Resolve(world);
         ApplyFluidRespawn(destination);
         if(networkStarted)TargetFluidRespawn(connectionToClient,destination);
     }
@@ -102,7 +77,7 @@ public partial class Player
         ResetWalkMotion();
         transform.position=destination;health=hunger=20;saturation=5;exhaustion=0;
         fluidHazards.Reset();fluidHazardTime=0;airSupply=300;burning=false;
-        fluidRespawnUnavailable=false;fluidViewContactKnown=false;ResetFluidMovement();RestoreDeathCursor();
+        fluidViewContactKnown=false;ResetFluidMovement();RestoreDeathCursor();
     }
     private void DisposeFluidView(){RestoreDeathCursor();if(fluidView!=null)Destroy(fluidView);fluidView=null;}
 }

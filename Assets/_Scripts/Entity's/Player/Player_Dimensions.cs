@@ -127,15 +127,8 @@ public partial class Player
             transferDestination=createPortal?await destination.FindOrCreateExitAsync(desired):desired;
             if(health<=0&&target==WorldDimension.Overworld)
             {
-                await destination.EnsureAreaAsync(new Vector3Int(8,0,8),true);
-                bool safe=false;
-                for(int y=destination.worldHeight-3;y>0;y--)
-                {
-                    var floor=destination.GetBlock(new Vector3Int(8,y,8)).type;
-                    if(!SpecialBlockGeometry.NormalCube(floor)||destination.GetBlock(new Vector3Int(8,y+1,8)).type!=BlockType.Air||destination.GetBlock(new Vector3Int(8,y+2,8)).type!=BlockType.Air)continue;
-                    transferDestination=new Vector3(8.5f,y+1,8.5f);safe=true;break;
-                }
-                if(!safe)throw new InvalidOperationException("No safe Overworld respawn found");
+                await destination.EnsureAreaAsync(Vector3Int.zero,true);
+                transferDestination=WorldSpawnRules.Resolve(destination);
             }
             await destination.EnsureAreaAsync(Vector3Int.FloorToInt(transferDestination),true);
             if(this==null)return;
@@ -306,7 +299,7 @@ public partial class Player
         transform.position=destination;dimensionTransfer=false;ResumeDimensionTransforms();portalCooldown=15;portalTime=0;
         if(health<=0)ApplyFluidRespawn(destination);
         velocity=extraForce=Vector3.zero;verticalMomentum=0;jumpRequest=false;
-        hasFluidSafePosition=false;ResetFluidMovement();
+        ResetFluidMovement();
         survivalPositionKnown=false;localWalkDistance=localSprintDistance=0;
         if(isLocalPlayer||!networkStarted)arrivalSoundPending=portalTravelInProgress;
         portalTravelInProgress=false;

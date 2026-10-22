@@ -130,7 +130,6 @@ public sealed class FluidCameraEffects : MonoBehaviour
             DrawDeathText(new Rect(0,60,width,20),"You died!",deathTitleStyle,Color.white);
             // The project does not yet award vanilla score points.
             DrawDeathText(new Rect(0,100,width,12),"Score: <color=#ffff55>0</color>",deathTextStyle,Color.white);
-            if(player.fluidRespawnUnavailable)DrawDeathText(new Rect(0,115,width,12),"No safe loaded spawn. Try again shortly.",deathTextStyle,new Color(1,.4f,.4f,1));
             if(DeathButton(new Rect(width/2-100,height/4+72,200,20),"Respawn",ready))player.RequestFluidRespawn();
             if(DeathButton(new Rect(width/2-100,height/4+96,200,20),"Title screen",ready))
             {confirmTitle=true;deathShownAt=Time.unscaledTime;}

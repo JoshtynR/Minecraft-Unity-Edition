@@ -159,19 +159,13 @@ public partial class WorldServer : NetworkBehaviour
         else
         {
             var world = World.Overworld;
-            for (var i = world.worldHeight - 1; i >= 0; i--)
-            {
-                if (world.GetBlock(new Vector3Int(8, i, 8)).type != BlockType.Air)
-                {
-                    var player = Instantiate(NetworkManager.singleton.playerPrefab, new Vector3(world.chunkSize/2+0.5f, i + 1, world.chunkSize/2+0.5f), Quaternion.identity);
-                    player.GetComponent<Player>().SteamId = message.steamId;
-                    player.GetComponent<Player>().PrepareDimensionJoin();
-                    NetworkServer.AddPlayerForConnection(conn, player);
-                    conn.identity.AssignClientAuthority(conn);
-                    player.GetComponent<Player>().SynchronizeDimensionOnJoin();
-                    break;
-                }
-            }
+            var spawn = WorldSpawnRules.Resolve(world);
+            var player = Instantiate(NetworkManager.singleton.playerPrefab, spawn, Quaternion.identity);
+            player.GetComponent<Player>().SteamId = message.steamId;
+            player.GetComponent<Player>().PrepareDimensionJoin();
+            NetworkServer.AddPlayerForConnection(conn, player);
+            conn.identity.AssignClientAuthority(conn);
+            player.GetComponent<Player>().SynchronizeDimensionOnJoin();
         }
     }
     public struct SpawnPlayerMessage : NetworkMessage

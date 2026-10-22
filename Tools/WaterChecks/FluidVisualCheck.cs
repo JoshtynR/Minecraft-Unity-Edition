@@ -97,6 +97,14 @@ public partial class World:MonoBehaviour
  public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();
  public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block{type=BlockType.Air};}
  public static bool FluidHasSolidMaterial(BlockType t)=>t!=BlockType.Air&&t!=BlockType.Water&&t!=BlockType.Lava;
+ public void AddChunkToUpdate(ChunkRenderer renderer,bool first=false){}
+}
+public class ChunkRenderer {}
+public static class WorldDataHelper
+{
+ public static void SetBlock(World world,Vector3Int position,BlockType type){world.blocks[position]=new Block{type=type};}
+ public static Vector3Int GetChunkPosition(World world,Vector3Int position)=>new Vector3Int((int)Math.Floor(position.x/16.0)*16,0,(int)Math.Floor(position.z/16.0)*16);
+ public static ChunkRenderer GetChunk(World world,Vector3Int position)=>null;
 }
 public partial class Player:MonoBehaviour
 {
@@ -174,6 +182,13 @@ public static class FluidVisualCheck
   player.RequestFluidRespawn();
   Check(player.health==20&&player.airSupply==300&&!player.burning&&player.transform.position.x==2.5f&&player.transform.position.y==1,"lava death respawns at a verified safe position and clears damage state");
   Check(player.movementResets==1&&Cursor.lockState==CursorLockMode.Locked&&!Cursor.visible,"respawn resets liquid motion and restores the cursor");
+  world.blocks.Clear();world.blocks[new Vector3Int(15,3,0)]=new Block{type=BlockType.Stone};
+  var edgeSpawn=WorldSpawnRules.Resolve(world);
+  Check(edgeSpawn.x==15.5f&&edgeSpawn.y==4&&edgeSpawn.z==.5f,"world spawn searches the full 15-block radius around zero");
+  world.blocks.Clear();world.blocks[new Vector3Int(16,3,0)]=new Block{type=BlockType.Stone};
+  var fallbackSpawn=WorldSpawnRules.Resolve(world);
+  Check(fallbackSpawn.x==.5f&&fallbackSpawn.y==10&&fallbackSpawn.z==.5f&&world.blocks[new Vector3Int(0,9,0)].type==BlockType.Stone,
+      "world spawn creates a deterministic safe fallback when no natural candidate exists");
   player.transform.position=new Vector3(4,1,4);player.RequestFluidRespawn();Check(player.transform.position.x==4,"alive clients cannot use respawn as a teleport");
   Call(effect,"OnDestroy");Check(gradient.destroyed&&!assets.guiWidgets.destroyed,"death screen releases its gradient and preserves source artwork");
   Console.WriteLine(count+" production player/camera/particle ownership and integration checks passed (Unity rendering mocked).");
