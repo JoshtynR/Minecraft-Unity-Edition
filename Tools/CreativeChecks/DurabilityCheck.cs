@@ -4,12 +4,17 @@ using UnityEngine;
 
 public partial class Player
 {
+    public float exhaustion;
+    public void AddForce(Vector3 direction,float amount){}
+    public void RpcAddForce(Mirror.NetworkConnection connection,Vector3 direction,float amount){}
+    public void RestoreHitFixture(){dropRequestId=lastServerDropRequest=1;Mirror.NetworkTime.time=0;}
     public bool ServerMiningForCheck=>serverMining;
     public void WearRevisionForCheck(int server,int client){serverItemWearRevision=server;knownItemWearRevision=client;}
     public void ReplayDropWithWearRevision(int request,bool dropping,int id,InventoryStack[] snapshot,int revision){ProcessDropAction(request,dropping,id,snapshot,false,revision);}
     public void HitForDurability(Player target){WearItemOnHit(target);}
     public void ReplayHitForDurability(int request,Player target,int slot,InventoryStack[] snapshot){ProcessItemHitWear(request,target,slot,snapshot,false);}
 }
+namespace Mirror {public static class NetworkTime {public static double time;}}
 public partial class PlayerInventory
 {
     static void CheckDurability()
@@ -57,6 +62,14 @@ public partial class PlayerInventory
         target.transform.position=new Vector3(0,0,2);
         inv.WriteStack(0,new InventoryStack(ItemType.WoodenSword,1));mine.HitForDurability(target);
         Check(inv.slots[0].damage==1&&!inv.DropRequestPending,"valid existing hit interaction consumes sword durability once and releases the transaction");
+        Check(target.health==16,"wood sword now damages player health instead of only pushing");
+        mine.HitForDurability(target);
+        Check(target.health==16&&inv.slots[0].damage==1,"hurt window rejects rapid repeat damage and wear");
+        Mirror.NetworkTime.time=1;
+        inv.WriteStack(0,new InventoryStack());mine.HitForDurability(target);
+        Check(target.health==15&&!inv.DropRequestPending,"empty hand can attack without requiring a durable tool");
+        inv.WriteStack(0,new InventoryStack(ItemType.WoodenSword,1,1));
+        mine.RestoreHitFixture();
         mine.ReplayHitForDurability(1,target,0,inv.DropInventorySnapshot());Check(inv.slots[0].damage==1,"replayed hit requests cannot duplicate wear");
         target.transform.position=new Vector3(100,0,0);mine.HitForDurability(target);
         Check(inv.slots[0].damage==1,"distant hit reports do not damage the tool");

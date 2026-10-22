@@ -646,7 +646,6 @@ public partial class Player : BaseEntity
                 var other = ray.transform.GetComponentInParent<Player>();
                 if (other != null)
                 {
-                    other.CmdAddForce(ray.transform.position - transform.position + Vector3.up, 12);
                     WearItemOnHit(other);
                 }
             }

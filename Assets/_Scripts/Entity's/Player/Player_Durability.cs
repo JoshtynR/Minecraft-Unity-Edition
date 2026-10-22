@@ -4,11 +4,12 @@ using UnityEngine;
 public partial class Player
 {
     private int serverItemWearRevision,knownItemWearRevision;
+    private double nextPlayerAttack, hurtUntil;
     public int ItemWearRevision=>knownItemWearRevision;
     public bool AcceptsItemRevision(int revision)=>revision==serverItemWearRevision;
     private void WearItemOnHit(Player target)
     {
-        if(inventory.DropRequestPending||ItemDurability.HitWear(inventory.HeldItem().type)==0)return;
+        if(inventory.DropRequestPending)return;
         int request=++dropRequestId;
         inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted;
         var snapshot=inventory.DropInventorySnapshot();
@@ -27,12 +28,21 @@ public partial class Player
             (target.transform.position-transform.position).sqrMagnitude<=reach*reach&&slot>=0&&slot<9&&ChestTransactions.Valid(snapshot,new InventoryStack()))
         {
             int amount=ItemDurability.HitWear(snapshot[slot].type);
-            if(amount>0&&!snapshot[slot].Empty&&ItemDurability.Maximum(snapshot[slot].type)>0)
+            if(NetworkTime.time>=nextPlayerAttack&&NetworkTime.time>=target.hurtUntil&&!target.dimensionTransfer)
             {
+                nextPlayerAttack=NetworkTime.time+.25;
+                target.hurtUntil=NetworkTime.time+.5;
+                int damage=CowRules.AttackDamage(snapshot[slot].type);
+                target.health=Mathf.Max(0,target.health-damage);
+                var push=target.transform.position-transform.position+Vector3.up;
+                if(network)target.RpcAddForce(target.connectionToClient,push,6);
+                else target.AddForce(push,6);
+                GameAudio.Broadcast("damage/hit",target.transform.position,1,1,world);
                 // A validated hit ends the mining session before changing its tool.
                 serverMining=false;
                 ItemDurability.Wear(ref snapshot[slot],amount);
                 inventory.ApplyDropInventory(snapshot);accepted=true;
+                exhaustion=System.Math.Min(40,exhaustion+.3f);
             }
         }
         if(request>lastServerDropRequest)
