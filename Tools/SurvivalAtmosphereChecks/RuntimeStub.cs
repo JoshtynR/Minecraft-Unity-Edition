@@ -41,7 +41,7 @@ namespace UnityEngine {
  public class Texture:Object {public int width,height;}
  public enum TextureFormat {RGBA32}public enum FilterMode {Point}public enum TextureWrapMode {Repeat,Clamp}
  public class Texture2D:Texture {Color[] pixels;public FilterMode filterMode;public TextureWrapMode wrapMode;public Texture2D(int w,int h,TextureFormat format,bool mip){width=w;height=h;pixels=new Color[w*h];}public void SetPixels(Color[] value){pixels=(Color[])value.Clone();}public Color[] GetPixels()=>pixels;public void Apply(bool mip,bool unreadable){}}
- public class Material:Object {public Texture mainTexture;public int renderQueue;public Vector2 mainTextureScale,mainTextureOffset;public Material(Material m){}public void SetFloat(string s,float f){}public void SetColor(string s,Color c){}}
+ public class Material:Object {public Texture mainTexture;public int renderQueue;public Vector2 mainTextureScale,mainTextureOffset;public Material(Material m){}public void SetFloat(string s,float f){}public void SetColor(string s,Color c){}public void SetVector(string s,Vector4 v){}}
  public class Mesh:Object {public Rendering.IndexFormat indexFormat;public Vector3[] vertices;public Vector2[] uv;public Color[] colors;public int[] triangles;public void SetVertices(List<Vector3> v){vertices=v.ToArray();}public void SetUVs(int channel,List<Vector2> v){uv=v.ToArray();}public void SetColors(List<Color> v){colors=v.ToArray();}public void SetTriangles(List<int> v,int sub){triangles=v.ToArray();}public void RecalculateBounds(){}}
  public class MeshFilter:Component {public Mesh sharedMesh;}
  public class MeshRenderer:Component {public Material sharedMaterial;public bool receiveShadows;public Rendering.ShadowCastingMode shadowCastingMode;}

@@ -39,6 +39,25 @@ public static class CloudMeshGeometry
     }
 }
 
+public static class HorizonMeshGeometry
+{
+    public static Mesh Build(int segments=64)
+    {
+        var vertices=new List<Vector3>();var uvs=new List<Vector2>();var triangles=new List<int>();
+        for(int i=0;i<segments;i++)
+        {
+            float a0=i*Mathf.PI*2/segments,a1=(i+1)*Mathf.PI*2/segments;
+            int first=vertices.Count;
+            vertices.Add(new Vector3(Mathf.Cos(a0),-.14f,Mathf.Sin(a0)));vertices.Add(new Vector3(Mathf.Cos(a0),.34f,Mathf.Sin(a0)));
+            vertices.Add(new Vector3(Mathf.Cos(a1),.34f,Mathf.Sin(a1)));vertices.Add(new Vector3(Mathf.Cos(a1),-.14f,Mathf.Sin(a1)));
+            uvs.Add(new Vector2((float)i/segments,0));uvs.Add(new Vector2((float)i/segments,1));
+            uvs.Add(new Vector2((float)(i+1)/segments,1));uvs.Add(new Vector2((float)(i+1)/segments,0));
+            triangles.Add(first);triangles.Add(first+1);triangles.Add(first+2);triangles.Add(first);triangles.Add(first+2);triangles.Add(first+3);
+        }
+        var mesh=new Mesh{name="Owned sunset horizon band"};mesh.SetVertices(vertices);mesh.SetUVs(0,uvs);mesh.SetTriangles(triangles,0);mesh.RecalculateBounds();return mesh;
+    }
+}
+
 // Local camera visuals only. The world clock is shared by the server and saved
 // with metadata; cosmetic cloud generation never consumes the terrain RNG.
 [RequireComponent(typeof(Camera))]
@@ -48,7 +67,7 @@ public sealed class OverworldAtmosphere : MonoBehaviour
     private Camera view;
     private GameObject root,sun,moon,sunset,clouds;
     private readonly List<Transform> cloudTiles=new List<Transform>();
-    private Mesh quad,cloudMesh;
+    private Mesh quad,cloudMesh,horizonMesh;
     private float cloudTileWidth,cloudTileDepth;
     private int cloudTileRadius;
     private Material sunMaterial,moonMaterial,sunsetMaterial,cloudMaterial;
@@ -105,10 +124,11 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         cloudMaterial.mainTexture=assets!=null&&assets.cloudTexture!=null?assets.cloudTexture:ownedClouds=Fallback(2);
         sunMaterial.SetFloat("_BlackTransparent",1);
         moonMaterial.SetFloat("_BlackTransparent",1);
-        sunsetMaterial.SetFloat("_RadialGlow",1);sunsetMaterial.renderQueue=1005;
+        sunsetMaterial.SetFloat("_HorizonBand",1);sunsetMaterial.renderQueue=1005;
         cloudMaterial.renderQueue=2900;cloudMaterial.SetFloat("_FogOn",1);cloudMaterial.SetFloat("_VertexColorOn",1);cloudMaterial.SetFloat("_ZWrite",1);
         root=new GameObject("Overworld sky visuals");quad=Quad(false);
-        sunset=Surface("Sunset glow",sunsetMaterial,quad);sun=Surface("Sun",sunMaterial,quad);moon=Surface("Moon",moonMaterial,quad);
+        horizonMesh=HorizonMeshGeometry.Build();sunset=Surface("Sunset horizon",sunsetMaterial,horizonMesh);
+        sun=Surface("Sun",sunMaterial,quad);moon=Surface("Moon",moonMaterial,quad);
         clouds=new GameObject("Clouds");clouds.layer=0;clouds.transform.SetParent(root.transform,false);
         var cloudTexture=(Texture2D)cloudMaterial.mainTexture;cloudMesh=CloudMeshGeometry.Build(cloudTexture);
         cloudTileWidth=cloudTexture.width*12;cloudTileDepth=cloudTexture.height*12;
@@ -132,14 +152,14 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         // same palette for the camera clear color and the distance fog.
         float horizonGlow=SkyClock.HorizonGlow(ticks);
         var clear=Color.Lerp(new Color(.015f,.02f,.045f),new Color(.50f,.70f,1f),daylight);
-        view.backgroundColor=Color.Lerp(clear,new Color(.72f,.34f,.18f),horizonGlow*.28f);
+        view.backgroundColor=clear;
         float angle=SkyClock.Angle(ticks)*Mathf.Deg2Rad;
         var direction=new Vector3(Mathf.Sin(angle),Mathf.Cos(angle),0);
         float radius=Mathf.Min(200,view.farClipPlane*.75f);
-        sunset.transform.position=transform.position+direction*radius*.99f;
-        sunset.transform.rotation=Quaternion.LookRotation(direction,Vector3.forward);
-        sunset.transform.localScale=Vector3.one*radius*.65f;
-        sunsetMaterial.SetColor("_Tint",new Color(1f,.25f,.06f,horizonGlow*.52f));
+        sunset.transform.position=transform.position;sunset.transform.rotation=Quaternion.identity;
+        sunset.transform.localScale=Vector3.one*radius*.98f;
+        sunsetMaterial.SetColor("_Tint",new Color(1f,.28f,.08f,horizonGlow*.58f));
+        sunsetMaterial.SetVector("_SunsetDirection",new Vector4(direction.x,0,direction.z,0));
         sunset.SetActive(horizonGlow>.001f);
         sun.transform.position=transform.position+direction*radius;
         sun.transform.rotation=Quaternion.LookRotation(direction,Vector3.forward);
@@ -193,7 +213,7 @@ public sealed class OverworldAtmosphere : MonoBehaviour
     private void OnDisable(){RestoreFog();if(root!=null)root.SetActive(false);}
     private void OnDestroy()
     {
-        RestoreFog();if(root!=null)Destroy(root);if(quad!=null)Destroy(quad);if(cloudMesh!=null)Destroy(cloudMesh);
+        RestoreFog();if(root!=null)Destroy(root);if(quad!=null)Destroy(quad);if(cloudMesh!=null)Destroy(cloudMesh);if(horizonMesh!=null)Destroy(horizonMesh);
         if(sunMaterial!=null)Destroy(sunMaterial);if(moonMaterial!=null)Destroy(moonMaterial);if(sunsetMaterial!=null)Destroy(sunsetMaterial);if(cloudMaterial!=null)Destroy(cloudMaterial);
         if(ownedSun!=null)Destroy(ownedSun);if(ownedMoon!=null)Destroy(ownedMoon);if(ownedClouds!=null)Destroy(ownedClouds);
     }

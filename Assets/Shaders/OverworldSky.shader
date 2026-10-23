@@ -1,6 +1,6 @@
 Shader "Voxel/OverworldSky"
 {
- Properties {_MainTex("Texture",2D)="white"{} _Tint("Tint",Color)=(1,1,1,1) _FogOn("Cloud fog",Float)=0 _BlackTransparent("Black background transparent",Float)=0 _RadialGlow("Radial glow",Float)=0 _VertexColorOn("Vertex shading",Float)=0 _ZWrite("Depth write",Float)=0}
+ Properties {_MainTex("Texture",2D)="white"{} _Tint("Tint",Color)=(1,1,1,1) _FogOn("Cloud fog",Float)=0 _BlackTransparent("Black background transparent",Float)=0 _HorizonBand("Horizon band",Float)=0 _VertexColorOn("Vertex shading",Float)=0 _ZWrite("Depth write",Float)=0}
  SubShader
  {
   Tags {"Queue"="Background+10" "RenderType"="Transparent"}
@@ -12,22 +12,22 @@ Shader "Voxel/OverworldSky"
    #pragma fragment frag
    #include "UnityCG.cginc"
    #include "WorldFog.cginc"
-   sampler2D _MainTex;float4 _MainTex_ST,_Tint,_FluidFog;float _FogOn,_BlackTransparent,_RadialGlow,_VertexColorOn;
+   sampler2D _MainTex;float4 _MainTex_ST,_Tint,_FluidFog,_SunsetDirection;float _FogOn,_BlackTransparent,_HorizonBand,_VertexColorOn;
    struct appdata{float4 vertex:POSITION;float2 uv:TEXCOORD0;float4 color:COLOR;};
-   struct v2f{float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float distance:TEXCOORD1;float4 color:COLOR;};
-   v2f vert(appdata v){v2f o;o.pos=UnityObjectToClipPos(v.vertex);o.uv=TRANSFORM_TEX(v.uv,_MainTex);o.distance=length(UnityObjectToViewPos(v.vertex));o.color=lerp(float4(1,1,1,1),v.color,_VertexColorOn);return o;}
+   struct v2f{float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float distance:TEXCOORD1;float2 horizonDirection:TEXCOORD2;float4 color:COLOR;};
+   v2f vert(appdata v){v2f o;o.pos=UnityObjectToClipPos(v.vertex);o.uv=TRANSFORM_TEX(v.uv,_MainTex);o.distance=length(UnityObjectToViewPos(v.vertex));o.horizonDirection=normalize(v.vertex.xz);o.color=lerp(float4(1,1,1,1),v.color,_VertexColorOn);return o;}
    fixed4 frag(v2f i):SV_Target
    {
     fixed4 sample=tex2D(_MainTex,i.uv);
     fixed4 c=sample*_Tint*i.color;
-    // Preserve authored halo alpha. Older RGB celestial sheets instead use a
-    // black matte, so turn luminance into a soft alpha rather than clipping it
-    // into a hard-edged square.
-    if(_BlackTransparent>.5)c.a*=smoothstep(.005,.08,max(sample.r,max(sample.g,sample.b)));
-    if(_RadialGlow>.5)
+    // Preserve authored pixel alpha exactly. RGB-only legacy sheets use a hard
+    // black key so their halo stays pixel-stepped rather than becoming blurry.
+    if(_BlackTransparent>.5)c.a*=step(.005,max(sample.r,max(sample.g,sample.b)));
+    if(_HorizonBand>.5)
     {
-     float2 radial=i.uv*2-1;
-     c.a*=1-smoothstep(.04,1,dot(radial,radial));
+     float vertical=smoothstep(0,.30,i.uv.y)*(1-smoothstep(.30,1,i.uv.y));
+     float facing=saturate(dot(i.horizonDirection,normalize(_SunsetDirection.xz))*.5+.5);
+     c.a*=vertical*facing*facing;
     }
     clip(c.a-.002);
     // Water/lava obscure celestial bodies as well as terrain.

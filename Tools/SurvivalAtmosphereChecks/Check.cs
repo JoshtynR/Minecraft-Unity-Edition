@@ -44,9 +44,10 @@ class Check {
   var parts=new PlayerObjects{leftArm=new GameObject("leftArm").transform,rightArm=new GameObject("rightArm").transform,leftLeg=new GameObject("leftLeg").transform,rightLeg=new GameObject("rightLeg").transform};
   var walk=p.gameObject.AddComponent<MinecraftWalkAnimator>();walk.Initialize(p,parts);Call(walk,"LateUpdate");var left=parts.leftLeg.localRotation*Vector3.up;var right=parts.rightLeg.localRotation*Vector3.up;Assert(left.z*right.z<0,"walking legs swing in opposite directions");
   Resources.items["SkyMaterial"]=new Material(null);var sky=p.cam.GetComponent<OverworldAtmosphere>();sky.player=p;Call(sky,"Awake");Call(sky,"LateUpdate");
-  Assert(GameObject.all.Exists(g=>g.name=="Sun")&&GameObject.all.Exists(g=>g.name=="Sunset glow")&&GameObject.all.Exists(g=>g.name=="Clouds"),"sky builds celestial bodies, sunset and clouds without source textures");
+  Assert(GameObject.all.Exists(g=>g.name=="Sun")&&GameObject.all.Exists(g=>g.name=="Sunset horizon")&&GameObject.all.Exists(g=>g.name=="Clouds"),"sky builds celestial bodies, sunset horizon and clouds without source textures");
   var sun=GameObject.all.Find(g=>g.name=="Sun");var moon=GameObject.all.Find(g=>g.name=="Moon");
   Assert(Math.Abs(sun.transform.localScale.x-60)<.001&&Math.Abs(moon.transform.localScale.x-40)<.001,"sun and moon retain classic 30/20 half-size at the 200-unit sky radius");
+  Assert(GameObject.all.Find(g=>g.name=="Sunset horizon").GetComponent<MeshFilter>().sharedMesh.vertices.Length>4,"sunset uses a surrounding horizon band rather than a sun halo quad");
   var cloudRoot=GameObject.all.Find(g=>g.name=="Clouds");Assert(cloudRoot.transform.childCount>1,"cloud sheet repeats through a camera-centered tile grid");
   var cloudMesh=cloudRoot.transform.GetChild(0).gameObject.GetComponent<MeshFilter>().sharedMesh;
   Assert(cloudMesh.vertices.Length>4&&cloudMesh.vertices.Min(v=>v.y)==-2&&cloudMesh.vertices.Max(v=>v.y)==2,"cloud alpha pixels build four-block-thick extruded geometry");
