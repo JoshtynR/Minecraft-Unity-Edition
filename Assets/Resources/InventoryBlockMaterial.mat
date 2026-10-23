@@ -34,7 +34,7 @@ Material:
     - _AOIntensity: 1
     - _AOOn: 0
     - _Debug: 0
-    - _FaceShadeOn: 0
+    - _FaceShadeOn: 1
     - _LT_BlockMul: 1
     - _LT_Exposure: 1
     - _LT_Gamma: 0.1

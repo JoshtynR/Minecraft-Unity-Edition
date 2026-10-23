@@ -38,6 +38,10 @@ def main():
         assert 'tex2Dlod(_BlockFaceAnimations' in animation and 'floor(_Time.y * timing.z)' in animation
         assert 'uv.z = timing.x + frame;' in animation
         assert 'frame = min(frame, cycle - frame)' in animation
+    lighting=(ROOT/'Assets/Shaders/VoxelLighting.cginc').read_text()
+    assert 'if (_LightingOn > 0.5) col.rgb *= light;' in lighting and 'col.rgb *= i.faceShade;' in lighting
+    inventory_material=(ROOT/'Assets/Resources/InventoryBlockMaterial.mat').read_text()
+    assert '- _LightingOn: 0' in inventory_material and '- _FaceShadeOn: 1' in inventory_material
     print(f'{len(manifest)} lossless image crops and {count} face image references verified.')
     helper=(ROOT/'Assets/_Scripts/World/Rendering/BlockHelper.cs').read_text()
     uvs=helper[helper.index('    public static Vector3[] FaceUVs'):]

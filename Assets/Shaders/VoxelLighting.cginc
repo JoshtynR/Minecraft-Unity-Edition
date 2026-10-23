@@ -66,7 +66,11 @@
                 #endif
                 col.rgb *= i.color.rgb;
                 float3 light=SampleVoxelLightmap(i.skyBlock)*i.ao;
-                if (_LightingOn > 0.5) col.rgb *= light * i.faceShade;
+                // Directional face shading is an art rule, not skylight. UI
+                // block icons disable the lightmap but must keep their classic
+                // bright top / darker side presentation.
+                if (_LightingOn > 0.5) col.rgb *= light;
+                col.rgb *= i.faceShade;
                 if (_Debug > 0.5 && _Debug < 1.5) col.rgb = (i.skyBlock.x / 15).xxx;
                 if (_Debug > 1.5 && _Debug < 2.5) col.rgb = (i.skyBlock.y / 15).xxx;
                 if (_Debug > 2.5) col.rgb = dot(light,float3(.2126,.7152,.0722)).xxx;
