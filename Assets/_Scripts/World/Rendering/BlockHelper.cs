@@ -74,7 +74,11 @@ public static class BlockHelper
 
                 var shape = block.blockShape.GetShape();
                 var neighborShape = neighbourBlock.blockShape.GetShape();
-                bool visible = BlockShapesExtensions.IsPlant(neighbourBlockType) || SpecialBlockGeometry.NonOccluding(neighbourBlockType) || !shape.TouchesCellBoundary(dir) || neighbourBlockTypeData.isTransparent ||
+                // Fluids never occlude the solid block faces around them. Lava is
+                // intentionally in the opaque draw pass, so relying on the material
+                // flag here opened holes in terrain whenever the camera entered it.
+                bool fluidNeighbor = neighbourBlockType == BlockType.Water || neighbourBlockType == BlockType.Lava;
+                bool visible = fluidNeighbor || BlockShapesExtensions.IsPlant(neighbourBlockType) || SpecialBlockGeometry.NonOccluding(neighbourBlockType) || !shape.TouchesCellBoundary(dir) || neighbourBlockTypeData.isTransparent ||
                     !(StairGeometry.IsStair(neighbourBlockType) ? StairGeometry.CoversFace(StairGeometry.Facing(neighbourBlock.blockShape), shape, dir.GetOpposite()) : neighborShape.CoversBoundaryFace(shape, dir.GetOpposite()));
                 if (blockType == BlockType.Water || blockType == BlockType.Lava)
                 {

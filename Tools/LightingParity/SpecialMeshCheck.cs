@@ -33,6 +33,14 @@ public static partial class LightingCheck
    data=BlockHelper.GetMeshData(chunk,p,new MeshData(true),BlockType.Lava);
    Check(data.vertices.Count==20,"shared lava face is culled even with nonopaque material");
   }
+  {
+   var chunk=new ChunkData();var p=new Vector3Int(0,10,0);
+   for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++)for(int z=-1;z<=1;z++)Add(chunk,p+new Vector3Int(x,y,z),BlockType.Air).sky=15;
+   Add(chunk,p,BlockType.Stone);Add(chunk,p+Vector3Int.right,BlockType.Lava);
+   BlockDataManager.blockTypeDataDictionary[(int)BlockType.Lava].isTransparent=false;
+   var data=BlockHelper.GetMeshData(chunk,p,new MeshData(true),BlockType.Stone);
+   Check(data.vertices.Count==24,"opaque-pass lava never culls the terrain face visible from inside it");
+  }
   foreach(BlockType type in Enum.GetValues(typeof(BlockType)))if(SpecialBlockGeometry.Handles(type))
   for(byte s=0;s<16;s++)
   {

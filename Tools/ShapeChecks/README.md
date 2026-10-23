@@ -24,7 +24,8 @@ https://github.com/jacobo-mc/mc_b1.7.3_release,
 commit 740c583901e1ff1150e9ef37e37dab5bc0e4f807, relevant Block*.java bounds,
 BlockFarmland/BlockSoulSand collision boxes and RenderBlocks face UV projection.
 Cactus has the same inset side/top geometry but keeps complete face artwork as
-Beta's special cactus renderer does.
+Beta's special cactus renderer does. Its collision box ends at pixel 15 while
+the rendered and selected box remains the full 16 pixels tall.
 
 Partial generic cuboid UVs project/crop the existing full-block image, retaining
 face layer indices. Crack UVs use those bounds too. The optional enhanced smooth
