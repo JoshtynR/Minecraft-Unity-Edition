@@ -29,6 +29,7 @@ class Check {
   cactusPlayer.CactusTick();Assert(cactusPlayer.health==19,"cactus respects the half-second hurt interval");Time.time=20.5f;cactusPlayer.CactusTick();Assert(cactusPlayer.health==18,"continued cactus contact damages again after ten ticks");
   cactusPlayer.isFlying=true;Time.time=21;cactusPlayer.CactusTick();Assert(cactusPlayer.health==18,"flying player is immune to cactus damage");BlockCollision.cactus=false;
   Assert(SkyClock.Daylight(6000)>.99&&SkyClock.Daylight(18000)<.01,"noon and midnight light");Assert(Math.Abs(SkyClock.Angle(1000)-SkyClock.Angle(25000))<.001,"twenty minute cycle wraps");
+  Assert(SkyClock.HorizonGlow(6000)==0&&SkyClock.HorizonGlow(18000)==0&&SkyClock.HorizonGlow(13000)>.8&&SkyClock.HorizonGlow(23000)>.8,"sunset colour is confined to horizon crossings");
   Time.time=100;World.Overworld=new World{worldTimeTicks=17000};var server=new WorldServer();Call(server,"InitializeWorldClock");Time.time=110;Assert(Math.Abs(server.WorldTicks-17200)<.001,"server resumes saved time and advances twenty ticks per second");
   foreach(var type in new[]{ItemType.Apple,ItemType.Bread,ItemType.MushroomStew,ItemType.RawPorkchop,ItemType.CookedPorkchop,ItemType.RawFish,ItemType.CookedFish,ItemType.Cookie,ItemType.GoldenApple}){int f;float s;Assert(FoodRules.TryGet(type,out f,out s)&&f>0&&s>0,"food supported "+type);}
   Time.time=0;var p=Player();p.inventory.slots[0]=new InventoryStack{type=ItemType.Bread,count=2};Assert(p.StartFood()&&p.inventory.DropRequestPending,"eating starts and locks stack mutations");Time.time=1;p.EndFood(true);Assert(p.hunger==10&&p.inventory.slots[0].count==2,"early completion rejected");
@@ -43,7 +44,9 @@ class Check {
   var parts=new PlayerObjects{leftArm=new GameObject("leftArm").transform,rightArm=new GameObject("rightArm").transform,leftLeg=new GameObject("leftLeg").transform,rightLeg=new GameObject("rightLeg").transform};
   var walk=p.gameObject.AddComponent<MinecraftWalkAnimator>();walk.Initialize(p,parts);Call(walk,"LateUpdate");var left=parts.leftLeg.localRotation*Vector3.up;var right=parts.rightLeg.localRotation*Vector3.up;Assert(left.z*right.z<0,"walking legs swing in opposite directions");
   Resources.items["SkyMaterial"]=new Material(null);var sky=p.cam.GetComponent<OverworldAtmosphere>();sky.player=p;Call(sky,"Awake");Call(sky,"LateUpdate");
-  Assert(GameObject.all.Exists(g=>g.name=="Sun")&&GameObject.all.Exists(g=>g.name=="Clouds"),"sky builds without source textures");
+  Assert(GameObject.all.Exists(g=>g.name=="Sun")&&GameObject.all.Exists(g=>g.name=="Sunset glow")&&GameObject.all.Exists(g=>g.name=="Clouds"),"sky builds celestial bodies, sunset and clouds without source textures");
+  var sun=GameObject.all.Find(g=>g.name=="Sun");var moon=GameObject.all.Find(g=>g.name=="Moon");
+  Assert(Math.Abs(sun.transform.localScale.x-60)<.001&&Math.Abs(moon.transform.localScale.x-40)<.001,"sun and moon retain classic 30/20 half-size at the 200-unit sky radius");
   var cloudRoot=GameObject.all.Find(g=>g.name=="Clouds");Assert(cloudRoot.transform.childCount>1,"cloud sheet repeats through a camera-centered tile grid");
   var cloudMesh=cloudRoot.transform.GetChild(0).gameObject.GetComponent<MeshFilter>().sharedMesh;
   Assert(cloudMesh.vertices.Length>4&&cloudMesh.vertices.Min(v=>v.y)==-2&&cloudMesh.vertices.Max(v=>v.y)==2,"cloud alpha pixels build four-block-thick extruded geometry");

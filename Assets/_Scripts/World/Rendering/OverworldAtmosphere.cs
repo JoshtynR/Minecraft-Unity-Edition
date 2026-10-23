@@ -46,12 +46,12 @@ public sealed class OverworldAtmosphere : MonoBehaviour
 {
     public Player player;
     private Camera view;
-    private GameObject root,sun,moon,clouds;
+    private GameObject root,sun,moon,sunset,clouds;
     private readonly List<Transform> cloudTiles=new List<Transform>();
     private Mesh quad,cloudMesh;
     private float cloudTileWidth,cloudTileDepth;
     private int cloudTileRadius;
-    private Material sunMaterial,moonMaterial,cloudMaterial;
+    private Material sunMaterial,moonMaterial,sunsetMaterial,cloudMaterial;
     private Texture2D ownedSun,ownedMoon,ownedClouds;
     private Vector4 previousFog,previousRange;
     private bool fogApplied;
@@ -99,15 +99,16 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         var template=Resources.Load<Material>("SkyMaterial");
         if(template==null){Debug.LogError("SkyMaterial resource is missing.");enabled=false;return false;}
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
-        sunMaterial=new Material(template);moonMaterial=new Material(template);cloudMaterial=new Material(template);
+        sunMaterial=new Material(template);moonMaterial=new Material(template);sunsetMaterial=new Material(template);cloudMaterial=new Material(template);
         sunMaterial.mainTexture=assets!=null&&assets.sunTexture!=null?assets.sunTexture:ownedSun=Fallback(0);
         moonMaterial.mainTexture=assets!=null&&assets.moonTexture!=null?assets.moonTexture:ownedMoon=Fallback(1);
         cloudMaterial.mainTexture=assets!=null&&assets.cloudTexture!=null?assets.cloudTexture:ownedClouds=Fallback(2);
         sunMaterial.SetFloat("_BlackTransparent",1);
         moonMaterial.SetFloat("_BlackTransparent",1);
+        sunsetMaterial.SetFloat("_RadialGlow",1);sunsetMaterial.renderQueue=1005;
         cloudMaterial.renderQueue=2900;cloudMaterial.SetFloat("_FogOn",1);cloudMaterial.SetFloat("_VertexColorOn",1);cloudMaterial.SetFloat("_ZWrite",1);
         root=new GameObject("Overworld sky visuals");quad=Quad(false);
-        sun=Surface("Sun",sunMaterial,quad);moon=Surface("Moon",moonMaterial,quad);
+        sunset=Surface("Sunset glow",sunsetMaterial,quad);sun=Surface("Sun",sunMaterial,quad);moon=Surface("Moon",moonMaterial,quad);
         clouds=new GameObject("Clouds");clouds.layer=0;clouds.transform.SetParent(root.transform,false);
         var cloudTexture=(Texture2D)cloudMaterial.mainTexture;cloudMesh=CloudMeshGeometry.Build(cloudTexture);
         cloudTileWidth=cloudTexture.width*12;cloudTileDepth=cloudTexture.height*12;
@@ -129,16 +130,25 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         view.clearFlags=CameraClearFlags.SolidColor;
         // Beta 1.7.3's clear sky is a saturated but not neon blue. Keep the
         // same palette for the camera clear color and the distance fog.
-        view.backgroundColor=Color.Lerp(new Color(.015f,.02f,.045f),new Color(.50f,.70f,1f),daylight);
+        float horizonGlow=SkyClock.HorizonGlow(ticks);
+        var clear=Color.Lerp(new Color(.015f,.02f,.045f),new Color(.50f,.70f,1f),daylight);
+        view.backgroundColor=Color.Lerp(clear,new Color(.72f,.34f,.18f),horizonGlow*.28f);
         float angle=SkyClock.Angle(ticks)*Mathf.Deg2Rad;
         var direction=new Vector3(Mathf.Sin(angle),Mathf.Cos(angle),0);
         float radius=Mathf.Min(200,view.farClipPlane*.75f);
+        sunset.transform.position=transform.position+direction*radius*.99f;
+        sunset.transform.rotation=Quaternion.LookRotation(direction,Vector3.forward);
+        sunset.transform.localScale=Vector3.one*radius*.65f;
+        sunsetMaterial.SetColor("_Tint",new Color(1f,.25f,.06f,horizonGlow*.52f));
+        sunset.SetActive(horizonGlow>.001f);
         sun.transform.position=transform.position+direction*radius;
         sun.transform.rotation=Quaternion.LookRotation(direction,Vector3.forward);
-        sun.transform.localScale=Vector3.one*radius*.10f;sun.SetActive(direction.y>-.1f);
+        // Classic Minecraft renders these at half-sizes 30 and 20 on a
+        // 100-unit celestial plane. Preserve those angular proportions.
+        sun.transform.localScale=Vector3.one*radius*.30f;sun.SetActive(direction.y>-.1f);
         moon.transform.position=transform.position-direction*radius;
         moon.transform.rotation=Quaternion.LookRotation(-direction,Vector3.forward);
-        moon.transform.localScale=Vector3.one*radius*.075f;moon.SetActive(direction.y<.1f);
+        moon.transform.localScale=Vector3.one*radius*.20f;moon.SetActive(direction.y<.1f);
         var moonTexture=moonMaterial.mainTexture;
         if(moonTexture!=null&&moonTexture.width==moonTexture.height*2)
         {
@@ -165,7 +175,9 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         fogApplied=true;
         bool active=world!=null&&world.dimension==WorldDimension.Overworld&&world.overworldFog;
         if(!active){Shader.SetGlobalVector("_WorldFogRange",Vector4.zero);return;}
-        var color=Color.Lerp(new Color(.025f,.03f,.06f),new Color(.50f,.70f,.96f),SkyClock.Daylight(world.CurrentWorldTicks));
+        double ticks=world.CurrentWorldTicks;
+        var color=Color.Lerp(new Color(.025f,.03f,.06f),new Color(.50f,.70f,.96f),SkyClock.Daylight(ticks));
+        color=Color.Lerp(color,new Color(.78f,.34f,.16f),SkyClock.HorizonGlow(ticks)*.62f);
         float end=Mathf.Max(16,Mathf.Min(view.farClipPlane*.9f,(world.renderDistance-.5f)*world.chunkSize));
         Shader.SetGlobalVector("_WorldFogColor",new Vector4(color.r,color.g,color.b,1));
         // Beta's overworld haze is subtle; it should only soften the far edge,
@@ -182,7 +194,7 @@ public sealed class OverworldAtmosphere : MonoBehaviour
     private void OnDestroy()
     {
         RestoreFog();if(root!=null)Destroy(root);if(quad!=null)Destroy(quad);if(cloudMesh!=null)Destroy(cloudMesh);
-        if(sunMaterial!=null)Destroy(sunMaterial);if(moonMaterial!=null)Destroy(moonMaterial);if(cloudMaterial!=null)Destroy(cloudMaterial);
+        if(sunMaterial!=null)Destroy(sunMaterial);if(moonMaterial!=null)Destroy(moonMaterial);if(sunsetMaterial!=null)Destroy(sunsetMaterial);if(cloudMaterial!=null)Destroy(cloudMaterial);
         if(ownedSun!=null)Destroy(ownedSun);if(ownedMoon!=null)Destroy(ownedMoon);if(ownedClouds!=null)Destroy(ownedClouds);
     }
 }
