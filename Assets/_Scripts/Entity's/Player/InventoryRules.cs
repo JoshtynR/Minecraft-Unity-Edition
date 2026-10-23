@@ -135,7 +135,8 @@ public struct TmiLayout
         float scale=Math.Min(1,Math.Min(width/280f,height/206f));
         float w=width/scale,h=height/scale;
         int columns=Math.Max(4,Math.Min(12,(int)((w/2-100-4)/18)));
-        int rows=Math.Max(1,(int)((h-38)/18));
+        // Reserve a title above the grid and a widget-button footer below it.
+        int rows=Math.Max(1,(int)((h-50)/18));
         float sidebar=w/2-4-columns*9;
         return new TmiLayout{scale=scale,width=w,height=h,columns=columns,rows=rows,sidebarX=sidebar,inventoryX=Math.Min(0,sidebar-columns*9-100)};
     }

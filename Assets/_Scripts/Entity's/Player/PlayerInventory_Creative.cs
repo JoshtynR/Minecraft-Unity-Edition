@@ -11,8 +11,8 @@ public partial class PlayerInventory
     private readonly List<RectTransform> creativeCells = new List<RectTransform>();
     private readonly RectTransform[] craftingRects = new RectTransform[4];
     private readonly RectTransform[] equipmentRects = new RectTransform[4],equipmentGhosts = new RectTransform[4];
-    private RectTransform creativeRoot, creativePanel, craftResultRect, tooltipRect;
-    private TextMeshProUGUI creativePageText, creativeNameText;
+    private RectTransform creativeRoot, creativePanel, inventoryBackdrop, craftResultRect, tooltipRect;
+    private TextMeshProUGUI creativePageText, creativeTitleText, creativeNameText;
     private TMP_FontAsset creativeFont;
     private Material inventoryTextMaterial,inventoryLabelMaterial,containerLabelMaterial;
     private Button previousPage, nextPage, recoveryButton;
@@ -39,8 +39,10 @@ public partial class PlayerInventory
         creativeRoot.localPosition=new Vector3(0,0,-35);
         var backdrop=CreativeRect("DimBackground",creativeRoot,0,0,640,360);
         backdrop.localPosition=new Vector3(0,0,10);
-        backdrop.gameObject.AddComponent<Image>().color=new Color(0,0,0,.6f);
+        var dim=backdrop.gameObject.AddComponent<Image>();dim.color=new Color(0,0,0,.48f);
         var outside=backdrop.gameObject.AddComponent<InventoryOutsideClick>();outside.playerInventory=this;
+        inventoryBackdrop=CreativeRect("InventoryBackdrop",creativeRoot,0,-2,182,172);
+        var inventoryShade=inventoryBackdrop.gameObject.AddComponent<Image>();inventoryShade.color=new Color(0,0,0,.58f);inventoryShade.raycastTarget=false;
         inventoryRect=CreativeRect("SurvivalInventory",creativeRoot,0,0,176,166);
         texturedInventory=assets!=null&&assets.inventory!=null;
         if(texturedInventory)
@@ -79,10 +81,12 @@ public partial class PlayerInventory
         recoveryText=recoveryButton.transform.Find("Label").GetComponent<TextMeshProUGUI>();
         recoveryButton.gameObject.SetActive(false);
         creativePanel=CreativeRect("TooManyItemsSidebar",creativeRoot,225,0,162,360);
+        var catalogShade=creativePanel.gameObject.AddComponent<Image>();catalogShade.color=new Color(0,0,0,.58f);catalogShade.raycastTarget=false;
         creativePanel.gameObject.SetActive(false);
-        previousPage=CreativeButton("<",creativePanel,-65,170,16,16,()=>ChangeCreativePage(-1));
-        nextPage=CreativeButton(">",creativePanel,65,170,16,16,()=>ChangeCreativePage(1));
-        creativePageText=CreativeText("Page",creativePanel,0,170,100,16,"",8,Color.white);
+        creativeTitleText=CreativeText("Title",creativePanel,0,170,150,16,"Too Many Items",8,Color.white);
+        previousPage=CreativeWidgetButton("<",creativePanel,-65,-170,20,20,assets!=null?assets.guiWidgets:null,()=>ChangeCreativePage(-1));
+        nextPage=CreativeWidgetButton(">",creativePanel,65,-170,20,20,assets!=null?assets.guiWidgets:null,()=>ChangeCreativePage(1));
+        creativePageText=CreativeText("Page",creativePanel,0,-170,100,16,"",8,Color.white);
         inventoryHighlightRect=CreativeRect("SlotHighlight",creativeRoot,0,0,16,16);
         var highlight=inventoryHighlightRect.gameObject.AddComponent<Image>();
         highlight.color=new Color(1,1,1,.35f);highlight.raycastTarget=false;
@@ -111,12 +115,15 @@ public partial class PlayerInventory
             creativeRoot.localScale=Vector3.one*layout.scale;
             creativeRoot.GetChild(0).GetComponent<RectTransform>().sizeDelta=creativeRoot.sizeDelta;
             inventoryRect.anchoredPosition=new Vector2(sidebarVisible?layout.inventoryX:0,0);
+            inventoryBackdrop.anchoredPosition=new Vector2(inventoryRect.anchoredPosition.x,inventoryRect.anchoredPosition.y-2);
             creativePanel.anchoredPosition=new Vector2(layout.sidebarX,0);
-            creativePanel.sizeDelta=new Vector2(layout.columns*18,layout.height);
-            previousPage.GetComponent<RectTransform>().anchoredPosition=new Vector2(-layout.columns*9+9,layout.height/2-10);
-            nextPage.GetComponent<RectTransform>().anchoredPosition=new Vector2(layout.columns*9-9,layout.height/2-10);
-            creativePageText.rectTransform.anchoredPosition=new Vector2(0,layout.height/2-10);
-            creativePageText.rectTransform.sizeDelta=new Vector2(layout.columns*18-36,16);
+            creativePanel.sizeDelta=new Vector2(layout.columns*18+8,layout.height);
+            creativeTitleText.rectTransform.anchoredPosition=new Vector2(0,layout.height/2-11);
+            creativeTitleText.rectTransform.sizeDelta=new Vector2(layout.columns*18,16);
+            previousPage.GetComponent<RectTransform>().anchoredPosition=new Vector2(-layout.columns*9+10,-layout.height/2+12);
+            nextPage.GetComponent<RectTransform>().anchoredPosition=new Vector2(layout.columns*9-10,-layout.height/2+12);
+            creativePageText.rectTransform.anchoredPosition=new Vector2(0,-layout.height/2+12);
+            creativePageText.rectTransform.sizeDelta=new Vector2(Math.Max(20,layout.columns*18-44),16);
             creativePageSize=Math.Max(1,Math.Min(layout.PageSize,creativeBlocks.Count));
             // F1 is off by default. Build catalog cells/icons only when the
             // sidebar is actually shown, rather than during player startup.
@@ -132,7 +139,7 @@ public partial class PlayerInventory
                 }
                 for(int i=0;i<creativeCells.Count;i++)
                 {
-                    creativeCells[i].anchoredPosition=new Vector2(-layout.columns*9+9+(i%layout.columns)*18,layout.height/2-30-(i/layout.columns)*18);
+                    creativeCells[i].anchoredPosition=new Vector2(-layout.columns*9+9+(i%layout.columns)*18,layout.height/2-32-(i/layout.columns)*18);
                     creativeCells[i].gameObject.SetActive(i<creativePageSize);
                 }
                 creativePage=Math.Min(creativePage,Math.Max(0,(creativeBlocks.Count-1)/creativePageSize));
@@ -348,6 +355,24 @@ public partial class PlayerInventory
         var rect=CreativeRect(label,parent,x,y,width,height);Panel(rect);
         var button=rect.gameObject.AddComponent<Button>();button.onClick.AddListener(action);
         button.onClick.AddListener(()=>GameAudio.PlayClip(GameAudio.Find("UI/click"),Vector3.zero,.2f,false));
+        CreativeText("Label",rect,0,0,width,height,label,8,Color.white);return button;
+    }
+
+    private Button CreativeWidgetButton(string label,Transform parent,float x,float y,float width,float height,Texture2D widgets,UnityEngine.Events.UnityAction action)
+    {
+        var rect=CreativeRect(label,parent,x,y,width,height);
+        Graphic target;
+        if(widgets!=null)
+        {
+            var image=rect.gameObject.AddComponent<RawImage>();image.texture=widgets;
+            // Classic widgets.png: normal button row starts at pixel (0,66), size 200x20.
+            image.uvRect=new Rect(0,1-86/256f,200/256f,20/256f);target=image;
+        }
+        else {Panel(rect);target=rect.GetComponent<Image>();}
+        var button=rect.gameObject.AddComponent<Button>();button.targetGraphic=target;
+        var colors=button.colors;colors.normalColor=Color.white;colors.highlightedColor=new Color(1.12f,1.12f,1.12f,1);
+        colors.pressedColor=new Color(.72f,.72f,.72f,1);colors.disabledColor=new Color(.45f,.45f,.45f,.75f);button.colors=colors;
+        button.onClick.AddListener(action);button.onClick.AddListener(()=>GameAudio.PlayClip(GameAudio.Find("UI/click"),Vector3.zero,.2f,false));
         CreativeText("Label",rect,0,0,width,height,label,8,Color.white);return button;
     }
 }

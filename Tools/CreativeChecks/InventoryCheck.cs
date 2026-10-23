@@ -137,6 +137,8 @@ namespace UnityEngine
 namespace UnityEngine.Events {public delegate void UnityAction();}
 namespace UnityEngine.UI
 {
+ public class Graphic:Component {public Color color=Color.white;public bool raycastTarget=true;}
+ public struct ColorBlock {public Color normalColor,highlightedColor,pressedColor,disabledColor;}
  public class MaskableGraphic:Component
  {
   public Color color=Color.white;public bool raycastTarget=true;public int dirty;
@@ -149,9 +151,9 @@ namespace UnityEngine.UI
   public int currentVertCount=>vertices.Count;public void Clear(){vertices.Clear();triangles.Clear();}
   public void AddVert(UIVertex v){vertices.Add(v);}public void AddTriangle(int a,int b,int c){triangles.Add(a);triangles.Add(b);triangles.Add(c);}
  }
- public class RawImage:Component {public Texture2D texture;public Rect uvRect;public bool raycastTarget=true;}
- public class Image:Component {public Color color;public bool raycastTarget=true;}
- public class Button:Component {public bool interactable=true;public Click onClick=new Click();public class Click {UnityEngine.Events.UnityAction action;public void AddListener(UnityEngine.Events.UnityAction a){action+=a;}public void Invoke(){action();}}}
+ public class RawImage:Graphic {public Texture2D texture;public Rect uvRect;}
+ public class Image:Graphic {}
+ public class Button:Component {public bool interactable=true;public Graphic targetGraphic;public ColorBlock colors;public Click onClick=new Click();public class Click {UnityEngine.Events.UnityAction action;public void AddListener(UnityEngine.Events.UnityAction a){action+=a;}public void Invoke(){action();}}}
 }
 namespace TMPro
 {
@@ -249,11 +251,16 @@ public partial class PlayerInventory
   foreach(int multiplier in new[]{1,2})
   {
    var sheet=new Texture2D{width=256*multiplier,height=256*multiplier};
-   Resources.hud=new PlayerHudAssets{inventory=sheet};
+   var widgets=new Texture2D{width=256,height=256};Resources.hud=new PlayerHudAssets{inventory=sheet,guiWidgets=widgets};
    var menu=BuildMenu();var background=menu.inventoryRect.GetComponent<UnityEngine.UI.RawImage>();
    Check(background!=null&&ReferenceEquals(background.texture,sheet),"inventory uses configured sheet at native and HD sizes");
    Check(background.uvRect.x==0&&background.uvRect.y==90/256f&&background.uvRect.width==176/256f&&background.uvRect.height==166/256f,"only top-left survival panel is sampled; extra atlas widgets excluded");
    Check(menu.inventoryRect.Find("Bevel")==null&&menu.inventoryRect.Find("CraftArrow")==null,"atlas bevels and arrow are not painted over");
+   Check(menu.inventoryBackdrop.GetComponent<UnityEngine.UI.Image>().color.a>.5f&&menu.creativePanel.GetComponent<UnityEngine.UI.Image>().color.a>.5f,"survival and TooManyItems panels have independent dark backplates");
+   var previousArtwork=menu.previousPage.GetComponent<UnityEngine.UI.RawImage>();
+   Check(previousArtwork!=null&&ReferenceEquals(previousArtwork.texture,widgets)&&ReferenceEquals(menu.previousPage.targetGraphic,previousArtwork),"catalogue arrows use the configured Minecraft GUI widget artwork");
+   menu.ToggleTooManyItems();
+   Check(menu.creativeTitleText.rectTransform.anchoredPosition.y>menu.creativeCells[0].anchoredPosition.y&&menu.creativePageText.rectTransform.anchoredPosition.y<menu.creativeCells[0].anchoredPosition.y,"catalogue is organized as title, item grid, and widget footer");
    for(int i=0;i<36;i++)
    {
     var cell=menu.inventorySlotsRect.GetChild(i);

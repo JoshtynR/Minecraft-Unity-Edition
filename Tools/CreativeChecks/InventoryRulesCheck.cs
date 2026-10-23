@@ -67,7 +67,7 @@ public partial class PlayerInventory
    var layout=TmiLayout.Calculate(size[0],size[1]);
    Check(layout.inventoryX-88>=-layout.width/2&&layout.sidebarX+layout.columns*9<=layout.width/2,"responsive layout keeps both panels within canvas");
    Check(layout.inventoryX+88+8<=layout.sidebarX-layout.columns*9,"responsive layout reserves separate sidebar");
-   Check(layout.rows*18+38<=layout.height&&layout.PageSize>0,"responsive catalogue rows fit height");
+   Check(layout.rows*18+50<=layout.height&&layout.PageSize>0,"responsive catalogue rows fit between title and widget footer");
   }
   Check(TmiLayout.SlotY(0)==-67&&TmiLayout.SlotY(9)==-9&&TmiLayout.SlotY(35)==-45&&TmiLayout.SlotX(35)==72,"Beta survival slot coordinates");
   foreach(ItemType type in Enum.GetValues(typeof(ItemType)))for(int armor=0;armor<4;armor++)
