@@ -126,7 +126,7 @@ namespace UnityEngine
   }
  }
  public enum KeyCode {Alpha1=49,E=69,Q=81,F1=282,LeftShift=304,RightShift=303}
- public static class Input {public static KeyCode? down;public static Vector3 mousePosition;public static bool GetKeyDown(KeyCode k)=>down==k;public static bool GetKey(KeyCode k)=>false;public static float GetAxis(string n)=>0;}
+ public static class Input {public static KeyCode? down;public static Vector3 mousePosition;public static bool GetKeyDown(KeyCode k)=>down==k;public static bool GetKey(KeyCode k)=>false;public static bool GetMouseButton(int button)=>false;public static float GetAxis(string n)=>0;}
  public enum RenderMode {ScreenSpaceOverlay,ScreenSpaceCamera}
  public class Camera:Component {public static Camera main;}
  public class Canvas:Component {public RenderMode renderMode;public Camera worldCamera;}
@@ -351,8 +351,14 @@ public partial class PlayerInventory
   inv.LoadInventory(null);inv.SetCursor(new InventoryStack(ItemType.Stone,8));
   Check(inv.BeginInventoryDrag(0,true),"carried stack starts a slot drag");inv.ContinueInventoryDrag(1);inv.ContinueInventoryDrag(2);inv.EndInventoryDrag();
   Check(inv.slots.Take(3).All(s=>s.count==1)&&inv.pickedUpSlot.count==5,"UI right drag paints one item into every crossed slot");
+  inv.LoadInventory(null);inv.AddItem(ItemType.Stone,8);inv.ClickInventorySlot(0,false,false);inv.BeginCursorDragFromClick(false);
+  inv.ContinueInventoryDrag(1);inv.ContinueInventoryDrag(2);inv.EndInventoryDrag();
+  Check(inv.pickedUpSlot==null&&inv.slots[1].count==4&&inv.slots[2].count==4,"picking up and dragging in one held click evenly paints crossed slots");
   inv.LoadInventory(null);inv.AddItem(ItemType.Stone,70);inv.ClickInventorySlot(1,false,false);inv.DoubleClickInventorySlot(0);
   Check(inv.pickedUpSlot.count==64&&inv.slots[0].count==6&&inv.slots[1].count==0,"UI double click consolidates loose matching stacks up to their limit");
+  inv.LoadInventory(null);inv.AddItem(ItemType.Stone,2);Time.unscaledTime=20;
+  Check(!inv.IsInventoryDoubleClick(0,false,1),"first item-aware click arms consolidation without triggering it");
+  Time.unscaledTime+=.44f;Check(inv.IsInventoryDoubleClick(0,false,1),"forgiving timer recognizes a same-item double click without relying on Unity clickCount");
   inv.LoadInventory(null);inv.SetCursor(new InventoryStack(ItemType.Log,2));inv.ClickInventorySlot(36,false,false);
   Check(inv.craftedOutput.type==ItemType.WoodenPlanks&&inv.craftedOutput.count==4,"single-log recipe preview");
   inv.ClickInventorySlot(40,false,false);Check(inv.pickedUpSlot.count==4&&inv.craftingSlots[0].count==1,"taking output consumes one ingredient");

@@ -18,9 +18,14 @@ public class InventorySlot : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         bool right=data.button==PointerEventData.InputButton.Right;
         if(!right&&data.button!=PointerEventData.InputButton.Left)return;
         if(isCatalog)playerInventory.GiveCatalogItem(slotIndex,right);
-        else if(!right&&data.clickCount>=2)playerInventory.DoubleClickInventorySlot(slotIndex);
+        else if(playerInventory.IsInventoryDoubleClick(slotIndex,right,data.clickCount))playerInventory.DoubleClickInventorySlot(slotIndex);
         else if(!playerInventory.BeginInventoryDrag(slotIndex,right))
-            playerInventory.ClickInventorySlot(slotIndex,right,Input.GetKey(KeyCode.LeftShift)||Input.GetKey(KeyCode.RightShift));
+        {
+            bool shift=Input.GetKey(KeyCode.LeftShift)||Input.GetKey(KeyCode.RightShift);
+            bool pending=playerInventory.InventoryActionPending;
+            playerInventory.ClickInventorySlot(slotIndex,right,shift);
+            if(!shift&&!pending)playerInventory.BeginCursorDragFromClick(right);
+        }
     }
     public void OnPointerUp(PointerEventData data)
     {if(!isCatalog)playerInventory.EndInventoryDrag();}

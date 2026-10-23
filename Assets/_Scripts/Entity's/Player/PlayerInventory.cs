@@ -78,6 +78,7 @@ public partial class PlayerInventory : MonoBehaviour
         }
         if (isOpen && Input.GetKeyDown(KeyCode.F1)) ToggleTooManyItems();
         if (isOpen) UpdateInventoryLayout();
+        if(inventoryDragActive&&!Input.GetMouseButton(inventoryDragRight?1:0))EndInventoryDrag();
         bool carried = isOpen && pickedUpSlot != null;
         pickedUpItemRect.gameObject.SetActive(carried);
         if (carried)

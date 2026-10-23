@@ -12,7 +12,11 @@ public partial class PlayerInventory
     private readonly InventoryStack[] playerCraftBuffer = new InventoryStack[4];
     private readonly InventoryStack[] tableCraftBuffer = new InventoryStack[9];
     private readonly List<int> draggedSlots = new List<int>();
-    private bool inventoryDragActive,inventoryDragRight;
+    private bool inventoryDragActive,inventoryDragRight,inventoryDragFromPickup;
+    private float lastInventoryClickTime=-10;
+    private ItemType lastInventoryClickType=ItemType.Nothing;
+    private int lastInventoryClickDamage;
+    private const float InventoryDoubleClickWindow=.45f;
     private InventoryStack[] craftBuffer => tableOpen ? tableCraftBuffer : playerCraftBuffer;
     private Slot[] ActiveCrafting => tableOpen ? tableSlots : craftingSlots;
 
@@ -104,7 +108,13 @@ public partial class PlayerInventory
     public bool BeginInventoryDrag(int index,bool right)
     {
         if(chestPending||furnacePending||DropRequestPending||Stack(pickedUpSlot).Empty||!DragSlotAccepts(index))return false;
-        inventoryDragActive=true;inventoryDragRight=right;draggedSlots.Clear();draggedSlots.Add(index);return true;
+        inventoryDragActive=true;inventoryDragRight=right;inventoryDragFromPickup=false;draggedSlots.Clear();draggedSlots.Add(index);return true;
+    }
+    public bool InventoryActionPending=>chestPending||furnacePending||DropRequestPending;
+    public void BeginCursorDragFromClick(bool right)
+    {
+        if(DropRequestPending||(!chestPending&&!furnacePending&&Stack(pickedUpSlot).Empty))return;
+        inventoryDragActive=true;inventoryDragRight=right;inventoryDragFromPickup=true;draggedSlots.Clear();
     }
     public void ContinueInventoryDrag(int index)
     {
@@ -115,8 +125,8 @@ public partial class PlayerInventory
     {
         if(!inventoryDragActive)return;
         inventoryDragActive=false;var indices=draggedSlots.ToArray();draggedSlots.Clear();
-        if(indices.Length==1){ClickInventorySlot(indices[0],inventoryDragRight,false);return;}
-        if(indices.Length<2)return;
+        if(indices.Length==0)return;
+        if(indices.Length==1&&!inventoryDragFromPickup){ClickInventorySlot(indices[0],inventoryDragRight,false);return;}
         if(chestOpen){DragChest(indices,inventoryDragRight);return;}
         if(furnaceOpen){DragFurnace(indices,inventoryDragRight);return;}
         var combined=LocalCombined();var mapped=MapLocalIndices(indices);
@@ -126,10 +136,21 @@ public partial class PlayerInventory
     private bool DragSlotAccepts(int index)
     {
         if(index==40||(index>=41&&index<45)||index==302)return false;
-        bool valid=index>=0&&index<40||index>=100&&index<127||index>=200&&index<209||index>=300&&index<302;
+        bool valid=(index>=0&&index<40)||(index>=100&&index<127)||(index>=200&&index<209)||(index>=300&&index<302);
         if(!valid)return false;
+        if((chestPending||furnacePending)&&inventoryDragFromPickup&&Stack(pickedUpSlot).Empty)return true;
         var slot=GetSlot(index);var cursor=Stack(pickedUpSlot);var value=Stack(slot);
         return slot!=null&&!cursor.Empty&&(value.Empty||value.Matches(cursor))&&value.count<InventoryRules.Limit(cursor.type);
+    }
+    public bool IsInventoryDoubleClick(int index,bool right,int eventClickCount)
+    {
+        if(right)return false;
+        var stack=Stack(pickedUpSlot);if(stack.Empty)stack=Stack(GetSlot(index));
+        if(stack.Empty){lastInventoryClickType=ItemType.Nothing;lastInventoryClickTime=Time.unscaledTime;return false;}
+        bool same=stack.type==lastInventoryClickType&&stack.damage==lastInventoryClickDamage;
+        bool result=same&&(eventClickCount>=2||Time.unscaledTime-lastInventoryClickTime<=InventoryDoubleClickWindow);
+        lastInventoryClickType=result?ItemType.Nothing:stack.type;lastInventoryClickDamage=stack.damage;
+        lastInventoryClickTime=result?-10:Time.unscaledTime;return result;
     }
     public void DoubleClickInventorySlot(int index)
     {

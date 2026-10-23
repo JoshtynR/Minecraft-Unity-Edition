@@ -6,6 +6,8 @@ public partial class PlayerInventory
 {
     private bool furnaceOpen, furnacePending, furnaceCloseRequested, furnaceNetworkSession;
     private int queuedFurnaceCollection=-1;
+    private int[] queuedFurnaceDrag;
+    private bool queuedFurnaceDragRight;
     private Vector3Int furnacePosition;
     private int furnaceSequence;
     private float nextFurnaceRefresh;
@@ -54,6 +56,8 @@ public partial class PlayerInventory
         SetFurnaceProgress(furnaceArrow, 24, Mathf.Clamp(reply.cookTicks * 24 / BetaSmelting.CookTicks, 0, 24), false);
         if(queuedFurnaceCollection>=0&&!furnaceCloseRequested)
         {int index=queuedFurnaceCollection;queuedFurnaceCollection=-1;CollectFurnace(index);return;}
+        if(queuedFurnaceDrag!=null&&!furnaceCloseRequested)
+        {var indices=queuedFurnaceDrag;bool right=queuedFurnaceDragRight;queuedFurnaceDrag=null;DragFurnace(indices,right);return;}
         if (furnaceCloseRequested) CloseInventory();
     }
     private void BuildFurnacePanel()
@@ -108,7 +112,7 @@ public partial class PlayerInventory
     private int FurnaceTarget(int index) => index>=300&&index<303?index-300:index>=0&&index<36?index+3:-1;
     private void DragFurnace(int[] indices,bool right)
     {
-        if(furnacePending)return;var targets=new int[indices.Length];
+        if(furnacePending){queuedFurnaceDrag=(int[])indices.Clone();queuedFurnaceDragRight=right;return;}var targets=new int[indices.Length];
         for(int i=0;i<indices.Length;i++)targets[i]=FurnaceTarget(indices[i]);
         SendFurnace(new FurnaceRequest{action=4,position=furnacePosition,slots=targets,right=right,sequence=furnaceSequence+1});
     }
@@ -127,7 +131,7 @@ public partial class PlayerInventory
     }
     private void EndFurnacePanel()
     {
-        furnaceOpen = false;queuedFurnaceCollection=-1; HideSlotHover(); inventorySlotsRect.SetParent(inventoryRect, false);
+        furnaceOpen = false;queuedFurnaceCollection=-1;queuedFurnaceDrag=null; HideSlotHover(); inventorySlotsRect.SetParent(inventoryRect, false);
         inventoryRect.gameObject.SetActive(true);
         if (furnacePanel != null) { furnacePanel.gameObject.SetActive(false); Destroy(furnacePanel.gameObject); furnacePanel = null; }
     }

@@ -6,6 +6,8 @@ public partial class PlayerInventory
 {
     private bool chestOpen,chestPending,chestCloseRequested,chestNetworkSession;
     private int queuedChestCollection=-1;
+    private int[] queuedChestDrag;
+    private bool queuedChestDragRight;
     private int chestSequence;
     private Vector3Int chestPosition;
     private RectTransform chestPanel;
@@ -63,6 +65,8 @@ public partial class PlayerInventory
         }
         if(queuedChestCollection>=0&&!chestCloseRequested)
         {int index=queuedChestCollection;queuedChestCollection=-1;CollectChest(index);return;}
+        if(queuedChestDrag!=null&&!chestCloseRequested)
+        {var indices=queuedChestDrag;bool right=queuedChestDragRight;queuedChestDrag=null;DragChest(indices,right);return;}
         if(chestCloseRequested)CloseInventory();
     }
     private void BuildChestPanel()
@@ -100,7 +104,7 @@ public partial class PlayerInventory
     }
     private void DragChest(int[] indices,bool right)
     {
-        if(chestPending)return;var targets=new int[indices.Length];
+        if(chestPending){queuedChestDrag=(int[])indices.Clone();queuedChestDragRight=right;return;}var targets=new int[indices.Length];
         for(int i=0;i<indices.Length;i++)targets[i]=indices[i]>=100?indices[i]-100:indices[i]+27;
         SendChest(new ChestRequest{action=4,position=chestPosition,slots=targets,right=right,sequence=chestSequence+1});
     }
@@ -119,7 +123,7 @@ public partial class PlayerInventory
     }
     private void EndChestPanel()
     {
-        chestOpen=false;queuedChestCollection=-1;HideSlotHover();
+        chestOpen=false;queuedChestCollection=-1;queuedChestDrag=null;HideSlotHover();
         inventorySlotsRect.SetParent(inventoryRect,false);
         inventoryRect.gameObject.SetActive(true);
         if(chestPanel!=null){chestPanel.gameObject.SetActive(false);Destroy(chestPanel.gameObject);chestPanel=null;}
