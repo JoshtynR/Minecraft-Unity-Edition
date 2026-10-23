@@ -5,6 +5,7 @@ using UnityEngine.UI;
 public partial class PlayerInventory
 {
     private bool chestOpen,chestPending,chestCloseRequested,chestNetworkSession;
+    private int queuedChestCollection=-1;
     private int chestSequence;
     private Vector3Int chestPosition;
     private RectTransform chestPanel;
@@ -29,6 +30,7 @@ public partial class PlayerInventory
             if(world.isSaving&&request.action!=2)
             {ReceiveChestReply(new ChestReply{error="World is saving; try the chest again in a moment."});return;}
             var reply=world.chests.Process(world.worldName,-1,request,accessible);
+            if(reply.accepted&&!reply.dropped.Empty)player.SpawnMenuDrop(reply.dropped);
             ReceiveChestReply(reply);
             if(reply.accepted&&!reply.opened)world.SaveWorld();
         }
@@ -59,6 +61,8 @@ public partial class PlayerInventory
             slot.type=stack.type;slot.damage=stack.damage;slot.SetCount(stack.count);
             DrawDurability(chestRects[i],stack);
         }
+        if(queuedChestCollection>=0&&!chestCloseRequested)
+        {int index=queuedChestCollection;queuedChestCollection=-1;CollectChest(index);return;}
         if(chestCloseRequested)CloseInventory();
     }
     private void BuildChestPanel()
@@ -94,6 +98,19 @@ public partial class PlayerInventory
         if(target<0||target>=63)return;
         SendChest(new ChestRequest{action=1,position=chestPosition,slot=target,right=right,shift=shift,sequence=chestSequence+1});
     }
+    private void DragChest(int[] indices,bool right)
+    {
+        if(chestPending)return;var targets=new int[indices.Length];
+        for(int i=0;i<indices.Length;i++)targets[i]=indices[i]>=100?indices[i]-100:indices[i]+27;
+        SendChest(new ChestRequest{action=4,position=chestPosition,slots=targets,right=right,sequence=chestSequence+1});
+    }
+    private void CollectChest(int index)
+    {
+        if(chestPending){queuedChestCollection=index;return;}int target=index>=100?index-100:index+27;
+        SendChest(new ChestRequest{action=5,position=chestPosition,slot=target,sequence=chestSequence+1});
+    }
+    private void DropChestCursor(bool single)
+    {if(!chestPending)SendChest(new ChestRequest{action=6,position=chestPosition,right=single,sequence=chestSequence+1});}
     private bool TryCloseChest()
     {
         if(chestPending){chestCloseRequested=true;return true;}
@@ -102,7 +119,7 @@ public partial class PlayerInventory
     }
     private void EndChestPanel()
     {
-        chestOpen=false;HideSlotHover();
+        chestOpen=false;queuedChestCollection=-1;HideSlotHover();
         inventorySlotsRect.SetParent(inventoryRect,false);
         inventoryRect.gameObject.SetActive(true);
         if(chestPanel!=null){chestPanel.gameObject.SetActive(false);Destroy(chestPanel.gameObject);chestPanel=null;}

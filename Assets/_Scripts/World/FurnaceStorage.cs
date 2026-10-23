@@ -6,10 +6,11 @@ using UnityEngine;
 
 public struct FurnaceRequest : NetworkMessage
 {
-    public byte action; // open, click, close, refresh
+    public byte action; // 0 open, 1 click, 2 close, 3 refresh, 4 drag, 5 collect, 6 drop cursor
     public Vector3Int position;
     public int slot, sequence, itemWearRevision;
     public bool right, shift;
+    public int[] slots;
     public InventoryStack[] inventory;
     public InventoryStack cursor;
 }
@@ -20,6 +21,7 @@ public struct FurnaceReply : NetworkMessage
     public Vector3Int position;
     public InventoryStack[] items, inventory;
     public InventoryStack cursor;
+    public InventoryStack dropped;
     public int sequence, burnTicks, fuelTicks, cookTicks;
 }
 
@@ -105,9 +107,15 @@ public sealed class FurnaceStorage
         }
         if (!sessions.TryGetValue(owner, out var session) || session.position != request.position) return new FurnaceReply { error = "Furnace session closed." };
         if (request.action == 3) return Reply(session, true);
-        if (request.action != 1 || request.sequence != session.sequence + 1) return new FurnaceReply { error = "Stale furnace action." };
-        if (!BetaSmelting.Click(entries[session.position].state, session.inventory, ref session.cursor, request.slot, request.right, request.shift)) return new FurnaceReply { error = "Invalid furnace action." };
-        session.sequence++; return Reply(session, true);
+        if (request.sequence != session.sequence + 1) return new FurnaceReply { error = "Stale furnace action." };
+        bool valid;InventoryStack dropped=new InventoryStack();
+        if(request.action==1)valid=BetaSmelting.Click(entries[session.position].state,session.inventory,ref session.cursor,request.slot,request.right,request.shift);
+        else if(request.action==4)valid=BetaSmelting.Drag(entries[session.position].state,session.inventory,ref session.cursor,request.slots,request.right);
+        else if(request.action==5)valid=BetaSmelting.Collect(entries[session.position].state,session.inventory,ref session.cursor,request.slot);
+        else if(request.action==6){dropped=InventoryRules.Drop(ref session.cursor,request.right);valid=!dropped.Empty;}
+        else valid=false;
+        if(!valid)return new FurnaceReply { error = "Invalid furnace action." };
+        session.sequence++;var reply=Reply(session,true);reply.dropped=dropped;return reply;
     }
     private FurnaceReply Reply(Session session, bool opened)
     {

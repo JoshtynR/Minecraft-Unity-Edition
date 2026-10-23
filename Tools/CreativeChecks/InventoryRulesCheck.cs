@@ -22,6 +22,15 @@ public partial class PlayerInventory
   slots=new InventoryStack[36];for(int i=0;i<36;i++)slots[i]=new InventoryStack(ItemType.Dirt,64);
   slots[0]=new InventoryStack(ItemType.Stone,64);slots[9]=new InventoryStack(ItemType.Stone,63);
   InventoryRules.Shift(slots,0);Check(slots[0].count==63&&slots[9].count==64,"shift transfer leaves uninserted remainder at source");
+  slots=new InventoryStack[5];var dragged=new InventoryStack(ItemType.Stone,5);
+  Check(InventoryRules.Drag(slots,ref dragged,new[]{0,1,1,2},true)&&slots[0].count==1&&slots[1].count==1&&slots[2].count==1&&dragged.count==2,"right drag paints one item into each unique slot");
+  slots=new InventoryStack[4];dragged=new InventoryStack(ItemType.Stone,10);
+  Check(InventoryRules.Drag(slots,ref dragged,new[]{0,1,2},false)&&slots[0].count==3&&slots[1].count==3&&slots[2].count==3&&dragged.count==1,"left drag evenly distributes a carried stack and keeps the remainder");
+  slots=new[]{new InventoryStack(ItemType.Stone,7),new InventoryStack(ItemType.Dirt,9),new InventoryStack(ItemType.Stone,12),new InventoryStack(ItemType.Stone,3,4)};
+  var collected=new InventoryStack(ItemType.Stone,50);
+  Check(InventoryRules.Collect(slots,ref collected)==14&&collected.count==64&&slots[0].Empty&&slots[2].count==5&&slots[3].count==3,"double-click collection fills one matching ID and damage stack without consuming other variants");
+  var dropped=InventoryRules.Drop(ref collected,true);Check(dropped.count==1&&collected.count==63,"right outside click removes one carried item");
+  dropped=InventoryRules.Drop(ref collected,false);Check(dropped.count==63&&collected.Empty,"left outside click removes the remaining carried stack");
   foreach(var log in new[]{ItemType.Log,ItemType.SpruceLog,ItemType.BirchLog})for(int cell=0;cell<4;cell++)
   {
    var input=new InventoryStack[4];input[cell]=new InventoryStack(log,1);

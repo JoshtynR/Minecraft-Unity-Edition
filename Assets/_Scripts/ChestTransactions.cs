@@ -26,4 +26,19 @@ public static class ChestTransactions
         else InventoryRules.Click(ref source[slot],ref cursor,right);
         return true;
     }
+    public static bool Drag(InventoryStack[] chest,InventoryStack[] inventory,ref InventoryStack cursor,int[] indices,bool right)
+    {
+        if(chest==null||chest.Length!=Size||!Valid(inventory,cursor)||indices==null)return false;
+        var combined=new InventoryStack[Size+36];Array.Copy(chest,combined,Size);Array.Copy(inventory,0,combined,Size,36);
+        InventoryRules.Drag(combined,ref cursor,indices,right);
+        Array.Copy(combined,chest,Size);Array.Copy(combined,Size,inventory,0,36);return true;
+    }
+    public static bool Collect(InventoryStack[] chest,InventoryStack[] inventory,ref InventoryStack cursor,int index)
+    {
+        if(chest==null||chest.Length!=Size||!Valid(inventory,cursor)||index<0||index>=Size+36)return false;
+        var combined=new InventoryStack[Size+36];Array.Copy(chest,combined,Size);Array.Copy(inventory,0,combined,Size,36);
+        if(cursor.Empty)InventoryRules.Click(ref combined[index],ref cursor,false);
+        InventoryRules.Collect(combined,ref cursor);
+        Array.Copy(combined,chest,Size);Array.Copy(combined,Size,inventory,0,36);return true;
+    }
 }

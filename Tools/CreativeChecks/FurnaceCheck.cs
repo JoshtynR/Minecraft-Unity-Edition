@@ -52,6 +52,10 @@ public partial class PlayerInventory
   inventory[0]=new InventoryStack(ItemType.IronOre,8);inventory[1]=new InventoryStack(ItemType.Coal,4);
   BetaSmelting.Click(furnace,inventory,ref cursor,3,false,true);BetaSmelting.Click(furnace,inventory,ref cursor,4,false,true);
   Check(furnace.items[0].count==8&&furnace.items[1].count==4,"shift click routes recipes and fuel to their slots");
+  var painted=new InventoryStack(ItemType.Sand,4);inventory=new InventoryStack[36];
+  Check(BetaSmelting.Drag(new BetaSmelting.State(),inventory,ref painted,new[]{3,4,5},true)&&inventory.Take(3).All(x=>x.count==1)&&painted.count==1,"furnace menu drag paints player slots without using output");
+  inventory[3]=new InventoryStack(ItemType.Sand,7);BetaSmelting.Collect(new BetaSmelting.State(),inventory,ref painted,6);
+  Check(painted.count==11&&inventory.Take(4).All(x=>x.Empty),"furnace double-click collection shares the authoritative cursor rules");
   var random=new System.Random(173);
   for(int trial=0;trial<30;trial++)
   {

@@ -83,6 +83,11 @@ public partial class PlayerInventory
         item.pickupDelay=0;item.position=Vector3.zero;
         player.DropAction(false,item.id);Check(inv.slots[0].damage==67&&world.droppedItems.Count==0,"world pickup atomically restores item durability");
         player.DropAction(false,item.id);Check(inv.slots.Count(s=>s.type==ItemType.DiamondPickaxe)==1,"duplicate pickup requests cannot create a second tool");
+        world.ClearDrops();inv.SetCursor(new InventoryStack(ItemType.Stone,4));player.RequestInventoryCursorDrop(true);
+        Check(inv.pickedUpSlot.count==3&&world.droppedItems.Items.Single().stack.count==1,"outside right click atomically drops one carried item");
+        player.RequestInventoryCursorDrop(false);
+        Check(inv.pickedUpSlot==null&&world.droppedItems.Items.Sum(x=>x.stack.count)==4,"outside left click atomically drops the remaining carried stack");
+        world.ClearDrops();
         world.isSaving=true;player.DropAction(true,0);Check(inv.slots[0].count==1&&world.droppedItems.Count==0,"save boundary refuses transfers on both sides");world.isSaving=false;
         inv.DropRequestPending=true;inv.OpenInventory();Check(!inv.isOpen,"inventory cannot open over an in-flight transfer snapshot");
         inv.ClickInventorySlot(0,false,false);Check(inv.slots[0].count==1&&inv.pickedUpSlot==null,"in-flight transfers block conflicting slot edits");inv.DropRequestPending=false;

@@ -89,9 +89,16 @@ public partial class PlayerInventory
   reply=store.Process("",1,new ChestRequest{action=1,position=pos,sequence=1,slot=27,shift=true},true);
   Check(reply.chest[0].count==63&&reply.inventory[0].Empty&&ChestTotal(reply)==63,"server transfer uses original session snapshot rather than later client array edits");
   Check(!store.Process("",1,new ChestRequest{action=1,position=pos,sequence=1,slot=0},true).accepted,"replayed sequence cannot duplicate a transfer");
+  reply=store.Process("",1,new ChestRequest{action=1,position=pos,sequence=2,slot=0},true);
+  reply=store.Process("",1,new ChestRequest{action=4,position=pos,sequence=3,slots=new[]{27,28,29},right=true},true);
+  Check(reply.inventory.Take(3).All(x=>x.count==1)&&reply.cursor.count==60,"server-authoritative chest drag paints across player slots");
+  reply=store.Process("",1,new ChestRequest{action=5,position=pos,sequence=4,slot=27},true);
+  Check(reply.cursor.count==63&&reply.inventory.Take(3).All(x=>x.Empty),"chest double click consolidates matching loose stacks onto cursor");
+  reply=store.Process("",1,new ChestRequest{action=6,position=pos,sequence=5,right=true},true);
+  Check(reply.dropped.count==1&&reply.cursor.count==62,"chest outside right click returns one authoritative world-drop stack");
   reply.chest[0].count=0;
   Check(!store.CanRemove("",pos),"occupied chest cannot be broken");
-  reply=store.Close(1);Check(!reply.opened&&reply.chest[0].count==63&&closes==1&&!store.CanRemove("",pos),"closing retains server contents and shuts lid");
+  reply=store.Close(1);Check(!reply.opened&&reply.chest[0].Empty&&closes==1&&store.CanRemove("",pos),"closing retains the updated server contents and shuts lid");
   Check(!store.Process("",1,open,false).accepted,"out-of-range or obstructed open rejected");
   open.inventory=new InventoryStack[35];Check(!store.Process("",1,open,true).accepted,"malformed inventory rejected");
   string name="chest-check-"+Guid.NewGuid().ToString("N");

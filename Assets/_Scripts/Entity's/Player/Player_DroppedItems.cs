@@ -7,6 +7,10 @@ public partial class Player
     private InventoryStack[] lastServerDropReply;
     private bool lastServerDropAccepted,awaitingNetworkDrop;
     private float nextDropPickup;
+    private int cursorDropRequestId,lastServerCursorDropRequest;
+    private InventoryStack[] lastServerCursorInventory;
+    private InventoryStack lastServerCursorReply;
+    private bool lastServerCursorAccepted;
 
     private void UpdateItemDrops()
     {
@@ -79,6 +83,55 @@ public partial class Player
         if(accepted)inventory.ApplyDropInventory(snapshot);
         inventory.DropRequestPending=false;awaitingNetworkDrop=false;
     }
+
+    public void RequestInventoryCursorDrop(bool single)
+    {
+        if(inventory==null||inventory.DropRequestPending||inventory.CursorSnapshot().Empty)return;
+        inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted;
+        int request=++cursorDropRequestId;
+        var snapshot=inventory.DropInventorySnapshot();var cursor=inventory.CursorSnapshot();
+        if(networkStarted)CmdInventoryCursorDrop(request,single,snapshot,cursor,knownItemWearRevision);
+        else ProcessInventoryCursorDrop(request,single,snapshot,cursor,false,knownItemWearRevision);
+    }
+    [Command] private void CmdInventoryCursorDrop(int request,bool single,InventoryStack[] snapshot,InventoryStack cursor,int revision)
+    {ProcessInventoryCursorDrop(request,single,snapshot,cursor,true,revision);}
+    private void ProcessInventoryCursorDrop(int request,bool single,InventoryStack[] snapshot,InventoryStack cursor,bool network,int revision)
+    {
+        if(request==lastServerCursorDropRequest&&lastServerCursorInventory!=null)
+        {CompleteInventoryCursorDrop(request,lastServerCursorInventory,lastServerCursorReply,lastServerCursorAccepted,network);return;}
+        bool accepted=false;
+        if(request>lastServerCursorDropRequest&&AcceptsItemRevision(revision)&&!dimensionTransfer&&world!=null&&world.IsWorldCreated&&!world.isSaving&&health>0&&ChestTransactions.Valid(snapshot,cursor))
+        {
+            var updated=cursor;var dropped=InventoryRules.Drop(ref updated,single);
+            accepted=SpawnMenuDrop(dropped);
+            if(accepted){cursor=updated;inventory.ApplyDropState(snapshot,cursor);}
+        }
+        if(request>lastServerCursorDropRequest)
+        {
+            lastServerCursorDropRequest=request;lastServerCursorAccepted=accepted;
+            lastServerCursorInventory=snapshot==null?null:(InventoryStack[])snapshot.Clone();lastServerCursorReply=cursor;
+        }
+        CompleteInventoryCursorDrop(request,snapshot,cursor,accepted,network);
+    }
+    private void CompleteInventoryCursorDrop(int request,InventoryStack[] snapshot,InventoryStack cursor,bool accepted,bool network)
+    {
+        if(network)TargetInventoryCursorDrop(connectionToClient,request,snapshot,cursor,accepted);
+        else ReceiveInventoryCursorDrop(request,snapshot,cursor,accepted);
+    }
+    [TargetRpc] private void TargetInventoryCursorDrop(NetworkConnection target,int request,InventoryStack[] snapshot,InventoryStack cursor,bool accepted)
+    {ReceiveInventoryCursorDrop(request,snapshot,cursor,accepted);}
+    private void ReceiveInventoryCursorDrop(int request,InventoryStack[] snapshot,InventoryStack cursor,bool accepted)
+    {
+        if(request!=cursorDropRequestId||inventory==null||!inventory.DropRequestPending)return;
+        if(accepted)inventory.ApplyDropState(snapshot,cursor);
+        inventory.DropRequestPending=false;awaitingNetworkDrop=false;
+    }
+    public bool SpawnMenuDrop(InventoryStack stack)
+    {
+        if(world==null||stack.Empty)return false;
+        Vector3 forward=cam!=null?cam.forward:transform.forward;
+        return world.SpawnItemDrop(stack,transform.position+Vector3.up*(eyeHeight-.3f),forward*.3f+Vector3.up*.1f,40);
+    }
 }
 
 public partial class PlayerInventory
@@ -86,9 +139,12 @@ public partial class PlayerInventory
     public bool DropRequestPending {get;set;}
     public InventoryStack[] DropInventorySnapshot()
     {ReadStorage();return (InventoryStack[])storageBuffer.Clone();}
+    public InventoryStack CursorSnapshot()=>Stack(pickedUpSlot);
     public void ApplyDropInventory(InventoryStack[] snapshot)
     {
         if(snapshot==null||snapshot.Length!=36)return;
         for(int i=0;i<36;i++)WriteStack(i,snapshot[i]);
     }
+    public void ApplyDropState(InventoryStack[] snapshot,InventoryStack cursor)
+    {ApplyDropInventory(snapshot);SetCursor(cursor);}
 }

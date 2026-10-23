@@ -5,6 +5,7 @@ using UnityEngine.UI;
 public partial class PlayerInventory
 {
     private bool furnaceOpen, furnacePending, furnaceCloseRequested, furnaceNetworkSession;
+    private int queuedFurnaceCollection=-1;
     private Vector3Int furnacePosition;
     private int furnaceSequence;
     private float nextFurnaceRefresh;
@@ -26,6 +27,7 @@ public partial class PlayerInventory
         if (world.isSaving && request.action != 2) { ReceiveFurnaceReply(new FurnaceReply { error = "World is saving; try again in a moment." }); return; }
         bool accessible = player != null && player.health > 0 && world.FurnaceAccessible(transform.position + Vector3.up * 1.6f, request.position);
         var reply = world.furnaces.Process(world.worldName, -1, request, accessible);
+        if (reply.accepted && !reply.dropped.Empty) player.SpawnMenuDrop(reply.dropped);
         ReceiveFurnaceReply(reply);
         if (reply.accepted && !reply.opened) world.SaveWorld();
     }
@@ -50,6 +52,8 @@ public partial class PlayerInventory
         }
         SetFurnaceProgress(furnaceFlame, 14, reply.burnTicks > 0 ? Mathf.Clamp(reply.burnTicks * 13 / System.Math.Max(1, reply.fuelTicks) + 1, 0, 14) : 0, true);
         SetFurnaceProgress(furnaceArrow, 24, Mathf.Clamp(reply.cookTicks * 24 / BetaSmelting.CookTicks, 0, 24), false);
+        if(queuedFurnaceCollection>=0&&!furnaceCloseRequested)
+        {int index=queuedFurnaceCollection;queuedFurnaceCollection=-1;CollectFurnace(index);return;}
         if (furnaceCloseRequested) CloseInventory();
     }
     private void BuildFurnacePanel()
@@ -101,6 +105,20 @@ public partial class PlayerInventory
         if (target < 0) return;
         SendFurnace(new FurnaceRequest { action = 1, position = furnacePosition, slot = target, right = right, shift = shift, sequence = furnaceSequence + 1 });
     }
+    private int FurnaceTarget(int index) => index>=300&&index<303?index-300:index>=0&&index<36?index+3:-1;
+    private void DragFurnace(int[] indices,bool right)
+    {
+        if(furnacePending)return;var targets=new int[indices.Length];
+        for(int i=0;i<indices.Length;i++)targets[i]=FurnaceTarget(indices[i]);
+        SendFurnace(new FurnaceRequest{action=4,position=furnacePosition,slots=targets,right=right,sequence=furnaceSequence+1});
+    }
+    private void CollectFurnace(int index)
+    {
+        if(furnacePending){queuedFurnaceCollection=index;return;}int target=FurnaceTarget(index);if(target<0)return;
+        SendFurnace(new FurnaceRequest{action=5,position=furnacePosition,slot=target,sequence=furnaceSequence+1});
+    }
+    private void DropFurnaceCursor(bool single)
+    {if(!furnacePending)SendFurnace(new FurnaceRequest{action=6,position=furnacePosition,right=single,sequence=furnaceSequence+1});}
     private bool TryCloseFurnace()
     {
         if (furnacePending) { furnaceCloseRequested = true; return true; }
@@ -109,7 +127,7 @@ public partial class PlayerInventory
     }
     private void EndFurnacePanel()
     {
-        furnaceOpen = false; HideSlotHover(); inventorySlotsRect.SetParent(inventoryRect, false);
+        furnaceOpen = false;queuedFurnaceCollection=-1; HideSlotHover(); inventorySlotsRect.SetParent(inventoryRect, false);
         inventoryRect.gameObject.SetActive(true);
         if (furnacePanel != null) { furnacePanel.gameObject.SetActive(false); Destroy(furnacePanel.gameObject); furnacePanel = null; }
     }

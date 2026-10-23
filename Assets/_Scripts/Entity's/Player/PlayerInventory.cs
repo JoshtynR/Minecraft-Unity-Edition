@@ -105,6 +105,7 @@ public partial class PlayerInventory : MonoBehaviour
 
     public void CloseInventory()
     {
+        inventoryDragActive=false;draggedSlots.Clear();
         if(TryCloseChest())return;
         if(TryCloseFurnace())return;
         if(tableOpen)EndCraftingTable(true);

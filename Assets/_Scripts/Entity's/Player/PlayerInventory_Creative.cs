@@ -40,6 +40,7 @@ public partial class PlayerInventory
         var backdrop=CreativeRect("DimBackground",creativeRoot,0,0,640,360);
         backdrop.localPosition=new Vector3(0,0,10);
         backdrop.gameObject.AddComponent<Image>().color=new Color(0,0,0,.6f);
+        var outside=backdrop.gameObject.AddComponent<InventoryOutsideClick>();outside.playerInventory=this;
         inventoryRect=CreativeRect("SurvivalInventory",creativeRoot,0,0,176,166);
         texturedInventory=assets!=null&&assets.inventory!=null;
         if(texturedInventory)
@@ -149,6 +150,21 @@ public partial class PlayerInventory
         tooManyItemsEnabled=!tooManyItemsEnabled;
         HideSlotHover();
         UpdateInventoryLayout();
+    }
+
+    public void ClickOutsideInventory(UnityEngine.EventSystems.PointerEventData data)
+    {
+        if(!isOpen||pickedUpSlot==null||data==null)return;
+        bool right=data.button==UnityEngine.EventSystems.PointerEventData.InputButton.Right;
+        if(!right&&data.button!=UnityEngine.EventSystems.PointerEventData.InputButton.Left)return;
+        Camera camera=inventoryCanvas.renderMode==RenderMode.ScreenSpaceOverlay?null:inventoryCanvas.worldCamera;
+        RectTransform panel=chestOpen?chestPanel:furnaceOpen?furnacePanel:tableOpen?tablePanel:inventoryRect;
+        if(panel!=null&&RectTransformUtility.RectangleContainsScreenPoint(panel,Input.mousePosition,camera))return;
+        if(creativePanel!=null&&creativePanel.gameObject.activeSelf&&RectTransformUtility.RectangleContainsScreenPoint(creativePanel,Input.mousePosition,camera))return;
+        inventoryDragActive=false;draggedSlots.Clear();
+        if(chestOpen)DropChestCursor(right);
+        else if(furnaceOpen)DropFurnaceCursor(right);
+        else if(player!=null)player.RequestInventoryCursorDrop(right);
     }
 
     private void ChangeCreativePage(int delta)

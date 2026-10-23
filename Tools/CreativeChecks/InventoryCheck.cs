@@ -130,7 +130,7 @@ namespace UnityEngine
  public enum RenderMode {ScreenSpaceOverlay,ScreenSpaceCamera}
  public class Camera:Component {public static Camera main;}
  public class Canvas:Component {public RenderMode renderMode;public Camera worldCamera;}
- public static class RectTransformUtility {public static bool ScreenPointToLocalPointInRectangle(RectTransform r,Vector3 p,Camera camera,out Vector2 point){point=new Vector2(p.x,p.y);return true;}}
+ public static class RectTransformUtility {public static bool ScreenPointToLocalPointInRectangle(RectTransform r,Vector3 p,Camera camera,out Vector2 point){point=new Vector2(p.x,p.y);return true;}public static bool RectangleContainsScreenPoint(RectTransform r,Vector3 p,Camera camera)=>false;}
  public enum CursorLockMode {None,Locked}
  public static class Cursor {public static CursorLockMode lockState;public static bool visible;}
 }
@@ -161,10 +161,11 @@ namespace TMPro
 }
 namespace UnityEngine.EventSystems
 {
- public class PointerEventData {public enum InputButton {Left,Right,Middle}public InputButton button;}
+ public class PointerEventData {public enum InputButton {Left,Right,Middle}public InputButton button;public int clickCount;}
  public interface IPointerEnterHandler {void OnPointerEnter(PointerEventData data);}
  public interface IPointerExitHandler {void OnPointerExit(PointerEventData data);}
  public interface IPointerDownHandler {void OnPointerDown(PointerEventData data);}
+ public interface IPointerUpHandler {void OnPointerUp(PointerEventData data);}
 }
 public enum Direction {down,up,backwards,forwards,left,right}
 public class ChunkData
@@ -347,6 +348,11 @@ public partial class PlayerInventory
   inv.ClickInventorySlot(0,false,false);inv.ClickInventorySlot(0,false,true);
   Check(inv.slots[0].count==0&&inv.slots[9].count==32,"shift transfer targets backpack rather than hidden storage");
   Check(Total(inv,ItemType.Stone)==63,"clicks conserve all items");
+  inv.LoadInventory(null);inv.SetCursor(new InventoryStack(ItemType.Stone,8));
+  Check(inv.BeginInventoryDrag(0,true),"carried stack starts a slot drag");inv.ContinueInventoryDrag(1);inv.ContinueInventoryDrag(2);inv.EndInventoryDrag();
+  Check(inv.slots.Take(3).All(s=>s.count==1)&&inv.pickedUpSlot.count==5,"UI right drag paints one item into every crossed slot");
+  inv.LoadInventory(null);inv.AddItem(ItemType.Stone,70);inv.ClickInventorySlot(1,false,false);inv.DoubleClickInventorySlot(0);
+  Check(inv.pickedUpSlot.count==64&&inv.slots[0].count==6&&inv.slots[1].count==0,"UI double click consolidates loose matching stacks up to their limit");
   inv.LoadInventory(null);inv.SetCursor(new InventoryStack(ItemType.Log,2));inv.ClickInventorySlot(36,false,false);
   Check(inv.craftedOutput.type==ItemType.WoodenPlanks&&inv.craftedOutput.count==4,"single-log recipe preview");
   inv.ClickInventorySlot(40,false,false);Check(inv.pickedUpSlot.count==4&&inv.craftingSlots[0].count==1,"taking output consumes one ingredient");

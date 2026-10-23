@@ -71,6 +71,7 @@ public partial class WorldServer
         { connection.Send(new FurnaceReply { error = "World is saving; try again in a moment." }); return; }
         bool accessible = player.health > 0 && world.FurnaceAccessible(player.transform.position + Vector3.up * 1.6f, request.position);
         var reply = world.furnaces.Process(world.StorageName, connection.connectionId, request, accessible);
+        if (reply.accepted && !reply.dropped.Empty) player.SpawnMenuDrop(reply.dropped);
         if (reply.accepted) player.GetComponent<PlayerInventory>().ApplyChestPlayerSnapshot(reply.inventory, reply.cursor);
         connection.Send(reply);
         if (reply.accepted && !reply.opened) world.SaveWorld();

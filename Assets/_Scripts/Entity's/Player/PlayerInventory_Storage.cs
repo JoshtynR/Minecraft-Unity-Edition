@@ -11,6 +11,8 @@ public partial class PlayerInventory
     private readonly InventoryStack[] storageBuffer = new InventoryStack[36];
     private readonly InventoryStack[] playerCraftBuffer = new InventoryStack[4];
     private readonly InventoryStack[] tableCraftBuffer = new InventoryStack[9];
+    private readonly List<int> draggedSlots = new List<int>();
+    private bool inventoryDragActive,inventoryDragRight;
     private InventoryStack[] craftBuffer => tableOpen ? tableCraftBuffer : playerCraftBuffer;
     private Slot[] ActiveCrafting => tableOpen ? tableSlots : craftingSlots;
 
@@ -98,6 +100,74 @@ public partial class PlayerInventory
             WriteStack(index,value);SetCursor(cursor);
         }
         RefreshCraftingOutput();
+    }
+    public bool BeginInventoryDrag(int index,bool right)
+    {
+        if(chestPending||furnacePending||DropRequestPending||Stack(pickedUpSlot).Empty||!DragSlotAccepts(index))return false;
+        inventoryDragActive=true;inventoryDragRight=right;draggedSlots.Clear();draggedSlots.Add(index);return true;
+    }
+    public void ContinueInventoryDrag(int index)
+    {
+        if(!inventoryDragActive||!DragSlotAccepts(index)||draggedSlots.Contains(index))return;
+        draggedSlots.Add(index);
+    }
+    public void EndInventoryDrag()
+    {
+        if(!inventoryDragActive)return;
+        inventoryDragActive=false;var indices=draggedSlots.ToArray();draggedSlots.Clear();
+        if(indices.Length==1){ClickInventorySlot(indices[0],inventoryDragRight,false);return;}
+        if(indices.Length<2)return;
+        if(chestOpen){DragChest(indices,inventoryDragRight);return;}
+        if(furnaceOpen){DragFurnace(indices,inventoryDragRight);return;}
+        var combined=LocalCombined();var mapped=MapLocalIndices(indices);
+        var cursor=Stack(pickedUpSlot);InventoryRules.Drag(combined,ref cursor,mapped,inventoryDragRight);
+        WriteLocalCombined(combined);SetCursor(cursor);RefreshCraftingOutput();
+    }
+    private bool DragSlotAccepts(int index)
+    {
+        if(index==40||(index>=41&&index<45)||index==302)return false;
+        bool valid=index>=0&&index<40||index>=100&&index<127||index>=200&&index<209||index>=300&&index<302;
+        if(!valid)return false;
+        var slot=GetSlot(index);var cursor=Stack(pickedUpSlot);var value=Stack(slot);
+        return slot!=null&&!cursor.Empty&&(value.Empty||value.Matches(cursor))&&value.count<InventoryRules.Limit(cursor.type);
+    }
+    public void DoubleClickInventorySlot(int index)
+    {
+        if(DropRequestPending)return;
+        inventoryDragActive=false;draggedSlots.Clear();
+        if(chestOpen){CollectChest(index);return;}
+        if(furnaceOpen){CollectFurnace(index);return;}
+        if(chestPending||furnacePending)return;
+        var combined=LocalCombined();int mapped;
+        if(!TryMapLocalIndex(index,out mapped))return;
+        var cursor=Stack(pickedUpSlot);
+        if(cursor.Empty)InventoryRules.Click(ref combined[mapped],ref cursor,false);
+        InventoryRules.Collect(combined,ref cursor);
+        WriteLocalCombined(combined);SetCursor(cursor);RefreshCraftingOutput();
+    }
+    private InventoryStack[] LocalCombined()
+    {
+        ReadStorage();ReadCrafting();var combined=new InventoryStack[36+ActiveCrafting.Length];
+        Array.Copy(storageBuffer,combined,36);Array.Copy(craftBuffer,0,combined,36,ActiveCrafting.Length);return combined;
+    }
+    private int[] MapLocalIndices(int[] indices)
+    {
+        var result=new List<int>();int mapped;
+        foreach(int index in indices)if(TryMapLocalIndex(index,out mapped))result.Add(mapped);
+        return result.ToArray();
+    }
+    private bool TryMapLocalIndex(int index,out int mapped)
+    {
+        if(index>=0&&index<36){mapped=index;return true;}
+        int start=tableOpen?200:36;
+        if(index>=start&&index<start+ActiveCrafting.Length){mapped=36+index-start;return true;}
+        mapped=-1;return false;
+    }
+    private void WriteLocalCombined(InventoryStack[] combined)
+    {
+        Array.Copy(combined,storageBuffer,36);CommitStorage();
+        int start=tableOpen?200:36;
+        for(int i=0;i<ActiveCrafting.Length;i++)WriteStack(start+i,combined[36+i]);
     }
     private void ReadCrafting()
     {

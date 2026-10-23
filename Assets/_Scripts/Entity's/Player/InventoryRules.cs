@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 [Serializable]
 public struct InventoryStack
@@ -32,6 +33,54 @@ public static class InventoryRules
         }
         else { var swap=slot;slot=cursor;cursor=swap; }
         slot.Normalize();cursor.Normalize();
+    }
+    public static bool Drag(InventoryStack[] slots,ref InventoryStack cursor,int[] indices,bool right)
+    {
+        cursor.Normalize();
+        if(slots==null||indices==null||cursor.Empty)return false;
+        var targets=new List<int>();
+        var seen=new HashSet<int>();
+        int limit=Limit(cursor.type);
+        foreach(int index in indices)
+        {
+            if(index<0||index>=slots.Length||!seen.Add(index))continue;
+            var slot=slots[index];slot.Normalize();slots[index]=slot;
+            if((slot.Empty||slot.Matches(cursor))&&(slot.Empty?0:slot.count)<limit)targets.Add(index);
+        }
+        if(targets.Count==0)return false;
+        int perSlot=right?1:Math.Max(1,cursor.count/targets.Count);
+        bool changed=false;
+        foreach(int index in targets)
+        {
+            if(cursor.Empty)break;
+            var slot=slots[index];
+            int move=Math.Min(cursor.count,Math.Min(perSlot,limit-(slot.Empty?0:slot.count)));
+            if(move<=0)continue;
+            if(slot.Empty)slot=new InventoryStack(cursor.type,0,cursor.damage);
+            slot.count+=move;cursor.count-=move;slots[index]=slot;changed=true;
+        }
+        cursor.Normalize();return changed;
+    }
+    public static int Collect(InventoryStack[] slots,ref InventoryStack cursor)
+    {
+        cursor.Normalize();
+        if(slots==null||cursor.Empty)return 0;
+        int moved=0,limit=Limit(cursor.type);
+        for(int i=0;i<slots.Length&&cursor.count<limit;i++)
+        {
+            var slot=slots[i];slot.Normalize();
+            if(slot.Empty||!slot.Matches(cursor)){slots[i]=slot;continue;}
+            int take=Math.Min(slot.count,limit-cursor.count);
+            cursor.count+=take;slot.count-=take;slot.Normalize();slots[i]=slot;moved+=take;
+        }
+        return moved;
+    }
+    public static InventoryStack Drop(ref InventoryStack cursor,bool single)
+    {
+        cursor.Normalize();if(cursor.Empty)return new InventoryStack();
+        int count=single?1:cursor.count;
+        var dropped=new InventoryStack(cursor.type,count,cursor.damage);
+        cursor.count-=count;cursor.Normalize();return dropped;
     }
     public static bool EquipmentAccepts(int index,ItemType type) => index==0&&type==ItemType.Pumpkin;
     public static void ClickEquipment(ref InventoryStack slot,ref InventoryStack cursor,int index)

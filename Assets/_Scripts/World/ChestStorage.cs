@@ -7,10 +7,11 @@ using UnityEngine;
 public struct ChestRequest : NetworkMessage
 {
     public int itemWearRevision;
-    public byte action; // 0 open, 1 click, 2 close
+    public byte action; // 0 open, 1 click, 2 close, 4 drag, 5 collect, 6 drop cursor
     public Vector3Int position;
     public int slot;
     public bool right,shift;
+    public int[] slots;
     public InventoryStack[] inventory;
     public InventoryStack cursor;
     public int sequence;
@@ -22,6 +23,7 @@ public struct ChestReply : NetworkMessage
     public Vector3Int position;
     public InventoryStack[] chest,inventory;
     public InventoryStack cursor;
+    public InventoryStack dropped;
     public int sequence;
 }
 
@@ -95,11 +97,17 @@ public sealed class ChestStorage
             session=new Session{position=request.position,inventory=(InventoryStack[])request.inventory.Clone(),cursor=request.cursor};
             sessions.Add(owner,session);LidChanged?.Invoke(request.position,true);return Reply(session,true);
         }
-        if(request.action!=1||!sessions.TryGetValue(owner,out session)||session.position!=request.position||request.sequence!=session.sequence+1)
+        if(!sessions.TryGetValue(owner,out session)||session.position!=request.position||request.sequence!=session.sequence+1)
             return new ChestReply{error="Stale chest action."};
-        if(!ChestTransactions.Click(entries[session.position].items,session.inventory,ref session.cursor,request.slot,request.right,request.shift))
+        bool valid;InventoryStack dropped=new InventoryStack();
+        if(request.action==1)valid=ChestTransactions.Click(entries[session.position].items,session.inventory,ref session.cursor,request.slot,request.right,request.shift);
+        else if(request.action==4)valid=ChestTransactions.Drag(entries[session.position].items,session.inventory,ref session.cursor,request.slots,request.right);
+        else if(request.action==5)valid=ChestTransactions.Collect(entries[session.position].items,session.inventory,ref session.cursor,request.slot);
+        else if(request.action==6){dropped=InventoryRules.Drop(ref session.cursor,request.right);valid=!dropped.Empty;}
+        else valid=false;
+        if(!valid)
             return new ChestReply{error="Invalid chest action."};
-        session.sequence++;return Reply(session,true);
+        session.sequence++;var reply=Reply(session,true);reply.dropped=dropped;return reply;
     }
     private ChestReply Reply(Session session,bool opened) => new ChestReply
     {

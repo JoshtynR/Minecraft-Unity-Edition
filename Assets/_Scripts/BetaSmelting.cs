@@ -116,4 +116,24 @@ public static class BetaSmelting
         else InventoryRules.Click(ref inventory[index - 3], ref cursor, right);
         return true;
     }
+
+    public static bool Drag(State state,InventoryStack[] inventory,ref InventoryStack cursor,int[] indices,bool right)
+    {
+        if(state==null||state.items==null||state.items.Length!=3||!ChestTransactions.Valid(inventory,cursor)||indices==null)return false;
+        var combined=new InventoryStack[39];Array.Copy(state.items,combined,3);Array.Copy(inventory,0,combined,3,36);
+        var editable=new int[indices.Length];int count=0;
+        foreach(int index in indices)if(index!=2&&index>=0&&index<39)editable[count++]=index;
+        if(count!=editable.Length)Array.Resize(ref editable,count);
+        InventoryRules.Drag(combined,ref cursor,editable,right);
+        state.items[0]=combined[0];state.items[1]=combined[1];Array.Copy(combined,3,inventory,0,36);return true;
+    }
+
+    public static bool Collect(State state,InventoryStack[] inventory,ref InventoryStack cursor,int index)
+    {
+        if(state==null||state.items==null||state.items.Length!=3||!ChestTransactions.Valid(inventory,cursor)||index<0||index>=39)return false;
+        var combined=new InventoryStack[39];Array.Copy(state.items,combined,3);Array.Copy(inventory,0,combined,3,36);
+        if(cursor.Empty)InventoryRules.Click(ref combined[index],ref cursor,false);
+        InventoryRules.Collect(combined,ref cursor);
+        Array.Copy(combined,state.items,3);Array.Copy(combined,3,inventory,0,36);return true;
+    }
 }
