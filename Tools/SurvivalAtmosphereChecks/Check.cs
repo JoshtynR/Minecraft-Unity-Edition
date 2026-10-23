@@ -24,6 +24,9 @@ class Check {
   fall.Step(6,false,false);fall.Step(3,false,false);Assert(fall.Step(3,true,false)==1,"four blocks costs half heart");Assert(fall.Step(3,true,false)==0,"landing charged once");
   fall.Step(2,false,false);fall.Step(1,false,true);Assert(fall.Step(0,true,false)==0,"water/flight breaks fall chain");fall.Step(100,false,false);Assert(fall.Step(100,true,false)==0,"teleport resets fall");
   fall.Reset();fall.Step(100,true,false);for(int y=99;y>60;y--)fall.Step(y,false,false);Assert(fall.Step(60,true,false)==37,"long fall damage");
+  Time.time=20;var cactusPlayer=Player();BlockCollision.cactus=true;cactusPlayer.CactusTick();Assert(cactusPlayer.health==19,"cactus contact deals one point of damage");
+  cactusPlayer.CactusTick();Assert(cactusPlayer.health==19,"cactus respects the half-second hurt interval");Time.time=20.5f;cactusPlayer.CactusTick();Assert(cactusPlayer.health==18,"continued cactus contact damages again after ten ticks");
+  cactusPlayer.isFlying=true;Time.time=21;cactusPlayer.CactusTick();Assert(cactusPlayer.health==18,"flying player is immune to cactus damage");BlockCollision.cactus=false;
   Assert(SkyClock.Daylight(6000)>.99&&SkyClock.Daylight(18000)<.01,"noon and midnight light");Assert(Math.Abs(SkyClock.Angle(1000)-SkyClock.Angle(25000))<.001,"twenty minute cycle wraps");
   Time.time=100;World.Overworld=new World{worldTimeTicks=17000};var server=new WorldServer();Call(server,"InitializeWorldClock");Time.time=110;Assert(Math.Abs(server.WorldTicks-17200)<.001,"server resumes saved time and advances twenty ticks per second");
   foreach(var type in new[]{ItemType.Apple,ItemType.Bread,ItemType.MushroomStew,ItemType.RawPorkchop,ItemType.CookedPorkchop,ItemType.RawFish,ItemType.CookedFish,ItemType.Cookie,ItemType.GoldenApple}){int f;float s;Assert(FoodRules.TryGet(type,out f,out s)&&f>0&&s>0,"food supported "+type);}

@@ -49,6 +49,32 @@ public static class BlockCollision
             feet.z + halfWidth > cell.z + shape.zMin/16f + Epsilon && feet.z - halfWidth < cell.z + shape.zMax/16f - Epsilon;
     }
 
+    // Contact queries share the exact code-defined collision boxes used by
+    // movement. This matters for hazards such as cactus, whose model and
+    // collision box are inset from the voxel boundary.
+    public static bool TouchesBlock(World world, Vector3 feet, float halfWidth, float height, BlockType type)
+    {
+        if (world == null) return false;
+        int x0 = Mathf.FloorToInt(feet.x - halfWidth);
+        int x1 = Mathf.FloorToInt(feet.x + halfWidth);
+        int y0 = Mathf.Max(0, Mathf.FloorToInt(feet.y));
+        int y1 = Mathf.Min(world.worldHeight - 1, Mathf.FloorToInt(feet.y + height));
+        int z0 = Mathf.FloorToInt(feet.z - halfWidth);
+        int z1 = Mathf.FloorToInt(feet.z + halfWidth);
+        for (int x = x0; x <= x1; x++)
+        for (int y = y0; y <= y1; y++)
+        for (int z = z0; z <= z1; z++)
+        {
+            var block = world.GetBlock(new Vector3Int(x,y,z));
+            if (block == null || block.type != type) continue;
+            int parts = SpecialBlockGeometry.CollisionCount(type);
+            for (int part = 0; part < parts; part++)
+                if (OverlapsBody(feet,halfWidth,height,new Vector3Int(x,y,z),SpecialBlockGeometry.CollisionPart(type,block.blockShape,part)))
+                    return true;
+        }
+        return false;
+    }
+
     public static bool Supported(World world, Vector3 feet, float halfWidth, float height)
     { return Clip(world,feet,halfWidth,height,-0.02f,1) > -0.02f + Epsilon; }
 

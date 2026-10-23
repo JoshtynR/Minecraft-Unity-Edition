@@ -255,6 +255,7 @@ public partial class Player : BaseEntity
         if (isServer || !networkStarted)
         {
             AdvanceFluidHazards(Time.fixedDeltaTime);
+            AdvanceCactusDamage();
             AdvanceFallDamage();
             AdvanceSurvival(Time.fixedDeltaTime);
             AdvanceMining(Time.fixedDeltaTime);

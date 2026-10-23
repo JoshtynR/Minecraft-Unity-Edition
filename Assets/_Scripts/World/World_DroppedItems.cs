@@ -118,6 +118,11 @@ public partial class World
                 foreach(var item in dropTickBuffer)
                 {
                     if(item.position.y<-64){droppedItems.Remove(item.id);BroadcastDropRemoval(item.id);continue;}
+                    // Beta cactus destroys item entities immediately on contact.
+                    // Test the entity box, not only its center voxel, so an item
+                    // touching the inset cactus edge cannot survive in a neighbor.
+                    if(BlockCollision.TouchesBlock(this,item.position,DroppedItemRules.HalfWidth,DroppedItemRules.Height,BlockType.Cactus))
+                    {droppedItems.Remove(item.id);BroadcastDropRemoval(item.id);continue;}
                     var cell=Vector3Int.FloorToInt(item.position);
                     var block=GetBlock(new Vector3Int(cell.x,Mathf.Clamp(cell.y,0,worldHeight-1),cell.z));
                     // Unloaded chunks pause entities rather than dropping them through the void.
@@ -133,7 +138,7 @@ public partial class World
                     if(block.type==BlockType.Lava){item.motion.x=Random.Range(-.2f,.2f);item.motion.z=Random.Range(-.2f,.2f);}
                     var below=GetBlock(Vector3Int.FloorToInt(item.position+Vector3.down*.01f));
                     bool alive=DroppedItemRules.Tick(item,(feet,move)=>BlockCollision.Resolve(this,feet,DroppedItemRules.HalfWidth,DroppedItemRules.Height,move,false),
-                        below!=null&&below.type==BlockType.Ice?.98f:.6f,current,block.type==BlockType.Lava,block.type==BlockType.Fire||block.type==BlockType.Cactus);
+                        below!=null&&below.type==BlockType.Ice?.98f:.6f,current,block.type==BlockType.Lava,block.type==BlockType.Fire);
                     if(!alive){droppedItems.Remove(item.id);BroadcastDropRemoval(item.id);}
                     else if(item.age%5==0)BroadcastDrop(item);
                 }

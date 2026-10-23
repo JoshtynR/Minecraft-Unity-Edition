@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public sealed class BlockBreakOverlay : System.IDisposable
@@ -7,6 +8,7 @@ public sealed class BlockBreakOverlay : System.IDisposable
     private Material material;
     private Vector3Int position;
     private BlockShape shape;
+    private BlockType blockType;
     private byte stairFacing;
     private int columns, rows;
     private bool warned;
@@ -15,12 +17,14 @@ public sealed class BlockBreakOverlay : System.IDisposable
     {
         if (root == null && !Create()) return;
         var nextShape = block.blockShape.GetShape();
-        if (shape == null || position != block.globalWorldPosition || !ReferenceEquals(shape, nextShape) || (StairGeometry.IsStair(block.type) && stairFacing != StairGeometry.Facing(block.blockShape)))
+        if (shape == null || position != block.globalWorldPosition || blockType != block.type || !ReferenceEquals(shape, nextShape) || (StairGeometry.IsStair(block.type) && stairFacing != StairGeometry.Facing(block.blockShape)))
         {
             position = block.globalWorldPosition; shape = nextShape;
+            blockType = block.type;
             stairFacing = StairGeometry.Facing(block.blockShape);
             root.transform.position = position;
             var data = new MeshData(false);
+            var baseUvs = new List<Vector3>();
             foreach (var dir in BlockHelper.directions)
             {
                 int parts = StairGeometry.IsStair(block.type) ? 2 : 1;
@@ -29,14 +33,24 @@ public sealed class BlockBreakOverlay : System.IDisposable
                     var face = parts == 2 ? StairGeometry.RenderFace(stairFacing, part, dir) : shape;
                     if (face == null) continue;
                     face.SetFaceVertices(dir, Vector3Int.zero, data);
+                    var mapping = block.type == BlockType.Cactus ? new Vector4(1,1,0,0) : face.FaceUVTransform(dir);
+                    AddBaseUVs(baseUvs,block.BlockData.textureData.FaceIndex(block.type,dir),mapping);
                     data.AddFaceUVs(0, face.FaceUVTransform(dir)); data.AddQuadTriangles();
                 }
             }
-            mesh.Clear(); mesh.SetVertices(data.vertices); mesh.SetUVs(0, data.uv); mesh.SetTriangles(data.triangles, 0); mesh.RecalculateBounds();
+            mesh.Clear(); mesh.SetVertices(data.vertices); mesh.SetUVs(0, data.uv); mesh.SetUVs(1,baseUvs); mesh.SetTriangles(data.triangles, 0); mesh.RecalculateBounds();
         }
         int column = stage % columns, row = stage / columns;
         material.SetVector("_Frame", new Vector4(1f / columns, 1f / rows, (float)column / columns, 1 - (row + 1f) / rows));
         root.SetActive(true);
+    }
+
+    private static void AddBaseUVs(List<Vector3> uvs,int layer,Vector4 mapping)
+    {
+        uvs.Add(new Vector3(mapping.z,mapping.w,layer));
+        uvs.Add(new Vector3(mapping.z,mapping.w+mapping.y,layer));
+        uvs.Add(new Vector3(mapping.z+mapping.x,mapping.w+mapping.y,layer));
+        uvs.Add(new Vector3(mapping.z+mapping.x,mapping.w,layer));
     }
 
     private bool Create()

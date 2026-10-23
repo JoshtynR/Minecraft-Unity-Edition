@@ -73,6 +73,18 @@ public partial class Player
         {health=Mathf.Max(0,health-damage);GameAudio.Broadcast(damage>4?"damage/fallbig":"damage/fallsmall",transform.position,1,1,world);}
     }
 
+    private void AdvanceCactusDamage()
+    {
+        if(world==null||!world.IsWorldCreated||health<=0||dimensionTransfer)return;
+        bool local=!networkStarted||isLocalPlayer;
+        if((local?isFlying:serverFlying)||NetworkTime.time<hurtUntil||
+            !BlockCollision.TouchesBlock(world,transform.position,entityWidth,entityHeight,BlockType.Cactus))return;
+        hurtUntil=NetworkTime.time+.5;
+        health=Mathf.Max(0,health-1);
+        exhaustion=System.Math.Min(40,exhaustion+.3f);
+        GameAudio.Broadcast("damage/hit",transform.position,1,1,world);
+    }
+
     private bool TryStartEating()
     {
         if(inventory==null||inventory.DropRequestPending||hunger>=20||health<=0)return false;

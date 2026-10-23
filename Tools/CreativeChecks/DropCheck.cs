@@ -8,6 +8,8 @@ public static class BlockCollision
 {
     public static Vector3 Resolve(World world,Vector3 feet,float radius,float height,Vector3 move,bool step)
     {if(feet.y+move.y<0)move.y=-feet.y;return move;}
+    public static bool TouchesBlock(World world,Vector3 feet,float radius,float height,BlockType type)
+    {return world.GetBlock(Vector3Int.FloorToInt(feet)).type==type;}
 }
 public static class FluidWorldQueries
 {
@@ -74,6 +76,9 @@ public partial class PlayerInventory
         Check(world.droppedItems.Count==3,"deferred saved drops survive world startup clearing");
         var before=source[0].position.y;Check(source[0].position.y==before&&world.droppedItems.Get(source[0].id).position.y!=before,"save snapshots do not alias simulation motion");
         world.ClearDrops();
+        var cactusCell=new Vector3Int(0,1,0);world.blocks[cactusCell]=new Block(BlockType.Cactus,cactusCell,null);
+        world.SpawnItemDrop(new InventoryStack(ItemType.Stone,1),(Vector3)cactusCell+new Vector3(.5f,.1f,.5f),Vector3.zero,0);world.StepDrops(.05f);
+        Check(world.droppedItems.Count==0,"cactus contact destroys a thrown item immediately");world.blocks.Remove(cactusCell);
         var player=inv.GetComponent<Player>();player.transform.position=Vector3.zero;
         inv.AddItem(ItemType.DiamondPickaxe,1,damage:67);player.DropAction(true,0);
         Check(inv.slots[0].count==0&&!inv.DropRequestPending&&world.droppedItems.Count==1,"Q atomically moves one selected item into the world");

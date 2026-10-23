@@ -53,12 +53,13 @@ namespace UnityEngine {
 namespace UnityEngine.Rendering {public enum ShadowCastingMode {Off}}
 namespace Mirror {public class Command:Attribute {}public class TargetRpc:Attribute {}public class SyncVar:Attribute {}public class NetworkConnection {}public static class NetworkTime {public static double time=>Time.time;}public static class NetworkClient {public static bool active;}public static class NetworkServer {public static bool active;}}
 public enum WorldDimension {Overworld,Nether}
-public enum BlockType {Air,Nothing,Water,Lava,Ladder,Stone}
+public enum BlockType {Air,Nothing,Water,Lava,Ladder,Stone,Cactus}
 public struct InventoryStack {public ItemType type;public int count;public bool Empty=>count<=0||type==ItemType.Nothing;public void Normalize(){if(count<=0){type=ItemType.Nothing;count=0;}}}
 public class PlayerInventory {public bool DropRequestPending,isOpen;public int selectedSlotIndex;public InventoryStack[] slots=new InventoryStack[36];public InventoryStack HeldItem()=>slots[selectedSlotIndex];public InventoryStack[] DropInventorySnapshot()=>(InventoryStack[])slots.Clone();public void ApplyDropInventory(InventoryStack[] s){slots=(InventoryStack[])s.Clone();}}
 public static class ChestTransactions {public static bool Valid(InventoryStack[] s,InventoryStack cursor)=>s!=null&&s.Length==36&&s.All(x=>x.count>=0&&x.count<=64);}
 public static class GameAudio {public static void Play(string s,Vector3 p,float volume,float pitch){}public static void Broadcast(string s,Vector3 p,float v,float pitch,World world){}public static float Variation(float a,float b)=>a;}
 public static class FluidWorldQueries {public static bool submerged;public static bool Touches(World w,Vector3 p,float width,float height,BlockType type,out int ignored){ignored=0;return submerged;}public static BlockType AtEye(World w,Vector3 p)=>submerged?BlockType.Water:BlockType.Air;}
+public static class BlockCollision {public static bool cactus;public static bool TouchesBlock(World w,Vector3 p,float width,float height,BlockType type)=>cactus&&type==BlockType.Cactus;}
 public class Block {public BlockType type=BlockType.Stone;}
 public partial class World {public static World Overworld;public bool IsWorldCreated=true;public int skyLightReduction,renderDistance=6,chunkSize=16;public WorldDimension dimension;public Block GetBlock(Vector3 p)=>new Block();public bool SpawnItemDrop(InventoryStack stack,Vector3 p,Vector3 velocity,int delay)=>true;}
 public static class InventoryRules {public static int Insert(InventoryStack[] slots,ItemType type,int count,int start,int end){for(int n=start;n<end;n++)if(slots[n].Empty){slots[n]=new InventoryStack{type=type,count=count};return 0;}return count;}}
@@ -70,8 +71,8 @@ public partial class Player:MonoBehaviour {
  public bool DimensionTransferInProgress=>dimensionTransfer;
  public bool isCrouching;
  public void MotionTick(float dt)=>AdvanceWalkMotion(dt);
- public World world,CurrentWorld;public Transform cam;public PlayerInventory inventory=new PlayerInventory();public int health=20,hunger=10;public float saturation,walkSpeed=4.317f,entityWidth=.3f,entityHeight=1.8f;
+ public World world,CurrentWorld;public Transform cam;public PlayerInventory inventory=new PlayerInventory();public int health=20,hunger=10;public float saturation,exhaustion,walkSpeed=4.317f,entityWidth=.3f,entityHeight=1.8f;private double hurtUntil;
  public bool dimensionTransfer,isGrounded=true,isFlying,InWater,InLava,escapeMenuOpen,networkStarted,isLocalPlayer=true,serverFlying,serverGrounded,isSprinting;public float horizontal,vertical;
  public int knownItemWearRevision;public Mirror.NetworkConnection connectionToClient;private bool AcceptsItemRevision(int revision)=>revision==knownItemWearRevision;
- public bool StartFood()=>TryStartEating();public void FoodTick()=>UpdateEating();public void EndFood(bool finish)=>FinishEatingRequest(finish);public void CameraTick()=>UpdateCameraBobbing();public void FallTick()=>AdvanceFallDamage();
+ public bool StartFood()=>TryStartEating();public void FoodTick()=>UpdateEating();public void EndFood(bool finish)=>FinishEatingRequest(finish);public void CameraTick()=>UpdateCameraBobbing();public void FallTick()=>AdvanceFallDamage();public void CactusTick()=>AdvanceCactusDamage();
 }
