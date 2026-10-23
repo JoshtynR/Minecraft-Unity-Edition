@@ -262,18 +262,18 @@ public static class BlockHelper
         var c01=SampleLightCorner(chunk,front,axisA,axisB,-1,1,emission,flat);
         var c11=SampleLightCorner(chunk,front,axisA,axisB,1,1,emission,flat);
         var c10=SampleLightCorner(chunk,front,axisA,axisB,1,-1,emission,flat);
-        int first=mesh.vertices.Count-4;
+        int first=meshData.vertices.Count-4;
         for(int i=0;i<4;i++)
         {
-            var v=mesh.vertices[first+i]-(Vector3)pos;
+            var v=meshData.vertices[first+i]-(Vector3)pos;
             float a=FaceCoordinate(Vector3.Dot(v,(Vector3)axisA)),b=FaceCoordinate(Vector3.Dot(v,(Vector3)axisB));
             float sky=ao?VoxelLightingMath.Interpolate(c00.x,c01.x,c11.x,c10.x,a,b):flat.x;
             float light=ao?VoxelLightingMath.Interpolate(c00.y,c01.y,c11.y,c10.y,a,b):flat.y;
             float shade=ao?VoxelLightingMath.Interpolate(c00.z,c01.z,c11.z,c10.z,a,b):1;
-            mesh.skyLight.Add(sky);mesh.blockLight.Add(light);
-            mesh.sides.Add(new Vector3(shade,1,4));
+            meshData.skyLight.Add(sky);meshData.blockLight.Add(light);
+            meshData.sides.Add(new Vector3(shade,1,4));
             // AO-off uses the flat face levels stored here.
-            mesh.smoothLightCorners.Add(new Vector4(flat.x,flat.y,0,0));
+            meshData.smoothLightCorners.Add(new Vector4(flat.x,flat.y,0,0));
         }
     }
 
