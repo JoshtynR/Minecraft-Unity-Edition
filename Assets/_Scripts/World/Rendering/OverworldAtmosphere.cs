@@ -1,4 +1,43 @@
 using UnityEngine;
+using System.Collections.Generic;
+
+public static class CloudMeshGeometry
+{
+    private static void Quad(List<Vector3> vertices,List<Vector2> uvs,List<Color> colors,List<int> triangles,
+        Vector3 a,Vector3 b,Vector3 c,Vector3 d,Vector2 uv,Color shade)
+    {
+        int first=vertices.Count;vertices.Add(a);vertices.Add(b);vertices.Add(c);vertices.Add(d);
+        uvs.Add(uv);uvs.Add(uv);uvs.Add(uv);uvs.Add(uv);
+        colors.Add(shade);colors.Add(shade);colors.Add(shade);colors.Add(shade);
+        triangles.Add(first);triangles.Add(first+1);triangles.Add(first+2);triangles.Add(first);triangles.Add(first+2);triangles.Add(first+3);
+    }
+    public static Mesh Build(Texture2D texture,float cellSize=12,float thickness=4)
+    {
+        if(texture==null)throw new System.ArgumentNullException("texture");
+        int width=texture.width,height=texture.height;var pixels=texture.GetPixels();
+        var solid=new bool[width*height];
+        for(int i=0;i<solid.Length;i++)solid[i]=pixels[i].a>.1f;
+        System.Func<int,int,bool> filled=(x,z)=>solid[(z%height+height)%height*width+(x%width+width)%width];
+        var vertices=new List<Vector3>();var uvs=new List<Vector2>();var colors=new List<Color>();var triangles=new List<int>();
+        float ox=-width*cellSize*.5f,oz=-height*cellSize*.5f,bottom=-thickness*.5f,top=thickness*.5f;
+        var topShade=Color.white;var sideShade=new Color(.8f,.8f,.8f,1);var bottomShade=new Color(.65f,.65f,.65f,1);
+        for(int z=0;z<height;z++)for(int x=0;x<width;x++)
+        {
+            if(!filled(x,z))continue;
+            float x0=ox+x*cellSize,x1=x0+cellSize,z0=oz+z*cellSize,z1=z0+cellSize;
+            var sample=new Vector2((x+.5f)/width,(z+.5f)/height);
+            Quad(vertices,uvs,colors,triangles,new Vector3(x0,top,z0),new Vector3(x0,top,z1),new Vector3(x1,top,z1),new Vector3(x1,top,z0),sample,topShade);
+            Quad(vertices,uvs,colors,triangles,new Vector3(x1,bottom,z0),new Vector3(x1,bottom,z1),new Vector3(x0,bottom,z1),new Vector3(x0,bottom,z0),sample,bottomShade);
+            if(!filled(x-1,z))Quad(vertices,uvs,colors,triangles,new Vector3(x0,bottom,z0),new Vector3(x0,bottom,z1),new Vector3(x0,top,z1),new Vector3(x0,top,z0),sample,sideShade);
+            if(!filled(x+1,z))Quad(vertices,uvs,colors,triangles,new Vector3(x1,bottom,z1),new Vector3(x1,bottom,z0),new Vector3(x1,top,z0),new Vector3(x1,top,z1),sample,sideShade);
+            if(!filled(x,z-1))Quad(vertices,uvs,colors,triangles,new Vector3(x1,bottom,z0),new Vector3(x0,bottom,z0),new Vector3(x0,top,z0),new Vector3(x1,top,z0),sample,sideShade);
+            if(!filled(x,z+1))Quad(vertices,uvs,colors,triangles,new Vector3(x0,bottom,z1),new Vector3(x1,bottom,z1),new Vector3(x1,top,z1),new Vector3(x0,top,z1),sample,sideShade);
+        }
+        var mesh=new Mesh{name="Owned extruded cloud tile"};
+        if(vertices.Count>65535)mesh.indexFormat=UnityEngine.Rendering.IndexFormat.UInt32;
+        mesh.SetVertices(vertices);mesh.SetUVs(0,uvs);mesh.SetColors(colors);mesh.SetTriangles(triangles,0);mesh.RecalculateBounds();return mesh;
+    }
+}
 
 // Local camera visuals only. The world clock is shared by the server and saved
 // with metadata; cosmetic cloud generation never consumes the terrain RNG.
@@ -8,7 +47,10 @@ public sealed class OverworldAtmosphere : MonoBehaviour
     public Player player;
     private Camera view;
     private GameObject root,sun,moon,clouds;
-    private Mesh quad,cloudQuad;
+    private readonly List<Transform> cloudTiles=new List<Transform>();
+    private Mesh quad,cloudMesh;
+    private float cloudTileWidth,cloudTileDepth;
+    private int cloudTileRadius;
     private Material sunMaterial,moonMaterial,cloudMaterial;
     private Texture2D ownedSun,ownedMoon,ownedClouds;
     private Vector4 previousFog,previousRange;
@@ -50,7 +92,7 @@ public sealed class OverworldAtmosphere : MonoBehaviour
                     ((x/3+z/4)%4==0?new Color(.55f,.55f,.6f,1):new Color(.85f,.87f,.9f,1));
             }
         }
-        texture.SetPixels(pixels);texture.Apply(false,true);return texture;
+        texture.SetPixels(pixels);texture.Apply(false,kind!=2);return texture;
     }
     private bool Build()
     {
@@ -63,9 +105,17 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         cloudMaterial.mainTexture=assets!=null&&assets.cloudTexture!=null?assets.cloudTexture:ownedClouds=Fallback(2);
         sunMaterial.SetFloat("_BlackTransparent",1);
         moonMaterial.SetFloat("_BlackTransparent",1);
-        cloudMaterial.renderQueue=2900;cloudMaterial.SetFloat("_FogOn",1);
-        root=new GameObject("Overworld sky visuals");quad=Quad(false);cloudQuad=Quad(true);
-        sun=Surface("Sun",sunMaterial,quad);moon=Surface("Moon",moonMaterial,quad);clouds=Surface("Clouds",cloudMaterial,cloudQuad);
+        cloudMaterial.renderQueue=2900;cloudMaterial.SetFloat("_FogOn",1);cloudMaterial.SetFloat("_VertexColorOn",1);cloudMaterial.SetFloat("_ZWrite",1);
+        root=new GameObject("Overworld sky visuals");quad=Quad(false);
+        sun=Surface("Sun",sunMaterial,quad);moon=Surface("Moon",moonMaterial,quad);
+        clouds=new GameObject("Clouds");clouds.layer=0;clouds.transform.SetParent(root.transform,false);
+        var cloudTexture=(Texture2D)cloudMaterial.mainTexture;cloudMesh=CloudMeshGeometry.Build(cloudTexture);
+        cloudTileWidth=cloudTexture.width*12;cloudTileDepth=cloudTexture.height*12;
+        cloudTileRadius=Mathf.Min(4,Mathf.Max(2,(int)System.Math.Ceiling(Mathf.Min(view.farClipPlane,1024)/Mathf.Min(cloudTileWidth,cloudTileDepth))+1));
+        for(int z=-cloudTileRadius;z<=cloudTileRadius;z++)for(int x=-cloudTileRadius;x<=cloudTileRadius;x++)
+        {
+            var tile=Surface("Cloud tile "+x+","+z,cloudMaterial,cloudMesh);tile.transform.SetParent(clouds.transform,false);cloudTiles.Add(tile.transform);
+        }
         return true;
     }
     private void LateUpdate()
@@ -97,15 +147,15 @@ public sealed class OverworldAtmosphere : MonoBehaviour
             moonMaterial.mainTextureOffset=new Vector2((phase%4)*.25f,phase<4?.5f:0);
         }
         clouds.SetActive(world.showClouds);
-        // EntityRenderer's classic cloud layer is a large, horizontal tiled
-        // sheet at Y=128. The texture supplies the pixel-stepped silhouettes;
-        // only its world offset moves over time.
-        float drift=(float)((ticks*.03)%2048.0);
-        clouds.transform.position=new Vector3(transform.position.x+drift,128,transform.position.z);
-        clouds.transform.localScale=new Vector3(1024,1,1024);
-        float tileSize=Mathf.Max(256,cloudMaterial.mainTexture.width*8);
-        cloudMaterial.mainTextureScale=new Vector2(2048/tileSize,2048/tileSize);
-        cloudMaterial.mainTextureOffset=new Vector2(transform.position.x/tileSize,transform.position.z/tileSize);
+        // Recycle a square of shared extruded tiles around the camera. The
+        // lattice itself drifts, so crossing a sheet boundary is seamless and
+        // never exposes the end of the cloud texture.
+        float drift=(float)((ticks*.03)%cloudTileWidth);
+        int centerX=(int)System.Math.Floor((transform.position.x-drift)/cloudTileWidth);
+        int centerZ=(int)System.Math.Floor(transform.position.z/cloudTileDepth);
+        int tileIndex=0;
+        for(int z=-cloudTileRadius;z<=cloudTileRadius;z++)for(int x=-cloudTileRadius;x<=cloudTileRadius;x++)
+            cloudTiles[tileIndex++].position=new Vector3((centerX+x)*cloudTileWidth+drift,128,(centerZ+z)*cloudTileDepth);
         cloudMaterial.SetColor("_Tint",Color.Lerp(new Color(.15f,.18f,.25f,1),Color.white,daylight));
     }
     private void OnPreCull()
@@ -131,7 +181,7 @@ public sealed class OverworldAtmosphere : MonoBehaviour
     private void OnDisable(){RestoreFog();if(root!=null)root.SetActive(false);}
     private void OnDestroy()
     {
-        RestoreFog();if(root!=null)Destroy(root);if(quad!=null)Destroy(quad);if(cloudQuad!=null)Destroy(cloudQuad);
+        RestoreFog();if(root!=null)Destroy(root);if(quad!=null)Destroy(quad);if(cloudMesh!=null)Destroy(cloudMesh);
         if(sunMaterial!=null)Destroy(sunMaterial);if(moonMaterial!=null)Destroy(moonMaterial);if(cloudMaterial!=null)Destroy(cloudMaterial);
         if(ownedSun!=null)Destroy(ownedSun);if(ownedMoon!=null)Destroy(ownedMoon);if(ownedClouds!=null)Destroy(ownedClouds);
     }

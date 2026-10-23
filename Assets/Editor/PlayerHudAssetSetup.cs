@@ -9,6 +9,7 @@ public static class PlayerHudAssetSetup
     public const string InventoryPath = "Assets/Textures/Minecraft/gui/container/inventory.png";
     public const string CraftingPath = "Assets/Textures/Minecraft/gui/container/crafting_table.png";
     public const string FurnacePath = "Assets/Textures/Minecraft/gui/container/furnace.png";
+    public const string CloudPath = "Assets/Textures/Minecraft/environment/clouds.png";
     static PlayerHudAssetSetup() { EditorApplication.delayCall += Bind; }
 
     [MenuItem("Minecraft/Textures/Refresh GUI and Chest Assets")]
@@ -48,7 +49,8 @@ public static class PlayerHudAssetSetup
         var bubbleParticle=config.bubbleParticle!=null?config.bubbleParticle:Prepare("Assets/Textures/Minecraft/particle/bubble.png");
         var sun=config.sunTexture!=null?config.sunTexture:Prepare("Assets/Textures/Minecraft/environment/sun.png");
         var moon=config.moonTexture!=null?config.moonTexture:Prepare("Assets/Textures/Minecraft/environment/moon_phases.png");
-        var clouds=config.cloudTexture!=null?config.cloudTexture:Prepare("Assets/Textures/Minecraft/environment/clouds.png");
+        var cloudPath=config.cloudTexture!=null?AssetDatabase.GetAssetPath(config.cloudTexture):CloudPath;
+        var clouds=Prepare(cloudPath,true);
         if ((icons == null || config.icons == icons) && (cracks == null || config.blockBreak == cracks) &&
             (inventory == null || config.inventory == inventory) &&
             (crafting == null || config.craftingTable == crafting) &&
@@ -92,19 +94,20 @@ public static class PlayerHudAssetSetup
         AssetDatabase.SaveAssetIfDirty(config);
     }
 
-    private static Texture2D Prepare(string path)
+    private static Texture2D Prepare(string path,bool readable=false)
     {
         var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         if (texture == null) return null;
         var importer = AssetImporter.GetAtPath(path) as TextureImporter;
         if (importer != null && (importer.filterMode != FilterMode.Point || importer.mipmapEnabled ||
-            importer.textureCompression != TextureImporterCompression.Uncompressed || importer.npotScale != TextureImporterNPOTScale.None))
+            importer.textureCompression != TextureImporterCompression.Uncompressed || importer.npotScale != TextureImporterNPOTScale.None || importer.isReadable!=readable))
         {
             importer.filterMode = FilterMode.Point;
             importer.mipmapEnabled = false;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
             importer.npotScale = TextureImporterNPOTScale.None;
             importer.alphaIsTransparency = true;
+            importer.isReadable = readable;
             importer.SaveAndReimport();
             texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }

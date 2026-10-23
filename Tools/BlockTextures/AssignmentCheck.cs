@@ -53,7 +53,7 @@ namespace UnityEditor
  {
   public TextureImporterNPOTScale npotScale=TextureImporterNPOTScale.None;
   public TextureImporterCompression textureCompression=TextureImporterCompression.Uncompressed;
-  public FilterMode filterMode=FilterMode.Point;public bool mipmapEnabled,alphaIsTransparency;
+  public FilterMode filterMode=FilterMode.Point;public bool mipmapEnabled,alphaIsTransparency,isReadable;
   public int maxTextureSize=2048;public Texture2D image;
   public void SaveAndReimport(){}
   public void GetSourceTextureWidthAndHeight(out int w,out int h){w=image.width;h=image.height;}
@@ -139,6 +139,7 @@ public static class AssignmentCheck
    var inventory=Image(PlayerHudAssetSetup.InventoryPath,256,256);
    var crafting=Image(PlayerHudAssetSetup.CraftingPath,256,256);
    var furnace=Image(PlayerHudAssetSetup.FurnacePath,256,256);
+   var clouds=Image(PlayerHudAssetSetup.CloudPath,32,32);
    var chestSkin=Image(root+"/block/normal.png",64,64);
    var chestContainer=Image(root+"/gui/container/generic_54.png",256,256);
    var steve=Image(root+"/entity/steve.png",64,64,10);
@@ -167,6 +168,7 @@ public static class AssignmentCheck
    Check(ReferenceEquals(hud.inventory,inventory),"auto-assign binds exact inventory container sheet");
    Check(ReferenceEquals(hud.craftingTable,crafting),"auto-assign binds exact crafting-table container sheet");
    Check(ReferenceEquals(hud.furnace,furnace),"auto-assign binds exact furnace container sheet");
+   Check(ReferenceEquals(hud.cloudTexture,clouds)&&((UnityEditor.TextureImporter)UnityEditor.AssetImporter.all[PlayerHudAssetSetup.CloudPath]).isReadable,"cloud sheet is bound readably for runtime extrusion");
    hud.furnace=original;PlayerHudAssetSetup.Bind();
    Check(ReferenceEquals(hud.furnace,original),"automatic GUI binding preserves assigned furnace artwork");
    hud.furnace=null;var furnaceImporter=UnityEditor.AssetImporter.all[PlayerHudAssetSetup.FurnacePath];furnaceImporter.mipmapEnabled=true;

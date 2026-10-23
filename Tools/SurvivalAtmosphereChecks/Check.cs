@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 class Check {
@@ -42,7 +43,12 @@ class Check {
   var parts=new PlayerObjects{leftArm=new GameObject("leftArm").transform,rightArm=new GameObject("rightArm").transform,leftLeg=new GameObject("leftLeg").transform,rightLeg=new GameObject("rightLeg").transform};
   var walk=p.gameObject.AddComponent<MinecraftWalkAnimator>();walk.Initialize(p,parts);Call(walk,"LateUpdate");var left=parts.leftLeg.localRotation*Vector3.up;var right=parts.rightLeg.localRotation*Vector3.up;Assert(left.z*right.z<0,"walking legs swing in opposite directions");
   Resources.items["SkyMaterial"]=new Material(null);var sky=p.cam.GetComponent<OverworldAtmosphere>();sky.player=p;Call(sky,"Awake");Call(sky,"LateUpdate");
-  Assert(GameObject.all.Exists(g=>g.name=="Sun")&&GameObject.all.Exists(g=>g.name=="Clouds"),"sky builds without source textures");Call(sky,"OnPreCull");Assert(Math.Abs(Shader.GetGlobalVector("_WorldFogRange").z-.62f)<.001f,"overworld fog uses published reduced strength");Call(sky,"OnPostRender");Assert(Shader.GetGlobalVector("_WorldFogRange").z==0,"fog does not leak into UI/hand camera");
+  Assert(GameObject.all.Exists(g=>g.name=="Sun")&&GameObject.all.Exists(g=>g.name=="Clouds"),"sky builds without source textures");
+  var cloudRoot=GameObject.all.Find(g=>g.name=="Clouds");Assert(cloudRoot.transform.childCount>1,"cloud sheet repeats through a camera-centered tile grid");
+  var cloudMesh=cloudRoot.transform.GetChild(0).gameObject.GetComponent<MeshFilter>().sharedMesh;
+  Assert(cloudMesh.vertices.Length>4&&cloudMesh.vertices.Min(v=>v.y)==-2&&cloudMesh.vertices.Max(v=>v.y)==2,"cloud alpha pixels build four-block-thick extruded geometry");
+  Assert(cloudMesh.colors.Any(c=>c.r<1),"extruded cloud sides and bottoms retain visible face shading");
+  Call(sky,"OnPreCull");Assert(Math.Abs(Shader.GetGlobalVector("_WorldFogRange").z-.62f)<.001f,"overworld fog uses published reduced strength");Call(sky,"OnPostRender");Assert(Shader.GetGlobalVector("_WorldFogRange").z==0,"fog does not leak into UI/hand camera");
   p.CurrentWorld.dimension=WorldDimension.Nether;Call(sky,"LateUpdate");Assert(!GameObject.all.Find(g=>g.name=="Overworld sky visuals").activeSelf,"nether hides overworld sky");Call(sky,"OnDestroy");Assert(GameObject.all.Find(g=>g.name=="Overworld sky visuals").destroyed,"owned sky root released");
   Console.WriteLine(checks+" production food/fall/bob/sky lifecycle checks passed (Unity/Mirror mocked).");
  }

@@ -13,7 +13,7 @@ namespace UnityEngine {
   public T AddComponent<T>() where T:Component,new(){var c=new T{gameObject=this};parts.Add(c);return c;}
   public T GetComponent<T>() where T:Component=>parts.OfType<T>().FirstOrDefault();public void SetActive(bool value){activeSelf=value;}
  }
- public class Transform:Component {public Vector3 position,localPosition,localScale=Vector3.one;public Quaternion rotation=Quaternion.identity,localRotation=Quaternion.identity;public Transform parent;public Vector3 right=>new Vector3(1,0,0);public void SetParent(Transform p,bool keep){parent=p;}public Vector3 InverseTransformVector(Vector3 v)=>new Vector3(v.x/localScale.x,v.y/localScale.y,v.z/localScale.z);}
+ public class Transform:Component {public Vector3 position,localPosition,localScale=Vector3.one;public Quaternion rotation=Quaternion.identity,localRotation=Quaternion.identity;public Transform parent;public readonly List<Transform> children=new List<Transform>();public int childCount=>children.Count;public Transform GetChild(int i)=>children[i];public Vector3 right=>new Vector3(1,0,0);public void SetParent(Transform p,bool keep){if(parent!=null)parent.children.Remove(this);parent=p;if(p!=null)p.children.Add(this);}public Vector3 InverseTransformVector(Vector3 v)=>new Vector3(v.x/localScale.x,v.y/localScale.y,v.z/localScale.z);}
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}public float magnitude=>(float)Math.Sqrt(x*x+y*y);}
  public struct Vector3 {
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
@@ -40,9 +40,9 @@ namespace UnityEngine {
  public class Camera:Component {public bool enabled=true;public float farClipPlane=1000;public Color backgroundColor;public CameraClearFlags clearFlags;}
  public class Texture:Object {public int width,height;}
  public enum TextureFormat {RGBA32}public enum FilterMode {Point}public enum TextureWrapMode {Repeat,Clamp}
- public class Texture2D:Texture {public FilterMode filterMode;public TextureWrapMode wrapMode;public Texture2D(int w,int h,TextureFormat format,bool mip){width=w;height=h;}public void SetPixels(Color[] pixels){}public void Apply(bool mip,bool unreadable){}}
+ public class Texture2D:Texture {Color[] pixels;public FilterMode filterMode;public TextureWrapMode wrapMode;public Texture2D(int w,int h,TextureFormat format,bool mip){width=w;height=h;pixels=new Color[w*h];}public void SetPixels(Color[] value){pixels=(Color[])value.Clone();}public Color[] GetPixels()=>pixels;public void Apply(bool mip,bool unreadable){}}
  public class Material:Object {public Texture mainTexture;public int renderQueue;public Vector2 mainTextureScale,mainTextureOffset;public Material(Material m){}public void SetFloat(string s,float f){}public void SetColor(string s,Color c){}}
- public class Mesh:Object {public Vector3[] vertices;public Vector2[] uv;public int[] triangles;public void RecalculateBounds(){}}
+ public class Mesh:Object {public Rendering.IndexFormat indexFormat;public Vector3[] vertices;public Vector2[] uv;public Color[] colors;public int[] triangles;public void SetVertices(List<Vector3> v){vertices=v.ToArray();}public void SetUVs(int channel,List<Vector2> v){uv=v.ToArray();}public void SetColors(List<Color> v){colors=v.ToArray();}public void SetTriangles(List<int> v,int sub){triangles=v.ToArray();}public void RecalculateBounds(){}}
  public class MeshFilter:Component {public Mesh sharedMesh;}
  public class MeshRenderer:Component {public Material sharedMaterial;public bool receiveShadows;public Rendering.ShadowCastingMode shadowCastingMode;}
  public static class Resources {public static Dictionary<string,Object> items=new Dictionary<string,Object>();public static T Load<T>(string name) where T:Object=>items.ContainsKey(name)?items[name] as T:null;}
@@ -50,7 +50,7 @@ namespace UnityEngine {
  public class RequireComponent:Attribute {public RequireComponent(Type t){}}public class Header:Attribute {public Header(string s){}}
  public static class Debug {public static void LogError(string text){throw new Exception(text);}}
 }
-namespace UnityEngine.Rendering {public enum ShadowCastingMode {Off}}
+namespace UnityEngine.Rendering {public enum ShadowCastingMode {Off}public enum IndexFormat {UInt16,UInt32}}
 namespace Mirror {public class Command:Attribute {}public class TargetRpc:Attribute {}public class SyncVar:Attribute {}public class NetworkConnection {}public static class NetworkTime {public static double time=>Time.time;}public static class NetworkClient {public static bool active;}public static class NetworkServer {public static bool active;}}
 public enum WorldDimension {Overworld,Nether}
 public enum BlockType {Air,Nothing,Water,Lava,Ladder,Stone,Cactus}
