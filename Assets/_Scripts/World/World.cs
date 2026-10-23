@@ -419,12 +419,7 @@ public partial class World : MonoBehaviour
     public void LoadAdditionalChunks(GameObject localPlayer)
     {
         if (!GenerateMoreChunks) return;
-        
-        // Debug.Log("Loading additional chunks");
-        GenerateWorld(Vector3Int.RoundToInt(localPlayer.transform.position), () =>
-        {
-            OnNewChunksGenerated?.Invoke();
-        });
+        RequestChunkStreaming(Vector3Int.RoundToInt(localPlayer.transform.position));
     }
     
     private void Clear()

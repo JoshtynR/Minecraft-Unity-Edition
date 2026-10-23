@@ -102,12 +102,14 @@ public partial class World
     private void StreamDimensionPlayers()
     {
         if(this!=Overworld || !NetworkServer.active || GameManager.Instance==null || Time.unscaledTime<dimensionStreamAt)return;
-        dimensionStreamAt=Time.unscaledTime+1;
-        foreach(var player in GameManager.Instance.players.ToArray())
+        dimensionStreamAt=Time.unscaledTime+.1f;
+        var players=GameManager.Instance.players;
+        for(int i=0;i<players.Count;i++)
         {
+            var player=players[i];
             if(player==null||player.DimensionTransferInProgress)continue;
             var realm=player.CurrentWorld;
-            if(realm!=null&&realm.GenerateMoreChunks&&!realm.GenerationBusy)realm.GenerateWorld(Vector3Int.FloorToInt(player.transform.position));
+            if(realm!=null&&realm.GenerateMoreChunks)realm.RequestChunkStreaming(Vector3Int.FloorToInt(player.transform.position));
         }
     }
 }

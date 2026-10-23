@@ -33,12 +33,61 @@ public partial class World
 
     [System.NonSerialized] private System.Threading.SemaphoreSlim runtimeGenerationGate;
     private System.Threading.SemaphoreSlim generationGate => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeGenerationGate, () => new System.Threading.SemaphoreSlim(1,1));
+    private Vector3Int streamingTarget;
+    private bool streamingRequested;
+    private bool streamingLoopRunning;
     private bool requestPlayerSpawn;
     public async void GenerateWorld(Vector3Int position, Action onGenerateNewChunks = null)
     {
         try { await EnsureAreaAsync(position); onGenerateNewChunks?.Invoke(); }
         catch (OperationCanceledException) { }
         catch (Exception error) { Debug.LogException(error); }
+    }
+
+    // Coalesce movement requests while a batch is running, then immediately build
+    // the next nearest batch. This removes the old one-second gap without allowing
+    // overlapping generation jobs or increasing main-thread mesh uploads.
+    public void RequestChunkStreaming(Vector3Int position)
+    {
+        if (!GenerateMoreChunks || disabled) return;
+        if (!streamingLoopRunning && IsWorldCreated && HasReadyArea(position)) return;
+        streamingTarget = position;
+        streamingRequested = true;
+        if (!streamingLoopRunning) RunChunkStreaming();
+    }
+
+    private async void RunChunkStreaming()
+    {
+        streamingLoopRunning = true;
+        try
+        {
+            const int maxContinuousBatches = 8;
+            int continuousBatches = 0;
+            while (streamingRequested && GenerateMoreChunks && !disabled && continuousBatches < maxContinuousBatches)
+            {
+                streamingRequested = false;
+                Vector3Int target = streamingTarget;
+                await EnsureAreaAsync(target);
+                OnNewChunksGenerated?.Invoke();
+                continuousBatches++;
+
+                // Let Update/rendering run between batches. A newer player position
+                // always wins, otherwise continue until the current view is complete.
+                await Task.Yield();
+                if (streamingTarget != target || !HasReadyArea(streamingTarget))
+                    streamingRequested = true;
+            }
+            if (continuousBatches >= maxContinuousBatches)
+                streamingRequested = false;
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception error) { Debug.LogException(error); }
+        finally
+        {
+            streamingLoopRunning = false;
+            if (streamingRequested && GenerateMoreChunks && !disabled)
+                RunChunkStreaming();
+        }
     }
     public async Task EnsureAreaAsync(Vector3Int position, bool fullArea = false)
     {
@@ -82,7 +131,7 @@ public partial class World
         
         Profiler.BeginThreadProfiling("GenerateWorld", "GenerateData");
 
-        if (worldGenerationData.chunkPositionsToCreate.Count > 0)
+        if (worldGenerationData.chunkDataPositionsToCreate.Count > 0)
         {
             try
             {
@@ -195,7 +244,7 @@ public partial class World
         
         Profiler.BeginThreadProfiling("GenerateWorld", "GenerateData");
 
-        if (worldGenerationData.chunkPositionsToCreate.Count > 0)
+        if (worldGenerationData.chunkDataPositionsToCreate.Count > 0)
         {
             try
             {

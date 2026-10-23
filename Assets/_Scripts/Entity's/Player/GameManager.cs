@@ -11,6 +11,8 @@ public class GameManager : MonoBehaviour
     public List<Player> players = new List<Player>();
     public Vector3Int playerChunkPosition;
     private Vector3Int currentChunkCenter = Vector3Int.zero;
+    private Coroutine chunkLoadingCoroutine;
+    private World chunkLoadingWorld;
     public bool playerSpawned = false;
 
     public World world;
@@ -22,11 +24,20 @@ public class GameManager : MonoBehaviour
         Instance = this;
     }
 
+    private void OnDisable()
+    {
+        if (chunkLoadingCoroutine != null) StopCoroutine(chunkLoadingCoroutine);
+        chunkLoadingCoroutine = null;
+        chunkLoadingWorld = null;
+    }
+
     public void StartCheckingForChunks()
     {
+        if (localPlayer == null || world == null) return;
+        if (chunkLoadingCoroutine != null) return;
+        chunkLoadingWorld = world;
         SetCurrentChunkCenter();
-        StopAllCoroutines();
-        StartCoroutine(CheckForChunkLoading());
+        chunkLoadingCoroutine = StartCoroutine(CheckForChunkLoading());
     }
 
     private void SetCurrentChunkCenter()
@@ -44,17 +55,22 @@ public class GameManager : MonoBehaviour
 
     private IEnumerator CheckForChunkLoading()
     {
-        yield return null;
-        if (
-            Mathf.Abs(currentChunkCenter.x - localPlayer.transform.position.x) > world.chunkSize / 2 ||
-            Mathf.Abs(currentChunkCenter.z - localPlayer.transform.position.z) > world.chunkSize / 2
-        )
+        while (localPlayer != null && world != null)
         {
-            world.LoadAdditionalChunks(localPlayer.gameObject);
+            if (chunkLoadingWorld != world)
+            {
+                chunkLoadingWorld = world;
+                SetCurrentChunkCenter();
+            }
+
+            if (Mathf.Abs(currentChunkCenter.x - localPlayer.transform.position.x) > world.chunkSize / 2 ||
+                Mathf.Abs(currentChunkCenter.z - localPlayer.transform.position.z) > world.chunkSize / 2)
+            {
+                SetCurrentChunkCenter();
+                world.LoadAdditionalChunks(localPlayer.gameObject);
+            }
+            yield return null;
         }
-        else
-        {
-            StartCoroutine(CheckForChunkLoading());
-        }
+        chunkLoadingCoroutine = null;
     }
 }

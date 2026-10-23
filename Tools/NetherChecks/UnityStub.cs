@@ -71,7 +71,7 @@ public static class WorldDataHelper {
  public static void SetBlock(World w,UnityEngine.Vector3Int p,BlockType t){var block=w.GetBlock(p);block.type=t;w.blocks[p]=block;}
 }
 public partial class World:UnityEngine.MonoBehaviour {
- public static World Instance;public string worldName="test";public long betaWorldSeed;public bool spawnPassiveMobs=true,DropAuthority=true,GenerateMoreChunks=true,isSaving,disabled,IsWorldCreated=true;public int worldHeight=128,renderDistance=1,chunkSize=16,chunksPerFrame=1;
+ public static World Instance;public string worldName="test";public long betaWorldSeed;public bool spawnPassiveMobs=true,DropAuthority=true,GenerateMoreChunks=true,isSaving,disabled,IsWorldCreated=true;public int worldHeight=128,renderDistance=1,chunkSize=16,chunksPerFrame=1;public float lastLightmapGamma;
  public WorldData worldData;public WorldRenderer worldRenderer;public TerrainGenerator terrainGenerator;public UnityEngine.Events.UnityEvent OnWorldCreated,OnNewChunksGenerated;
  private int lastBetaSkyDarkness,lastBetaBrightnessBoost;private readonly SemaphoreSlim generationGate=new SemaphoreSlim(1,1);private readonly CancellationToken worldCancellationToken=CancellationToken.None;private bool chunkUpdateInProgress,waterMeshBuildInProgress;
  public List<ChunkRenderer> chunksToUpdate=new List<ChunkRenderer>();public Queue<Block> blockToUpdate=new Queue<Block>();
@@ -84,6 +84,7 @@ public partial class World:UnityEngine.MonoBehaviour {
  public Block GetBlock(UnityEngine.Vector3 p)=>GetBlock(UnityEngine.Vector3Int.FloorToInt(p));
  public Task EnsureAreaAsync(UnityEngine.Vector3Int p,bool full=false){generationCalls++;return generationBarrier==null?Task.CompletedTask:generationBarrier.Task;}
  public void GenerateWorld(UnityEngine.Vector3Int p){}
+ public void RequestChunkStreaming(UnityEngine.Vector3Int p){GenerateWorld(p);}
  public Task SaveDimensionAsync(){saves++;return Task.CompletedTask;}
  public int playerSaves;public void SavePlayer(object save){playerSaves++;}
  public int worldSaveCalls;public void SaveWorld(){worldSaveCalls++;}
