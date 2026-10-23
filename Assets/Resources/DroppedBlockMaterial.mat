@@ -25,7 +25,6 @@ Material:
     - _FaceShadeOn: 1
     - _AOOn: 0
     - _Debug: 0
-    - _Brightness: 1
     - _ShadeUp: 1
     - _ShadeSideNS: 0.8
     - _ShadeSideEW: 0.6

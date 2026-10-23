@@ -101,8 +101,6 @@ public static class BlockHelper
                 d => blockTypeData.textureData.FaceIndex(SpecialBlockGeometry.TextureDirection(block.type, SpecialBlockGeometry.State(block.type, block.blockShape), d)), blockTypeData.albedoTint, meshData, part => blockTypeData.textureData.PartIndex(part));
             if (chunk != null)
             {
-                float brightness = SampleBrightness(chunk, pos, chunk.worldRef.betaSkylightSubtracted, block.BlockData.lightEmission);
-                if (SpecialBlockGeometry.IsTorch(block.type) && block.BlockData.lightEmission > 0) brightness = 1;
                 for (int i=first;i<meshData.vertices.Count;i++)
                 {
                     int face=first+((i-first)/4)*4;
@@ -114,19 +112,11 @@ public static class BlockHelper
                     var sample=pos;
                     if (!SpecialBlockGeometry.NonOccluding(block.type))
                         sample+=Math.Abs(ny)>=Math.Abs(nx)&&Math.Abs(ny)>=Math.Abs(nz)?new Vector3Int(0,ny<0?-1:1,0):Math.Abs(nx)>Math.Abs(nz)?new Vector3Int(nx<0?-1:1,0,0):new Vector3Int(0,0,nz<0?-1:1);
-                    float light=sample.Equals(pos)?brightness:SampleBrightness(chunk,sample,chunk.worldRef.betaSkylightSubtracted,block.BlockData.lightEmission);
                     var sampleBlock=chunk.GetBlock(sample);
-                    if(chunk.worldRef.java18Lighting)
-                    {
-                        meshData.skyLight.Add(sampleBlock.GetSkyLight());
-                        meshData.blockLight.Add(Math.Max(sampleBlock.GetBlockLight(),(int)block.BlockData.lightEmission));
-                        meshData.sides.Add(new Vector3(shade,shade,5));
-                        meshData.smoothLightCorners.Add(new Vector4());
-                        continue;
-                    }
-                    meshData.skyLight.Add(sampleBlock.GetSkyLight());meshData.blockLight.Add(sampleBlock.GetBlockLight());
-                    meshData.sides.Add(new Vector3(light*shade,light*shade,3));
-                    meshData.smoothLightCorners.Add(new Vector4(light*shade,light*shade,light*shade,light*shade));
+                    meshData.skyLight.Add(sampleBlock.GetSkyLight());
+                    meshData.blockLight.Add(Math.Max(sampleBlock.GetBlockLight(),(int)block.BlockData.lightEmission));
+                    meshData.sides.Add(new Vector3(shade,shade,5));
+                    meshData.smoothLightCorners.Add(new Vector4());
                 }
             }
             return meshData;
@@ -140,14 +130,13 @@ public static class BlockHelper
                 chunk != null, WheatCropRules.IsCrop(block.type) ? blockTypeData.textureData.GrowthStageIndex(SpecialBlockGeometry.State(block.type, block.blockShape)) : blockTypeData.textureData.FaceIndex(Direction.backwards), tint, meshData);
             if (chunk != null)
             {
-                float brightness = SampleBrightness(chunk, pos, chunk.worldRef.betaSkylightSubtracted, block.BlockData.lightEmission);
                 for (int i = first; i < meshData.vertices.Count; i++)
                 {
                     meshData.skyLight.Add(block.GetSkyLight());
-                    meshData.blockLight.Add(block.GetBlockLight());
-                    // Marker 3: flat plant brightness, no AO or cube face shading.
-                    meshData.sides.Add(new Vector3(brightness, brightness, 3));
-                    meshData.smoothLightCorners.Add(new Vector4(brightness, brightness, brightness, brightness));
+                    meshData.blockLight.Add(Math.Max(block.GetBlockLight(),(int)block.BlockData.lightEmission));
+                    // Marker 3: lightmap sampling without AO or cube face shading.
+                    meshData.sides.Add(new Vector3(1,1,3));
+                    meshData.smoothLightCorners.Add(new Vector4());
                 }
             }
             return meshData;
@@ -261,97 +250,38 @@ public static class BlockHelper
     
     public static void GetFaceLightingAndAO(Direction direction, Vector3Int pos, MeshData meshData, ChunkData chunk, BlockShape faceShape = null)
     {
-        if(chunk.worldRef.java18Lighting){GetJava18FaceLighting(direction,pos,meshData,chunk,faceShape);return;}
-        Vector3Int normal = direction.GetVector();
-        ChunkSection.ChooseFaceAxes(normal, out var axisA, out var axisB);
-        var faceBlock = chunk.GetBlock(pos);
-        var shape = faceShape ?? faceBlock.blockShape.GetShape();
-        bool fullSmooth = chunk.worldRef.fullSmoothLighting;
-        var front = pos + normal;
-        // A slab/stair inset face is inside its block cell, whose brightness already
-        // borrows from above/four sides. External cube and liquid faces use the
-        // adjacent cell as before.
-        if ((fullSmooth || StairGeometry.IsStair(faceBlock.type) || BlockShapesExtensions.ForBlock(faceBlock.type) == BlockShapes.Slab) &&
-            faceBlock.type != BlockType.Water && faceBlock.type != BlockType.Lava &&
-            IsInsetFace(normal, shape)) front = pos;
-        if (!fullSmooth && direction == Direction.up &&
-            (faceBlock.type == BlockType.Water || faceBlock.type == BlockType.Lava)) front = pos;
-        int emission = faceBlock.BlockData.lightEmission;
-        int darkness = chunk.worldRef.betaSkylightSubtracted;
-        float flat = SampleBrightness(chunk, front, darkness, emission);
-        bool smooth = fullSmooth || (faceBlock.type != BlockType.Water && faceBlock.type != BlockType.Lava);
-        float c00 = smooth ? SampleCorner(chunk, front, axisA, axisB, -1, -1, darkness, emission, flat) : flat;
-        float c01 = smooth ? SampleCorner(chunk, front, axisA, axisB, -1, 1, darkness, emission, flat) : flat;
-        float c11 = smooth ? SampleCorner(chunk, front, axisA, axisB, 1, 1, darkness, emission, flat) : flat;
-        float c10 = smooth ? SampleCorner(chunk, front, axisA, axisB, 1, -1, darkness, emission, flat) : flat;
-        int firstVertex = meshData.vertices.Count - 4;
-        var sample = chunk.GetBlock(front);
-        float q0 = 0, q1 = 0, q2 = 0, q3 = 0;
-        for (int i = 0; i < 4; i++)
-        {
-            var vertex = meshData.vertices[firstVertex + i];
-            float alongA = Vector3.Dot(vertex - (Vector3)pos, (Vector3)axisA);
-            float alongB = Vector3.Dot(vertex - (Vector3)pos, (Vector3)axisB);
-            float a = fullSmooth ? FaceCoordinate(alongA) : (alongA >= ShapeMidpoint(axisA, shape) ? 1 : 0);
-            float b = fullSmooth ? FaceCoordinate(alongB) : (alongB >= ShapeMidpoint(axisB, shape) ? 1 : 0);
-            float corner = Beta173Lighting.InterpolateCorners(c00, c01, c11, c10, a, b);
-            if (i == 0) q0 = corner;
-            else if (i == 1) q1 = corner;
-            else if (i == 2) q2 = corner;
-            else q3 = corner;
-            meshData.skyLight.Add(front.y >= chunk.worldRef.worldHeight ? 15 : sample.GetSkyLight());
-            meshData.blockLight.Add(sample.GetBlockLight());
-            // Marker 1 retains Beta vertex interpolation; 2 enables fragment
-            // bilinear interpolation. Both retain flat brightness for AO-off.
-            meshData.sides.Add(new Vector3(corner, flat, fullSmooth ? 2 : 1));
-        }
-        // Face UVs are always (0,0),(0,1),(1,1),(1,0). Store the light values in
-        // that same order, independently of face orientation or triangle order.
-        var corners = new Vector4(q0, q1, q2, q3);
-        for (int i = 0; i < 4; i++) meshData.smoothLightCorners.Add(corners);
-    }
-
-    private static float ShapeMidpoint(Vector3Int axis, BlockShape shape)
-    {
-        if (axis.x != 0) return (shape.xMin + shape.xMax) / 32f;
-        if (axis.y != 0) return (shape.yMin + shape.yMax) / 32f;
-        return (shape.zMin + shape.zMax) / 32f;
-    }
-
-    private static void GetJava18FaceLighting(Direction direction,Vector3Int pos,MeshData mesh,ChunkData chunk,BlockShape faceShape)
-    {
         var block=chunk.GetBlock(pos);var shape=faceShape??block.blockShape.GetShape();
         var normal=direction.GetVector();ChunkSection.ChooseFaceAxes(normal,out var axisA,out var axisB);
         var front=IsInsetFace(normal,shape)?pos:pos+normal;
         bool liquid=block.type==BlockType.Water||block.type==BlockType.Lava;
         if(liquid&&direction==Direction.up)front=pos;
         int emission=block.BlockData.lightEmission;
-        var flat=SampleJava18(chunk,front,emission);
+        var flat=SampleLightLevels(chunk,front,emission);
         bool ao=!liquid&&emission==0;
-        var c00=Java18Corner(chunk,front,axisA,axisB,-1,-1,emission,flat);
-        var c01=Java18Corner(chunk,front,axisA,axisB,-1,1,emission,flat);
-        var c11=Java18Corner(chunk,front,axisA,axisB,1,1,emission,flat);
-        var c10=Java18Corner(chunk,front,axisA,axisB,1,-1,emission,flat);
+        var c00=SampleLightCorner(chunk,front,axisA,axisB,-1,-1,emission,flat);
+        var c01=SampleLightCorner(chunk,front,axisA,axisB,-1,1,emission,flat);
+        var c11=SampleLightCorner(chunk,front,axisA,axisB,1,1,emission,flat);
+        var c10=SampleLightCorner(chunk,front,axisA,axisB,1,-1,emission,flat);
         int first=mesh.vertices.Count-4;
         for(int i=0;i<4;i++)
         {
             var v=mesh.vertices[first+i]-(Vector3)pos;
             float a=FaceCoordinate(Vector3.Dot(v,(Vector3)axisA)),b=FaceCoordinate(Vector3.Dot(v,(Vector3)axisB));
-            float sky=ao?Beta173Lighting.InterpolateCorners(c00.x,c01.x,c11.x,c10.x,a,b):flat.x;
-            float light=ao?Beta173Lighting.InterpolateCorners(c00.y,c01.y,c11.y,c10.y,a,b):flat.y;
-            float shade=ao?Beta173Lighting.InterpolateCorners(c00.z,c01.z,c11.z,c10.z,a,b):1;
+            float sky=ao?VoxelLightingMath.Interpolate(c00.x,c01.x,c11.x,c10.x,a,b):flat.x;
+            float light=ao?VoxelLightingMath.Interpolate(c00.y,c01.y,c11.y,c10.y,a,b):flat.y;
+            float shade=ao?VoxelLightingMath.Interpolate(c00.z,c01.z,c11.z,c10.z,a,b):1;
             mesh.skyLight.Add(sky);mesh.blockLight.Add(light);
             mesh.sides.Add(new Vector3(shade,1,4));
-            // Modern vertices keep flat levels for the material's smooth-lighting toggle.
+            // AO-off uses the flat face levels stored here.
             mesh.smoothLightCorners.Add(new Vector4(flat.x,flat.y,0,0));
         }
     }
 
-    private static Vector3 Java18Corner(ChunkData chunk,Vector3Int front,Vector3Int axisA,Vector3Int axisB,int signA,int signB,int emission,Vector3 flat)
+    private static Vector3 SampleLightCorner(ChunkData chunk,Vector3Int front,Vector3Int axisA,Vector3Int axisB,int signA,int signB,int emission,Vector3 flat)
     {
-        var a=SampleJava18(chunk,front+axisA*signA,emission);
-        var b=SampleJava18(chunk,front+axisB*signB,emission);
-        var diagonal=a.z<1&&b.z<1?a:SampleJava18(chunk,front+axisA*signA+axisB*signB,emission);
+        var a=SampleLightLevels(chunk,front+axisA*signA,emission);
+        var b=SampleLightLevels(chunk,front+axisB*signB,emission);
+        var diagonal=a.z<1&&b.z<1?a:SampleLightLevels(chunk,front+axisA*signA+axisB*signB,emission);
         // Vanilla substitutes the face brightness when a packed neighbor light is zero.
         if(a.x==0&&a.y==0){a.x=flat.x;a.y=flat.y;}
         if(b.x==0&&b.y==0){b.x=flat.x;b.y=flat.y;}
@@ -359,7 +289,7 @@ public static class BlockHelper
         return new Vector3((flat.x+a.x+b.x+diagonal.x)*.25f,(flat.y+a.y+b.y+diagonal.y)*.25f,(flat.z+a.z+b.z+diagonal.z)*.25f);
     }
 
-    private static Vector3 SampleJava18(ChunkData chunk,Vector3Int pos,int emission)
+    private static Vector3 SampleLightLevels(ChunkData chunk,Vector3Int pos,int emission)
     {
         if(pos.y>=chunk.worldRef.worldHeight)return new Vector3(chunk.worldRef.dimension==WorldDimension.Nether?0:15,emission,1);
         if(pos.y<0)return new Vector3(0,emission,1);
@@ -391,50 +321,8 @@ public static class BlockHelper
         return coordinate;
     }
 
-    private static float SampleCorner(ChunkData chunk, Vector3Int front, Vector3Int axisA,
-        Vector3Int axisB, int signA, int signB, int darkness, int emission, float flat)
-    {
-        var a = front + axisA * signA;
-        var b = front + axisB * signB;
-        return Beta173Lighting.CornerBrightness(flat,
-            SampleBrightness(chunk, a, darkness, emission),
-            SampleBrightness(chunk, b, darkness, emission),
-            SampleBrightness(chunk, a + axisB * signB, darkness, emission),
-            PassesCornerSample(chunk.GetBlock(a)), PassesCornerSample(chunk.GetBlock(b)));
-    }
-
     private static readonly Vector3Int[] SlabLightNeighbors =
         { Vector3Int.up, Vector3Int.left, Vector3Int.right, Vector3Int.forward, Vector3Int.back };
-
-    private static bool PassesCornerSample(Block block)
-    {
-        // All currently implemented solid/liquid materials use Beta's false
-        // canBlockGrass entry; air (including outside bounds) uses true.
-        if (block == null || block.type == BlockType.Air || block.type == BlockType.Nothing) return true;
-        BetaBlockCatalog.Entry entry;
-        return BetaBlockCatalog.TryGet(block.type, out entry) && entry.CornerPass;
-    }
-
-    private static float SampleBrightness(ChunkData chunk, Vector3Int position, int darkness, int emission)
-    {
-        if (position.y >= chunk.worldRef.worldHeight)
-            return Beta173Lighting.Brightness(chunk.worldRef.dimension == WorldDimension.Nether ? 0 : 15, 0, darkness, emission, chunk.worldRef.dimension == WorldDimension.Nether);
-        if (position.y < 0) return Beta173Lighting.Brightness(0, 0, darkness, emission, chunk.worldRef.dimension == WorldDimension.Nether);
-        var block = chunk.GetBlock(position);
-        if (BlockShapesExtensions.ForBlock(block.type) == BlockShapes.Slab || StairGeometry.IsStair(block.type))
-        {
-            // Beta half slabs and stairs sample above and four sides, never below.
-            int sky = 0, light = 0;
-            foreach (var dir in SlabLightNeighbors)
-            {
-                var neighbor = chunk.GetBlock(position + dir);
-                sky = Math.Max(sky, neighbor.GetSkyLight());
-                light = Math.Max(light, neighbor.GetBlockLight());
-            }
-            return Beta173Lighting.Brightness(sky, light, darkness, emission, chunk.worldRef.dimension == WorldDimension.Nether);
-        }
-        return Beta173Lighting.Brightness(block.GetSkyLight(), block.GetBlockLight(), darkness, emission, chunk.worldRef.dimension == WorldDimension.Nether);
-    }
 
     public static int GetLightIndex(Vector3Int pos, ChunkData chunk)
     {

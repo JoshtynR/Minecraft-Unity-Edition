@@ -44,15 +44,13 @@ public partial class F3MenuManger : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.KeypadPlus))
             {
-                World.Instance.betaSkylightSubtracted = Mathf.Clamp(World.Instance.betaSkylightSubtracted - 1, 0, 11);
-                World.Instance.skyLightMultiplier = Mathf.Lerp(1f, 0.15f, World.Instance.betaSkylightSubtracted / 11f);
-                World.Instance.UpadteLightTexture();
+                World.Instance.skyLightReduction = Mathf.Clamp(World.Instance.skyLightReduction - 1, 0, 11);
+                World.Instance.RefreshLightmap();
             }
             if (Input.GetKeyDown(KeyCode.KeypadMinus))
             {
-                World.Instance.betaSkylightSubtracted = Mathf.Clamp(World.Instance.betaSkylightSubtracted + 1, 0, 11);
-                World.Instance.skyLightMultiplier = Mathf.Lerp(1f, 0.15f, World.Instance.betaSkylightSubtracted / 11f);
-                World.Instance.UpadteLightTexture();
+                World.Instance.skyLightReduction = Mathf.Clamp(World.Instance.skyLightReduction + 1, 0, 11);
+                World.Instance.RefreshLightmap();
             }
 
             if (Input.GetKeyDown(KeyCode.Backspace))

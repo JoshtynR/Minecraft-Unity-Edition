@@ -2,85 +2,47 @@ using UnityEngine;
 
 public partial class World
 {
-    [Tooltip("Java Edition 1.8 colored lightmap and smooth ambient occlusion. Disable to use the previous Beta lighting.")]
-    public bool java18Lighting = true;
-    [Tooltip("Current Beta skylight subtraction: 0 is daytime; 11 is a clear night. Updated by the overworld clock during play.")]
-    [Range(0, 11)] public int betaSkylightSubtracted;
-    [Tooltip("Beta fallback only: optional bilinear face interpolation and smoothed liquids. Java 1.8 lighting uses independent light levels and vertex AO.")]
-    public bool fullSmoothLighting = false;
-    private int lastFullSmoothLighting = -1;
-    private int lastBetaSkyDarkness = -1;
-    private float lastBetaBrightnessBoost = -1;
-    private int lastJava18Lighting = -1;
+    [Tooltip("Amount removed from direct skylight for gameplay checks: 0 at day, 11 at night.")]
+    [Range(0, 11)] public int skyLightReduction;
+    private float lastLightmapGamma = -1;
     private float lightmapClock,torchFlicker,torchVelocity;
-    // Unity does not serialize System.Random across script reloads. Recreate
-    // this visual-only stream on demand, including for restored components.
     private System.Random lightmapRandom;
-    private Texture2D java18Lightmap;
+    private Texture2D lightmapTexture;
 
     private void ReleaseLightmap()
     {
-        if(java18Lightmap!=null)
-        {if(Application.isPlaying)Destroy(java18Lightmap);else DestroyImmediate(java18Lightmap);}
-        java18Lightmap=null;
+        if(lightmapTexture!=null)
+        {if(Application.isPlaying)Destroy(lightmapTexture);else DestroyImmediate(lightmapTexture);}
+        lightmapTexture=null;
     }
 
     private void PublishLightmap()
     {
-        LightTextureCreator.java18=java18Lighting;
-        LightTextureCreator.nether=dimension==WorldDimension.Nether;
-        LightTextureCreator.gamma=gamma;
-        LightTextureCreator.skyDarkness=betaSkylightSubtracted;
-        LightTextureCreator.sunlight=dimension==WorldDimension.Nether?.2f:Java18Lighting.SunBrightness(SkyClock.Angle(CurrentWorldTicks));
-        LightTextureCreator.torchFlicker=torchFlicker;
-        LightTextureCreator.CreateLightTexture();
-        Shader.SetGlobalVectorArray("lightColors",LightTextureCreator.lightColors);
-        if(java18Lighting)
+        VoxelLightmap.Generate(
+            dimension==WorldDimension.Nether?.2f:LightmapLighting.SunBrightness(SkyClock.Angle(CurrentWorldTicks)),
+            gamma,dimension==WorldDimension.Nether,torchFlicker);
+        if(lightmapTexture==null)
         {
-            if(java18Lightmap==null)
-            {
-                java18Lightmap=new Texture2D(16,16,TextureFormat.RGBA32,false,true);
-                java18Lightmap.name="Owned Java 1.8 lightmap";
-                java18Lightmap.filterMode=FilterMode.Bilinear;java18Lightmap.wrapMode=TextureWrapMode.Clamp;
-            }
-            java18Lightmap.SetPixels(LightTextureCreator.LightColors);java18Lightmap.Apply(false,false);
-            Shader.SetGlobalTexture("_Java18Lightmap",java18Lightmap);
+            lightmapTexture=new Texture2D(16,16,TextureFormat.RGBA32,false,true);
+            lightmapTexture.name="Owned voxel lightmap";
+            lightmapTexture.filterMode=FilterMode.Bilinear;lightmapTexture.wrapMode=TextureWrapMode.Clamp;
         }
+        lightmapTexture.SetPixels(VoxelLightmap.Colors);lightmapTexture.Apply(false,false);
+        Shader.SetGlobalTexture("_VoxelLightmap",lightmapTexture);
     }
 
-    private void UpdateBetaLightingSettings()
+    private void UpdateLighting()
     {
         if (Instance != this) return;
-        Shader.SetGlobalFloat("_Java18Lighting",java18Lighting?1:0);
-        Shader.SetGlobalFloat("_BetaNether", dimension == WorldDimension.Nether ? 1 : 0);
-        int darkness = dimension == WorldDimension.Nether ? 0 : Mathf.Clamp(betaSkylightSubtracted, 0, 11);
-        int smoothMode = fullSmoothLighting ? 1 : 0;
-        int modern=java18Lighting?1:0;
-        bool rebuild = lastJava18Lighting!=modern || lastFullSmoothLighting != smoothMode || (!java18Lighting&&lastBetaSkyDarkness!=darkness);
-        lastJava18Lighting=modern;
-        lastFullSmoothLighting = smoothMode;
         lightmapClock+=Time.deltaTime;
-        if(lightmapClock>=.05f||lastBetaSkyDarkness!=darkness||lastBetaBrightnessBoost!=gamma||rebuild)
+        if(lightmapClock>=.05f||lastLightmapGamma!=gamma||lightmapTexture==null)
         {
             lightmapClock=0;
             if(lightmapRandom==null)lightmapRandom=new System.Random();
             torchVelocity+=(float)((lightmapRandom.NextDouble()-lightmapRandom.NextDouble())*lightmapRandom.NextDouble()*lightmapRandom.NextDouble());
             torchVelocity*=.9f;torchFlicker=torchVelocity;
             PublishLightmap();
-        }
-        if (lastBetaSkyDarkness != darkness)
-        {
-            Shader.SetGlobalFloat("_BetaSkyDarkness", darkness);
-            lastBetaSkyDarkness = darkness;
-
-        }
-        if (rebuild && IsWorldCreated && worldData.chunkDict != null)
-            foreach (var chunk in worldData.chunkDict.Values) AddChunkToUpdate(chunk);
-        if (lastBetaBrightnessBoost != gamma)
-        {
-            // Beta fallback only; 1.8 gamma is applied while generating the RGB map.
-            Shader.SetGlobalFloat("_BetaBrightnessBoost", Mathf.Clamp01(gamma));
-            lastBetaBrightnessBoost = gamma;
+            lastLightmapGamma=gamma;
         }
     }
 }

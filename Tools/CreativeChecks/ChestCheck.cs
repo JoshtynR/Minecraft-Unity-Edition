@@ -20,7 +20,7 @@ public partial class World:MonoBehaviour
  public bool GenerationBusy;
  public World worldRenderer=>this;public WorldDimension dimension;public string StorageName=>DimensionRules.StorageName(worldName,dimension);public static World FindDimension(WorldDimension id)=>Instance;public static System.Collections.Generic.IEnumerable<World> LoadedDimensions=>new[]{Instance};
  public bool IsWorldCreated=true,disabled;public int worldHeight=128;
- public static World Instance=new World();public string worldName="";public int betaSkylightSubtracted;public bool isSaving;public void SaveWorld(){}
+ public static World Instance=new World();public string worldName="";public int skyLightReduction;public bool isSaving;public void SaveWorld(){}
  public System.Collections.Generic.Dictionary<Vector3Int,Block> blocks=new System.Collections.Generic.Dictionary<Vector3Int,Block>();
  public World(){InitializeChests();}
  public void AddChunkToUpdate(ChunkRenderer renderer){}

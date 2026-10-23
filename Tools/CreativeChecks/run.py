@@ -79,7 +79,7 @@ with tempfile.TemporaryDirectory() as tmp:
         str(root / 'Assets/_Scripts/World/Rendering/ModernChestVisual.cs'),
         str(root / 'Assets/_Scripts/World/Rendering/ChunkRenderer.cs'),
         str(root / 'Assets/_Scripts/World/World_Chests.cs'),
-        str(root / 'Assets/_Scripts/WorldGeneration/Beta/Beta173Lighting.cs'),
+        str(root / 'Assets/_Scripts/World/VoxelLightingMath.cs'),
         str(root / 'Tools/CreativeChecks/ChestCheck.cs'),
         str(root / "Assets/_Scripts/Entity's/Player/InventoryPlayerGraphic.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/InventoryRules.cs"),

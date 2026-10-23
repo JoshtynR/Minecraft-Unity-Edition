@@ -153,7 +153,7 @@ public partial class World
             feet = new Vector3(x+.5f,y+1,z+.5f);
             if (!MobSpawnClear(feet,species)) return false;
             var light = GetBlock(Vector3Int.FloorToInt(feet));
-            return !grass || Mathf.Max(light.GetBlockLight(),light.GetSkyLight()-betaSkylightSubtracted) > 8;
+            return !grass || Mathf.Max(light.GetBlockLight(),light.GetSkyLight()-skyLightReduction) > 8;
         }
         return false;
     }
@@ -176,7 +176,7 @@ public partial class World
     private void SpawnNaturalMobs()
     {
         int passiveCount=0;foreach(var animal in activeMobs)if(!MobRules.Hostile(animal.species))passiveCount++;
-        if (!spawnPassiveMobs || betaSkylightSubtracted >= 7 || maximumActivePassiveMobs <= passiveCount || mobs.Count >= MobStore.Capacity || mobPlayers.Count == 0) return;
+        if (!spawnPassiveMobs || skyLightReduction >= 7 || maximumActivePassiveMobs <= passiveCount || mobs.Count >= MobStore.Capacity || mobPlayers.Count == 0) return;
         mobSpawnCandidates.Clear();
         foreach(var entry in mobSpawnCooldowns)if(!worldData.chunkDict.ContainsKey(entry.Key)||mobTick>=entry.Value)mobSpawnCandidates.Add(entry.Key);
         foreach(var expired in mobSpawnCandidates)mobSpawnCooldowns.Remove(expired);mobSpawnCandidates.Clear();

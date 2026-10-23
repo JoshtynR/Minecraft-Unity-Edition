@@ -94,7 +94,7 @@ public partial class World
         StreamDimensionPlayers();
         if (Application.isPlaying) UpdateChunks();
         if (Instance != this) return;
-        UpdateBetaLightingSettings();
+        UpdateLighting();
         if (backgroundCamera == null) backgroundCamera = Camera.main;
         if (backgroundCamera != null)
             backgroundCamera.backgroundColor = dimension == WorldDimension.Nether ? new Color(.2f,.03f,.03f,1) :

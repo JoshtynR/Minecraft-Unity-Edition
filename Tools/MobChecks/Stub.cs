@@ -99,7 +99,7 @@ public partial class World:MonoBehaviour {
 #if !FULL_MOB_SYSTEM
  private List<Player> mobPlayers=new List<Player>();private List<MobState> activeMobs=new List<MobState>();private List<Vector3Int> mobSpawnCandidates=new List<Vector3Int>();private MobEntitySystem mobEntities=new MobEntitySystem();public MobEntitySystem MobEntities=>mobEntities;public MobStore mobs=>mobEntities.Store;private JavaRandom mobRandom=new JavaRandom(173);private int mobTick;
 #endif
- public int betaSkylightSubtracted=11,worldHeight=128;public float gamma;public bool blocked;public int edits,drops;public RendererRoot worldRenderer=new RendererRoot();
+ public int skyLightReduction=11,worldHeight=128;public float gamma;public bool blocked;public int edits,drops;public RendererRoot worldRenderer=new RendererRoot();
  private sealed class Data {public Dictionary<Vector3Int,int> chunkDict=new Dictionary<Vector3Int,int>();}private Data worldData=new Data();
  public Dictionary<Vector3Int,Block> cells=new Dictionary<Vector3Int,Block>();public Block GetBlock(Vector3 p)=>GetBlock(Vector3Int.FloorToInt(p));public Block GetBlock(Vector3Int p)=>cells.TryGetValue(p,out var block)?block:new Block{type=p.y<64?(p.y==63?BlockType.Grass:BlockType.Stone):BlockType.Air,sky=p.y<64?0:15};
 #if !FULL_MOB_SYSTEM
@@ -122,7 +122,6 @@ public class PlayerInventory {public InventoryStack held;public InventoryStack H
  public bool DropRequestPending;public int selectedSlotIndex;public InventoryStack[] DropInventorySnapshot(){var items=new InventoryStack[36];items[0]=held;return items;}public void ApplyDropInventory(InventoryStack[] items){held=items[0];}
 #endif
 }
-public static class Beta173Lighting {public static float Brightness(int sky,int block,int darkness,float boost,bool nether)=>1;}
 public class MeshData {
  public List<Vector3> vertices=new List<Vector3>(),uv=new List<Vector3>();public List<int> triangles=new List<int>();
  public MeshData(bool main){}public void AddVertex(Vector3 point){vertices.Add(point);}public void AddQuadTriangles(){int start=vertices.Count-4;triangles.AddRange(new[]{start,start+1,start+2,start,start+2,start+3});}

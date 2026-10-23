@@ -22,8 +22,7 @@ public static partial class LightingCheck
    Check(mesh.uv.Count==vertices&&mesh.colors.Count==vertices&&mesh.faceCoordinates.Count==vertices&&mesh.sides.Count==vertices&&mesh.skyLight.Count==vertices&&mesh.blockLight.Count==vertices&&mesh.smoothLightCorners.Count==vertices,"all plant vertex streams align");
    for(int i=0;i<vertices;i++)
    {
-    Check(mesh.sides[i].z==3&&mesh.skyLight[i]==12&&mesh.blockLight[i]==3,"flat own-cell plant lighting marker");
-    Check(Math.Abs(mesh.sides[i].x-Beta173Lighting.Brightness(12,3,0,0))<1e-6,"plant brightness ignores cube AO");
+    Check(mesh.skyLight[i]==12&&mesh.blockLight[i]==3&&mesh.sides[i].z==3,"plants retain raw light levels without cube AO");
    }
    var stonePos=pos+Vector3Int.down;
    chunk.blocks[stonePos]=new Block{type=BlockType.Stone,chunkData=chunk,localChunkPosition=stonePos};

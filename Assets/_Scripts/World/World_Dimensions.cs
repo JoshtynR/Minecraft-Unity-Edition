@@ -81,10 +81,10 @@ public partial class World
         {
             // Renderer roots contain chunks, chest models, drops and animals, never World itself.
             loaded.worldRenderer.gameObject.SetActive(loaded==world);
-            loaded.lastBetaSkyDarkness=-1;loaded.lastBetaBrightnessBoost=-1;
+            loaded.lastLightmapGamma=-1;
         }
         if(GameManager.Instance!=null)GameManager.Instance.world=world;
-        world.UpadteLightTexture();
+        world.RefreshLightmap();
     }
     public static async void SaveAllDimensions()
     {

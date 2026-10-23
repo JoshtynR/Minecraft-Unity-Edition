@@ -34,48 +34,38 @@ namespace UnityEngine
     public static class Time{public static float deltaTime=.05f;}
     public static class Shader
     {
-        public static int uploads;public static Texture texture;
-        public static void SetGlobalFloat(string key,float value){}
-        public static void SetGlobalVectorArray(string key,Vector4[] values){uploads++;}
+        public static Texture texture;
         public static void SetGlobalTexture(string key,Texture value){texture=value;}
     }
 }
 public enum WorldDimension{Overworld,Nether}
-public struct WorldData{public Dictionary<int,object> chunkDict;}
 public partial class World:MonoBehaviour
 {
     public static World Instance;public WorldDimension dimension;public float gamma;public double CurrentWorldTicks=6000;
-    public bool IsWorldCreated;public WorldData worldData=new WorldData{chunkDict=new Dictionary<int,object>{{1,new object()},{2,new object()}}};public int queued;
-    public void AddChunkToUpdate(object chunk){queued++;}
-    public void Frame()=>UpdateBetaLightingSettings();public void DisposeForCheck()=>ReleaseLightmap();
+    public void Frame()=>UpdateLighting();public void DisposeForCheck()=>ReleaseLightmap();
 }
 class RuntimeCheck
 {
     static void Require(bool ok,string label){if(!ok)throw new Exception(label);}
     static void Main()
     {
-        var world=new World();World.Instance=world;world.Frame();world.IsWorldCreated=true;
+        var world=new World();World.Instance=world;world.Frame();
         var texture=(Texture2D)Shader.texture;
-        Require(world.java18Lighting&&texture!=null,"1.8 lighting defaults on and uploads a map");
+        Require(texture!=null,"lighting uploads a map");
         Require(texture.filterMode==FilterMode.Bilinear&&texture.wrapMode==TextureWrapMode.Clamp,"lightmap sampling configuration");
         var day=texture.pixels[15*16].r;
-        world.CurrentWorldTicks=18000;world.betaSkylightSubtracted=11;world.Frame();
+        world.CurrentWorldTicks=18000;world.skyLightReduction=11;world.Frame();
         Require(texture.pixels[15*16].r<day&&texture.pixels[15*16].b>texture.pixels[15*16].r,"clock updates cool night skylight");
-        Require(world.queued==0,"day/night changes do not remesh chunks");
         var dark=texture.pixels[0].r;world.gamma=1;world.Frame();
-        Require(texture.pixels[0].r>dark&&world.queued==0,"gamma changes update map without remeshing");
+        Require(texture.pixels[0].r>dark,"gamma changes update the map");
         for(int i=0;i<30;i++)world.Frame();Require(Texture2D.created==1,"lightmap texture is reused");
         var randomField=typeof(World).GetField("lightmapRandom",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
         randomField.SetValue(world,null);world.Frame();
         Require(randomField.GetValue(world)!=null,"lighting recreates missing visual RNG after script reload");
-        world.java18Lighting=false;world.Frame();Require(world.queued==2,"style switch remeshes exactly once");
-        world.Frame();Require(world.queued==2,"unchanged style does not keep remeshing");
-        world.betaSkylightSubtracted=10;world.Frame();Require(world.queued==4,"legacy baked light still remeshes when needed");
-        int uploads=Shader.uploads;new World().Frame();Require(Shader.uploads==uploads,"inactive dimension cannot overwrite active lightmap");
+        var activeTexture=Shader.texture;new World().Frame();Require(Shader.texture==activeTexture,"inactive dimension cannot overwrite active lightmap");
         world.DisposeForCheck();Require(texture.destroyed,"world teardown releases owned lightmap");
-        world.worldData=default(WorldData);world.java18Lighting=true;world.Frame();
-        Require(world.worldData.chunkDict==null,"style change tolerates an uninitialized WorldData struct");
+        world.Frame();Require(Shader.texture!=null,"released lightmap is recreated on demand");
         world.DisposeForCheck();
-        Console.WriteLine("Production world/lightmap lifecycle, default mode, clock/gamma updates, remesh avoidance and dimension ownership checks passed (Unity GPU mocked).");
+        Console.WriteLine("Production lightmap lifecycle, clock/gamma updates and dimension ownership checks passed (Unity GPU mocked).");
     }
 }

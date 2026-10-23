@@ -21,10 +21,10 @@ class Check {
   var pushed=new MobState{id=900,health=10,position=zombie.position};MobEntitySystem.PushApart(zombie,pushed);Assert(zombie.motion.x<0&&pushed.motion.x>0&&Math.Abs(zombie.motion.x+pushed.motion.x)<.00001f,"overlapping bodies receive equal opposing pushes");zombie.motion=Vector3.zero;
   world.Step(zombie);Assert(player.health==15&&zombie.attackTicks==20,"zombie deals reference melee damage and starts attack cooldown");
   world.Step(zombie);Assert(player.health==15,"attack cooldown prevents per-frame damage");
-  world.betaSkylightSubtracted=0;world.Step(zombie);Assert(zombie.fireTicks==160,"exposed zombies ignite in daylight");
+  world.skyLightReduction=0;world.Step(zombie);Assert(zombie.fireTicks==160,"exposed zombies ignite in daylight");
   var skeleton=Mob(world,MobType.Skeleton);world.Step(skeleton);Assert(skeleton.fireTicks==160,"exposed skeletons ignite in daylight");
   world=new World{blocked=true};player=Target(world,1);world.Step(Mob(world,MobType.Zombie));Assert(player.health==20,"solid cover blocks melee acquisition");
-  world=new World{betaSkylightSubtracted=0};player=Target(world,1);var spider=Mob(world,MobType.Spider);
+  world=new World{skyLightReduction=0};player=Target(world,1);var spider=Mob(world,MobType.Spider);
   world.Step(spider);Assert(player.health==20,"unprovoked spiders are neutral in bright daylight");
   spider.angerTicks=600;world.Step(spider);Assert(player.health==18,"provoked daylight spider attacks");
   world=new World();player=Target(world,1);player.isFlying=true;world.Step(Mob(world,MobType.Zombie));Assert(player.health==20,"flying players are not hostile targets");

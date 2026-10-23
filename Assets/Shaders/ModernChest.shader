@@ -1,6 +1,6 @@
 Shader "Voxel/ModernChest"
 {
-    Properties { _MainTex ("Chest skin",2D)="white" {} _Brightness ("Voxel light",Float)=1 }
+    Properties { _MainTex ("Chest skin",2D)="white" {} }
     SubShader
     {
         Tags { "RenderType"="Opaque" }
@@ -12,8 +12,8 @@ Shader "Voxel/ModernChest"
             #pragma target 3.5
             #include "UnityCG.cginc"
             #include "WorldFog.cginc"
-            #include "Java18Lighting.cginc"
-            sampler2D _MainTex;float _Brightness;float4 _FluidFog;
+            #include "LightmapLighting.cginc"
+            sampler2D _MainTex;float4 _FluidFog;
             struct appdata {float4 vertex:POSITION;float2 uv:TEXCOORD0;float3 normal:NORMAL;};
             struct v2f {float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float light:TEXCOORD1;float distance:TEXCOORD2;};
             v2f vert(appdata v)
@@ -29,7 +29,7 @@ Shader "Voxel/ModernChest"
                 #ifndef UNITY_COLORSPACE_GAMMA
                     c.rgb=LinearToGammaSpace(c.rgb);
                 #endif
-                c.rgb=ApplyWorldFog(c.rgb*EntityLight(_Brightness)*i.light,i.distance,_FluidFog);
+                c.rgb=ApplyWorldFog(c.rgb*EntityLight()*i.light,i.distance,_FluidFog);
                 #ifndef UNITY_COLORSPACE_GAMMA
                     c.rgb=GammaToLinearSpace(c.rgb);
                 #endif

@@ -46,7 +46,7 @@ public partial class World
             var chunk=mobSpawnCandidates[mobRandom.NextInt(mobSpawnCandidates.Count)];
             var feet=(Vector3)(chunk+new Vector3Int(mobRandom.NextInt(16),mobRandom.NextInt(16),mobRandom.NextInt(16)))+new Vector3(.5f,0,.5f);
             if(MobPlayerDistance(feet)<24*24||!MobAreaLoaded(feet))continue;
-            var block=GetBlock(feet);if(block==null||block.type!=BlockType.Air||Math.Max(block.GetBlockLight(),block.GetSkyLight()-betaSkylightSubtracted)>7)continue;
+            var block=GetBlock(feet);if(block==null||block.type!=BlockType.Air||Math.Max(block.GetBlockLight(),block.GetSkyLight()-skyLightReduction)>7)continue;
             var species=(MobType)(4+mobRandom.NextInt(4));
             var candidate=new MobState{species=species,position=feet};
             float width=MobRules.Width(candidate),height=MobRules.BodyHeight(candidate);
@@ -70,14 +70,14 @@ public partial class World
     internal void TickSunlight(MobState mob)
     {
         var eye=mob.position+Vector3.up*(MobRules.BodyHeight(mob)*.85f);
-        if(betaSkylightSubtracted<4&&GetBlock(eye).GetSkyLight()==15)
+        if(skyLightReduction<4&&GetBlock(eye).GetSkyLight()==15)
             mob.fireTicks=Math.Max(mob.fireTicks,160);
     }
     internal Player FindMobTarget(MobState mob,bool daylightNeutral)
     {
         var agent=GetMobAgent(mob);
         var eye=mob.position+Vector3.up*(MobRules.BodyHeight(mob)*.85f);
-        if(daylightNeutral&&mob.angerTicks==0&&GetBlock(eye).GetSkyLight()-betaSkylightSubtracted>7)
+        if(daylightNeutral&&mob.angerTicks==0&&GetBlock(eye).GetSkyLight()-skyLightReduction>7)
         {agent.Target=null;mob.targetMemoryTicks=0;return null;}
         Player target=null;float nearest=16*16;
         foreach(var player in mobPlayers)
@@ -227,7 +227,7 @@ public partial class World
         }
         visual.transform.position=message.position;
         if(message.direction.sqrMagnitude>.0001f)visual.transform.rotation=Quaternion.LookRotation(message.direction);
-        var light=GetBlock(message.position);mobArrowProperties.SetVector("_LightLevels",new Vector4(light.GetSkyLight(),light.GetBlockLight(),1,0));mobArrowProperties.SetFloat("_Brightness",Beta173Lighting.Brightness(light.GetSkyLight(),light.GetBlockLight(),betaSkylightSubtracted,0,dimension==WorldDimension.Nether));visual.GetComponent<MeshRenderer>().SetPropertyBlock(mobArrowProperties);
+        var light=GetBlock(message.position);mobArrowProperties.SetVector("_LightLevels",new Vector4(light.GetSkyLight(),light.GetBlockLight(),1,0));visual.GetComponent<MeshRenderer>().SetPropertyBlock(mobArrowProperties);
     }
     private void SendMobArrows(NetworkConnectionToClient connection)
     {foreach(var arrow in mobArrows)connection.Send(new MobArrowMessage{dimension=dimension,id=arrow.id,position=arrow.position,direction=arrow.motion,embedded=arrow.embedded});}

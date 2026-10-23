@@ -170,10 +170,6 @@ public sealed class FirstPersonView : MonoBehaviour
         var levels=new Vector4(block==null?15:block.GetSkyLight(),block==null?0:block.GetBlockLight(),1,0);
         spriteMaterial.SetVector("_LightLevels",levels);
         blockMaterial.SetVector("_LightLevels",levels);
-        float brightness = block == null ? 1 : Beta173Lighting.Brightness(block.GetSkyLight(), block.GetBlockLight(), world.betaSkylightSubtracted, 0,world.dimension == WorldDimension.Nether);
-        spriteMaterial.SetFloat("_Brightness", brightness);
-        blockMaterial.SetFloat("_Brightness", world == null ? 1 : brightness / Mathf.Max(.05f,
-            Beta173Lighting.Brightness(14, 0, world.betaSkylightSubtracted, 0,world.dimension == WorldDimension.Nether)));
     }
 
     private void OnDisable()

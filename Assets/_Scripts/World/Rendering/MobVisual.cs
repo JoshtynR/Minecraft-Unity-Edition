@@ -62,7 +62,6 @@ public sealed class MobVisual
         if(mob.species==MobType.Creeper)root.transform.localScale=Vector3.one*(1+mob.fuseTicks/30f*.15f);
         var sample=world.GetBlock(mob.position+Vector3.up*(MobRules.BodyHeight(mob)*.66f));
         properties.SetVector("_LightLevels",new Vector4(sample==null?15:sample.GetSkyLight(),sample==null?0:sample.GetBlockLight(),1,0));
-        properties.SetFloat("_Brightness",sample==null?1:Beta173Lighting.Brightness(sample.GetSkyLight(),sample.GetBlockLight(),world.betaSkylightSubtracted,0,world.dimension == WorldDimension.Nether));
         properties.SetFloat("_Hurt",mob.hurtTicks>0?1:0);
         properties.SetFloat("_Flash",mob.species==MobType.Creeper&&mob.fuseTicks>0&&(mob.fuseTicks/3)%2==0?.8f:0);
         for(int i=0;i<renderers.Length;i++)

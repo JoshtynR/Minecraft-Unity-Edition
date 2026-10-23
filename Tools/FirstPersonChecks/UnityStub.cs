@@ -49,9 +49,8 @@ public static class FoodRules{public const float EatSeconds=1.6f;}
 public class Player:UnityEngine.MonoBehaviour {public World CurrentWorld=>World.Instance;public UnityEngine.Transform cam;public bool IsReadyForPlay=true,escapeMenuOpen,IsEating;public float EatingProgress;public int health=20;public PlayerInventory inventory=new PlayerInventory();public void ApplyFirstPersonBob(UnityEngine.Transform pose){}}
 public class PlayerHudAssets:UnityEngine.Object {public UnityEngine.Texture inventoryPlayerSkin;}
 public static class WorldLoadingScreen {public static bool IsLoading;}
-public class World {public WorldDimension dimension;public static World Instance;public int betaSkylightSubtracted;public Block GetBlock(UnityEngine.Vector3 position)=>new Block();}
+public class World {public WorldDimension dimension;public static World Instance;public int skyLightReduction;public Block GetBlock(UnityEngine.Vector3 position)=>new Block();}
 public class Block {public int GetSkyLight()=>10;public int GetBlockLight()=>0;}
-public static class Beta173Lighting {public static float Brightness(int sky,int block,int sub,int gamma,bool nether=false)=>.5f;}
 public class ItemDefinition {public UnityEngine.Texture2D icon;}
 public static class ItemCatalog {public static ItemDefinition Get(ItemType type)=>type==ItemType.Missing?null:new ItemDefinition{icon=new UnityEngine.Texture2D{width=16,height=16}};public static bool TryPlacedBlock(ItemType t,out BlockType b){b=BlockType.Stone;return t==ItemType.Stone;}}
 public static class BlockShapesExtensions {public static bool IsPlant(BlockType b)=>false;}

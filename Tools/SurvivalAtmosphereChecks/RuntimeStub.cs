@@ -60,7 +60,7 @@ public static class ChestTransactions {public static bool Valid(InventoryStack[]
 public static class GameAudio {public static void Play(string s,Vector3 p,float volume,float pitch){}public static void Broadcast(string s,Vector3 p,float v,float pitch,World world){}public static float Variation(float a,float b)=>a;}
 public static class FluidWorldQueries {public static bool submerged;public static bool Touches(World w,Vector3 p,float width,float height,BlockType type,out int ignored){ignored=0;return submerged;}public static BlockType AtEye(World w,Vector3 p)=>submerged?BlockType.Water:BlockType.Air;}
 public class Block {public BlockType type=BlockType.Stone;}
-public partial class World {public static World Overworld;public bool IsWorldCreated=true;public int betaSkylightSubtracted,renderDistance=6,chunkSize=16;public WorldDimension dimension;public Block GetBlock(Vector3 p)=>new Block();public bool SpawnItemDrop(InventoryStack stack,Vector3 p,Vector3 velocity,int delay)=>true;}
+public partial class World {public static World Overworld;public bool IsWorldCreated=true;public int skyLightReduction,renderDistance=6,chunkSize=16;public WorldDimension dimension;public Block GetBlock(Vector3 p)=>new Block();public bool SpawnItemDrop(InventoryStack stack,Vector3 p,Vector3 velocity,int delay)=>true;}
 public static class InventoryRules {public static int Insert(InventoryStack[] slots,ItemType type,int count,int start,int end){for(int n=start;n<end;n++)if(slots[n].Empty){slots[n]=new InventoryStack{type=type,count=count};return 0;}return count;}}
 public partial class WorldServer {public static WorldServer instance;}
 public class PlayerHudAssets:UnityEngine.Object {public Texture2D sunTexture,moonTexture,cloudTexture;}

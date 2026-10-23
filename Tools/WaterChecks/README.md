@@ -166,7 +166,7 @@ frametime from .mcmeta when present and uses these defaults when absent.
 
 Chunk submeshes are now solid (0), cutout leaves/glass (1), and blended water (2).
 The Chunk prefab binds Water_Material to slot 2. Its Voxel/Water shader samples
-the same face texture array and shares Beta lighting code with Voxel, but draws
+the same face texture array and shares the voxel lightmap path, but draws
 in the Transparent queue with SrcAlpha/OneMinusSrcAlpha blending, no depth writes,
 and both face orientations visible. Water Opacity defaults to 0.6 and multiplies
 image alpha and block tint alpha. It does not change water's lighting opacity (3).

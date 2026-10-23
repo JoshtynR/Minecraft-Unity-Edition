@@ -3,7 +3,7 @@ using UnityEngine;
 
 public partial class World
 {
-    private int FarmLight(Block block) => block == null ? 0 : System.Math.Max(block.GetBlockLight(), block.GetSkyLight() - betaSkylightSubtracted);
+    private int FarmLight(Block block) => block == null ? 0 : System.Math.Max(block.GetBlockLight(), block.GetSkyLight() - skyLightReduction);
 
     private void SetFarmBlock(Vector3Int position, BlockType type, byte state = 0)
     {

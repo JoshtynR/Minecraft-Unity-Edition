@@ -12,7 +12,7 @@ public partial class World
         if(this!=Overworld||!Application.isPlaying||!IsWorldCreated)return;
         if(NetworkServer.active&&WorldServer.instance!=null)worldTimeTicks=WorldServer.instance.WorldTicks;
         else if(!NetworkClient.active)worldTimeTicks+=dt*20;
-        betaSkylightSubtracted=Mathf.RoundToInt((1-SkyClock.Daylight(CurrentWorldTicks))*11);
+        skyLightReduction=Mathf.RoundToInt((1-SkyClock.Daylight(CurrentWorldTicks))*11);
     }
 }
 public partial class WorldServer

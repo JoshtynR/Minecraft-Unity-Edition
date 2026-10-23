@@ -1,8 +1,8 @@
 using System;
 
-// Java 1.8's separate sky/block lightmap, in display (gamma) color space.
-// Independent of Unity so the renderer and reference checks share the same math.
-public static class Java18Lighting
+// Colored sky/block lightmap math in display (gamma) color space.
+// Kept independent of Unity so rendering and reference checks share the same math.
+public static class LightmapLighting
 {
     public struct RGB
     {

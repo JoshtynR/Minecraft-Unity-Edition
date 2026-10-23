@@ -1,6 +1,6 @@
 Shader "Voxel/Mob"
 {
-    Properties { _MainTex ("Mob texture",2D)="white" {} _Tint("Tint",Color)=(1,1,1,1) _Brightness ("Voxel light",Float)=1 _Hurt ("Hurt flash",Float)=0 _Flash("Fuse flash",Float)=0 _Unlit("Unlit effect",Float)=0 }
+    Properties { _MainTex ("Mob texture",2D)="white" {} _Tint("Tint",Color)=(1,1,1,1) _Hurt ("Hurt flash",Float)=0 _Flash("Fuse flash",Float)=0 _Unlit("Unlit effect",Float)=0 }
     SubShader
     {
         Tags { "RenderType"="Opaque" }
@@ -12,8 +12,8 @@ Shader "Voxel/Mob"
             #pragma target 3.5
             #include "UnityCG.cginc"
             #include "WorldFog.cginc"
-            #include "Java18Lighting.cginc"
-            sampler2D _MainTex;float _Brightness,_Hurt,_Flash,_Unlit;float4 _FluidFog,_Tint;
+            #include "LightmapLighting.cginc"
+            sampler2D _MainTex;float _Hurt,_Flash,_Unlit;float4 _FluidFog,_Tint;
             struct appdata {float4 vertex:POSITION;float2 uv:TEXCOORD0;float3 normal:NORMAL;};
             struct v2f {float4 pos:SV_POSITION;float2 uv:TEXCOORD0;float light:TEXCOORD1;float distance:TEXCOORD2;};
             v2f vert(appdata v)
@@ -31,7 +31,7 @@ Shader "Voxel/Mob"
                     c.rgb=LinearToGammaSpace(c.rgb);
                 #endif
                 c.rgb*=_Tint.rgb;
-                float3 rgb=lerp(c.rgb*lerp(EntityLight(_Brightness)*i.light,1,_Unlit),float3(1,.2,.2),_Hurt*.45);
+                float3 rgb=lerp(c.rgb*lerp(EntityLight()*i.light,1,_Unlit),float3(1,.2,.2),_Hurt*.45);
                 rgb=lerp(rgb,float3(1,1,1),_Flash);
                 rgb=ApplyWorldFog(rgb,i.distance,_FluidFog);
                 #ifndef UNITY_COLORSPACE_GAMMA

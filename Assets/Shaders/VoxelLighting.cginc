@@ -1,11 +1,10 @@
             #include "UnityCG.cginc"
             #include "WorldFog.cginc"
-            #include "Java18Lighting.cginc"
+            #include "LightmapLighting.cginc"
             UNITY_DECLARE_TEX2DARRAY(_BlockFaceTextures);
             #include "BlockFaceAnimation.cginc"
             float _TextureOn, _LightingOn, _AOOn, _FaceShadeOn;
             float _ShadeUp, _ShadeSideNS, _ShadeSideEW, _ShadeDown, _Debug;
-            float _BetaSkyDarkness, _BetaBrightnessBoost, _BetaNether;
             float4 _FluidFog;
             #ifdef VOXEL_WATER
                 float _WaterOpacity;
@@ -26,33 +25,19 @@
                 float4 pos : SV_POSITION;
                 float3 uv : TEXCOORD0;
                 float2 skyBlock : TEXCOORD1;
-                float brightness : TEXCOORD2;
                 float faceShade : TEXCOORD3;
                 float4 color : COLOR;
-                float4 corners : TEXCOORD4;
-                float samplingMode : TEXCOORD5;
-                float2 faceUV : TEXCOORD6;
                 float fogDistance : TEXCOORD7;
                 float ao : TEXCOORD8;
             };
-            float BetaBrightness(float sky, float block)
-            {
-                float level = max(max(0, floor(sky + 0.5) - _BetaSkyDarkness), floor(block + 0.5));
-                float darkness = 1 - saturate(level / 15);
-                float ambient=lerp(.05,.1,saturate(_BetaNether));
-                return (1 - darkness) / (darkness * 3 + 1) * (1-ambient) + ambient;
-            }
             v2f vert(appdata v)
             {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.fogDistance = length(UnityObjectToViewPos(v.vertex));
                 o.uv = AnimatedBlockFaceUV(v.uv);
-                o.faceUV = v.faceUV;
                 o.skyBlock = v.light;
                 o.color = v.color;
-                o.corners = v.corners;
-                o.samplingMode = v.sides.z;
                 float2 levels=v.light;
                 #ifdef VOXEL_ENTITY_LIGHT
                     if(_LightLevels.z>.5)levels=_LightLevels.xy;
@@ -60,10 +45,6 @@
                 if(v.sides.z>3.5&&v.sides.z<4.5&&_AOOn<.5)levels=v.corners.xy;
                 float ao=v.sides.z>4.5||v.sides.z>3.5&&_AOOn>.5?v.sides.x:1;
                 o.skyBlock=levels;o.ao=ao;
-                float brightness = v.sides.z > 0.5
-                    ? (_AOOn > 0.5 ? v.sides.x : v.sides.y)
-                    : BetaBrightness(v.light.x, v.light.y);
-                o.brightness = lerp(brightness, 1, saturate(_BetaBrightnessBoost));
                 float3 normal = UnityObjectToWorldNormal(v.normal);
                 float3 an = abs(normal);
                 float shade = an.y >= an.x && an.y >= an.z ? (normal.y >= 0 ? _ShadeUp : _ShadeDown)
@@ -79,25 +60,16 @@
                 #else
                     clip(col.a - 0.5);
                 #endif
-                // Beta multiplied vertex brightness/tint into sRGB texture colors.
-                // Preserve that operation even in a Unity Linear project.
+                // Voxel textures and vertex tints are authored in display color space.
                 #ifndef UNITY_COLORSPACE_GAMMA
                     col.rgb = LinearToGammaSpace(col.rgb);
                 #endif
                 col.rgb *= i.color.rgb;
-                float brightness = i.brightness;
-                if (_AOOn > 0.5 && i.samplingMode > 1.5 && i.samplingMode < 2.5)
-                {
-                    float bottom = lerp(i.corners.x, i.corners.w, i.faceUV.x);
-                    float top = lerp(i.corners.y, i.corners.z, i.faceUV.x);
-                    brightness = lerp(bottom, top, i.faceUV.y);
-                    brightness = lerp(brightness, 1, saturate(_BetaBrightnessBoost));
-                }
-                float3 modernLight=Java18Light(i.skyBlock)*i.ao;
-                if (_LightingOn > 0.5) col.rgb *= (_Java18Lighting>.5?modernLight:brightness.xxx) * i.faceShade;
+                float3 light=SampleVoxelLightmap(i.skyBlock)*i.ao;
+                if (_LightingOn > 0.5) col.rgb *= light * i.faceShade;
                 if (_Debug > 0.5 && _Debug < 1.5) col.rgb = (i.skyBlock.x / 15).xxx;
                 if (_Debug > 1.5 && _Debug < 2.5) col.rgb = (i.skyBlock.y / 15).xxx;
-                if (_Debug > 2.5) col.rgb = (_Java18Lighting>.5?dot(modernLight,float3(.2126,.7152,.0722)):brightness).xxx;
+                if (_Debug > 2.5) col.rgb = dot(light,float3(.2126,.7152,.0722)).xxx;
                 col.rgb = ApplyWorldFog(col.rgb,i.fogDistance,_FluidFog);
                 #ifndef UNITY_COLORSPACE_GAMMA
                     col.rgb = GammaToLinearSpace(col.rgb);

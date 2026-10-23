@@ -159,7 +159,7 @@ public static class Lighting
             if (neighbor == null || neighbor.type == BlockType.Nothing) continue;
             if (neighbor.BlockData.opacity == 15) continue;
 
-            int next = Beta173Lighting.Attenuate(lightLevel, neighbor.BlockData.opacity);
+            int next = VoxelLightingMath.Attenuate(lightLevel, neighbor.BlockData.opacity);
             if (neighbor.GetSkyLight() < next)
             {
                 neighbor.SetSkyLight(next);
@@ -210,7 +210,7 @@ public static class Lighting
             if (neighbor == null || neighbor.type == BlockType.Nothing) continue;
             if (neighbor.BlockData.opacity == 15) continue;
 
-            int next = Beta173Lighting.Attenuate(current, neighbor.BlockData.opacity);
+            int next = VoxelLightingMath.Attenuate(current, neighbor.BlockData.opacity);
             if (neighbor.GetBlockLight() < next)
             {
                 neighbor.SetBlockLight(next);

@@ -90,7 +90,7 @@ public partial class World:UnityEngine.MonoBehaviour {
  public Task EnsureWorldMetadataAsync()=>Task.CompletedTask;
  public static string GetChunkPath(string name,UnityEngine.Vector3Int p,WorldDimension dimension=WorldDimension.Overworld)=>"/nonexistent/test-chunk";
  public Task<Dictionary<UnityEngine.Vector3Int,ChunkData>> LoadChunksAsync(IEnumerable<UnityEngine.Vector3Int> positions,string name)=>Task.FromResult(new Dictionary<UnityEngine.Vector3Int,ChunkData>());
- public void UpadteLightTexture(){}
+ public void RefreshLightmap(){}
  public void RestoreFluidTicks(object x){}public void RestoreDroppedItems(object x){}public void RestoreMobs(object x){}
  public void SendMobSnapshot(Mirror.NetworkConnectionToClient c){}
  public object[] CaptureDroppedItems()=>new object[0];

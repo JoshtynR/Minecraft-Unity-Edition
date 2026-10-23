@@ -1,6 +1,6 @@
 Shader "Voxel/FirstPerson"
 {
-    Properties { _MainTex ("Skin or item", 2D) = "white" {} _Brightness ("Brightness", Float) = 1 }
+    Properties { _MainTex ("Skin or item", 2D) = "white" {} }
     SubShader
     {
         Tags { "Queue"="AlphaTest" "RenderType"="TransparentCutout" }
@@ -12,8 +12,8 @@ Shader "Voxel/FirstPerson"
             #pragma fragment frag
             #pragma target 3.5
             #include "UnityCG.cginc"
-            #include "Java18Lighting.cginc"
-            sampler2D _MainTex; float _Brightness;
+            #include "LightmapLighting.cginc"
+            sampler2D _MainTex;
             struct appdata { float4 vertex:POSITION; float2 uv:TEXCOORD0; float3 normal:NORMAL; };
             struct v2f { float4 pos:SV_POSITION; float2 uv:TEXCOORD0; float shade:TEXCOORD1; };
             v2f vert(appdata v)
@@ -28,7 +28,7 @@ Shader "Voxel/FirstPerson"
                 #ifndef UNITY_COLORSPACE_GAMMA
                     c.rgb=LinearToGammaSpace(c.rgb);
                 #endif
-                c.rgb*=EntityLight(_Brightness)*i.shade;
+                c.rgb*=EntityLight()*i.shade;
                 #ifndef UNITY_COLORSPACE_GAMMA
                     c.rgb=GammaToLinearSpace(c.rgb);
                 #endif

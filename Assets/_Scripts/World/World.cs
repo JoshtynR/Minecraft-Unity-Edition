@@ -39,15 +39,8 @@ public partial class World : MonoBehaviour
     
     public bool GenerateMoreChunks = true;
     [Space]
-    [Header("Lighting")] 
-    [Range(0, 1)]
-    public float gamma = 0.0f;
-    [Range(0.15f, 1)]
-    public float skyLightMultiplier = 0.75f;
-    public float blockLightMultiplier = 1.5f;
-    [Space]
-    public Color dayColor;
-    public Color nightColor;
+    [Header("Lighting")]
+    [Range(0, 1)] public float gamma = 0.0f;
     public string worldName;
     [HideInInspector]
     public bool disabled;
@@ -149,13 +142,14 @@ public partial class World : MonoBehaviour
 
             validateDone = true;
         }
-        UpadteLightTexture();
+        RefreshLightmap();
     }
 
-    public void UpadteLightTexture()
+    public void RefreshLightmap()
     {
-        UpdateBetaLightingSettings();
-        if(Instance==this)PublishLightmap();
+        if(Instance!=this)return;
+        lightmapClock=.05f;
+        UpdateLighting();
     }
 
     private WorldGenerationData GetPositionsInRenderDistance(Vector3Int playerPos)

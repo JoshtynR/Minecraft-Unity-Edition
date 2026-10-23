@@ -57,7 +57,7 @@ public partial class World
  private void UpdateFurnaces(){}
  private void UpdateMobs(){}
  private void UpdateDroppedItems(){}
- private void UpdateBetaLightingSettings(){}
+ private void UpdateLighting(){}
  private Task<Dictionary<ChunkRenderer,MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> chunks,bool markModifiedByPlayer)
  {
   if(markModifiedByPlayer)throw new Exception("lighting updates marked player edits");jobs++;

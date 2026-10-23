@@ -39,8 +39,6 @@ public sealed class DroppedItemVisual
         int visible=DroppedItemRules.Copies(state.stack.count);
         var block=world.GetBlock(Vector3Int.FloorToInt(state.position+Vector3.up*.25f));
         properties.SetVector("_LightLevels",new Vector4(block==null?15:block.GetSkyLight(),block==null?0:block.GetBlockLight(),1,0));
-        float brightness=block==null?1:Beta173Lighting.Brightness(block.GetSkyLight(),block.GetBlockLight(),world.betaSkylightSubtracted,0,world.dimension == WorldDimension.Nether);
-        properties.SetFloat("_Brightness",flat?brightness:brightness/Mathf.Max(.05f,Beta173Lighting.Brightness(14,0,world.betaSkylightSubtracted,0,world.dimension == WorldDimension.Nether)));
         for(int i=0;i<4;i++)
         {
             copies[i].gameObject.SetActive(i<visible);
