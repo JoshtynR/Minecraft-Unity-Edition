@@ -11,8 +11,8 @@ public static class BlockShapesList
     public static readonly BlockShape Farmland = new BlockShape(0, 0, 0, 16, 15, 16);
     public static readonly BlockShape SnowLayer = new BlockShape(0, 0, 0, 16, 2, 16);
     public static readonly BlockShape Cactus = new BlockShape(1, 0, 1, 15, 16, 15);
-    // Beta's physical cactus box is one pixel shorter than its rendered/selected box.
-    public static readonly BlockShape CactusCollision = new BlockShape(1, 0, 1, 15, 15, 15);
+    // Beta insets cactus on the four horizontal sides, but keeps full height.
+    public static readonly BlockShape CactusCollision = new BlockShape(1, 0, 1, 15, 16, 15);
     public static readonly BlockShape Cake = new BlockShape(1, 0, 1, 15, 8, 15);
     public static readonly BlockShape Bed = new BlockShape(0, 0, 0, 16, 9, 16);
     public static readonly BlockShape PressurePlate = new BlockShape(1, 0, 1, 15, 1, 15);

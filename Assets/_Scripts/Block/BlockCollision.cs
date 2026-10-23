@@ -5,6 +5,9 @@ using UnityEngine;
 public static class BlockCollision
 {
     private const float Epsilon = 0.00001f;
+    // Movement clips bodies flush against a block. Hazard queries must include
+    // that flush boundary or a player/item stopped by a cactus never "touches" it.
+    private const float ContactPadding = 0.001f;
     private static float Axis(Vector3 v, int axis) { return axis == 0 ? v.x : axis == 1 ? v.y : v.z; }
 
     public static float Clip(World world, Vector3 feet, float halfWidth, float height, float movement, int axis)
@@ -55,12 +58,12 @@ public static class BlockCollision
     public static bool TouchesBlock(World world, Vector3 feet, float halfWidth, float height, BlockType type)
     {
         if (world == null) return false;
-        int x0 = Mathf.FloorToInt(feet.x - halfWidth);
-        int x1 = Mathf.FloorToInt(feet.x + halfWidth);
-        int y0 = Mathf.Max(0, Mathf.FloorToInt(feet.y));
-        int y1 = Mathf.Min(world.worldHeight - 1, Mathf.FloorToInt(feet.y + height));
-        int z0 = Mathf.FloorToInt(feet.z - halfWidth);
-        int z1 = Mathf.FloorToInt(feet.z + halfWidth);
+        int x0 = Mathf.FloorToInt(feet.x - halfWidth - ContactPadding);
+        int x1 = Mathf.FloorToInt(feet.x + halfWidth + ContactPadding);
+        int y0 = Mathf.Max(0, Mathf.FloorToInt(feet.y - ContactPadding));
+        int y1 = Mathf.Min(world.worldHeight - 1, Mathf.FloorToInt(feet.y + height + ContactPadding));
+        int z0 = Mathf.FloorToInt(feet.z - halfWidth - ContactPadding);
+        int z1 = Mathf.FloorToInt(feet.z + halfWidth + ContactPadding);
         for (int x = x0; x <= x1; x++)
         for (int y = y0; y <= y1; y++)
         for (int z = z0; z <= z1; z++)
@@ -69,10 +72,20 @@ public static class BlockCollision
             if (block == null || block.type != type) continue;
             int parts = SpecialBlockGeometry.CollisionCount(type);
             for (int part = 0; part < parts; part++)
-                if (OverlapsBody(feet,halfWidth,height,new Vector3Int(x,y,z),SpecialBlockGeometry.CollisionPart(type,block.blockShape,part)))
+                if (TouchesBody(feet,halfWidth,height,new Vector3Int(x,y,z),SpecialBlockGeometry.CollisionPart(type,block.blockShape,part)))
                     return true;
         }
         return false;
+    }
+
+    private static bool TouchesBody(Vector3 feet, float halfWidth, float height, Vector3Int cell, BlockShape shape)
+    {
+        return feet.x + halfWidth + ContactPadding >= cell.x + shape.xMin/16f &&
+            feet.x - halfWidth - ContactPadding <= cell.x + shape.xMax/16f &&
+            feet.y + height + ContactPadding >= cell.y + shape.yMin/16f &&
+            feet.y - ContactPadding <= cell.y + shape.yMax/16f &&
+            feet.z + halfWidth + ContactPadding >= cell.z + shape.zMin/16f &&
+            feet.z - halfWidth - ContactPadding <= cell.z + shape.zMax/16f;
     }
 
     public static bool Supported(World world, Vector3 feet, float halfWidth, float height)

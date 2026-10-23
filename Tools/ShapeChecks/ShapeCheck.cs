@@ -74,7 +74,7 @@ public static partial class ShapeCheck
   Check(BlockShapesExtensions.ForBlock(BlockType.Farmland).GetShape().yMax==15&&BlockShapesExtensions.ForBlock(BlockType.MoistFarmland).GetShape().yMax==15,"farmland visual height");
   Check(BlockShapesList.Bed.yMax==9&&BlockShapesList.Cake.yMax==8&&BlockShapesList.Trapdoor.yMax==3&&BlockShapesList.PressurePlate.yMax==1,"Beta default cuboid dimensions");
   Check(!BlockShapesList.Cactus.isSideFull(Direction.up)&&!BlockShapesList.Cactus.isSideFull(Direction.down),"inset cactus never hides a full neighbor face");
-  Check(BlockShapesExtensions.CollisionShape(BlockType.Cactus,BlockShapesList.Cactus).yMax==15&&BlockShapesList.Cactus.yMax==16,"Beta cactus collision is one pixel shorter than its visual box");
+  Check(BlockShapesExtensions.CollisionShape(BlockType.Cactus,BlockShapesList.Cactus).yMax==16&&BlockShapesList.Cactus.yMax==16,"Beta cactus is inset horizontally but remains full height");
   Check(!BlockShapesList.Cake.TouchesCellBoundary(Direction.up)&&BlockShapesList.Slab.CoversBoundaryFace(BlockShapesList.Slab,Direction.right),"inset face and equal slab boundary coverage");
   Check(!BlockShapesList.Slab.CoversBoundaryFace(BlockShapesList.FullBlock,Direction.right),"half slab cannot hide full cube side");
   var uv=BlockShapesList.Slab.FaceUVTransform(Direction.right);Check(uv.x==1&&uv.y==0.5f,"slab side crops half image rather than stretches it");
@@ -83,6 +83,8 @@ public static partial class ShapeCheck
   Put(w,0,0,0,BlockType.SoulSand);d=BlockCollision.Resolve(w,V(0.5f,2,0.5f),0.3f,1.8f,V(0,-3,0),false);Check(Near(d.y,-1.125f)&&BlockShapesExtensions.ForBlock(BlockType.SoulSand).GetShape().yMax==16,"soul sand full visual cube and lower collider");
   Put(w,0,0,0,BlockType.Farmland);d=BlockCollision.Resolve(w,V(0.5f,2,0.5f),0.3f,1.8f,V(0,-3,0),false);Check(Near(d.y,-1),"Beta farmland collides at full height");
   w=new World();Put(w,1,1,0,BlockType.Cactus);d=BlockCollision.Resolve(w,V(0.5f,1,0.5f),0.3f,1.8f,V(1,0,0),false);Check(Near(d.x,0.2625f),"cactus collision uses inset side");
+  Check(BlockCollision.TouchesBlock(w,V(0.7625f,1,0.5f),0.3f,1.8f,BlockType.Cactus),"flush movement contact triggers cactus hazard");
+  Check(!BlockCollision.TouchesBlock(w,V(0.75f,1,0.5f),0.3f,1.8f,BlockType.Cactus),"visible gap does not trigger cactus hazard");
   w.GetBlock(new Vector3Int(1,1,0)).BlockData.generateCollider=false;d=BlockCollision.Resolve(w,V(0.5f,1,0.5f),0.3f,1.8f,V(1,0,0),false);Check(d.x==1,"respects user's collision flag");
   w=new World();Put(w,0,0,0,BlockType.Stone);Put(w,1,0,0,BlockType.Stone);Put(w,1,1,0,BlockType.StoneSlab);
   d=BlockCollision.Resolve(w,V(0.5f,1,0.5f),0.3f,1.8f,V(0.5f,0,0),true);Check(Near(d.x,0.5f)&&Near(d.y,0.5f),"step onto half slab");
