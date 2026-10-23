@@ -33,7 +33,7 @@ public sealed class BlockBreakOverlay : System.IDisposable
                     var face = parts == 2 ? StairGeometry.RenderFace(stairFacing, part, dir) : shape;
                     if (face == null) continue;
                     face.SetFaceVertices(dir, Vector3Int.zero, data);
-                    var mapping = block.type == BlockType.Cactus ? new Vector4(1,1,0,0) : face.FaceUVTransform(dir);
+                    var mapping = face.FaceUVTransform(dir);
                     AddBaseUVs(baseUvs,block.BlockData.textureData.FaceIndex(block.type,dir),mapping);
                     data.AddFaceUVs(0, face.FaceUVTransform(dir)); data.AddQuadTriangles();
                 }

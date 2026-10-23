@@ -173,11 +173,9 @@ public static class BlockHelper
             GetFaceLightingAndAO(dir, pos, meshData, chunk);
         meshData.AddQuadTriangles();
         var shape = block.blockShape.GetShape();
-        // Cactus uses the complete face artwork on its inset sides/top, as in
-        // Beta's special cactus renderer. Generic partial cuboids crop by bounds.
         if ((block.type == BlockType.Water || block.type == BlockType.Lava) && chunk != null)
             AddFluidUVs(dir, pos, meshData, chunk, blockTypeData.textureData);
-        else meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(block.type, dir), block.type == BlockType.Cactus ? new Vector4(1,1,0,0) : shape.FaceUVTransform(dir));
+        else meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(block.type, dir), shape.FaceUVTransform(dir));
 
         // Grass dirt/base sides stay neutral; only the top and overlay use the map.
         meshData.AddQuadColor(tint);

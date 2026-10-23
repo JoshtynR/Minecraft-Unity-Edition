@@ -75,6 +75,8 @@ public static partial class ShapeCheck
   Check(BlockShapesList.Bed.yMax==9&&BlockShapesList.Cake.yMax==8&&BlockShapesList.Trapdoor.yMax==3&&BlockShapesList.PressurePlate.yMax==1,"Beta default cuboid dimensions");
   Check(!BlockShapesList.Cactus.isSideFull(Direction.up)&&!BlockShapesList.Cactus.isSideFull(Direction.down),"inset cactus never hides a full neighbor face");
   Check(BlockShapesExtensions.CollisionShape(BlockType.Cactus,BlockShapesList.Cactus).yMax==16&&BlockShapesList.Cactus.yMax==16,"Beta cactus is inset horizontally but remains full height");
+  var cactusSideUv=BlockShapesList.Cactus.FaceUVTransform(Direction.backwards);var cactusTopUv=BlockShapesList.Cactus.FaceUVTransform(Direction.up);
+  Check(Near(cactusSideUv.x,.875f)&&Near(cactusSideUv.z,.0625f)&&Near(cactusTopUv.x,.875f)&&Near(cactusTopUv.y,.875f),"cactus renders the inner fourteen pixels of its face textures");
   Check(!BlockShapesList.Cake.TouchesCellBoundary(Direction.up)&&BlockShapesList.Slab.CoversBoundaryFace(BlockShapesList.Slab,Direction.right),"inset face and equal slab boundary coverage");
   Check(!BlockShapesList.Slab.CoversBoundaryFace(BlockShapesList.FullBlock,Direction.right),"half slab cannot hide full cube side");
   var uv=BlockShapesList.Slab.FaceUVTransform(Direction.right);Check(uv.x==1&&uv.y==0.5f,"slab side crops half image rather than stretches it");
