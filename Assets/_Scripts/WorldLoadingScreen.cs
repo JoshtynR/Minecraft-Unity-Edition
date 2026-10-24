@@ -80,7 +80,7 @@ public sealed class WorldLoadingScreen : MonoBehaviour
         {
             var tiles=Rect("Dirt",background,0,0,0,0);tiles.anchorMin=Vector2.zero;tiles.anchorMax=Vector2.one;
             dirt=tiles.gameObject.AddComponent<RawImage>();dirt.texture=assets.loadingBackground;
-            dirt.color=new Color(64/255f,64/255f,64/255f,1);dirt.raycastTarget=false;
+            dirt.color=new Color(120/255f,120/255f,120/255f,1);dirt.raycastTarget=false;
         }
         var font=assets!=null&&assets.levelFont!=null?assets.levelFont:TMP_Settings.defaultFontAsset;
         textMaterial=MinecraftUIText.CreateMaterial(font,8,true);

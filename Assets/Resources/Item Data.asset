@@ -840,7 +840,7 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: 42fe18c9d60a4954c81bde26e57e21e8, type: 3}
     maxStack: 64
     maxDamage: 0
-    placedBlock: 0
+    placedBlock: 61
   - id: 1007
     displayName: Flint
     icon: {fileID: 2800000, guid: a221e96fabcd9c3478f3fba3b71bb032, type: 3}
@@ -1192,13 +1192,13 @@ MonoBehaviour:
   - id: 1065
     displayName: Raw Porkchop
     icon: {fileID: 2800000, guid: 2e3643dec3641804bbc0ecbf80626447, type: 3}
-    maxStack: 1
+    maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1066
     displayName: Cooked Porkchop
     icon: {fileID: 2800000, guid: d695e8c77d5cf844ba8cb0bb81030348, type: 3}
-    maxStack: 1
+    maxStack: 64
     maxDamage: 0
     placedBlock: 0
   - id: 1067

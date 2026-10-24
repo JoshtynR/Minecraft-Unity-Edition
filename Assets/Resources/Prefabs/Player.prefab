@@ -869,6 +869,9 @@ MonoBehaviour:
   fovLerpSpeed: 8
   PlayerName: 
   SteamId: 0
+  expectsSavedPlayerData: 0
+  viewBobbing: 1
+  dimension: 0
   airSupply: 300
   burning: 0
   saturation: 5
@@ -1504,7 +1507,7 @@ Camera:
     height: 1
   near clip plane: 0.01
   far clip plane: 1000
-  field of view: 70
+  field of view: 75
   orthographic: 0
   orthographic size: 5
   m_Depth: 0

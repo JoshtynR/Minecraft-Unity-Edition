@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10afee2ba88b4d16af99413a6e454221, type: 3}
   m_Name: PlayerHudAssets
   m_EditorClassIdentifier: 
-  worldListEntryPrefab: {fileID: 7926451109967716828, guid: b6dc23748837537428186f16740ee810, type: 3}
+  worldListEntryPrefab: {fileID: 7926451109967716828, guid: b6dc23748837537428186f16740ee810,
+    type: 3}
   icons: {fileID: 2800000, guid: 4525a3faaaa32704cb43d4ae54527df1, type: 3}
   inventory: {fileID: 2800000, guid: 3c315156104df1645b4f737d7af4ddad, type: 3}
   craftingTable: {fileID: 2800000, guid: 54ba8932ad9360147b828eb24a9b7979, type: 3}
@@ -34,6 +35,9 @@ MonoBehaviour:
   guiFont: {fileID: 12800000, guid: 0d046d4a4a2dc434c888321d17cfa4b4, type: 3}
   guiWidgets: {fileID: 2800000, guid: 4de7eeaf258f6464982e10cb58b596d2, type: 3}
   loadingBackground: {fileID: 2800000, guid: ba38ccef4f11d9a4f9b956f7776c9a2f, type: 3}
+  sunTexture: {fileID: 2800000, guid: 40b2f49c2d741174c879100db05f643a, type: 3}
+  moonTexture: {fileID: 2800000, guid: caafc9c47baed414bb85c33e8fea5d19, type: 3}
+  cloudTexture: {fileID: 2800000, guid: b39090b4ad411074a906d7ea181ca65b, type: 3}
   blockBreak: {fileID: 2800000, guid: b0f623e5a889ca64fa6332a6fc5643de, type: 3}
   blockBreakMaterial: {fileID: 2100000, guid: 3bea119353c541b7a49c108038f6f4fb, type: 2}
   breakColumns: 0

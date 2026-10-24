@@ -9,6 +9,12 @@ public class SplashText : MonoBehaviour
         BlatantPlagiarism,
         WeOutHere,
         ISmellCheese,
+        RickyBobby,
+        LiketheVacuum,
+        BumpertoBumperBaby,
+        Carrot,
+
+
     }
 
     [Header("UI Reference")]
@@ -31,9 +37,14 @@ public class SplashText : MonoBehaviour
     {
         switch (option)
         {
-            case SplashOptions.BlatantPlagiarism: return "BLATANT PLAGIARISM";
+            case SplashOptions.BlatantPlagiarism: return "BLATANT PLAGIARISM!!!";
             case SplashOptions.WeOutHere: return "WE OUT HERE BOY!";
             case SplashOptions.ISmellCheese: return "I Smell Cheese?";
+            case SplashOptions.RickyBobby: return "Ricky Bobby!";
+            case SplashOptions.LiketheVacuum: return "Like the Vacuum!!";
+            case SplashOptions.BumpertoBumperBaby: return "Bumper to Bumper!";
+            case SplashOptions.Carrot: return "She got a carrot?? the fuck";
+
             default: return option.ToString();
         }
     }

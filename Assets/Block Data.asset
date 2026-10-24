@@ -292,7 +292,7 @@ MonoBehaviour:
     generateCollider: 1
     opacity: 1
     lightEmission: 0
-    albedoTint: {r: 0.27979448, g: 0.49019608, b: 0, a: 1}
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 10
     textureData:
       growthStages:
@@ -571,7 +571,7 @@ MonoBehaviour:
     generateCollider: 1
     opacity: 1
     lightEmission: 0
-    albedoTint: {r: 0.20345317, g: 0.33962262, b: 0.20345317, a: 1}
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 19
     textureData:
       growthStages:
@@ -629,7 +629,7 @@ MonoBehaviour:
     generateCollider: 1
     opacity: 1
     lightEmission: 0
-    albedoTint: {r: 0.27960485, g: 0.3679245, b: 0.18222676, a: 1}
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 9
     textureData:
       growthStages:
@@ -998,7 +998,7 @@ MonoBehaviour:
       right: {fileID: 0}
       specialTextures:
       - part: 3
-        image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        image: {fileID: 2800000, guid: fd02deee8bb5735498f2145f27aec696, type: 3}
         overrideAnimation: 0
         animate: 1
         columns: 1
@@ -1007,7 +1007,7 @@ MonoBehaviour:
         framesPerSecond: 20
         playback: 0
       - part: 4
-        image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        image: {fileID: 2800000, guid: 42f20c7365635604c8bc8b493f3611f2, type: 3}
         overrideAnimation: 0
         animate: 1
         columns: 1
@@ -1016,7 +1016,7 @@ MonoBehaviour:
         framesPerSecond: 20
         playback: 0
       - part: 5
-        image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        image: {fileID: 2800000, guid: 0fe85107a41731d4c8660bb9b7eef0c5, type: 3}
         overrideAnimation: 0
         animate: 1
         columns: 1
@@ -1025,7 +1025,7 @@ MonoBehaviour:
         framesPerSecond: 20
         playback: 0
       - part: 6
-        image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        image: {fileID: 2800000, guid: 7f83ac648a701c040b89d59399ebd371, type: 3}
         overrideAnimation: 0
         animate: 1
         columns: 1
@@ -1034,7 +1034,7 @@ MonoBehaviour:
         framesPerSecond: 20
         playback: 0
       - part: 7
-        image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        image: {fileID: 2800000, guid: def60a6f21366104cba64aa629ebdf9d, type: 3}
         overrideAnimation: 0
         animate: 1
         columns: 1
@@ -1043,7 +1043,7 @@ MonoBehaviour:
         framesPerSecond: 20
         playback: 0
       - part: 8
-        image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        image: {fileID: 2800000, guid: 02304f71f2c2de54b95c76fed001cbb0, type: 3}
         overrideAnimation: 0
         animate: 1
         columns: 1
@@ -1052,7 +1052,7 @@ MonoBehaviour:
         framesPerSecond: 20
         playback: 0
       - part: 9
-        image: {fileID: 2800000, guid: 89c0101f773fc6e4f92764e2412deee4, type: 3}
+        image: {fileID: 2800000, guid: 3ec3d808baf90834d91a607c8681d58f, type: 3}
         overrideAnimation: 0
         animate: 1
         columns: 1
@@ -1214,7 +1214,7 @@ MonoBehaviour:
     generateCollider: 0
     opacity: 0
     lightEmission: 0
-    albedoTint: {r: 0.38039216, g: 0.5764706, b: 0.1764706, a: 1}
+    albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 38
     textureData:
       growthStages:
@@ -1882,13 +1882,13 @@ MonoBehaviour:
       - {fileID: 0}
       - {fileID: 0}
       - {fileID: 0}
-      top: {fileID: 0}
-      bottom: {fileID: 0}
-      side: {fileID: 0}
-      front: {fileID: 0}
-      back: {fileID: 0}
-      left: {fileID: 0}
-      right: {fileID: 0}
+      top: {fileID: 2800000, guid: 58f79d874cfafe744b97a35197efcae0, type: 3}
+      bottom: {fileID: 2800000, guid: 58f79d874cfafe744b97a35197efcae0, type: 3}
+      side: {fileID: 2800000, guid: ad15232e3edb76543b197831fe414cca, type: 3}
+      front: {fileID: 2800000, guid: fdb7c93b652f9684baaabe286ded5d43, type: 3}
+      back: {fileID: 2800000, guid: ad15232e3edb76543b197831fe414cca, type: 3}
+      left: {fileID: 2800000, guid: ad15232e3edb76543b197831fe414cca, type: 3}
+      right: {fileID: 2800000, guid: ad15232e3edb76543b197831fe414cca, type: 3}
       specialTextures: []
       animateFaces: 0
       animationColumns: 1
@@ -2886,9 +2886,9 @@ MonoBehaviour:
       - {fileID: 0}
       - {fileID: 0}
       - {fileID: 0}
-      top: {fileID: 2800000, guid: aad037f0edaab984b8b6d5dd9eccd965, type: 3}
-      bottom: {fileID: 2800000, guid: aad037f0edaab984b8b6d5dd9eccd965, type: 3}
-      side: {fileID: 2800000, guid: aad037f0edaab984b8b6d5dd9eccd965, type: 3}
+      top: {fileID: 0}
+      bottom: {fileID: 0}
+      side: {fileID: 0}
       front: {fileID: 0}
       back: {fileID: 0}
       left: {fileID: 0}

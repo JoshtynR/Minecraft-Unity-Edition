@@ -1,6 +1,0 @@
-seed=2151901553968352745
-betaChunk=0,0
-stage=depth
-format=little-endian-f64
-count=25
-LtNuiqozysAAc24g5B7KwLrkSQ8g8snAYJrgd5kdycB+UyabrcTIwKpdYWUxfsnAoa9fwzhwycAeGm3lRijJwLBXsNSRncjAeLd109YDyMDq1nBEmK7IwDFdX8e6lsjA8hji8FKiyMACNj3P5UHIwNzGzOCHX8fACkJE4ga6x8AAkqyfJwLIwIombLBUcMjABEnQ+s3ex8DkcMBfnDXHwJua67W0/cbA/jwe/VFNx8AakDjPj1bHwKiznS90McfAmpBTCwirxsA=
