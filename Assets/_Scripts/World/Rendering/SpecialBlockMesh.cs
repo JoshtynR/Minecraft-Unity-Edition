@@ -113,7 +113,13 @@ public static class SpecialBlockMesh
                     (head?BlockTexturePart.BedHeadTop:BlockTexturePart.BedFootTop):
                     d==(head?Direction.forwards:Direction.backwards)?(head?BlockTexturePart.BedHeadEnd:BlockTexturePart.BedFootEnd):
                     (head?BlockTexturePart.BedHeadSide:BlockTexturePart.BedFootSide);
-                mesh.AddFaceUVs(Texture(parts,part,layer(d)),d==Direction.up||d==Direction.down?new Vector4(1,1,0,0):b.FaceUVTransform(d));mesh.AddQuadColor(tint);
+                mesh.AddFaceUVs(Texture(parts,part,layer(d)),d==Direction.up||d==Direction.down?new Vector4(1,1,0,0):b.FaceUVTransform(d));
+                // Beta's separate bed-side tiles are directional: both long
+                // faces must run from foot to head. BlockShape emits the left
+                // face in the opposite Z order, so mirror that face to keep
+                // the pillow and outer leg away from the centre seam.
+                if(d==Direction.left)MirrorLastFaceU(mesh);
+                mesh.AddQuadColor(tint);
             }
             Rotate(mesh,start,pos,(s&3)*Math.PI/2);return;
         }
@@ -186,6 +192,13 @@ public static class SpecialBlockMesh
     private static void RotateUV(MeshData m,int turns)
     {
         for(int i=m.uv.Count-8;i<m.uv.Count;i++){var uv=m.uv[i];for(int j=0;j<(turns&3);j++){float x=uv.x;uv.x=uv.y;uv.y=1-x;}m.uv[i]=uv;}
+    }
+    private static void MirrorLastFaceU(MeshData m)
+    {
+        int first=m.uv.Count-4;
+        float min=m.uv[first].x,max=min;
+        for(int i=first+1;i<m.uv.Count;i++){min=Math.Min(min,m.uv[i].x);max=Math.Max(max,m.uv[i].x);}
+        for(int i=first;i<m.uv.Count;i++){var uv=m.uv[i];uv.x=min+max-uv.x;m.uv[i]=uv;}
     }
     private static void OrientPiston(MeshData m,int first,Vector3Int p,int facing)
     {
