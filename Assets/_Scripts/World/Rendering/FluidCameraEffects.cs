@@ -17,6 +17,7 @@ public sealed class FluidCameraEffects : MonoBehaviour
     private Texture2D deathGradient;
     private GUIStyle deathTitleStyle,deathTextStyle;
     private float deathShownAt=-1;
+    private float sleepShownAt=-1;
     private bool confirmTitle;
     private float deathGuiScale=1;
     private void Awake(){view=GetComponent<Camera>();assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");}
@@ -66,6 +67,11 @@ public sealed class FluidCameraEffects : MonoBehaviour
         {
             DrawDeathScreen();return;
         }
+        if(player!=null&&player.sleeping)
+        {
+            DrawSleepScreen();return;
+        }
+        sleepShownAt=-1;
         deathShownAt=-1;confirmTitle=false;
         if(player==null||assets==null||Event.current.type!=EventType.Repaint)return;
         var old=GUI.color;int depth=GUI.depth;GUI.depth=100;
@@ -94,21 +100,50 @@ public sealed class FluidCameraEffects : MonoBehaviour
             GUI.DrawTextureWithTexCoords(new Rect(-Screen.width*.15f,Screen.height*.45f,Screen.width*.65f,Screen.height*.7f),assets.fireOverlay,uv);
             GUI.DrawTextureWithTexCoords(new Rect(Screen.width*.5f,Screen.height*.45f,Screen.width*.65f,Screen.height*.7f),assets.fireOverlay,uv);
         }
+        if(!string.IsNullOrEmpty(player.SleepMessage))
+        {
+            EnsureGuiStyles();
+            int scale=Mathf.Max(1,Mathf.Min(Screen.width/320,Screen.height/240));
+            var matrix=GUI.matrix;GUI.matrix=Matrix4x4.Scale(Vector3.one*scale);
+            DrawDeathText(new Rect(0,Screen.height/(float)scale-62,Screen.width/(float)scale,12),player.SleepMessage,deathTextStyle,Color.white);
+            GUI.matrix=matrix;
+        }
         GUI.color=old;GUI.depth=depth;
+    }
+
+    private void DrawSleepScreen()
+    {
+        EnsureGuiStyles();if(sleepShownAt<0)sleepShownAt=Time.unscaledTime;
+        int oldDepth=GUI.depth;var oldMatrix=GUI.matrix;var oldColor=GUI.color;
+        try
+        {
+            GUI.depth=-90;int scale=Mathf.Max(1,Mathf.Min(Screen.width/320,Screen.height/240));deathGuiScale=scale;
+            float width=Screen.width/(float)scale,height=Screen.height/(float)scale;GUI.matrix=Matrix4x4.Scale(Vector3.one*scale);
+            float fade=Mathf.Clamp01((Time.unscaledTime-sleepShownAt)*2);
+            GUI.color=new Color(0,0,0,.55f*fade);GUI.DrawTexture(new Rect(0,0,width,height),Texture2D.whiteTexture);GUI.color=Color.white;
+            if(DeathButton(new Rect(width/2-100,height-50,200,20),"Leave Bed",true))player.RequestWakeFromBed();
+        }
+        finally{GUI.matrix=oldMatrix;GUI.color=oldColor;GUI.depth=oldDepth;}
+    }
+
+    private void EnsureGuiStyles()
+    {
+        if(deathTextStyle!=null)return;
+        deathTextStyle=new GUIStyle(GUI.skin.label){fontSize=8,alignment=TextAnchor.UpperCenter,richText=true,
+            padding=new RectOffset(),margin=new RectOffset(),contentOffset=Vector2.zero};
+        if(assets!=null&&assets.guiFont!=null)deathTextStyle.font=assets.guiFont;
+        deathTitleStyle=new GUIStyle(deathTextStyle){fontSize=16};
     }
 
     private void DrawDeathScreen()
     {
         if(deathShownAt<0)deathShownAt=Time.unscaledTime;
+        EnsureGuiStyles();
         if(deathGradient==null)
         {
             deathGradient=new Texture2D(1,2,TextureFormat.RGBA32,false);
             deathGradient.SetPixels(new[]{new Color(128/255f,48/255f,48/255f,160/255f),new Color(80/255f,0,0,96/255f)});
             deathGradient.filterMode=FilterMode.Bilinear;deathGradient.wrapMode=TextureWrapMode.Clamp;deathGradient.Apply();
-            deathTextStyle=new GUIStyle(GUI.skin.label){fontSize=8,alignment=TextAnchor.UpperCenter,richText=true,
-                padding=new RectOffset(),margin=new RectOffset(),contentOffset=Vector2.zero};
-            if(assets!=null&&assets.guiFont!=null)deathTextStyle.font=assets.guiFont;
-            deathTitleStyle=new GUIStyle(deathTextStyle){fontSize=16};
         }
         int oldDepth=GUI.depth;var oldMatrix=GUI.matrix;var oldColor=GUI.color;
         try

@@ -127,8 +127,16 @@ public partial class Player
             transferDestination=createPortal?await destination.FindOrCreateExitAsync(desired):desired;
             if(health<=0&&target==WorldDimension.Overworld)
             {
-                await destination.EnsureAreaAsync(Vector3Int.zero,true);
-                transferDestination=WorldSpawnRules.Resolve(destination);
+                if(hasBedSpawn)await destination.EnsureAreaAsync(bedSpawn,true);
+                else await destination.EnsureAreaAsync(Vector3Int.zero,true);
+                Vector3 bedDestination;
+                if(hasBedSpawn&&WorldSpawnRules.TryResolveBed(destination,bedSpawn,out bedDestination))transferDestination=bedDestination;
+                else
+                {
+                    hasBedSpawn=false;
+                    await destination.EnsureAreaAsync(Vector3Int.zero,true);
+                    transferDestination=WorldSpawnRules.Resolve(destination);
+                }
             }
             await destination.EnsureAreaAsync(Vector3Int.FloorToInt(transferDestination),true);
             if(this==null)return;

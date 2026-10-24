@@ -66,7 +66,12 @@ public partial class Player
         if(world==null)return;
         // Beta has no Nether respawn anchor: every death returns to the
         // overworld spawn, rather than the last safe fluid position.
-        Vector3 destination=WorldSpawnRules.Resolve(world);
+        Vector3 destination;
+        if(!hasBedSpawn||!WorldSpawnRules.TryResolveBed(world,bedSpawn,out destination))
+        {
+            if(hasBedSpawn){hasBedSpawn=false;ShowSleepMessage("Your home bed was missing or obstructed");}
+            destination=WorldSpawnRules.Resolve(world);
+        }
         ApplyFluidRespawn(destination);
         if(networkStarted)TargetFluidRespawn(connectionToClient,destination);
     }

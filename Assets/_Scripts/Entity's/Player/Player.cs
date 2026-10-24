@@ -222,6 +222,7 @@ public partial class Player : BaseEntity
 
     private void OnDisable()
     {
+        RestoreSleepCursor();
         serverMining = localMining = false;
         DisposeMining();
         Gizmos.CameraFilter -= FilterGizmoCamera;
@@ -231,6 +232,8 @@ public partial class Player : BaseEntity
     {
         if (!Application.isPlaying) return;
         TickDimension();
+        TickSleeping();
+        if(sleeping)return;
         if (dimensionTransfer) { CancelFoodForTravel(); falling.Reset(); ResetWalkMotion(); return; }
         if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) { falling.Reset(); ResetWalkMotion(); return; }
         if (!networkStarted || isLocalPlayer)
@@ -269,6 +272,7 @@ public partial class Player : BaseEntity
         if(block==null)return false;
         if(isCrouching)return TryUseFarming(block,adjacent);
         if(TryUseNetherBed(block))return true;
+        if(TryUseBed(block))return true;
         if(block.type==BlockType.CraftingTable){inventory.OpenCraftingTable(block.globalWorldPosition);return true;}
         if(block.type==BlockType.Chest){inventory.RequestChest(block.globalWorldPosition);return true;}
         if(World.IsFurnace(block.type)){inventory.RequestFurnace(block.globalWorldPosition);return true;}
@@ -543,8 +547,8 @@ public partial class Player : BaseEntity
 
     public WorldServer.SavePlayerMessage SavePlayer()
     {
-        return new WorldServer.SavePlayerMessage(transform.position, objects.body.rotation, objects.head.rotation, inventory.SavedInventory(), SteamId,
-            inventory.SavedCrafting(),inventory.SavedCursor(),inventory.SavedRecovery(),inventory.SavedEquipment(), dimension);
+        return new WorldServer.SavePlayerMessage(SavedSleepPosition, objects.body.rotation, objects.head.rotation, inventory.SavedInventory(), SteamId,
+            inventory.SavedCrafting(),inventory.SavedCursor(),inventory.SavedRecovery(),inventory.SavedEquipment(), dimension,hasBedSpawn,bedSpawn);
     }
     
     [TargetRpc]
@@ -562,6 +566,7 @@ public partial class Player : BaseEntity
             objects.body.rotation = message.bodyRotation;
             objects.head.rotation = message.headRotation;
             inventory.LoadInventory(message.inventory,message.crafting,message.cursor,message.recovery,message.equipment);
+            hasBedSpawn=message.hasBedSpawn;bedSpawn=message.bedSpawn;
             savedPlayerApplied = true;
             loadingSavedPlayer = false;
         });
@@ -572,6 +577,12 @@ public partial class Player : BaseEntity
 
     private void GetPlayerInput()
     {
+        if(sleeping)
+        {
+            horizontal=vertical=verticalMomentum=mouseX=mouseY=0;jumpRequest=false;swimJumpHeld=false;isSprinting=false;
+            if(Input.GetKeyDown(KeyCode.Escape))RequestWakeFromBed();
+            return;
+        }
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (inventory.isOpen)
@@ -591,7 +602,7 @@ public partial class Player : BaseEntity
         }
 
         UpdateItemDrops();
-        if (inventory.isOpen || escapeMenuOpen || health <= 0)
+        if (inventory.isOpen || escapeMenuOpen || health <= 0 || sleeping)
         {
             horizontal = 0;
             vertical = 0;

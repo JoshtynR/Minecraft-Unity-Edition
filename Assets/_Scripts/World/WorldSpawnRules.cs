@@ -54,4 +54,36 @@ public static class WorldSpawnRules
         }
         return false;
     }
+
+    public static bool TryResolveBed(World world, Vector3Int bed, out Vector3 spawn)
+    {
+        spawn=default(Vector3);
+        if(world==null||world.dimension!=WorldDimension.Overworld)return false;
+        var block=world.GetBlock(bed);
+        if(block==null||block.type!=BlockType.Bed)return false;
+        byte state=SpecialBlockGeometry.State(block.type,block.blockShape);
+        var partner=bed+SpecialBlockGeometry.PartnerOffset(BlockType.Bed,state);
+        var partnerBlock=world.GetBlock(partner);
+        if(partnerBlock==null||partnerBlock.type!=BlockType.Bed)return false;
+        // Match classic behavior: prefer the eight blocks surrounding either
+        // bed half, then the two cells directly above it.
+        Vector3Int[] horizontal={Vector3Int.left,Vector3Int.right,Vector3Int.back,Vector3Int.forward,
+            new Vector3Int(-1,0,-1),new Vector3Int(-1,0,1),new Vector3Int(1,0,-1),new Vector3Int(1,0,1)};
+        foreach(var origin in new[]{bed,partner})
+            foreach(var offset in horizontal)
+                if(TryBedCandidate(world,origin+offset,out spawn))return true;
+        if(TryBedCandidate(world,bed+Vector3Int.up,out spawn))return true;
+        return TryBedCandidate(world,partner+Vector3Int.up,out spawn);
+    }
+
+    private static bool TryBedCandidate(World world,Vector3Int feet,out Vector3 spawn)
+    {
+        spawn=default(Vector3);
+        if(feet.y<1||feet.y>=world.worldHeight-1)return false;
+        var floor=world.GetBlock(feet+Vector3Int.down);
+        var lower=world.GetBlock(feet);var upper=world.GetBlock(feet+Vector3Int.up);
+        if(floor==null||lower==null||upper==null||!SpecialBlockGeometry.NormalCube(floor.type)||
+            lower.type!=BlockType.Air||upper.type!=BlockType.Air)return false;
+        spawn=new Vector3(feet.x+.5f,feet.y,feet.z+.5f);return true;
+    }
 }

@@ -117,9 +117,12 @@ public partial class WorldServer : NetworkBehaviour
         public PlayerInventory.Slot[] equipment;
         public ulong steamId;
         public WorldDimension dimension;
+        public bool hasBedSpawn;
+        public Vector3Int bedSpawn;
 
         public SavePlayerMessage(Vector3 position, Quaternion bodyRotation, Quaternion headRotation, PlayerInventory.Slot[] inventory, ulong steamId,
-            PlayerInventory.Slot[] crafting = null, PlayerInventory.Slot cursor = null, PlayerInventory.Slot[] recovery = null, PlayerInventory.Slot[] equipment = null, WorldDimension dimension = WorldDimension.Overworld)
+            PlayerInventory.Slot[] crafting = null, PlayerInventory.Slot cursor = null, PlayerInventory.Slot[] recovery = null, PlayerInventory.Slot[] equipment = null,
+            WorldDimension dimension = WorldDimension.Overworld, bool hasBedSpawn = false, Vector3Int bedSpawn = default(Vector3Int))
         {
             this.position = position;
             this.bodyRotation = bodyRotation;
@@ -131,6 +134,8 @@ public partial class WorldServer : NetworkBehaviour
             this.equipment = equipment;
             this.steamId = steamId;
             this.dimension = DimensionRules.Valid(dimension);
+            this.hasBedSpawn = hasBedSpawn;
+            this.bedSpawn = bedSpawn;
         }
     }
     

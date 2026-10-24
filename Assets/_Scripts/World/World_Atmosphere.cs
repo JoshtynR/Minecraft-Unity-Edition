@@ -22,4 +22,9 @@ public partial class WorldServer
     public double WorldTicks => clockStartTicks+System.Math.Max(0,NetworkTime.time-clockStartedAt)*20;
     private void InitializeWorldClock()
     {clockStartTicks=World.Overworld!=null?World.Overworld.worldTimeTicks:1000;clockStartedAt=NetworkTime.time;}
+    [Server] public void SetWorldTime(double ticks)
+    {
+        clockStartTicks=ticks;clockStartedAt=NetworkTime.time;
+        if(World.Overworld!=null)World.Overworld.worldTimeTicks=ticks;
+    }
 }
