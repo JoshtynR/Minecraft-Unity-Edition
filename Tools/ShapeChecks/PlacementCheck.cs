@@ -70,9 +70,29 @@ public static class PlacementCheck
   Check(!material.PlaceBlock(),"empty stack cannot place a block");
   material.inventory.DropRequestPending=true;material.inventory.slots[0].count=64;
   Check(!material.PlaceBlock()&&material.inventory.slots[0].count==64,"placement cannot consume a slot while a drop transaction is in flight");
+  var rules=new World();var at=new Vector3Int(8,4,8);
+  Check(!rules.CanPlaceSurvivalBlock(at,BlockType.Dandelion,0),"flowers cannot be placed in air");
+  rules.SetBlock(at+Vector3Int.down,BlockType.Grass);
+  Check(rules.CanPlaceSurvivalBlock(at,BlockType.Dandelion,0)&&rules.CanPlaceSurvivalBlock(at,BlockType.TallGrass,0),"flowers and tall grass accept grass support");
+  rules.SetBlock(at+Vector3Int.down,BlockType.Sand);
+  Check(rules.CanPlaceSurvivalBlock(at,BlockType.DeadBush,0)&&rules.CanPlaceSurvivalBlock(at,BlockType.Cactus,0),"desert plants accept sand support");
+  rules.SetBlock(at+Vector3Int.right,BlockType.Stone);
+  Check(!rules.CanPlaceSurvivalBlock(at,BlockType.Cactus,0),"cactus rejects a solid horizontal neighbor");
+  rules.blocks.Remove(at+Vector3Int.right);rules.SetBlock(at+Vector3Int.down,BlockType.Dirt);rules.SetBlock(at+Vector3Int.down+Vector3Int.left,BlockType.Water);
+  Check(rules.CanPlaceSurvivalBlock(at,BlockType.SugarCane,0),"sugar cane requires water beside valid soil");
+  rules.blocks.Remove(at+Vector3Int.down+Vector3Int.left);
+  Check(!rules.CanPlaceSurvivalBlock(at,BlockType.SugarCane,0),"sugar cane rejects dry soil");
+  rules.SetBlock(at+Vector3Int.down,BlockType.Stone);
+  Check(rules.CanPlaceSurvivalBlock(at,BlockType.SnowLayer,0)&&rules.CanPlaceSurvivalBlock(at,BlockType.RedstoneWire,0),"snow and redstone require solid floor support");
+  Check(SpecialBlockGeometry.State(BlockType.Leaves,SpecialBlockGeometry.Shape(BlockType.Leaves,4))==4,"player-placed leaf no-decay metadata round-trips");
+  rules.blocks.Clear();for(int x=0;x<4;x++)rules.SetBlock(at+new Vector3Int(x,0,0),BlockType.Leaves);rules.SetBlock(at+new Vector3Int(4,0,0),BlockType.Log);
+  Check(BlockSurvivalRules.LeafConnection(at,p=>rules.GetBlock(p).type)==BlockSurvivalRules.LeafConnectionState.Connected,"leaves find a log through four connected leaf steps");
+  rules.blocks.Remove(at+new Vector3Int(4,0,0));
+  Check(BlockSurvivalRules.LeafConnection(at,p=>rules.GetBlock(p).type)==BlockSurvivalRules.LeafConnectionState.Disconnected,"orphan leaves decay when no log is reachable");
+  Check(BlockSurvivalRules.LeafConnection(at,p=>p.x==7?BlockType.Nothing:rules.GetBlock(p).type)==BlockSurvivalRules.LeafConnectionState.Unknown,"unloaded leaf boundary defers decay");
   var crafter=new Player{aimed=new Vector3Int(3,2,4)};crafter.world.SetBlock(crafter.aimed,BlockType.CraftingTable);
   Check(crafter.UseForCheck()&&crafter.inventory.tablePosition.Equals(crafter.aimed),"right-click dispatches crafting tables to the new inventory interface");
-  Console.WriteLine("27 production stair/slab/torch/item/interaction placement checks passed (Unity/network mocked).");
+  Console.WriteLine("39 production placement and block-survival checks passed (Unity/network mocked).");
  }
 }
 

@@ -53,8 +53,10 @@ public partial class WorldServer : NetworkBehaviour
         if(WheatCropRules.IsCrop(message.blockType))return;
         if((player.transform.position-((Vector3)message.position+Vector3.one*.5f)).sqrMagnitude>64)return;
         if(!world.CanReplaceChest(message.position,message.blockType))return;
-        world.SetBlock(message.position,message.blockType,message.stairFacing);
-        BroadcastBlock(world,message.position,message.blockType,message.stairFacing);
+        byte state=BlockSurvivalRules.IsLeaves(message.blockType)?(byte)4:message.stairFacing;
+        if(!world.CanPlaceSurvivalBlock(message.position,message.blockType,state))return;
+        world.SetBlock(message.position,message.blockType,state);
+        BroadcastBlock(world,message.position,message.blockType,state);
         GameAudio.BroadcastBlock(message.blockType,message.position,false,world);
     }
     public void BroadcastBlock(World world,Vector3Int position,BlockType type,byte state)

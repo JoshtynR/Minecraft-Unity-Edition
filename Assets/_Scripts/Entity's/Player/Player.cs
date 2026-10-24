@@ -303,6 +303,8 @@ public partial class Player : BaseEntity
                     blockPos.y-targetedBlock.globalWorldPosition.y,blockPos.z-targetedBlock.globalWorldPosition.z);
                 var look = type==BlockType.Piston||type==BlockType.StickyPiston||type==BlockType.PistonHead ? cam.forward : objects.body.forward;
                 byte facing = SpecialBlockGeometry.Placement(type, look, normal);
+                // Beta metadata bit 4 marks player-placed leaves as permanent.
+                if (BlockSurvivalRules.IsLeaves(type)) facing = 4;
                 if ((type == BlockType.Ladder || type == BlockType.WallSign || type == BlockType.Trapdoor || type == BlockType.StoneButton) && normal.y != 0) return false;
                 if (SpecialBlockGeometry.IsTorch(type) && normal.y < 0) return false;
                 if (!SpecialBlockGeometry.CanAttach(type,facing,blockPos,p => world.GetBlock(p).type)) return false;
@@ -324,6 +326,7 @@ public partial class Player : BaseEntity
                     blockPos = belowPos;
                     type = doubled;
                 }
+                if (!world.CanPlaceSurvivalBlock(blockPos, type, facing)) return false;
                 // Validate the actual solid pieces, including a merged slab.
                 if (!IsPlayerStandingIn(blockPos, type, facing))
                 {

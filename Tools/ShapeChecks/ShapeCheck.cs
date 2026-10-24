@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace UnityEngine
 {
- public struct Vector3Int {public static Vector3Int down=>new Vector3Int(0,-1,0);public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));public static implicit operator Vector3(Vector3Int v)=>new Vector3(v.x,v.y,v.z);public static Vector3Int operator +(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;} }
+ public struct Vector3Int {public static Vector3Int zero=>new Vector3Int();public static Vector3Int down=>new Vector3Int(0,-1,0);public static Vector3Int up=>new Vector3Int(0,1,0);public static Vector3Int left=>new Vector3Int(-1,0,0);public static Vector3Int right=>new Vector3Int(1,0,0);public static Vector3Int forward=>new Vector3Int(0,0,1);public static Vector3Int back=>new Vector3Int(0,0,-1);public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));public static implicit operator Vector3(Vector3Int v)=>new Vector3(v.x,v.y,v.z);public static Vector3Int operator +(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;} }
  public struct Vector3
  {
   public static Vector3 one=>new Vector3(1,1,1);
@@ -22,10 +22,13 @@ namespace UnityEngine
  public static class Mathf {public static float Abs(float f)=>Math.Abs(f);public static float Clamp(float f,float a,float b)=>Math.Max(a,Math.Min(b,f));public static int FloorToInt(float f)=>(int)Math.Floor(f);public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int Max(int a,int b)=>Math.Max(a,b);}
 }
 public enum Direction {down,up,backwards,forwards,left,right}
+public static class DirectionExtensions {public static Vector3Int GetVector(this Direction d){switch(d){case Direction.up:return Vector3Int.up;case Direction.down:return Vector3Int.down;case Direction.left:return Vector3Int.left;case Direction.right:return Vector3Int.right;case Direction.forwards:return Vector3Int.forward;default:return Vector3Int.back;}}}
 public class ChunkData {}
 public class BlockData {public bool generateCollider=true;}
 public class Block {public byte waterLevel;public Vector3Int globalWorldPosition;public BlockType type;public BlockData BlockData=new BlockData();public BlockShapes blockShape;public Block(BlockType t){type=t;blockShape=BlockShapesExtensions.ForBlock(t);} }
-public partial class World {public static bool IsFurnace(BlockType t)=>t==BlockType.Furnace||t==BlockType.LitFurnace;public int worldHeight=12;public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block(BlockType.Air);} }
+public partial class World {public static bool IsFurnace(BlockType t)=>t==BlockType.Furnace||t==BlockType.LitFurnace;public static bool FluidHasSolidMaterial(BlockType t)=>t!=BlockType.Air&&t!=BlockType.Water&&t!=BlockType.Lava&&!BlockShapesExtensions.IsPlant(t);public int worldHeight=12;public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block(BlockType.Air);}public bool CanPlaceSurvivalBlock(Vector3Int p,BlockType t,byte s)=>BlockSurvivalRules.CanPlace(t,s,p,q=>GetBlock(q).type); }
+public static class BlockHelper {public static readonly Direction[] directions={Direction.forwards,Direction.backwards,Direction.left,Direction.right,Direction.up,Direction.down};}
+public static class BetaFireSimulation {public static int Flammability(BlockType t)=>t==BlockType.Log||t==BlockType.Leaves?5:0;}
 public class TestTransform {public Vector3 position;public Vector3 forward=new Vector3(0,0,1),right=new Vector3(1,0,0);}
 namespace UnityEngine {public static class Time {public static float deltaTime=0.02f,fixedDeltaTime=0.02f;}}
 public partial class Controller

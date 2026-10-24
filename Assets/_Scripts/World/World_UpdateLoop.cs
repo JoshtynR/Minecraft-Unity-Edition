@@ -25,7 +25,7 @@ public partial class World
             if(chunksToUpdate==null)chunksToUpdate=new List<ChunkRenderer>();else chunksToUpdate.Clear();
             queuedChunks.Clear();
         }
-        blockToUpdate.Clear();
+        ResetBlockSurvival();
         chunkUpdateSession++;
         chunkUpdateInProgress = false;
     }
@@ -87,6 +87,8 @@ public partial class World
     {
         AdvanceAtmosphereClock(Time.deltaTime);
         UpdateWater();
+        UpdateBlocks();
+        UpdateLeafDecay();
         UpdateDroppedItems();
         UpdateFurnaces();
         UpdateMobs();
@@ -103,6 +105,9 @@ public partial class World
 
     public void UpdateBlocks()
     {
-        while (blockToUpdate.Count > 0) blockToUpdate.Dequeue().OnBlockUpdate();
+        if (disabled || !IsWorldCreated || GenerationBusy || isSaving) return;
+        // Neighbor cascades (notably leaves) must never monopolize a frame.
+        int budget = Math.Min(blockToUpdate.Count, 128);
+        while (budget-- > 0) ProcessBlockUpdate(blockToUpdate.Dequeue());
     }
 }
