@@ -74,16 +74,6 @@ public sealed class OverworldAtmosphere : MonoBehaviour
     private Texture2D ownedSun,ownedMoon,ownedClouds;
     private Vector4 previousFog,previousRange;
     private bool fogApplied;
-    public static Color CloudTint(float daylight,float horizonGlow)
-    {
-        // Beta clouds never become near-black while the sun is crossing the
-        // horizon. Nearby geometry receives little distance fog, so give the
-        // cloud itself the same warm dusk lift that distant tiles receive.
-        float brightness=Mathf.Max(.1f+Mathf.Clamp01(daylight)*.9f,.72f*Mathf.Clamp01(horizonGlow));
-        var neutral=new Color(brightness,brightness,brightness,1);
-        var dusk=new Color(brightness,brightness*.72f,brightness*.68f,1);
-        return Color.Lerp(neutral,dusk,Mathf.Clamp01(horizonGlow)*.6f);
-    }
     private void Awake(){view=GetComponent<Camera>();}
     private static Mesh Quad(bool horizontal)
     {
@@ -132,8 +122,15 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         sunMaterial.mainTexture=assets!=null&&assets.sunTexture!=null?assets.sunTexture:ownedSun=Fallback(0);
         moonMaterial.mainTexture=assets!=null&&assets.moonTexture!=null?assets.moonTexture:ownedMoon=Fallback(1);
         cloudMaterial.mainTexture=assets!=null&&assets.cloudTexture!=null?assets.cloudTexture:ownedClouds=Fallback(2);
+        var sunPixels=sunMaterial.mainTexture as Texture2D;if(sunPixels!=null){sunPixels.filterMode=FilterMode.Point;sunPixels.wrapMode=TextureWrapMode.Clamp;}
+        var moonPixels=moonMaterial.mainTexture as Texture2D;if(moonPixels!=null){moonPixels.filterMode=FilterMode.Point;moonPixels.wrapMode=TextureWrapMode.Clamp;}
         sunMaterial.SetFloat("_BlackTransparent",1);
+        // The supplied legacy sun sheet contains near-black RGB background
+        // pixels rather than exact black/alpha zero. Key those pixels out while
+        // retaining the bright, deliberately pixel-stepped halo.
+        sunMaterial.SetFloat("_BlackCutoff",.2f);
         moonMaterial.SetFloat("_BlackTransparent",1);
+        moonMaterial.SetFloat("_BlackCutoff",.005f);
         sunsetMaterial.SetFloat("_HorizonBand",1);sunsetMaterial.renderQueue=1005;
         cloudMaterial.renderQueue=2900;cloudMaterial.SetFloat("_FogOn",1);cloudMaterial.SetFloat("_VertexColorOn",1);cloudMaterial.SetFloat("_ZWrite",1);
         root=new GameObject("Overworld sky visuals");quad=Quad(false);
@@ -196,7 +193,7 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         int tileIndex=0;
         for(int z=-cloudTileRadius;z<=cloudTileRadius;z++)for(int x=-cloudTileRadius;x<=cloudTileRadius;x++)
             cloudTiles[tileIndex++].position=new Vector3((centerX+x)*cloudTileWidth+drift,128,(centerZ+z)*cloudTileDepth);
-        cloudMaterial.SetColor("_Tint",CloudTint(daylight,horizonGlow));
+        cloudMaterial.SetColor("_Tint",Color.Lerp(new Color(.15f,.18f,.25f,1),Color.white,daylight));
     }
     private void OnPreCull()
     {

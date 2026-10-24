@@ -30,8 +30,6 @@ class Check {
   cactusPlayer.isFlying=true;Time.time=21;cactusPlayer.CactusTick();Assert(cactusPlayer.health==18,"flying player is immune to cactus damage");BlockCollision.cactus=false;
   Assert(SkyClock.Daylight(6000)>.99&&SkyClock.Daylight(18000)<.01,"noon and midnight light");Assert(Math.Abs(SkyClock.Angle(1000)-SkyClock.Angle(25000))<.001,"twenty minute cycle wraps");
   Assert(SkyClock.HorizonGlow(6000)==0&&SkyClock.HorizonGlow(18000)==0&&SkyClock.HorizonGlow(13000)>.8&&SkyClock.HorizonGlow(23000)>.8,"sunset colour is confined to horizon crossings");
-  var duskCloud=OverworldAtmosphere.CloudTint(0,1);var nightCloud=OverworldAtmosphere.CloudTint(0,0);
-  Assert(duskCloud.r>=.7f&&duskCloud.g>.5f&&duskCloud.b>.45f&&nightCloud.r<.2f,"sunset lifts nearby clouds without brightening midnight");
   Time.time=100;World.Overworld=new World{worldTimeTicks=17000};var server=new WorldServer();Call(server,"InitializeWorldClock");Time.time=110;Assert(Math.Abs(server.WorldTicks-17200)<.001,"server resumes saved time and advances twenty ticks per second");
   foreach(var type in new[]{ItemType.Apple,ItemType.Bread,ItemType.MushroomStew,ItemType.RawPorkchop,ItemType.CookedPorkchop,ItemType.RawFish,ItemType.CookedFish,ItemType.Cookie,ItemType.GoldenApple}){int f;float s;Assert(FoodRules.TryGet(type,out f,out s)&&f>0&&s>0,"food supported "+type);}
   Time.time=0;var p=Player();p.inventory.slots[0]=new InventoryStack{type=ItemType.Bread,count=2};Assert(p.StartFood()&&p.inventory.DropRequestPending,"eating starts and locks stack mutations");Time.time=1;p.EndFood(true);Assert(p.hunger==10&&p.inventory.slots[0].count==2,"early completion rejected");
