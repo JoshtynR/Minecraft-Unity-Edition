@@ -9,7 +9,7 @@ public partial class World
         {
             if(mob==null||mob.health<=0||!MobRules.Hostile(mob.species))continue;
             var delta=mob.position-position;
-            if(Mathf.Abs(delta.y)<=vertical&&delta.x*delta.x+delta.z*delta.z<=horizontal*horizontal)return true;
+            if(Mathf.Abs(delta.x)<=horizontal&&Mathf.Abs(delta.y)<=vertical&&Mathf.Abs(delta.z)<=horizontal)return true;
         }
         return false;
     }

@@ -494,8 +494,11 @@ public partial class Player : BaseEntity
         if(IsEating){horizontal*=.2f;vertical*=.2f;isSprinting=false;}
         UpdateFluidView();
         if(!IsEating&&TargetedMob()==null)UpdateMining();else CancelMining();
-        DoHeadRotation();
-        UpdateCameraBobbing();
+        if(!sleeping)
+        {
+            DoHeadRotation();
+            UpdateCameraBobbing();
+        }
 
                 // Smooth FOV shift while sprinting
         if (_camComponent != null)

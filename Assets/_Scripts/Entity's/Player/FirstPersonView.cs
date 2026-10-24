@@ -93,7 +93,7 @@ public sealed class FirstPersonView : MonoBehaviour
     {
         if (handCamera == null || spriteMaterial == null || player == null || sourceCamera == null) return;
         cameraObject.transform.SetPositionAndRotation(sourceCamera.transform.position, sourceCamera.transform.rotation);
-        bool visible = player.IsReadyForPlay && player.health > 0 && !WorldLoadingScreen.IsLoading &&
+        bool visible = player.IsReadyForPlay && player.health > 0 && !player.sleeping && !WorldLoadingScreen.IsLoading &&
             player.inventory != null && !player.inventory.isOpen && !player.escapeMenuOpen && sourceCamera.enabled;
         handCamera.enabled = visible;
         if (!visible)

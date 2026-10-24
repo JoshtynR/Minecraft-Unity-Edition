@@ -7,17 +7,31 @@ public partial class Player
     private const byte BedOccupied=4;
     [SyncVar] public bool sleeping;
     [SyncVar] private Vector3Int sleepingBed;
+    [SyncVar] private Vector3Int sleepingFoot;
     [SyncVar] private bool hasBedSpawn;
     [SyncVar] private Vector3Int bedSpawn;
     private Vector3 sleepReturnPosition;
     private int sleepHealth;
+    private int sleepAttempt;
+    private double sleepStartedAt;
     private string sleepMessage;
     private float sleepMessageUntil;
     private bool sleepCursorReleased;
     private CursorLockMode sleepCursorLock;
     private bool sleepCursorVisible;
+    private GameObject sleepGameUI;
+    private bool sleepGameUIWasActive;
     public string SleepMessage=>Time.unscaledTime<sleepMessageUntil?sleepMessage:string.Empty;
     private Vector3 SavedSleepPosition=>sleeping?sleepReturnPosition:transform.position;
+    internal bool FullyAsleep=>sleeping&&NetworkTime.time-sleepStartedAt>=5;
+    public Vector3 SleepingDirection
+    {
+        get
+        {
+            var direction=sleepingFoot-sleepingBed;
+            return direction==Vector3Int.zero?Vector3.forward:(Vector3)direction;
+        }
+    }
 
     private bool TryUseBed(Block block)
     {
@@ -31,7 +45,9 @@ public partial class Player
 
     private void UseBed(Vector3Int position)
     {
-        if(sleeping||dimensionTransfer||dimension!=WorldDimension.Overworld||health<=0||world==null||world.isSaving||!InMiningReach(position))return;
+        if(sleeping||dimensionTransfer||dimension!=WorldDimension.Overworld||health<=0||world==null||world.isSaving)return;
+        var reachDelta=transform.position-((Vector3)position+Vector3.one*.5f);
+        if(Mathf.Abs(reachDelta.x)>3||Mathf.Abs(reachDelta.y)>2||Mathf.Abs(reachDelta.z)>3)return;
         var clicked=world.GetBlock(position);
         if(clicked==null||clicked.type!=BlockType.Bed)return;
         byte clickedState=SpecialBlockGeometry.State(BlockType.Bed,clicked.blockShape);
@@ -55,12 +71,13 @@ public partial class Player
         if(world.HasHostileMobNear(center,8,5)){SendSleepMessage("You may not rest now; there are monsters nearby");return;}
 
         CancelFoodForTravel();serverMining=localMining=false;
-        hasBedSpawn=true;bedSpawn=head;sleepingBed=head;sleepReturnPosition=transform.position;sleepHealth=health;sleeping=true;
+        hasBedSpawn=true;bedSpawn=head;sleepingBed=head;sleepingFoot=foot;sleepReturnPosition=transform.position;sleepHealth=health;
+        sleepStartedAt=networkStarted?NetworkTime.time:Time.unscaledTime;sleeping=true;int attempt=++sleepAttempt;
         SetBedOccupied(world,head,true);SetBedOccupied(world,foot,true);
         var liePosition=(Vector3)head+new Vector3(.5f,9f/16f,.5f);
         MoveForSleep(liePosition);
         if(networkStarted)TargetEnterBed(connectionToClient,liePosition);
-        else {EnterSleepClient(liePosition);StartCoroutine(CompleteOfflineSleep());}
+        else {EnterSleepClient(liePosition);StartCoroutine(CompleteOfflineSleep(attempt));}
         if(NetworkServer.active&&WorldServer.instance!=null)WorldServer.instance.EvaluateSleep();
     }
 
@@ -85,10 +102,11 @@ public partial class Player
         return false;
     }
 
-    private IEnumerator CompleteOfflineSleep()
+    private IEnumerator CompleteOfflineSleep(int attempt)
     {
-        yield return new WaitForSecondsRealtime(.5f);
-        if(!sleeping)yield break;
+        // Classic clients spend 100 ticks entering bed before the night skips.
+        yield return new WaitForSecondsRealtime(5f);
+        if(!sleeping||attempt!=sleepAttempt)yield break;
         double now=world.CurrentWorldTicks,time=(now%SkyClock.DayTicks+SkyClock.DayTicks)%SkyClock.DayTicks;
         world.worldTimeTicks=now+(SkyClock.DayTicks-time);
         WakeFromBed(true);
@@ -110,9 +128,9 @@ public partial class Player
         {
             Vector3 safe;
             if(WorldSpawnRules.TryResolveBed(realm,sleepingBed,out safe))destination=safe;
-            ClearOccupiedBed(realm,sleepingBed);
+            ClearOccupiedBed(realm,sleepingBed,sleepingFoot);
         }
-        sleeping=false;MoveForSleep(destination);
+        sleeping=false;sleepAttempt++;MoveForSleep(destination);
         if(networkStarted)TargetLeaveBed(connectionToClient,destination,morning);
         else {RestoreSleepCursor();if(morning)ShowSleepMessage("Respawn point set");}
     }
@@ -120,8 +138,9 @@ public partial class Player
     private void TickSleeping()
     {
         if(!sleeping)return;
-        var realm=CurrentWorld;var block=realm==null?null:realm.GetBlock(sleepingBed);
-        if((isServer||!networkStarted)&&(health!=sleepHealth||block==null||block.type!=BlockType.Bed))WakeFromBed(false);
+        var realm=CurrentWorld;var head=realm==null?null:realm.GetBlock(sleepingBed);var foot=realm==null?null:realm.GetBlock(sleepingFoot);
+        if((isServer||!networkStarted)&&(health!=sleepHealth||head==null||head.type!=BlockType.Bed||foot==null||foot.type!=BlockType.Bed))WakeFromBed(false);
+        else if((isServer||!networkStarted)&&!SleepingAtNight(realm.CurrentWorldTicks))WakeFromBed(true);
         horizontal=vertical=verticalMomentum=0;jumpRequest=false;isSprinting=false;
         falling.Reset();ResetWalkMotion();
     }
@@ -141,13 +160,9 @@ public partial class Player
         if(NetworkServer.active&&WorldServer.instance!=null)WorldServer.instance.BroadcastBlock(realm,position,BlockType.Bed,state);
     }
 
-    private void ClearOccupiedBed(World realm,Vector3Int head)
+    private void ClearOccupiedBed(World realm,Vector3Int head,Vector3Int foot)
     {
-        var block=realm.GetBlock(head);
-        if(block==null||block.type!=BlockType.Bed)return;
-        byte state=SpecialBlockGeometry.State(BlockType.Bed,block.blockShape);
-        var partner=head+SpecialBlockGeometry.PartnerOffset(BlockType.Bed,state);
-        SetBedOccupied(realm,head,false);SetBedOccupied(realm,partner,false);
+        SetBedOccupied(realm,head,false);SetBedOccupied(realm,foot,false);
     }
 
     private void SendSleepMessage(string message)
@@ -162,12 +177,15 @@ public partial class Player
     private void EnterSleepClient(Vector3 position)
     {
         MoveForSleep(position);ShowSleepMessage("Respawn point set");
+        sleepGameUI=GameObject.Find("PlayerCanvas/GameUI");
+        if(sleepGameUI!=null){sleepGameUIWasActive=sleepGameUI.activeSelf;sleepGameUI.SetActive(false);}
         if(sleepCursorReleased)return;
         sleepCursorLock=Cursor.lockState;sleepCursorVisible=Cursor.visible;sleepCursorReleased=true;
         Cursor.lockState=CursorLockMode.None;Cursor.visible=true;
     }
     private void RestoreSleepCursor()
     {
+        if(sleepGameUI!=null){sleepGameUI.SetActive(sleepGameUIWasActive);sleepGameUI=null;}
         if(!sleepCursorReleased)return;sleepCursorReleased=false;
         Cursor.lockState=sleepCursorLock;Cursor.visible=sleepCursorVisible;
     }
@@ -193,22 +211,29 @@ public partial class WorldServer
 
     private IEnumerator CompleteNetworkSleep()
     {
-        sleepCompletionPending=true;yield return new WaitForSecondsRealtime(.5f);
+        sleepCompletionPending=true;yield return new WaitForSecondsRealtime(5f);
         try
         {
             var sleepers=new System.Collections.Generic.List<Player>();
-            foreach(var connection in NetworkServer.connections.Values)
+            while(true)
             {
-                if(connection==null||connection.identity==null)continue;
-                var player=connection.identity.GetComponent<Player>();
-                if(player==null||player.dimension!=WorldDimension.Overworld||player.health<=0||player.DimensionTransferInProgress)continue;
-                if(!player.sleeping)yield break;sleepers.Add(player);
+                sleepers.Clear();bool ready=true;
+                foreach(var connection in NetworkServer.connections.Values)
+                {
+                    if(connection==null||connection.identity==null)continue;
+                    var player=connection.identity.GetComponent<Player>();
+                    if(player==null||player.dimension!=WorldDimension.Overworld||player.health<=0||player.DimensionTransferInProgress)continue;
+                    if(!player.sleeping)yield break;
+                    sleepers.Add(player);if(!player.FullyAsleep)ready=false;
+                }
+                if(sleepers.Count==0)yield break;
+                if(ready)break;
+                yield return new WaitForSecondsRealtime(.1f);
             }
-            if(sleepers.Count==0)yield break;
             double now=WorldTicks,time=(now%SkyClock.DayTicks+SkyClock.DayTicks)%SkyClock.DayTicks;
             SetWorldTime(now+(SkyClock.DayTicks-time));
             foreach(var player in sleepers)player.ServerWakeFromBed(true);
         }
-        finally{sleepCompletionPending=false;}
+        finally{sleepCompletionPending=false;EvaluateSleep();}
     }
 }
