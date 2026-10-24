@@ -124,15 +124,17 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         cloudMaterial.mainTexture=assets!=null&&assets.cloudTexture!=null?assets.cloudTexture:ownedClouds=Fallback(2);
         var sunPixels=sunMaterial.mainTexture as Texture2D;if(sunPixels!=null){sunPixels.filterMode=FilterMode.Point;sunPixels.wrapMode=TextureWrapMode.Clamp;}
         var moonPixels=moonMaterial.mainTexture as Texture2D;if(moonPixels!=null){moonPixels.filterMode=FilterMode.Point;moonPixels.wrapMode=TextureWrapMode.Clamp;}
-        // This sheet stores its glow as 1..40 RGB over a fully opaque black
-        // background. Additive blending makes black contribute nothing while
-        // preserving every dim, pixel-stepped yellow halo value.
+        // The celestial sheets store their glow over fully opaque black.
+        // Additive blending makes black contribute nothing while preserving
+        // every dim, pixel-stepped halo value.
         sunMaterial.SetFloat("_BlackTransparent",0);
         sunMaterial.SetFloat("_Additive",1);
         sunMaterial.SetFloat("_SrcBlend",1); // One
         sunMaterial.SetFloat("_DstBlend",1); // One
-        moonMaterial.SetFloat("_BlackTransparent",1);
-        moonMaterial.SetFloat("_BlackCutoff",.005f);
+        moonMaterial.SetFloat("_BlackTransparent",0);
+        moonMaterial.SetFloat("_Additive",1);
+        moonMaterial.SetFloat("_SrcBlend",1); // One
+        moonMaterial.SetFloat("_DstBlend",1); // One
         sunsetMaterial.SetFloat("_HorizonBand",1);sunsetMaterial.renderQueue=1005;
         cloudMaterial.renderQueue=2900;cloudMaterial.SetFloat("_FogOn",1);cloudMaterial.SetFloat("_VertexColorOn",1);cloudMaterial.SetFloat("_ZWrite",1);
         root=new GameObject("Overworld sky visuals");quad=Quad(false);
