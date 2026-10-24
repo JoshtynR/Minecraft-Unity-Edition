@@ -163,8 +163,15 @@ public partial class World
         await CastLightFirstTime(chunks);
         // Changes from a built portal may have queued incremental light transport.
         foreach(var data in chunks)if(data.HasPendingLighting)data.UpdateLight();
-        var meshes=await CreateMeshDataAsync(chunks);
-        foreach(var pair in meshes)
-            if(worldData.chunkDict.TryGetValue(pair.Key,out var renderer))renderer.UpdateChunk(pair.Value);
+        int batchSize=Math.Max(1,ChunkWorkerOptions().MaxDegreeOfParallelism);
+        for(int offset=0;offset<chunks.Count;offset+=batchSize)
+        {
+            var batch=chunks.GetRange(offset,Math.Min(batchSize,chunks.Count-offset));
+            var meshes=await CreateMeshDataAsync(batch);
+            foreach(var data in batch)
+                if(worldData.chunkDict.TryGetValue(data.worldPos,out var renderer))renderer.UpdateChunk(meshes[data.worldPos]);
+            if(Application.isPlaying)await Task.Yield();
+            worldCancellationToken.ThrowIfCancellationRequested();
+        }
     }
 }

@@ -196,9 +196,9 @@ public partial class World
         var visualStopWatch = new Stopwatch();
         visualStopWatch.Start();
         
-        // Generate visual chunks
-        ConcurrentDictionary<Vector3Int, MeshData> meshDataDict;
-        
+        // Generate visual chunks. Dense Nether caves can produce very large
+        // staging meshes, so build and upload a small worker-sized batch rather
+        // than retaining the entire visible dimension before the first upload.
         List<ChunkData> dataToRender = worldData.chunkDataDict
             .Where(x => worldGenerationData.chunkPositionsToCreate.Contains(x.Key) || worldGenerationData.chunkPositionsToLoad.Contains(x.Key))
             .Select(x => x.Value)
@@ -208,25 +208,16 @@ public partial class World
         await RefreshTreeMeshes();
         if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Building terrain",.8f);
 
-        try
-        {
-            meshDataDict = await CreateMeshDataAsync(dataToRender);
-        }
-        catch (OperationCanceledException)
-        {
-            Debug.Log("Task cancelled");
-            return;
-        }
-        
+        int meshCount;
+        try { meshCount=await BuildAndApplyGeneratedChunks(dataToRender,position); }
+        catch (OperationCanceledException) { Debug.Log("Task cancelled");return; }
         visualStopWatch.Stop();
         if (!Application.isPlaying)
         {
             Debug.Log($"Mesh generation took {visualStopWatch.ElapsedMilliseconds}ms");
         }
 
-        var uploadWatch=Stopwatch.StartNew();
-        await ApplyGeneratedChunks(meshDataDict, position);
-        if(logGenerationTimings)Debug.Log($"[WorldGeneration:{dimension}] total={totalWatch.ElapsedMilliseconds}ms terrain={dataStopWatch.ElapsedMilliseconds}ms load={loadStopWatch.ElapsedMilliseconds}ms population={featureStopWatch.ElapsedMilliseconds}ms lighting/meshes={visualStopWatch.ElapsedMilliseconds}ms upload={uploadWatch.ElapsedMilliseconds}ms chunks={meshDataDict.Count}");
+        if(logGenerationTimings)Debug.Log($"[WorldGeneration:{dimension}] total={totalWatch.ElapsedMilliseconds}ms terrain={dataStopWatch.ElapsedMilliseconds}ms load={loadStopWatch.ElapsedMilliseconds}ms population={featureStopWatch.ElapsedMilliseconds}ms lighting/mesh-upload={visualStopWatch.ElapsedMilliseconds}ms chunks={meshCount}");
         
         Profiler.EndThreadProfiling();
     }
@@ -401,17 +392,20 @@ public partial class World
             if (worldData.chunkDict.ContainsKey(origin) && worldData.chunkDataDict.TryGetValue(origin,out var chunk)) QueueWaterChunk(chunk);
     }
 
-    private async Task ApplyGeneratedChunks(ConcurrentDictionary<Vector3Int, MeshData> meshDataConDict, Vector3Int playerPos)
+    private async Task<int> BuildAndApplyGeneratedChunks(List<ChunkData> chunks, Vector3Int playerPos)
     {
-        var meshDataDict = meshDataConDict.OrderBy(pair => Vector3Int.Distance(playerPos, pair.Key)).ToArray();
-        for (var i = 0; i < meshDataDict.Length; i++)
+        var ordered=chunks.OrderBy(data=>Vector3Int.Distance(playerPos,data.worldPos)).ToList();
+        int batchSize=Math.Max(1,ChunkWorkerOptions().MaxDegreeOfParallelism);
+        for(int offset=0;offset<ordered.Count;offset+=batchSize)
         {
-            var item = meshDataDict[i];
-            CreateChunk(worldData, item.Key, item.Value);
-            if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Building terrain",.8f+.15f*(i+1)/meshDataDict.Length);
-            if (Application.isPlaying && (i + 1) % Math.Max(1, (int)chunksPerFrame) == 0)
+            var batch=ordered.GetRange(offset,Math.Min(batchSize,ordered.Count-offset));
+            var meshes=await CreateMeshDataAsync(batch);
+            for(int i=0;i<batch.Count;i++)
             {
-                await Task.Yield();
+                var data=batch[i];
+                CreateChunk(worldData,data.worldPos,meshes[data.worldPos]);
+                if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Building terrain",.8f+.15f*(offset+i+1)/Math.Max(1,ordered.Count));
+                if(Application.isPlaying)await Task.Yield();
                 worldCancellationToken.ThrowIfCancellationRequested();
             }
         }
@@ -434,6 +428,7 @@ public partial class World
             Debug.Log($"World created in {fullStopwatch.ElapsedMilliseconds}ms");
             fullStopwatch.Reset();
         }
+        return ordered.Count;
     }
 
     private void CreateChunk(WorldData worldData, Vector3Int pos, MeshData meshData)

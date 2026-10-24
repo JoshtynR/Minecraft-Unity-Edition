@@ -52,7 +52,7 @@ public class ChunkRenderer : MonoBehaviour
             mesh.SetTriangles(meshData.waterMesh.triangles, 2, false);
         mesh.bounds = new Bounds(meshData.boundsCenter, meshData.boundsSize);
         if(meshData.chests!=null||chestVisuals.Count>0)RefreshChestVisuals(meshData.chests);
-        // MeshData is staging data; retaining it here doubles chunk geometry memory.
+        meshData.ReleaseAfterUpload();
     }
 
     private void RefreshChestVisuals(List<Vector3Int> positions)

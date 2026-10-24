@@ -31,9 +31,9 @@ namespace UnityEngine
  public class Mesh:Object
  {
   public int vertexCount=4;public static int created;public int uploads;public int subMeshCount;public Rendering.IndexFormat indexFormat;
-  public List<Vector3> vertices,normals;public Bounds bounds;public List<Vector2> faceUVs;public List<Vector2> lightUVs;public List<Vector4> cornerUVs;public Dictionary<int,List<int>> indices=new Dictionary<int,List<int>>();
+  public List<Vector3> vertices,normals;public Bounds bounds;public List<Vector3> textureUVs;public List<Vector2> faceUVs;public List<Vector2> lightUVs;public List<Vector4> cornerUVs;public Dictionary<int,List<int>> indices=new Dictionary<int,List<int>>();
   public Mesh(){created++;}public void Clear(){}public void MarkDynamic(){}public void SetVertices(List<Vector3> list){vertices=new List<Vector3>(list);vertexCount=list.Count;uploads++;}
-  public void SetUVs<T>(int channel,List<T> data){if(channel==4&&data.Count!=vertexCount)throw new Exception("UV5 count does not match mesh vertices");if(channel==4)faceUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==1)lightUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==3)cornerUVs=new List<Vector4>((IEnumerable<Vector4>)(object)data);}public void SetColors(List<Color> data){}
+  public void SetUVs<T>(int channel,List<T> data){if(channel==4&&data.Count!=vertexCount)throw new Exception("UV5 count does not match mesh vertices");if(channel==0)textureUVs=new List<Vector3>((IEnumerable<Vector3>)(object)data);if(channel==4)faceUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==1)lightUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==3)cornerUVs=new List<Vector4>((IEnumerable<Vector4>)(object)data);}public void SetColors(List<Color> data){}
   public void SetNormals(List<Vector3> data){normals=new List<Vector3>(data);}
   public void SetTriangles(List<int> data,int submesh,bool calculateBounds=true){if(calculateBounds)throw new Exception("bounds calculated during upload");indices[submesh]=new List<int>(data);}
  }
@@ -108,18 +108,19 @@ public static class LifecycleCheck
   var empty=new MeshData(true);empty.PrepareForRendering();Check(empty.normals.Count==0&&empty.boundsSize.x==0,"empty chunk bounds and normals");
   var data=new ChunkData();var renderer=new ChunkRenderer();renderer.Initialize(data);var mesh=renderer.filter.sharedMesh;
   renderer.Initialize(new ChunkData());Check(renderer.filter.sharedMesh==mesh&&Mesh.created==1,"pool reuse retains owned mesh");
-  var staging=Quad(renderer.ChunkData);renderer.RenderMesh(staging);renderer.RenderMesh(staging);
-  Check(mesh.vertices.Count==12&&staging.vertices.Count==12,"repeat uploads don't duplicate transparent vertices");
+  var staging=Quad(renderer.ChunkData);renderer.RenderMesh(staging);
+  Check(mesh.vertices.Count==12,"transparent and water vertices upload exactly once");
   Check(mesh.indices[1][0]==4&&mesh.indices[1][2]==6,"transparent indices offset exactly once");
-  Check(staging.lightingUVs.Count==12&&staging.lightingUVs[4].x==15,"lighting channel merged");
-  Check(staging.uv.Count==12&&staging.uv[4].z==7,"face texture layers retained");
-  Check(staging.smoothLightCorners.Count==12&&mesh.cornerUVs.Count==12&&mesh.cornerUVs[7].z==0.3f,"smooth corner channel survives transparent merge and repeated upload");
+  Check(mesh.lightUVs.Count==12&&mesh.lightUVs[4].x==15,"lighting channel merged");
+  Check(mesh.textureUVs.Count==12&&mesh.textureUVs[4].z==7,"face texture layers retained");
+  Check(mesh.cornerUVs.Count==12&&mesh.cornerUVs[7].z==0.3f,"smooth corner channel survives transparent merge and upload");
   Check(mesh.subMeshCount==3&&mesh.indices[2][0]==8&&mesh.indices[2][2]==10,"water indices offset after opaque and cutout geometry exactly once");
   Check(mesh.lightUVs.Count==12&&mesh.cornerUVs[11].w==0.4f,"water retains brightness and corner channels");
   Check(mesh.normals.Count==12&&mesh.bounds.size.x==3,"renderer uploads worker normals and bounds");
+  Check(mesh.faceUVs.Count==12&&mesh.faceUVs[2].x==1,"normalized face coordinates merge independently of cropped images");
+  Check(staging.vertices.Count==0&&staging.uv.Count==0&&staging.lightingUVs.Count==0&&staging.normals.Count==0&&staging.transparentMesh.triangles.Count==0&&staging.waterMesh.vertices.Count==0,"managed mesh staging arrays released after native upload");
   renderer.RenderMesh(new MeshData(true){sourceChunk=renderer.ChunkData});
   Check(mesh.indices[2].Count==0,"dry rebuild clears previous water triangles");
-  Check(staging.faceCoordinates.Count==12&&staging.faceCoordinates[2].x==1,"normalized face coordinates merge independently of cropped images");
   int uploads=mesh.uploads;renderer.Initialize(new ChunkData());renderer.RenderMesh(staging);
   Check(mesh.uploads==uploads,"stale chunk data rejected after pool reuse");
   Check(typeof(ChunkRenderer).GetField("MeshData")==null,"renderer doesn't retain staging lists");

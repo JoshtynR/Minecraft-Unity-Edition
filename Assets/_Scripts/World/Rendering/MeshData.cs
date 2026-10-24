@@ -156,4 +156,27 @@ public class MeshData
         triangles.Add(vertices.Count - 2);
         triangles.Add(vertices.Count - 1);
     }
+
+    // Unity copies these channels into native Mesh storage during upload. Drop
+    // the managed backing arrays immediately so dense Nether chunks do not keep
+    // a second complete copy alive until a later full GC.
+    public void ReleaseAfterUpload()
+    {
+        ReleaseLists(this);
+        if(transparentMesh!=null)ReleaseLists(transparentMesh);
+        if(waterMesh!=null)ReleaseLists(waterMesh);
+        chests=null;
+    }
+
+    private static void ReleaseLists(MeshData data)
+    {
+        Release(data.vertices);Release(data.triangles);Release(data.faceCoordinates);Release(data.uv);Release(data.colors);
+        Release(data.skyLight);Release(data.blockLight);Release(data.smoothLightCorners);Release(data.sides);
+        Release(data.lightingUVs);Release(data.normals);
+    }
+
+    private static void Release<T>(List<T> list)
+    {
+        list.Clear();list.Capacity=0;
+    }
 }

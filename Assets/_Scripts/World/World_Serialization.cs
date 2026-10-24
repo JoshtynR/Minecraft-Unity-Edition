@@ -71,10 +71,12 @@ public partial class World
             var stopwatch = Stopwatch.StartNew();
             var saveWatch = Stopwatch.StartNew();
             capturedChunks=worldData.chunkDataDict.Values.Where(data=>data.modifiedAfterSave).ToArray();
-            // Create object with data to save
+            // Chunk payloads are written in small batches below. Retaining a full
+            // ChunkSaveData graph for every loaded chunk made the first Nether
+            // save hold several copies of the dimension in RAM simultaneously.
             var worldSaveData = new WorldSaveData
             {
-                chunks = capturedChunks.Select(ChunkSaveData.Serialize).ToArray(),
+                chunks = new ChunkSaveData[0],
                 worldName = worldName,
                 dimension = dimension,
                 seedOffset = mapSeedOffset,
@@ -84,33 +86,24 @@ public partial class World
                 droppedItems = CaptureDroppedItems(),
                 mobs = CaptureMobs()
             };
-            // Capture/clear synchronously. Changes arriving during asynchronous
-            // IO set dirty again and must remain eligible for the next save.
+            // Clear synchronously before IO. Changes arriving while a chunk is
+            // serialized set dirty again and remain eligible for the next save.
             foreach(var chunk in capturedChunks)chunk.modifiedAfterSave=false;
             saveWatch.Stop();
             Debug.Log($"Creating local save object took {saveWatch.ElapsedMilliseconds}ms");
 
             Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/"+StorageName+"/chunks"));
 
-            // Save the chunks
+            // Snapshot and write a small batch at a time. Snapshot creation stays
+            // on the Unity thread so gameplay cannot mutate a chunk halfway
+            // through its copy; JSON/compression and disk IO remain off-thread.
             var saveOptions=ChunkWorkerOptions();
-            await Task.Run(() =>
+            int saveBatchSize=Math.Max(1,saveOptions.MaxDegreeOfParallelism);
+            for(int offset=0;offset<capturedChunks.Length;offset+=saveBatchSize)
             {
-                Parallel.ForEach(worldSaveData.chunks,saveOptions, chunk =>
-                {
-                    var path = GetChunkPath(worldName, chunk.position, dimension);
-                    string json;
-                    if (binaryCompressSaves)
-                    {
-                        json = Compress(JsonUtility.ToJson(chunk));
-                    }
-                    else
-                    {
-                        json = JsonUtility.ToJson(chunk);
-                    }
-                    File.WriteAllText(path, json);
-                });
-            });
+                int count=Math.Min(saveBatchSize,capturedChunks.Length-offset);
+                await SaveChunkBatchAsync(capturedChunks,offset,count,saveOptions);
+            }
 
             // Save the world data
             var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraftUnity/saves/"+StorageName+"/world.json");
@@ -143,6 +136,19 @@ public partial class World
             isSaving = false;
             generationGate.Release();
         }
+    }
+
+    private async Task SaveChunkBatchAsync(ChunkData[] chunks,int offset,int count,ParallelOptions options)
+    {
+        var snapshots=new ChunkSaveData[count];
+        for(int i=0;i<count;i++)snapshots[i]=ChunkSaveData.Serialize(chunks[offset+i]);
+        await Task.Run(() => Parallel.ForEach(snapshots,options,snapshot =>
+        {
+            var path=GetChunkPath(worldName,snapshot.position,dimension);
+            var json=JsonUtility.ToJson(snapshot);
+            if(binaryCompressSaves)json=Compress(json);
+            File.WriteAllText(path,json);
+        }));
     }
 
     public void SavePlayer(WorldServer.SavePlayerMessage message)
