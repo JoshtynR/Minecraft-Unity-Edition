@@ -32,6 +32,7 @@ public class ChunkData {
  public bool betaPopulationDone,modifiedAfterSave;public List<BetaPopulationRecord> betaPopulationRecords=new List<BetaPopulationRecord>();public int chunkSize=16,chunkHeight=16;public World worldRef;public UnityEngine.Vector3Int worldPos;
  public BlockType[,,] blocks=new BlockType[16,240,16];
  public void SetBlock(UnityEngine.Vector3Int p,BlockType b){blocks[p.x,p.y,p.z]=b;}
+ public void InitializeGeneratedBlocks(BlockType[,,] source,bool reflectX,int sourceHeight){for(int x=0;x<16;x++)for(int z=0;z<16;z++)for(int y=0;y<240;y++)blocks[x,y,z]=y<sourceHeight?source[reflectX?15-x:x,y,z]:BlockType.Air;}
  public Block GetBlock(UnityEngine.Vector3Int p){return new Block(blocks[p.x,p.y,p.z]);}
 }
 public static class WorldDataHelper { public static void SetBlock(World w,UnityEngine.Vector3Int p,BlockType b){var block=w.GetBlock(p);if(block.chunkData!=null){var c=block.chunkData;c.blocks[p.x-c.worldPos.x,p.y,p.z-c.worldPos.z]=b;}} }

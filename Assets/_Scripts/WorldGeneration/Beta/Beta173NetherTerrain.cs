@@ -6,6 +6,16 @@ public sealed class Beta173NetherTerrain
     public const int TerrainHeight = 128, SeaLevel = 32;
     private readonly BetaOctaveNoise minLimit, maxLimit, selector, surface, thickness;
     private readonly Beta173NetherCaves caves;
+    [ThreadStatic] private static NetherScratch threadScratch;
+    private static NetherScratch Scratch => threadScratch ?? (threadScratch=new NetherScratch());
+
+    private sealed class NetherScratch
+    {
+        public readonly double[] low=new double[425],high=new double[425],select=new double[425],vertical=new double[17];
+        public readonly double[] sand=new double[256],gravel=new double[256],depth=new double[256];
+        public readonly double[,,] density=new double[5,17,5];
+        public readonly BlockType[,,] blocks=new BlockType[16,TerrainHeight,16];
+    }
     public Beta173NetherTerrain(long seed)
     {
         var random = new JavaRandom(seed);
@@ -21,20 +31,35 @@ public sealed class Beta173NetherTerrain
         var blocks=GenerateRaw(chunkX,chunkZ);
         Surface(blocks,chunkX,chunkZ); caves.Generate(blocks,chunkX,chunkZ); return blocks;
     }
+
+    // Streaming consumes the result before the worker takes another chunk, so
+    // its large noise/density/block buffers can safely be reused per worker.
+    internal BlockType[,,] GenerateForChunk(int chunkX,int chunkZ)
+    {
+        var scratch=Scratch;
+        var blocks=GenerateRawCore(chunkX,chunkZ,scratch.blocks,scratch);
+        SurfaceCore(blocks,chunkX,chunkZ,scratch);caves.Generate(blocks,chunkX,chunkZ);return blocks;
+    }
+
     public BlockType[,,] GenerateRaw(int chunkX,int chunkZ)
     {
+        return GenerateRawCore(chunkX,chunkZ,new BlockType[16,TerrainHeight,16],null);
+    }
+
+    private BlockType[,,] GenerateRawCore(int chunkX,int chunkZ,BlockType[,,] blocks,NetherScratch scratch)
+    {
         int cx=chunkX*4,cz=chunkZ*4;
-        double[] low=minLimit.GenerateNoiseOctaves(null,cx,0,cz,5,17,5,684.412,2053.236,684.412);
-        double[] high=maxLimit.GenerateNoiseOctaves(null,cx,0,cz,5,17,5,684.412,2053.236,684.412);
-        double[] select=selector.GenerateNoiseOctaves(null,cx,0,cz,5,17,5,684.412/80,2053.236/60,684.412/80);
-        var vertical=new double[17];
+        double[] low=minLimit.GenerateNoiseOctaves(scratch?.low,cx,0,cz,5,17,5,684.412,2053.236,684.412);
+        double[] high=maxLimit.GenerateNoiseOctaves(scratch?.high,cx,0,cz,5,17,5,684.412,2053.236,684.412);
+        double[] select=selector.GenerateNoiseOctaves(scratch?.select,cx,0,cz,5,17,5,684.412/80,2053.236/60,684.412/80);
+        var vertical=scratch?.vertical??new double[17];
         for(int y=0;y<17;y++)
         {
             vertical[y]=Math.Cos(y*Math.PI*6/17)*2;
             double d=y>17/2?16-y:y;
             if(d<4){d=4-d;vertical[y]-=d*d*d*10;}
         }
-        var density=new double[5,17,5];int index=0;
+        var density=scratch?.density??new double[5,17,5];int index=0;
         for(int x=0;x<5;x++)for(int z=0;z<5;z++)for(int y=0;y<17;y++)
         {
             double a=low[index]/512,b=high[index]/512,t=(select[index]/10+1)/2;
@@ -42,7 +67,6 @@ public sealed class Beta173NetherTerrain
             if(y>13){double fade=(double)((float)(y-13)/3f);value=value*(1-fade)+-10*fade;}
             density[x,y,z]=value;index++;
         }
-        var blocks = new BlockType[16, TerrainHeight, 16];
         for (int cellX = 0; cellX < 4; cellX++)
         for (int cellZ = 0; cellZ < 4; cellZ++)
         for (int cellY = 0; cellY < 16; cellY++)
@@ -79,10 +103,15 @@ public sealed class Beta173NetherTerrain
 
     public void Surface(BlockType[,,] blocks,int chunkX,int chunkZ)
     {
+        SurfaceCore(blocks,chunkX,chunkZ,null);
+    }
+
+    private void SurfaceCore(BlockType[,,] blocks,int chunkX,int chunkZ,NetherScratch scratch)
+    {
         const double scale=.03125;
-        var sand=surface.GenerateNoiseOctaves(null,chunkX*16,chunkZ*16,0,16,16,1,scale,scale,1);
-        var gravel=surface.GenerateNoiseOctaves(null,chunkX*16,109.0134,chunkZ*16,16,1,16,scale,1,scale);
-        var depth=thickness.GenerateNoiseOctaves(null,chunkX*16,chunkZ*16,0,16,16,1,scale*2,scale*2,scale*2);
+        var sand=surface.GenerateNoiseOctaves(scratch?.sand,chunkX*16,chunkZ*16,0,16,16,1,scale,scale,1);
+        var gravel=surface.GenerateNoiseOctaves(scratch?.gravel,chunkX*16,109.0134,chunkZ*16,16,1,16,scale,1,scale);
+        var depth=thickness.GenerateNoiseOctaves(scratch?.depth,chunkX*16,chunkZ*16,0,16,16,1,scale*2,scale*2,scale*2);
         var random=new JavaRandom(unchecked((long)chunkX*341873128712L+(long)chunkZ*132897987541L));
         for(int k=0;k<16;k++)for(int l=0;l<16;l++)
         {

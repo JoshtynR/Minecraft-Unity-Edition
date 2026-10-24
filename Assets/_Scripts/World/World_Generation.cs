@@ -301,8 +301,12 @@ public partial class World
 
     public UniTask CastLightFirstTime(List<ChunkData> dataToCast)
     {
-        var loadedLightingChunks = worldData.chunkDataDict.Values.ToList();
-        int workers=ChunkWorkerOptions().MaxDegreeOfParallelism;
+        // Newly populated halo chunks and chunks with queued cross-boundary light
+        // are the only ones that need first-light transport. Re-walking every
+        // clean loaded chunk on every streaming batch becomes quadratic travel.
+        var loadedLightingChunks = worldData.chunkDataDict.Values
+            .Where(chunk=>!chunk.lightingInitialized||chunk.HasPendingLighting).ToList();
+        int workers=TerrainWorkerOptions().MaxDegreeOfParallelism;
         return UniTask.RunOnThreadPool(() =>
         {
             Lighting.InitializeLoadedChunks(loadedLightingChunks, worldCancellationToken, workers);
@@ -333,7 +337,7 @@ public partial class World
 
     private UniTask<ConcurrentDictionary<Vector3Int, ChunkData>> CalculateWorldChunkData(HashSet<Vector3Int> chunkDataPositionsToCreate)
     {
-        var options = ChunkWorkerOptions();
+        var options = TerrainWorkerOptions();
         return UniTask.RunOnThreadPool(() =>
         {
             Profiler.BeginThreadProfiling("MyThreads","CalculateWorldChunkData");
@@ -347,7 +351,7 @@ public partial class World
                 }
 
                 var pos = positions[index];
-                var data = new ChunkData(chunkSize, chunkHeight, this, pos);
+                var data = new ChunkData(chunkSize, chunkHeight, this, pos, false);
                 generated[index] = terrainGenerator.GenerateChunkData(data);
 
             });

@@ -3496,6 +3496,7 @@ MonoBehaviour:
   chunksPerFrame: 1
   chunksGenerationPerFrame: 2
   chunkWorkerThreads: 3
+  terrainWorkerThreads: 5
   worldRenderer: {fileID: 1269315924}
   terrainGenerator: {fileID: 1658937128}
   mapSeedOffset: {x: -251, y: 150, z: 0}

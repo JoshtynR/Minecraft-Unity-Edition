@@ -26,8 +26,10 @@ public partial class World : MonoBehaviour
     [Space]
     public byte chunksPerFrame = 1;
     public int chunksGenerationPerFrame = 1;
-    [Tooltip("Maximum concurrent terrain/mesh workers per world. Lower values leave CPU time for rendering while exploring.")]
+    [Tooltip("Maximum concurrent mesh/save workers per world. Lower values bound temporary geometry and save memory.")]
     [Range(1, 8)] public int chunkWorkerThreads = 2;
+    [Tooltip("Maximum concurrent terrain and initial-light workers. Noise generation is CPU-heavy but uses bounded scratch buffers.")]
+    [Range(1, 8)] public int terrainWorkerThreads = 5;
     [Tooltip("Log terrain, population, lighting/meshing and upload timings for each generation request.")]
     public bool logGenerationTimings;
     public WorldRenderer worldRenderer;
@@ -218,9 +220,19 @@ public partial class World : MonoBehaviour
 
     private ParallelOptions ChunkWorkerOptions()
     {
+        return WorkerOptions(chunkWorkerThreads);
+    }
+
+    private ParallelOptions TerrainWorkerOptions()
+    {
+        return WorkerOptions(terrainWorkerThreads);
+    }
+
+    private ParallelOptions WorkerOptions(int requestedWorkers)
+    {
         return new ParallelOptions
         {
-            MaxDegreeOfParallelism = System.Math.Max(1, System.Math.Min(chunkWorkerThreads,
+            MaxDegreeOfParallelism = System.Math.Max(1, System.Math.Min(requestedWorkers,
                 System.Math.Max(1, System.Environment.ProcessorCount - 1))),
             CancellationToken = worldCancellationToken
         };

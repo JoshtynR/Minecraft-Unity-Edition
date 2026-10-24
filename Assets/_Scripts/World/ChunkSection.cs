@@ -9,18 +9,34 @@ public class ChunkSection
     public int yOffset;
     public ChunkData dataRef;
 
-    public ChunkSection(ChunkData dataRef, int yOffset, BlockType populate = BlockType.Nothing)
+    public ChunkSection(ChunkData dataRef, int yOffset, BlockType populate = BlockType.Nothing, bool initializeBlocks = true)
     {
         this.dataRef = dataRef;
         this.yOffset = yOffset;
         blocks = new Block[dataRef.chunkSize, dataRef.chunkHeight, dataRef.chunkSize];
         lightMap = new char[dataRef.chunkSize, dataRef.chunkHeight, dataRef.chunkSize];
-        Populate(populate);
+        if (initializeBlocks) Populate(populate);
+    }
+
+    // Terrain generation already owns the final block type for every cell. Fill
+    // an uninitialized section once instead of constructing 4096 Nothing blocks
+    // and immediately mutating/replacing every one of them.
+    public void InitializeGenerated(BlockType[,,] source, bool reflectX, int sourceHeight)
+    {
+        for (int x = 0; x < dataRef.chunkSize; x++)
+        for (int y = 0; y < dataRef.chunkHeight; y++)
+        for (int z = 0; z < dataRef.chunkSize; z++)
+        {
+            int worldY=yOffset+y;
+            int sourceX=reflectX?dataRef.chunkSize-1-x:x;
+            var type=worldY<sourceHeight?source[sourceX,worldY,z]:BlockType.Air;
+            blocks[x,y,z]=BlockMapping.CreateGenerated(type,new Vector3Int(x,y,z),this);
+        }
     }
 
     public static ChunkSection Deserialize(ChunkSectionSaveData saveData, ChunkData dataRef)
     {
-        var chunkSection = new ChunkSection(dataRef, saveData.yOffset, BlockType.Air);
+        var chunkSection = new ChunkSection(dataRef, saveData.yOffset, BlockType.Air, false);
 
         var pos = new Vector3Int(0, 0, 0);
         var posIndex = 0;
@@ -40,6 +56,17 @@ public class ChunkSection
                 chunkSection.blocks[pos.x, pos.y, pos.z].Loaded();
                 posIndex++;
             }
+        }
+
+        // Valid saves cover the full section. Preserve the old Air fallback for
+        // truncated legacy/corrupt RLE data without paying for it on normal loads.
+        while(posIndex<chunkSection.blocks.Length)
+        {
+            pos.x=posIndex%dataRef.chunkSize;
+            pos.z=posIndex/(dataRef.chunkSize*dataRef.chunkHeight);
+            pos.y=(posIndex/dataRef.chunkSize)%dataRef.chunkHeight;
+            chunkSection.blocks[pos.x,pos.y,pos.z]=new Block(BlockType.Air,pos,chunkSection);
+            posIndex++;
         }
 
         return chunkSection;

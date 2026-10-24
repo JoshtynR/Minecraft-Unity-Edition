@@ -37,19 +37,7 @@ public class TerrainGenerator : MonoBehaviour
         generation.caves.Generate(rawTerrain, betaChunkX, betaChunkZ);
         if (dumpBetaParity) BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ, "caves");
 
-        for (int betaLocalX = 0; betaLocalX < data.chunkSize; betaLocalX++)
-        for (int betaLocalZ = 0; betaLocalZ < data.chunkSize; betaLocalZ++)
-        {
-            int unityLocalX = BetaCoordinateSpace.BetaLocalToUnityLocalX(betaLocalX);
-            int unityLocalZ = BetaCoordinateSpace.BetaLocalToUnityLocalZ(betaLocalZ);
-            var localPos = new Vector3Int(unityLocalX, 0, unityLocalZ);
-            for (int y = 0; y < data.worldRef.worldHeight; y++)
-            {
-                localPos.y = y;
-                data.SetBlock(localPos, y < Beta173Terrain.TerrainHeight
-                    ? rawTerrain[betaLocalX, y, betaLocalZ] : BlockType.Air);
-            }
-        }
+        data.InitializeGeneratedBlocks(rawTerrain,true,Beta173Terrain.TerrainHeight);
 
         return data;
     }
@@ -84,9 +72,8 @@ public class TerrainGenerator : MonoBehaviour
     {
         int bx=BetaCoordinateSpace.UnityChunkToBetaChunkX(FloorDiv(data.worldPos.x,16));
         int bz=BetaCoordinateSpace.UnityChunkToBetaChunkZ(FloorDiv(data.worldPos.z,16));
-        var raw=GetGenerators(data.worldRef.betaWorldSeed).nether.Generate(bx,bz);
-        for(int x=0;x<16;x++)for(int z=0;z<16;z++)for(int y=0;y<data.worldRef.worldHeight;y++)
-            data.SetBlock(new Vector3Int(15-x,y,z),y<128?raw[x,y,z]:BlockType.Air);
+        var raw=GetGenerators(data.worldRef.betaWorldSeed).nether.GenerateForChunk(bx,bz);
+        data.InitializeGeneratedBlocks(raw,true,Beta173NetherTerrain.TerrainHeight);
         return data;
     }
 

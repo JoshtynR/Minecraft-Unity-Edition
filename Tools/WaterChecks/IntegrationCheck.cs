@@ -47,7 +47,7 @@ namespace Mirror
     public class NetworkIdentity {public T GetComponent<T>()where T:new()=>new T();}
     public interface NetworkMessage {}
 }
-public class SlabBlock : Block { public SlabBlock(Block b):base(b) {} }
+public class SlabBlock : Block { public SlabBlock(Block b):base(b) {} public SlabBlock(BlockType t,Vector3Int p,ChunkSection s):base(t,p,s){} }
 public class BlockTypeData { public byte opacity,lightEmission; }
 public enum BlockTexturePart { FluidStill,FluidFlow }
 public class TextureData

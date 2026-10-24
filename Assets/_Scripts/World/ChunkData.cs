@@ -30,7 +30,7 @@ public class ChunkData
     public readonly List<Block> skyExtendList = new();
     public List<ChunkRenderer> chunkToUpdateAfterLighting = new List<ChunkRenderer>();
 
-    public ChunkData(int chunkSize, int chunkHeight, World worldRef, Vector3Int worldPos)
+    public ChunkData(int chunkSize, int chunkHeight, World worldRef, Vector3Int worldPos, bool initializeBlocks = true)
     {
         this.chunkSize = chunkSize;
         this.chunkHeight = chunkHeight;
@@ -39,14 +39,20 @@ public class ChunkData
         sections = new ChunkSection[worldRef.worldHeight / 16];
         for (int i = 0; i < sections.Length; i++)
         {
-            sections[i] = new ChunkSection(this, i*this.chunkHeight);
+            sections[i] = new ChunkSection(this, i*this.chunkHeight, BlockType.Nothing, initializeBlocks);
         }
+    }
+
+    public void InitializeGeneratedBlocks(BlockType[,,] source, bool reflectX, int sourceHeight)
+    {
+        foreach(var section in sections)section.InitializeGenerated(source,reflectX,sourceHeight);
+        modifiedAfterSave=true;
     }
 
     public static ChunkData Deserialize(ChunkSaveData saveData, World owner = null)
     {
         var world = owner ?? World.Instance;
-        var chunkData = new ChunkData(world.chunkSize, world.chunkHeight, world, saveData.position);
+        var chunkData = new ChunkData(world.chunkSize, world.chunkHeight, world, saveData.position, false);
         var sections = new ChunkSection[saveData.sections.Length];
         // sections = saveData.sections.Select(s => new ChunkSection(s, this)).ToArray();
         for (var i = 0; i < sections.Length; i++)
