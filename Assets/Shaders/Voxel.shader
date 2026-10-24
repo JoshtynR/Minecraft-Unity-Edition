@@ -5,6 +5,7 @@ Shader "Voxel"
         [MaterialToggle] _TextureOn ("Texture On", Float) = 1
         [MaterialToggle] _LightingOn ("Lighting On", Float) = 1
         [MaterialToggle] _AOOn ("Smooth Lighting", Float) = 1
+        _AOIntensity ("Ambient Occlusion Intensity", Range(0,2)) = 1
         [MaterialToggle] _FaceShadeOn ("Face Shade On", Float) = 1
         _ShadeUp ("Up Brightness", Range(0,1.5)) = 1
         _ShadeSideNS ("North/South Brightness", Range(0,1.5)) = 0.8

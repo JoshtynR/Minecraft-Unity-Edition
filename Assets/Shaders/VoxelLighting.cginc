@@ -3,7 +3,7 @@
             #include "LightmapLighting.cginc"
             UNITY_DECLARE_TEX2DARRAY(_BlockFaceTextures);
             #include "BlockFaceAnimation.cginc"
-            float _TextureOn, _LightingOn, _AOOn, _FaceShadeOn;
+            float _TextureOn, _LightingOn, _AOOn, _AOIntensity, _FaceShadeOn;
             float _ShadeUp, _ShadeSideNS, _ShadeSideEW, _ShadeDown, _Debug;
             float4 _FluidFog;
             #ifdef VOXEL_WATER
@@ -43,7 +43,13 @@
                     if(_LightLevels.z>.5)levels=_LightLevels.xy;
                 #endif
                 if(v.sides.z>3.5&&v.sides.z<4.5&&_AOOn<.5)levels=v.corners.xy;
-                float ao=v.sides.z>4.5||v.sides.z>3.5&&_AOOn>.5?v.sides.x:1;
+                // Marker 4 carries true corner AO. Scale only its occlusion
+                // amount so directional face shading and special-model shading
+                // remain independent material controls.
+                float ao=1;
+                if(v.sides.z>4.5)ao=v.sides.x;
+                else if(v.sides.z>3.5&&_AOOn>.5)
+                    ao=saturate(lerp(1,v.sides.x,max(0,_AOIntensity)));
                 o.skyBlock=levels;o.ao=ao;
                 float3 normal = UnityObjectToWorldNormal(v.normal);
                 float3 an = abs(normal);

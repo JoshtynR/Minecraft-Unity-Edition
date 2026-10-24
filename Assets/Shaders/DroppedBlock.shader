@@ -5,6 +5,7 @@ Shader "Voxel/DroppedBlock"
         _TextureOn ("Texture On", Float) = 1
         _LightingOn ("Lighting On", Float) = 1
         _AOOn ("Smooth Lighting", Float) = 0
+        _AOIntensity ("Ambient Occlusion Intensity", Range(0,2)) = 1
         _FaceShadeOn ("Face Shade On", Float) = 1
         _ShadeUp ("Up", Float) = 1
         _ShadeSideNS ("North South", Float) = .8
