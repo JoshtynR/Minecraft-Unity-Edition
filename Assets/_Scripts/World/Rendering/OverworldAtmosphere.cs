@@ -124,11 +124,13 @@ public sealed class OverworldAtmosphere : MonoBehaviour
         cloudMaterial.mainTexture=assets!=null&&assets.cloudTexture!=null?assets.cloudTexture:ownedClouds=Fallback(2);
         var sunPixels=sunMaterial.mainTexture as Texture2D;if(sunPixels!=null){sunPixels.filterMode=FilterMode.Point;sunPixels.wrapMode=TextureWrapMode.Clamp;}
         var moonPixels=moonMaterial.mainTexture as Texture2D;if(moonPixels!=null){moonPixels.filterMode=FilterMode.Point;moonPixels.wrapMode=TextureWrapMode.Clamp;}
-        sunMaterial.SetFloat("_BlackTransparent",1);
-        // The supplied legacy sun sheet contains near-black RGB background
-        // pixels rather than exact black/alpha zero. Key those pixels out while
-        // retaining the bright, deliberately pixel-stepped halo.
-        sunMaterial.SetFloat("_BlackCutoff",.2f);
+        // This sheet stores its glow as 1..40 RGB over a fully opaque black
+        // background. Additive blending makes black contribute nothing while
+        // preserving every dim, pixel-stepped yellow halo value.
+        sunMaterial.SetFloat("_BlackTransparent",0);
+        sunMaterial.SetFloat("_Additive",1);
+        sunMaterial.SetFloat("_SrcBlend",1); // One
+        sunMaterial.SetFloat("_DstBlend",1); // One
         moonMaterial.SetFloat("_BlackTransparent",1);
         moonMaterial.SetFloat("_BlackCutoff",.005f);
         sunsetMaterial.SetFloat("_HorizonBand",1);sunsetMaterial.renderQueue=1005;
