@@ -83,6 +83,7 @@ public partial class World : MonoBehaviour
         OnValidate();
         Clear();
         InitializeDroppedItems();
+        InitializeFallingBlocks();
         InitializeMobs();
         NetworkClient.RegisterHandler<FurnaceReply>(message =>
         {
@@ -444,6 +445,7 @@ public partial class World : MonoBehaviour
     {
         ResetWater();
         ResetDroppedItems();
+        ResetFallingBlocks();
         ResetMobs();
         furnaceClock=0;
         ResetTreeMeshChanges();
@@ -482,6 +484,7 @@ public partial class World : MonoBehaviour
         UnregisterDimension();
         ReleaseLightmap();
         ResetDroppedItems(true);
+        ResetFallingBlocks(true);
         ResetMobs(true);
         if (!secondaryDimension)
         {
@@ -489,6 +492,7 @@ public partial class World : MonoBehaviour
             NetworkClient.UnregisterHandler<ChestReply>();
             NetworkClient.UnregisterHandler<FurnaceReply>();
             NetworkClient.UnregisterHandler<DropStateMessage>();
+            NetworkClient.UnregisterHandler<FallingBlockStateMessage>();
             NetworkClient.UnregisterHandler<MobStateMessage>();
             NetworkClient.UnregisterHandler<MobBatchMessage>();
             NetworkClient.UnregisterHandler<MobArrowMessage>();

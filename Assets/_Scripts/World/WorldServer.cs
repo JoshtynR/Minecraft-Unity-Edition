@@ -31,6 +31,12 @@ public partial class WorldServer : NetworkBehaviour
             var world=connection.identity.GetComponent<Player>().CurrentWorld;
             foreach(var item in world.CaptureDroppedItems())connection.Send(new DropStateMessage{item=item,dimension=world.dimension});
         });
+        NetworkServer.RegisterHandler<FallingBlockSyncRequest>((connection,request)=>
+        {
+            if(connection.identity==null)return;
+            var world=connection.identity.GetComponent<Player>().CurrentWorld;
+            foreach(var block in world.CaptureFallingBlocks())connection.Send(new FallingBlockStateMessage{block=block,dimension=world.dimension});
+        });
 
         NetworkServer.RegisterHandler<MobSyncRequest>((connection,request)=>
         {

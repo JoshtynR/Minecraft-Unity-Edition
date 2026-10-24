@@ -89,6 +89,7 @@ public partial class World
         UpdateWater();
         UpdateBlocks();
         UpdateLeafDecay();
+        UpdateFallingBlocks();
         UpdateDroppedItems();
         UpdateFurnaces();
         UpdateMobs();

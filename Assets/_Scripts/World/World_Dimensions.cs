@@ -71,7 +71,7 @@ public partial class World
         string json=File.ReadAllText(path);
         if(!json.TrimStart().StartsWith("{"))json=Decompress(json);
         var saved=JsonUtility.FromJson<WorldSaveData>(json);
-        RestoreFluidTicks(saved.fluidTicks);RestoreDroppedItems(saved.droppedItems);RestoreMobs(saved.SavedMobs);
+        RestoreFluidTicks(saved.fluidTicks);RestoreDroppedItems(saved.droppedItems);RestoreFallingBlocks(saved.fallingBlocks);RestoreMobs(saved.SavedMobs);
     }
     public static void ActivateDimension(World world)
     {

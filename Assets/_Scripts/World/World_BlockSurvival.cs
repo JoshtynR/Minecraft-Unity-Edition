@@ -73,6 +73,8 @@ public partial class World
         if (DropAuthority)
         {
             byte state = SpecialBlockGeometry.State(block.type, block.blockShape);
+            if (IsFallingBlock(block.type) && TryStartFallingBlock(position,block.type,state))
+                return;
             if (BlockSurvivalRules.IsLeaves(block.type))
             {
                 if ((state & 4) == 0 && !leafDecay.ContainsKey(position))

@@ -84,6 +84,7 @@ public partial class World
                 hasWorldTime = true, worldTimeTicks = CurrentWorldTicks,
                 fluidTicks = CaptureFluidTicks(),
                 droppedItems = CaptureDroppedItems(),
+                fallingBlocks = CaptureFallingBlocks(),
                 mobs = CaptureMobs()
             };
             // Clear synchronously before IO. Changes arriving while a chunk is

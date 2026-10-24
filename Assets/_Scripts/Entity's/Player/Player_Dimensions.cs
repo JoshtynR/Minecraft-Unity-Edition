@@ -217,6 +217,7 @@ public partial class Player
             }
             realm.SendMobSnapshot(connectionToClient);
             foreach(var item in realm.CaptureDroppedItems())connectionToClient.Send(new DropStateMessage{dimension=dimension,item=item});
+            foreach(var block in realm.CaptureFallingBlocks())connectionToClient.Send(new FallingBlockStateMessage{dimension=dimension,block=block});
         }
         TargetCompleteDimension(connectionToClient,sequence,transferDestination);
     }

@@ -210,6 +210,7 @@ public partial class World : IWaterWorld
             foreach (var block in section.blocks)
             {
                 var p = block.globalWorldPosition;
+                QueueGravityOnChunkActivation(block);
                 if(block.type==BlockType.Fire)fluidTicks.Schedule(WaterPos(p),2,40);
                 if (block.type == BlockType.Water || block.type == BlockType.Lava)
                 {
