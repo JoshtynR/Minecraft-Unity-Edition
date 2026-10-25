@@ -124,8 +124,9 @@ public static class Lighting
 
         int nextLight = Mathf.Max(0, oldLightValue - 1);
 
-        foreach (var neighbor in block.GetNeighbors())
+        for (int i = 0; i < 6; i++)
         {
+            var neighbor = block.GetNeighbor(i);
             if (neighbor == null || neighbor.type == BlockType.Nothing) continue;
 
             int neighborLight = neighbor.GetSkyLight();
@@ -154,8 +155,9 @@ public static class Lighting
         if (lightLevel <= 1) return;
 
 
-        foreach (var neighbor in block.GetNeighbors())
+        for (int i = 0; i < 6; i++)
         {
+            var neighbor = block.GetNeighbor(i);
             if (neighbor == null || neighbor.type == BlockType.Nothing) continue;
             if (neighbor.BlockData.opacity == 15) continue;
 
@@ -173,8 +175,9 @@ public static class Lighting
     {
         if (block == null) return;
 
-        foreach (var neighbor in block.GetNeighbors())
+        for (int i = 0; i < 6; i++)
         {
+            var neighbor = block.GetNeighbor(i);
             if (neighbor == null || neighbor.type == BlockType.Nothing) continue;
 
             var nLight = neighbor.GetBlockLight();
@@ -205,8 +208,9 @@ public static class Lighting
         if (current <= 1) return;
 
 
-        foreach (var neighbor in block.GetNeighbors())
+        for (int i = 0; i < 6; i++)
         {
+            var neighbor = block.GetNeighbor(i);
             if (neighbor == null || neighbor.type == BlockType.Nothing) continue;
             if (neighbor.BlockData.opacity == 15) continue;
 

@@ -166,7 +166,7 @@ public sealed class FirstPersonView : MonoBehaviour
     private void UpdateLight()
     {
         var world = player.CurrentWorld;
-        var block = world != null ? world.GetBlock(player.cam.position) : null;
+        var block = world != null ? world.GetBlock(player.cam.position) : default(Block);
         var levels=new Vector4(block==null?15:block.GetSkyLight(),block==null?0:block.GetBlockLight(),1,0);
         spriteMaterial.SetVector("_LightLevels",levels);
         blockMaterial.SetVector("_LightLevels",levels);

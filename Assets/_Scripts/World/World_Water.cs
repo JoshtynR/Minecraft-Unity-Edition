@@ -62,7 +62,7 @@ public partial class World : IWaterWorld
 
     private bool TryGetWaterBlock(Vector3Int p, out Block block)
     {
-        block = null;
+        block = default(Block);
         if (p.y < 0 || p.y >= worldHeight) return false;
         var origin = WorldDataHelper.GetChunkPosition(this, p);
         if (!worldData.chunkDataDict.TryGetValue(origin, out var chunk) || !chunk.isGenerated ||
@@ -182,7 +182,8 @@ public partial class World : IWaterWorld
             QueuePortalValidation(position);
         }
         if(washedCrop&&NetworkServer.active)DropWheat(position,cropAge);
-        chunk.GetBlock(position - chunk.worldPos).waterLevel = liquid ? (byte)(level&15) : (byte)0;
+        var changed = chunk.GetBlock(position - chunk.worldPos);
+        changed.waterLevel = liquid ? (byte)(level&15) : (byte)0;
         chunk.modifiedAfterSave = true;
         if(hardening)EmitFluidEffect(position,0);
         // Corner heights sample diagonal cells too, including across chunk edges.

@@ -71,7 +71,7 @@ public class ChunkData
     
     public static void LoopThroughTheBlocks(ChunkData chunkData, Action<int, int, int, BlockType> actionToPerform)
     {
-        foreach (var section in chunkData.sections.Where(s => s.blocks.Cast<Block>().Any(b => b.type != BlockType.Air)))
+        foreach (var section in chunkData.sections.Where(s => s.blocks.HasNonAir))
         {
             foreach (var block in section.blocks)
             {

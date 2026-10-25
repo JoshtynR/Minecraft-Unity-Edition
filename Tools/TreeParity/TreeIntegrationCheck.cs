@@ -10,6 +10,7 @@ namespace UnityEngine
         public bool Equals(Vector3Int p) { return x==p.x&&y==p.y&&z==p.z; }
         public override bool Equals(object p) { return p is Vector3Int && Equals((Vector3Int)p); }
         public override int GetHashCode() { unchecked{return(x*397^y)*397^z;} }
+        public static Vector3Int operator +(Vector3Int a,Vector3Int b) { return new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z); }
     }
 }
 public class Block { public ChunkData chunkData;public BlockType type; public Block(BlockType type){this.type=type;} }

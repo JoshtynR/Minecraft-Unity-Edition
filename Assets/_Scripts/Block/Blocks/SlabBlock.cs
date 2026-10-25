@@ -1,16 +1,11 @@
-﻿using System;
 using UnityEngine;
 
-[Serializable]
-public class SlabBlock : Block
+public static class SlabBlock
 {
-    public string test;
-    public SlabBlock(BlockType type,Vector3Int position,ChunkSection section) : base(type,position,section)
+    public static Block Create(BlockType type, Vector3Int position, ChunkSection section)
     {
-        blockShape=BlockShapes.Slab;
-    }
-    public SlabBlock(Block block) : base(block)
-    {
-        blockShape = BlockShapes.Slab;
+        var block = new Block(type, position, section);
+        block.blockShape = BlockShapes.Slab;
+        return block;
     }
 }

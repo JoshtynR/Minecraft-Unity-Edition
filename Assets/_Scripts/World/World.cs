@@ -326,7 +326,8 @@ public partial class World : MonoBehaviour
                 if (partnerPos.y < 0 || partnerPos.y >= worldHeight || partner == null ||
                     (!updating && (partner.type != BlockType.Air || !BlockSurvivalRules.CanReplace(previous.type,blockType)))) continue;
                 WorldDataHelper.SetBlock(this, partnerPos, blockType);
-                GetBlock(partnerPos).blockShape = SpecialBlockGeometry.Shape(blockType, (byte)(stairFacing|8));
+                var partnerBlock = GetBlock(partnerPos);
+                partnerBlock.blockShape = SpecialBlockGeometry.Shape(blockType, (byte)(stairFacing|8));
                 QueueSurvivalAround(partnerPos);
                 var partnerChunk = WorldDataHelper.GetChunk(this, WorldDataHelper.GetChunkPosition(this,partnerPos));
                 if (partnerChunk != null) { partnerChunk.ChunkData.modifiedAfterSave = true; neightBourUpdates.Add(partnerChunk); }
@@ -351,7 +352,8 @@ public partial class World : MonoBehaviour
             // else
             // {
                 WorldDataHelper.SetBlock(chunk.ChunkData.worldRef, pos, blockType);
-                GetBlock(pos).blockShape = SpecialBlockGeometry.Shape(blockType, stairFacing);
+                var placedBlock = GetBlock(pos);
+                placedBlock.blockShape = SpecialBlockGeometry.Shape(blockType, stairFacing);
                 QueueSurvivalAround(pos);
                 if (BlockSurvivalRules.IsLog(previousType) && !BlockSurvivalRules.IsLog(blockType)) QueueLeavesAroundRemovedLog(pos);
                 QueuePortalValidation(pos);

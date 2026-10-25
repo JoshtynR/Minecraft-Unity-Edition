@@ -47,7 +47,6 @@ namespace Mirror
     public class NetworkIdentity {public T GetComponent<T>()where T:new()=>new T();}
     public interface NetworkMessage {}
 }
-public class SlabBlock : Block { public SlabBlock(Block b):base(b) {} public SlabBlock(BlockType t,Vector3Int p,ChunkSection s):base(t,p,s){} }
 public class BlockTypeData { public byte opacity,lightEmission; }
 public enum BlockTexturePart { FluidStill,FluidFlow }
 public class TextureData
@@ -182,6 +181,8 @@ public partial class WorldServer
 public static partial class IntegrationCheck
 {
     private static Vector3Int V(int x,int y,int z) { return new Vector3Int(x,y,z); }
+    private static void SetLevel(ChunkData chunk, Vector3Int position, byte level) { var block=chunk.GetBlock(position);block.waterLevel=level; }
+    private static void SetShape(ChunkData chunk, Vector3Int position, BlockShapes shape) { var block=chunk.GetBlock(position);block.blockShape=shape; }
     private static ChunkData AddChunk(World w,Vector3Int origin)
     {
         var c=new ChunkData(w,origin); w.worldData.chunkDataDict[origin]=c;w.worldData.chunkDict[origin]=new ChunkRenderer { ChunkData=c }; return c;
@@ -197,6 +198,15 @@ public static partial class IntegrationCheck
         var w = World.Instance = new World();
         WaterCheck.Assert(w.TestPopulationPausesWater(),"population holds authoritative water ticks until the worker completes");
         var c = AddChunk(w,V(0,0,0));
+        var cellField=typeof(ChunkSection.PackedBlockStorage).GetField("cells",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
+        var lightField=typeof(ChunkSection).GetField("lightMap",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
+        WaterCheck.Assert(cellField.FieldType==typeof(ushort[])&&((ushort[])cellField.GetValue(c.sections[0].blocks)).Length==8,"section cells are not a dense two-byte array");
+        WaterCheck.Assert(lightField.FieldType==typeof(byte[])&&((byte[])lightField.GetValue(c.sections[0])).Length==8,"section light is not a dense one-byte array");
+        var liveHandle=c.GetBlock(V(0,0,0));c.SetBlock(V(0,0,0),BlockType.Stone);
+        WaterCheck.Assert(liveHandle.type==BlockType.Stone,"queued block handle became a stale value snapshot");
+        var handleSet=new HashSet<Block>{liveHandle};c.SetBlock(V(0,0,0),BlockType.Dirt);
+        WaterCheck.Assert(handleSet.Contains(c.GetBlock(V(0,0,0))),"live handle identity changed with cell contents");
+        WaterCheck.Assert(default(Block)==null&&c.GetBlock(V(0,0,0))!=null,"value handles broke legacy no-result checks");
         // Newly cataloged torches have the same opacity as air. Removing an
         // emitter must still queue its block-light removal.
         BlockDataManager.blockTypeDataDictionary[(int)BlockType.Torch].lightEmission=14;
@@ -209,7 +219,7 @@ public static partial class IntegrationCheck
         var b=c.GetBlock(V(0,2,0)); b.waterLevel=12;
         WaterCheck.Assert(b.type==BlockType.Water && b.globalWorldPosition.Equals(V(0,2,0)),"placed water mapping/global section coordinates");
         WaterCheck.Assert(new Block(b).waterLevel==12,"copied block lost level");
-        c.SetBlock(V(1,2,0),BlockType.Water);c.GetBlock(V(1,2,0)).waterLevel=3;
+        c.SetBlock(V(1,2,0),BlockType.Water);SetLevel(c,V(1,2,0),3);
         var save=new ChunkSectionSaveData(c.sections[1]);
         WaterCheck.Assert(save.blocks[0].waterLevel==12 && save.blocks[1].waterLevel==3 && save.blocks[0].length==1,"RLE merged unlike water levels");
         var restored=ChunkSection.Deserialize(save,c);
@@ -229,8 +239,8 @@ public static partial class IntegrationCheck
         }
         for(byte age=0;age<8;age++)
         {
-            c.SetBlock(V(0,0,0),WheatCropRules.Crop);c.GetBlock(V(0,0,0)).blockShape=SpecialBlockGeometry.Shape(WheatCropRules.Crop,age);
-            c.SetBlock(V(1,0,0),WheatCropRules.Crop);c.GetBlock(V(1,0,0)).blockShape=SpecialBlockGeometry.Shape(WheatCropRules.Crop,(byte)((age+1)&7));
+            c.SetBlock(V(0,0,0),WheatCropRules.Crop);SetShape(c,V(0,0,0),SpecialBlockGeometry.Shape(WheatCropRules.Crop,age));
+            c.SetBlock(V(1,0,0),WheatCropRules.Crop);SetShape(c,V(1,0,0),SpecialBlockGeometry.Shape(WheatCropRules.Crop,(byte)((age+1)&7)));
             var cropSave=new ChunkSectionSaveData(c.sections[0]);
             WaterCheck.Assert(cropSave.blocks[0].length==1&&cropSave.blocks[0].type==WheatCropRules.Crop&&cropSave.blocks[0].stairFacing==age,"RLE preserves wheat ages without separate IDs");
             var cropLoad=ChunkSection.Deserialize(cropSave,c);
@@ -242,8 +252,8 @@ public static partial class IntegrationCheck
         }
         for(byte facing=0; facing<4; facing++)
         {
-            c.SetBlock(V(0,0,0),BlockType.WoodenStairs);c.GetBlock(V(0,0,0)).blockShape=StairGeometry.Shape(facing);
-            c.SetBlock(V(1,0,0),BlockType.WoodenStairs);c.GetBlock(V(1,0,0)).blockShape=StairGeometry.Shape((byte)((facing+1)&3));
+            c.SetBlock(V(0,0,0),BlockType.WoodenStairs);SetShape(c,V(0,0,0),StairGeometry.Shape(facing));
+            c.SetBlock(V(1,0,0),BlockType.WoodenStairs);SetShape(c,V(1,0,0),StairGeometry.Shape((byte)((facing+1)&3)));
             var stairSave=new ChunkSectionSaveData(c.sections[0]);
             WaterCheck.Assert(stairSave.blocks[0].length==1&&stairSave.blocks[0].stairFacing==facing,"RLE preserves different stair directions");
             var stairLoad=ChunkSection.Deserialize(stairSave,c);
@@ -257,8 +267,8 @@ public static partial class IntegrationCheck
         foreach(BlockType type in Enum.GetValues(typeof(BlockType))) if(SpecialBlockGeometry.Handles(type))
         for(byte state=0;state<16;state++)
         {
-            c.SetBlock(V(0,0,0),type);c.GetBlock(V(0,0,0)).blockShape=SpecialBlockGeometry.Shape(type,state);
-            c.SetBlock(V(1,0,0),type);c.GetBlock(V(1,0,0)).blockShape=SpecialBlockGeometry.Shape(type,(byte)((state+1)&15));
+            c.SetBlock(V(0,0,0),type);SetShape(c,V(0,0,0),SpecialBlockGeometry.Shape(type,state));
+            c.SetBlock(V(1,0,0),type);SetShape(c,V(1,0,0),SpecialBlockGeometry.Shape(type,(byte)((state+1)&15)));
             var specialSave=new ChunkSectionSaveData(c.sections[0]);var specialLoad=ChunkSection.Deserialize(specialSave,c);
             WaterCheck.Assert(specialSave.blocks[0].length==1&&specialSave.blocks[0].hasBlockState,"RLE separates all special metadata states");
             WaterCheck.Assert(SpecialBlockGeometry.State(type,specialLoad.blocks[0,0,0].blockShape)==state,"all special states survive actual save/load");
@@ -270,7 +280,7 @@ public static partial class IntegrationCheck
         WaterCheck.Assert(ChunkSection.Deserialize(legacyStairs,c).blocks[0,0,0].blockShape==BlockShapes.StairsEast,"old saves without orientation remain loadable");
         // Exercise production face vertex adjustment with four equal flow cells.
         for(int x=0;x<2;x++) for(int z=0;z<2;z++)
-        { c.SetBlock(V(x,1,z),BlockType.Water);c.GetBlock(V(x,1,z)).waterLevel=7;c.SetBlock(V(x,2,z),BlockType.Air); }
+        { c.SetBlock(V(x,1,z),BlockType.Water);SetLevel(c,V(x,1,z),7);c.SetBlock(V(x,2,z),BlockType.Air); }
         var mesh=new MeshData(false);
         var shape=new BlockShape(0,0,0,16,16,16);
         shape.SetFaceVertices(Direction.up,V(0,1,0),mesh);
@@ -290,8 +300,8 @@ public static partial class IntegrationCheck
         WaterMeshCheck.AddFluidUVs(Direction.up,V(0,1,0),mesh,c,new TextureData());
         WaterCheck.Assert(mesh.uv[0].z==10,"level fluid top uses still sheet");
         WaterCheck.Assert(mesh.faceCoordinates.Count==mesh.vertices.Count,"fluid top UV5 coordinates match every emitted vertex");
-        c.GetBlock(V(0,1,0)).waterLevel=0;c.GetBlock(V(1,1,0)).waterLevel=1;
-        c.GetBlock(V(0,1,1)).waterLevel=0;
+        SetLevel(c,V(0,1,0),0);SetLevel(c,V(1,1,0),1);
+        SetLevel(c,V(0,1,1),0);
         mesh=new MeshData(false);shape.SetFaceVertices(Direction.up,V(0,1,0),mesh);
         WaterMeshCheck.AddFluidUVs(Direction.up,V(0,1,0),mesh,c,new TextureData());
         WaterCheck.Assert(mesh.uv[0].z==20&&Math.Abs(mesh.uv[0].x-.25f)<.00001f&&Math.Abs(mesh.uv[0].y-.75f)<.00001f,"flowing top uses rotated flow sheet");

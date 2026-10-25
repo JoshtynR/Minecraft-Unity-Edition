@@ -35,7 +35,7 @@ public static class BlockTargeting
     {
         adjacent=new Vector3Int();hitPoint=new Vector3();
         float length=direction.magnitude;
-        if(world==null||length<0.0000001f||reach<=0) return null;
+        if(world==null||length<0.0000001f||reach<=0) return default(Block);
         direction=new Vector3(direction.x/length,direction.y/length,direction.z/length);
         var cell=new Vector3Int(Mathf.FloorToInt(origin.x),Mathf.FloorToInt(origin.y),Mathf.FloorToInt(origin.z));
         int sx=Math.Sign(direction.x),sy=Math.Sign(direction.y),sz=Math.Sign(direction.z);
@@ -69,6 +69,6 @@ public static class BlockTargeting
             else if(ty<=tz) {entered=ty;ty+=dy;cell.y+=sy;}
             else {entered=tz;tz+=dz;cell.z+=sz;}
         }
-        return null;
+        return default(Block);
     }
 }

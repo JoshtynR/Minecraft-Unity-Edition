@@ -1,12 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 
-public class WaterBlock : Block
+public static class WaterBlock
 {
-    public WaterBlock(Vector3Int position, ChunkSection section) : base(BlockType.Water, position, section) { }
-    public WaterBlock(Block block) : base(block) { }
-    public override void OnBlockUpdate()
-    {
-        if (section != null && chunkData.worldRef.IsWorldCreated)
-            chunkData.worldRef.NotifyWaterBlockChanged(globalWorldPosition);
-    }
+    public static Block Create(Vector3Int position, ChunkSection section) => new Block(BlockType.Water, position, section);
 }

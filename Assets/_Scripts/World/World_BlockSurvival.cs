@@ -68,7 +68,7 @@ public partial class World
         Vector3Int position;
         try { position = block.globalWorldPosition; }
         catch { return; }
-        if (!ReferenceEquals(GetBlock(position), block)) return;
+        if (GetBlock(position) != block) return;
 
         if (DropAuthority)
         {
