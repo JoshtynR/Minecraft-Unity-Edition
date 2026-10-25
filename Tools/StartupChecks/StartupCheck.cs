@@ -124,7 +124,7 @@ static class StartupCheck
   WorldLoadingScreen.Begin();LoadingTick(30);SceneManager.LoadScene("MainMenu");Check(!WorldLoadingScreen.IsLoading,"leaving world removes overlay");
   WorldLoadingScreen.Begin();WorldLoadingScreen.Cancel();Check(!WorldLoadingScreen.IsLoading,"disconnect cancels loading before world scene exists");
   SceneManager.LoadScene("World");WorldLoadingScreen.Begin();original=Screen();Mirror.NetworkManager.singleton=new Mirror.NetworkManager{offlineScene=""};
-  Call(original,"CancelLoad");Check(!WorldLoadingScreen.IsLoading&&Mirror.NetworkManager.singleton.stopped&&SceneManager.GetActiveScene().name=="MainMenu","cancel disconnects and returns to menu without configured offline scene");
+  Call(original,"CancelLoad");Check(!WorldLoadingScreen.IsLoading&&!Mirror.NetworkManager.singleton.stopped&&SceneManager.GetActiveScene().name=="MainMenu","offline cancel returns to menu without touching an inactive network session");
   Application.isBatchMode=true;WorldLoadingScreen.Begin();Check(!WorldLoadingScreen.IsLoading,"headless server does not create loading UI");Application.isBatchMode=false;
   var network=new GameObject("Network").AddComponent<MinecraftNetworkManager>();
   network.OnServerDisconnect(null);Check(network.disconnects==1,"cancel before world-server creation still performs base disconnect");
