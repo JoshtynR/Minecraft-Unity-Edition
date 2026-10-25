@@ -54,7 +54,9 @@ public partial class World
                 {
                     feet=new Vector3(anchorX+mobRandom.NextInt(11)-5+.5f,anchorY+mobRandom.NextInt(7)-3,anchorZ+mobRandom.NextInt(11)-5+.5f);
                     if(MobPlayerDistance(feet)<24*24||!MobAreaLoaded(feet))continue;
-                    var block=GetBlock(feet);if(block==null||block.type!=BlockType.Air||Math.Max(block.GetBlockLight(),block.GetSkyLight()-skyLightReduction)>7)continue;
+                    var block=GetBlock(feet);
+                    if(block==null||block.type!=BlockType.Air||
+                       !HostileSpawnRules.Allows(block.GetBlockLight(),block.GetSkyLight(),skyLightReduction,mobRandom.NextInt(8)))continue;
                     var candidate=new MobState{species=definition.Type,position=feet};
                     bool clear=MobWalkable(candidate,feet);
                     foreach(var existing in mobs.Entities)if(MobRules.Bounds(existing).Intersects(MobRules.Bounds(candidate))){clear=false;break;}
