@@ -19,12 +19,14 @@ public class MinecraftNetworkManager : NetworkManager
     private static bool startingHost;
     public static bool OfflineSessionRequested { get; private set; }
 
-    // Normal local worlds do not need a Mirror server or a bound socket. LAN is
-    // an explicit opt-in because it deliberately makes this machine the host.
+    // Single-player still uses Mirror's in-process host lifecycle because the
+    // world/player bootstrap is built around it. dontListen keeps that host
+    // completely local: no transport socket is opened and no remote connection
+    // can be accepted. LAN is the explicit opt-in that enables listening.
     public static void StartLocalWorld()
     {
         if (SettingsManager.LanEnabled) StartLanHost();
-        else StartOfflineWorld();
+        else StartGameHost(true);
     }
 
     public static void StartOfflineWorld()
