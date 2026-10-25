@@ -182,7 +182,15 @@ public partial class World : MonoBehaviour
         var visibleSet = new HashSet<Vector3Int>(allChunkPositionsNeeded);
         var dataSet = new HashSet<Vector3Int>(allChunkDataPositionsNeeded);
         var chunkPositionsToRemove = WorldDataHelper.GetUnneededChunkPositions(worldData, visibleSet);
-        var chunkDataToRemove = WorldDataHelper.GetUnneededDataPositions(worldData, dataSet);
+        // Remote clients never own save files. Their generated/snapshot chunks
+        // may still carry the dirty bit, but they can be discarded immediately.
+        // The authority must first persist dirty chunks before releasing them.
+        var chunkDataToRemove = worldData.chunkDataDict
+            .Where(pair=>!dataSet.Contains(pair.Key)&&(!pair.Value.modifiedAfterSave||!DropAuthority))
+            .Select(pair=>pair.Key).ToHashSet();
+        var chunkDataToSaveAndRemove = worldData.chunkDataDict
+            .Where(pair=>DropAuthority&&!dataSet.Contains(pair.Key)&&pair.Value.modifiedAfterSave)
+            .Select(pair=>pair.Key).ToHashSet();
         
 
         var data = new WorldGenerationData
@@ -192,7 +200,8 @@ public partial class World : MonoBehaviour
             chunkPositionsToLoad = chunkPositionsToLoad,
             chunkDataPositionsToLoad = chunkDataPositionsToLoad,
             chunkPositionsToRemove = chunkPositionsToRemove,
-            chunkDataToRemove = chunkDataToRemove
+            chunkDataToRemove = chunkDataToRemove,
+            chunkDataToSaveAndRemove = chunkDataToSaveAndRemove
         };
         
         return data;
@@ -449,24 +458,25 @@ public partial class World : MonoBehaviour
         ResetMobs();
         furnaceClock=0;
         ResetTreeMeshChanges();
+        ResetChunkUpdates();
+
+        // Pooled renderers used to retain both a readable native mesh and their
+        // previous ChunkData. Release those references before replacing the maps.
+        foreach (var chunk in worldRenderer.GetComponentsInChildren<ChunkRenderer>(true))
+        {
+            chunk.ReleaseForPool();
+            if(Application.isPlaying)Destroy(chunk.gameObject);
+            else DestroyImmediate(chunk.gameObject);
+        }
+        worldRenderer.chunkPool.Clear();
+
         worldData = new WorldData
         {
             chunkDataDict = new Dictionary<Vector3Int, ChunkData>(),
             chunkDict = new Dictionary<Vector3Int, ChunkRenderer>(),
             worldName = worldName, owner = this
         };
-        worldData.chunkDataDict?.Clear();
-        worldData.chunkDict?.Clear();
-        worldRenderer.chunkPool?.Clear();
         isSaving = false;
-        
-        ResetChunkUpdates();
-        
-
-        foreach (var chunk in worldRenderer.GetComponentsInChildren<ChunkRenderer>(true))
-        {
-            DestroyImmediate(chunk.gameObject);
-        }
     }
 
     public void OnDisable()
@@ -508,6 +518,7 @@ public partial class World : MonoBehaviour
         public HashSet<Vector3Int> chunkDataPositionsToLoad;
         public HashSet<Vector3Int> chunkPositionsToRemove;
         public HashSet<Vector3Int> chunkDataToRemove;
+        public HashSet<Vector3Int> chunkDataToSaveAndRemove;
     }
 
 

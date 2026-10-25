@@ -2,40 +2,19 @@ public static class BlockMapping
 {
     public static Block CreateGenerated(BlockType type, UnityEngine.Vector3Int position, ChunkSection section)
     {
-        switch(WheatCropRules.Canonical(type))
-        {
-            case BlockType.Water:return new WaterBlock(position,section);
-            case BlockType.WoodenSlab:
-            case BlockType.StoneSlab:
-            case BlockType.SandstoneSlab:
-            case BlockType.CobblestoneSlab:return new SlabBlock(type,position,section);
-            default:return new Block(type,position,section);
-        }
+        return new Block(type,position,section);
     }
 
     public static Block MapGeneratedTypeToBlock(Block block)
     {
-        switch (block.type)
-        {
-            case BlockType.Water: return block is WaterBlock ? block : new WaterBlock(block);
-            case BlockType.WoodenSlab:
-            case BlockType.StoneSlab:
-            case BlockType.SandstoneSlab:
-            case BlockType.CobblestoneSlab: return block is SlabBlock ? block : new SlabBlock(block);
-            default: return block;
-        }
+        return block;
     }
 
     public static Block MapTypeToBlock(BlockType type, Block block)
     {
-        switch (type)
-        {
-            case BlockType.Water: return new WaterBlock(block);
-            case BlockType.WoodenSlab:
-            case BlockType.StoneSlab:
-            case BlockType.SandstoneSlab:
-            case BlockType.CobblestoneSlab: return new SlabBlock(block);
-            default: return block.Reset(block);
-        }
+        // Mapping no longer swaps in per-type subclasses, so the block already
+        // has the canonical type/shape/state. Avoid decoding and re-encoding
+        // the same object on every placement and deserialized cell.
+        return block;
     }
 }

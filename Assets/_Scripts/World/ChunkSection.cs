@@ -5,7 +5,9 @@ using UnityEngine;
 public class ChunkSection
 {
     public Block[,,] blocks;
-    private char[,,] lightMap;
+    // Sky and block light are four bits each. A byte is the complete cell;
+    // char doubled this array for every loaded section without storing more data.
+    private byte[,,] lightMap;
     public int yOffset;
     public ChunkData dataRef;
 
@@ -14,7 +16,7 @@ public class ChunkSection
         this.dataRef = dataRef;
         this.yOffset = yOffset;
         blocks = new Block[dataRef.chunkSize, dataRef.chunkHeight, dataRef.chunkSize];
-        lightMap = new char[dataRef.chunkSize, dataRef.chunkHeight, dataRef.chunkSize];
+        lightMap = new byte[dataRef.chunkSize, dataRef.chunkHeight, dataRef.chunkSize];
         if (initializeBlocks) Populate(populate);
     }
 
@@ -114,7 +116,7 @@ public class ChunkSection
     // Set XXXX0000
     public void SetSunlight(Vector3Int pos, int value)
     {
-        lightMap[pos.x, pos.y, pos.z] = (char)((lightMap[pos.x, pos.y, pos.z] & 0xF) | (value << 4));
+        lightMap[pos.x, pos.y, pos.z] = (byte)((lightMap[pos.x, pos.y, pos.z] & 0xF) | ((value & 0xF) << 4));
     }
 
     // Get 0000XXXX
@@ -126,7 +128,7 @@ public class ChunkSection
     // Set 0000XXXX
     public void SetBlockLight(Vector3Int pos, int value)
     {
-        lightMap[pos.x, pos.y, pos.z] = (char)((lightMap[pos.x, pos.y, pos.z] & 0xF0) | value);
+        lightMap[pos.x, pos.y, pos.z] = (byte)((lightMap[pos.x, pos.y, pos.z] & 0xF0) | (value & 0xF));
     }
 
     /// <summary>Highest of block or skylight at pos.</summary>

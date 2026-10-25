@@ -159,6 +159,45 @@ public partial class World
         File.WriteAllText(path, JsonUtility.ToJson(message));
     }
 
+    // The generation gate is already held by the caller. Snapshot a small batch
+    // on the Unity thread, write it off-thread, and evict only chunks which were
+    // not changed again while IO was in flight.
+    private async Task<HashSet<Vector3Int>> SaveChunksForEvictionAsync(IEnumerable<Vector3Int> positions)
+    {
+        var evicted=new HashSet<Vector3Int>();
+        if(positions==null||!DropAuthority)return evicted;
+        var chunks=positions.Select(position=>
+        {
+            worldData.chunkDataDict.TryGetValue(position,out var chunk);return chunk;
+        }).Where(chunk=>chunk!=null&&chunk.modifiedAfterSave).ToArray();
+        if(chunks.Length==0)return evicted;
+        Directory.CreateDirectory(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            ".minecraftUnity/saves/"+StorageName+"/chunks"));
+        var options=ChunkWorkerOptions();
+        int batchSize=Math.Max(1,options.MaxDegreeOfParallelism);
+        for(int offset=0;offset<chunks.Length;offset+=batchSize)
+        {
+            int count=Math.Min(batchSize,chunks.Length-offset);
+            for(int i=0;i<count;i++)chunks[offset+i].modifiedAfterSave=false;
+            try
+            {
+                await SaveChunkBatchAsync(chunks,offset,count,options);
+                for(int i=0;i<count;i++)
+                {
+                    var chunk=chunks[offset+i];
+                    if(!chunk.modifiedAfterSave&&worldData.chunkDataDict.TryGetValue(chunk.worldPos,out var live)&&ReferenceEquals(live,chunk))
+                        evicted.Add(chunk.worldPos);
+                }
+            }
+            catch(Exception error)
+            {
+                for(int i=0;i<count;i++)chunks[offset+i].modifiedAfterSave=true;
+                Debug.LogException(error);
+            }
+        }
+        return evicted;
+    }
+
     public UniTask<ConcurrentDictionary<Vector3Int, ChunkData>> LoadChunksAsync(IEnumerable<Vector3Int> chunks, string worldName)
     {
         return UniTask.RunOnThreadPool(() =>

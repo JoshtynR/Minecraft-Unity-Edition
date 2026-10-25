@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class WorldRenderer : MonoBehaviour
 {
+    private const int MaximumPooledChunkObjects=32;
     public GameObject chunkPrefab;
     [System.NonSerialized] private Queue<ChunkRenderer> runtimeChunkPool;
     public Queue<ChunkRenderer> chunkPool => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeChunkPool, () => new Queue<ChunkRenderer>());
@@ -34,7 +35,10 @@ public class WorldRenderer : MonoBehaviour
     
     public void RemoveChunk(ChunkRenderer chunk)
     {
+        if(chunk==null)return;
+        chunk.ReleaseForPool();
         chunk.gameObject.SetActive(false);
-        chunkPool.Enqueue(chunk);
+        if(chunkPool.Count<MaximumPooledChunkObjects)chunkPool.Enqueue(chunk);
+        else Destroy(chunk.gameObject);
     }
 }

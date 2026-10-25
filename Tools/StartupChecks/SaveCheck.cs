@@ -37,7 +37,7 @@ public class WorldSaveData
 {
     public bool hasWorldTime;public double worldTimeTicks;
     public ChunkSaveData[] chunks;public string worldName;public WorldDimension dimension;
-    public UnityEngine.Vector3Int seedOffset;public long betaWorldSeed;public object fluidTicks,droppedItems,mobs;
+    public UnityEngine.Vector3Int seedOffset;public long betaWorldSeed;public object fluidTicks,droppedItems,fallingBlocks,mobs;
 }
 public class Store{public void SaveWorld(string name){}}
 public class Player{public object inventory;public bool DimensionTransferInProgress;public WorldServer.SavePlayerMessage SavePlayer()=>new WorldServer.SavePlayerMessage();}
@@ -54,7 +54,7 @@ public partial class World
     private readonly CancellationToken worldCancellationToken=CancellationToken.None;
     public Store chests=new Store(),furnaces=new Store();
     public bool GateReleased=>generationGate.CurrentCount==1;
-    public object CaptureFluidTicks()=>null;public object CaptureDroppedItems()=>null;public object CaptureMobs()=>null;
+    public object CaptureFluidTicks()=>null;public object CaptureDroppedItems()=>null;public object CaptureFallingBlocks()=>null;public object CaptureMobs()=>null;
     public void SavePlayer(WorldServer.SavePlayerMessage player){}
     private ParallelOptions ChunkWorkerOptions()=>new ParallelOptions{MaxDegreeOfParallelism=2};
     public static string Compress(string value)=>value;

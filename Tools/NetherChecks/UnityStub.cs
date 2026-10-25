@@ -22,7 +22,7 @@ namespace UnityEngine {
  }
  public struct Vector3Int {
   public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}
-  public static Vector3Int zero=>new Vector3Int();public static Vector3Int up=>new Vector3Int(0,1,0);public static Vector3Int down=>new Vector3Int(0,-1,0);public static Vector3Int left=>new Vector3Int(-1,0,0);public static Vector3Int right=>new Vector3Int(1,0,0);
+  public static Vector3Int zero=>new Vector3Int();public static Vector3Int up=>new Vector3Int(0,1,0);public static Vector3Int down=>new Vector3Int(0,-1,0);public static Vector3Int left=>new Vector3Int(-1,0,0);public static Vector3Int right=>new Vector3Int(1,0,0);public static Vector3Int back=>new Vector3Int(0,0,-1);public static Vector3Int forward=>new Vector3Int(0,0,1);
   public static Vector3Int RoundToInt(Vector3 p)=>FloorToInt(p);
   public static Vector3Int FloorToInt(Vector3 p)=>new Vector3Int((int)Math.Floor(p.x),(int)Math.Floor(p.y),(int)Math.Floor(p.z));
   public static implicit operator Vector3(Vector3Int a)=>new Vector3(a.x,a.y,a.z);public static Vector3Int operator+(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3Int operator-(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x-b.x,a.y-b.y,a.z-b.z);public static Vector3Int operator*(Vector3Int a,int s)=>new Vector3Int(a.x*s,a.y*s,a.z*s);
@@ -57,13 +57,16 @@ public class Block {public UnityEngine.Vector3Int globalWorldPosition;public Blo
 public class ChunkData {public UnityEngine.Vector3Int worldPos;public bool modifiedByPlayer,modifiedAfterSave,HasPendingLighting,betaPopulationDone;public World worldRef;public Dictionary<UnityEngine.Vector3Int,Block> blocks=new Dictionary<UnityEngine.Vector3Int,Block>();public static ChunkData Deserialize(ChunkSaveData s,World w)=>new ChunkData{worldRef=w,worldPos=s.position};public void UpdateLight(){HasPendingLighting=false;}}
 public class ChunkSaveData {public static int serializations;public UnityEngine.Vector3Int position;public static ChunkSaveData Serialize(ChunkData d){serializations++;return new ChunkSaveData{position=d.worldPos};}}
 public class ChunkRenderer:UnityEngine.MonoBehaviour {public ChunkData ChunkData;public void Initialize(ChunkData d){ChunkData=d;}public void UpdateChunk(object mesh){}}
-public class WorldSaveData {public object fluidTicks,droppedItems,mobs;public object SavedMobs=>mobs;}
+public class WorldSaveData {public object fluidTicks,droppedItems,fallingBlocks,mobs;public object SavedMobs=>mobs;}
 public struct DropStateMessage {public WorldDimension dimension;public object item;}
+public struct FallingBlockStateMessage {public WorldDimension dimension;public object block;}
+public struct FallingBlockSyncRequest {}
 public class GameManager {public static GameManager Instance;public List<Player> players=new List<Player>();public World world;public Player localPlayer;public int streamRestarts;public void StartCheckingForChunks(){streamRestarts++;}}
 public static class WorldLoadingScreen {public static bool IsLoading;public static void Begin(){IsLoading=true;}public static void Cancel(){IsLoading=false;}}
 public static class GameAudio {public static void Play(string s,UnityEngine.Vector3 p,float v=1){}public static void Broadcast(string s,UnityEngine.Vector3 p,float v,float pitch,World world){}public static void BroadcastBlock(BlockType t,UnityEngine.Vector3Int p,bool broken,World world=null){}}
 public static class SpecialBlockGeometry {public static bool NormalCube(BlockType b)=>b!=BlockType.Air&&b!=BlockType.Nothing&&b!=BlockType.NetherPortal&&b!=BlockType.Fire;public static bool NoCollision(BlockType b)=>!NormalCube(b);public static byte Shape(BlockType t,byte s)=>s;public static byte State(BlockType t,byte s)=>s;public static UnityEngine.Vector3Int PartnerOffset(BlockType t,byte s)=>UnityEngine.Vector3Int.right;}
 public static class BlockShapesExtensions {public static bool IsPlant(BlockType t)=>t==BlockType.BrownMushroom||t==BlockType.RedMushroom;}
+public static class BlockSurvivalRules {public static bool IsLeaves(BlockType t)=>false;}
 public static class WorldDataHelper {
  public static List<UnityEngine.Vector3Int> GetChunkPositionsInRenderDistance(World w,UnityEngine.Vector3Int p)=>new List<UnityEngine.Vector3Int>{GetChunkPosition(w,p)};
  public static List<UnityEngine.Vector3Int> GetDataPositionsInRenderDistance(World w,UnityEngine.Vector3Int p)=>new List<UnityEngine.Vector3Int>{GetChunkPosition(w,p),GetChunkPosition(w,p)+new UnityEngine.Vector3Int(16,0,0)};
@@ -93,21 +96,24 @@ public partial class World:UnityEngine.MonoBehaviour {
  public static string GetChunkPath(string name,UnityEngine.Vector3Int p,WorldDimension dimension=WorldDimension.Overworld)=>"/nonexistent/test-chunk";
  public Task<Dictionary<UnityEngine.Vector3Int,ChunkData>> LoadChunksAsync(IEnumerable<UnityEngine.Vector3Int> positions,string name)=>Task.FromResult(new Dictionary<UnityEngine.Vector3Int,ChunkData>());
  public void RefreshLightmap(){}
- public void RestoreFluidTicks(object x){}public void RestoreDroppedItems(object x){}public void RestoreMobs(object x){}
+ private void Clear(){worldData.chunkDataDict.Clear();worldData.chunkDict.Clear();}
+ public void RestoreFluidTicks(object x){}public void RestoreDroppedItems(object x){}public void RestoreFallingBlocks(object x){}public void RestoreMobs(object x){}
  public void SendMobSnapshot(Mirror.NetworkConnectionToClient c){}
  public object[] CaptureDroppedItems()=>new object[0];
+ public object[] CaptureFallingBlocks()=>new object[0];
  public static string Compress(string s)=>s;public static string Decompress(string s)=>s;
  private void ResetChunkUpdates(){}
  public Task CastLightFirstTime(List<ChunkData> chunks)=>Task.CompletedTask;
  private ParallelOptions ChunkWorkerOptions()=>new ParallelOptions{MaxDegreeOfParallelism=2};
  public Task<Dictionary<UnityEngine.Vector3Int,object>> CreateMeshDataAsync(List<ChunkData> chunks){meshRebuilds++;return Task.FromResult(new Dictionary<UnityEngine.Vector3Int,object>());}
  public void AddChunkToUpdate(ChunkRenderer c,bool first){}
+ public bool CanPlaceSurvivalBlock(UnityEngine.Vector3Int p,BlockType t,byte state)=>true;
  public bool CanReplaceChest(UnityEngine.Vector3Int p,BlockType t)=>true;public void ReceiveWaterState(UnityEngine.Vector3Int p,byte state){}
  public void SetBlock(UnityEngine.Vector3Int p,BlockType t,byte state=0){WorldDataHelper.SetBlock(this,p,t);QueuePortalValidation(p);}
  private void SetFarmBlock(UnityEngine.Vector3Int p,BlockType t){SetBlock(p,t);}
 }
 public partial class Player:UnityEngine.MonoBehaviour {
- protected World world;public bool isLocalPlayer=true,isServer=true,networkStarted;private bool loadingSavedPlayer;private int knownItemWearRevision;public bool AcceptsItemRevision(int revision)=>revision==0;public ulong SteamId;public bool expectsSavedPlayerData;public void RpcLoadPlayer(Mirror.NetworkConnection c,object data){}public int health=20;public PlayerInventory inventory=new PlayerInventory();public Mirror.NetworkConnectionToClient connectionToClient;
+ protected World world;public bool isLocalPlayer=true,isServer=true,networkStarted,hasBedSpawn;public UnityEngine.Vector3Int bedSpawn;private bool loadingSavedPlayer;private int knownItemWearRevision;public bool AcceptsItemRevision(int revision)=>revision==0;public ulong SteamId;public bool expectsSavedPlayerData;public void RpcLoadPlayer(Mirror.NetworkConnection c,object data){}public int health=20;public PlayerInventory inventory=new PlayerInventory();public Mirror.NetworkConnectionToClient connectionToClient;
  private bool serverMining,localMining,jumpRequest,survivalPositionKnown;private float verticalMomentum,localWalkDistance,localSprintDistance;private UnityEngine.Vector3 velocity,extraForce;
  public void ResetFluidMovement(){}public void ApplyFluidRespawn(UnityEngine.Vector3 p){health=20;}
  public WorldServer.SavePlayerMessage SavePlayer()=>new WorldServer.SavePlayerMessage{inventory=new PlayerInventory.Slot[36]};private bool InMiningReach(UnityEngine.Vector3Int p)=>true;

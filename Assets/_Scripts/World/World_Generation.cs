@@ -117,11 +117,18 @@ public partial class World
         {
             WorldDataHelper.RemoveChunk(this, pos);
         }
+
+        // Newly generated/edited chunks used to remain pinned until the global
+        // five-minute autosave. Write back only dirty chunks leaving the halo,
+        // then evict them just like the clean chunks below.
+        var savedForEviction=await SaveChunksForEvictionAsync(worldGenerationData.chunkDataToSaveAndRemove);
         
         foreach (var pos in worldGenerationData.chunkDataToRemove)
         {
             WorldDataHelper.RemoveChunkData(this, pos);
         }
+        foreach(var pos in savedForEviction)
+            WorldDataHelper.RemoveChunkData(this,pos);
 
         // Generate data chunks
         ConcurrentDictionary<Vector3Int, ChunkData> dataDict = new ConcurrentDictionary<Vector3Int, ChunkData>();

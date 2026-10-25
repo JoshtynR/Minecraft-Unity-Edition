@@ -40,7 +40,7 @@ namespace UnityEngine
  public struct Vector3Int
  {
   public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}
-  public static Vector3Int up=>new Vector3Int(0,1,0);public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));
+  public static Vector3Int up=>new Vector3Int(0,1,0);public static Vector3Int down=>new Vector3Int(0,-1,0);public static Vector3Int left=>new Vector3Int(-1,0,0);public static Vector3Int right=>new Vector3Int(1,0,0);public static Vector3Int back=>new Vector3Int(0,0,-1);public static Vector3Int forward=>new Vector3Int(0,0,1);public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));
   public static Vector3Int operator +(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);
   public static implicit operator Vector3(Vector3Int p)=>new Vector3(p.x,p.y,p.z);
  }
@@ -49,7 +49,7 @@ namespace UnityEngine
  public struct Vector2 {public static Vector2 zero=>new Vector2();public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public static class Input {public static Vector3 mousePosition;}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;width=w;height=h;}public bool Contains(Vector2 p)=>p.x>=x&&p.x<x+width&&p.y>=y&&p.y<y+height;}
- public static class Mathf {public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int FloorToInt(float n)=>(int)Math.Floor(n);}
+ public static class Mathf {public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static float Clamp01(float n)=>Math.Max(0,Math.Min(1,n));public static int FloorToInt(float n)=>(int)Math.Floor(n);}
  public enum CursorLockMode {None,Locked}public static class Cursor {public static CursorLockMode lockState=CursorLockMode.Locked;public static bool visible;}
  public class Texture:Object {}
  public enum TextureFormat {RGBA32}public enum FilterMode {Bilinear}public enum TextureWrapMode {Clamp}
@@ -87,8 +87,8 @@ namespace UnityEngine
  public class GUISkin {public GUIStyle label=new GUIStyle();}
  public static class GUI {public static Color color;public static int depth;public static Matrix4x4 matrix;public static GUISkin skin=new GUISkin();public static List<string> labels=new List<string>();public static int clickButton=-1,buttons;public static void DrawTextureWithTexCoords(Rect r,Texture t,Rect uv){}public static void DrawTexture(Rect r,Texture t){}public static void Box(Rect r,string s){}public static void Label(Rect r,string s){}public static List<Tuple<Rect,string,Color,bool,int>> draws=new List<Tuple<Rect,string,Color,bool,int>>();public static void Label(Rect r,string s,GUIStyle style){labels.Add(s);draws.Add(Tuple.Create(r,s,style.normal.textColor,style.richText,style.fontSize));}public static bool Button(Rect r,string s,GUIStyle style)=>buttons++==clickButton;}
 }
-public class Block {public BlockType type;public byte waterLevel;}
-public static class SpecialBlockGeometry {public static bool NormalCube(BlockType t)=>t==BlockType.Stone;}
+public class Block {public BlockType type;public byte waterLevel,blockShape;}
+public static class SpecialBlockGeometry {public static bool NormalCube(BlockType t)=>t==BlockType.Stone;public static byte State(BlockType t,byte shape)=>shape;public static Vector3Int PartnerOffset(BlockType t,byte state)=>Vector3Int.right;}
 public partial class World:MonoBehaviour
 {
  public bool overworldFog=true;public double CurrentWorldTicks=>1000;public int renderDistance=6,chunkSize=16;
@@ -111,11 +111,12 @@ public partial class Player:MonoBehaviour
  private class FallStub {public void Reset(){}}private readonly FallStub falling=new FallStub();
  private void ResetWalkMotion(){}
  public WorldDimension dimension;public World CurrentWorld=>world??World.Instance;public float PortalOverlay;private void BeginDimensionTravel(WorldDimension target,Vector3 position,bool portal){}
- public World world;public bool networkStarted,isLocalPlayer=true,isFlying,serverFlying,InWater;
+ public World world;public bool networkStarted,isLocalPlayer=true,isFlying,serverFlying,InWater,sleeping,hasBedSpawn;public Vector3Int bedSpawn;public string SleepMessage=>"";
  public bool isServer;public Mirror.NetworkConnection connectionToClient;
  public bool escapeMenuOpen;
  public int hunger;public float saturation,exhaustion;public int movementResets;
  private void ResetFluidMovement(){movementResets++;}
+ private void ShowSleepMessage(string message){}public void RequestWakeFromBed(){}
  public int health=20;public float entityWidth=.3f,entityHeight=1.8f,eyeHeight=1.578f;public Transform cam;
 }
 public class GameManager {public static GameManager Instance;public Player localPlayer;}

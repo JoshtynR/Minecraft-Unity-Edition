@@ -114,6 +114,10 @@ public class ChunkData
 public partial class World
 {
  public bool GenerationBusy;
+    private void QueueSurvivalAround(Vector3Int p) {}
+    private void QueueLeavesAroundRemovedLog(Vector3Int p) {}
+    private void QueueGravityOnChunkActivation(Block block) {}
+    public bool CanPlaceSurvivalBlock(Vector3Int p,BlockType t,byte state)=>true;
     public void DropWheat(Vector3Int p,int age) {}
     private void TickFarming(WaterPosition p,Block block) {}
     private void ValidateFarmNeighbors(Vector3Int p) {}
@@ -159,6 +163,12 @@ public partial class World
     public void TestRefreshTrees() { RefreshTreeMeshes().GetAwaiter().GetResult(); }
     public void TestActivate(ChunkData c) { QueueWaterChunk(c); }
 }
+public static class BlockSurvivalRules
+{
+    public static bool IsLeaves(BlockType t)=>t==BlockType.Leaves||t==BlockType.SpruceLeaves||t==BlockType.BirchLeaves;
+    public static bool IsLog(BlockType t)=>t==BlockType.Log||t==BlockType.SpruceLog||t==BlockType.BirchLog;
+    public static bool CanReplace(BlockType existing,BlockType placed)=>existing==BlockType.Air||existing==BlockType.Fire;
+}
 public partial class WorldServer
 {
     public static WorldServer instance;
@@ -197,13 +207,13 @@ public static partial class IntegrationCheck
         WaterCheck.Assert(c.GetBlock(V(0,2,0)).GetBlockLight()==0&&c.blockLightRemoveQueue.Count>0&&c.blockLightRemoveQueue.Peek().lightLevel==14,"same-opacity emitter removal queued");
         c.SetBlock(V(0,2,0),BlockType.Water);
         var b=c.GetBlock(V(0,2,0)); b.waterLevel=12;
-        WaterCheck.Assert(b is WaterBlock && b.globalWorldPosition.Equals(V(0,2,0)),"placed water mapping/global section coordinates");
-        WaterCheck.Assert(new WaterBlock(b).waterLevel==12,"copied block lost level");
+        WaterCheck.Assert(b.type==BlockType.Water && b.globalWorldPosition.Equals(V(0,2,0)),"placed water mapping/global section coordinates");
+        WaterCheck.Assert(new Block(b).waterLevel==12,"copied block lost level");
         c.SetBlock(V(1,2,0),BlockType.Water);c.GetBlock(V(1,2,0)).waterLevel=3;
         var save=new ChunkSectionSaveData(c.sections[1]);
         WaterCheck.Assert(save.blocks[0].waterLevel==12 && save.blocks[1].waterLevel==3 && save.blocks[0].length==1,"RLE merged unlike water levels");
         var restored=ChunkSection.Deserialize(save,c);
-        WaterCheck.Assert(restored.blocks[0,0,0] is WaterBlock && restored.blocks[0,0,0].waterLevel==12 && restored.blocks[1,0,0].waterLevel==3,"save/load lost flow levels");
+        WaterCheck.Assert(restored.blocks[0,0,0].type==BlockType.Water && restored.blocks[0,0,0].waterLevel==12 && restored.blocks[1,0,0].waterLevel==3,"save/load lost flow levels");
         var legacy=new ChunkSectionSaveData { yOffset=0,blocks=new[]{new BlockSaveData(BlockType.Water,8)} };
         WaterCheck.Assert(ChunkSection.Deserialize(legacy,c).blocks[0,0,0].waterLevel==0,"old water save must default to source");
         c.SetBlock(V(0,2,0),BlockType.Air);WaterCheck.Assert(c.GetBlock(V(0,2,0)).waterLevel==0,"air retained water metadata");
@@ -215,7 +225,7 @@ public static partial class IntegrationCheck
             c.SetBlock(V(1,0,1),type);
             var shapeSave=new ChunkSectionSaveData(c.sections[0]);
             var shapeLoad=ChunkSection.Deserialize(shapeSave,c);
-            WaterCheck.Assert(shapeLoad.blocks[1,0,1].blockShape==(WheatCropRules.IsCrop(type)?SpecialBlockGeometry.Shape(WheatCropRules.Crop,WheatCropRules.LegacyAge(type)):WheatCropRules.IsSoil(type)?SpecialBlockGeometry.Shape(type,SpecialBlockGeometry.DefaultState(type)):BlockShapesExtensions.ForBlock(type)),"saved catalog type reconstructs shape or migrated crop state: "+type);
+            WaterCheck.Assert(shapeLoad.blocks[1,0,1].blockShape==(WheatCropRules.IsCrop(type)?SpecialBlockGeometry.Shape(WheatCropRules.Crop,WheatCropRules.LegacyAge(type)):(WheatCropRules.IsSoil(type)||BlockSurvivalRules.IsLeaves(type))?SpecialBlockGeometry.Shape(type,SpecialBlockGeometry.DefaultState(type)):BlockShapesExtensions.ForBlock(type)),"saved catalog type reconstructs shape or migrated crop/leaf state: "+type);
         }
         for(byte age=0;age<8;age++)
         {

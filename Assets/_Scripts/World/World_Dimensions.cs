@@ -85,6 +85,40 @@ public partial class World
         }
         if(GameManager.Instance!=null)GameManager.Instance.world=world;
         world.RefreshLightmap();
+        TrimInactiveDimensions();
+    }
+
+    // Vanilla does not keep every chunk from every visited dimension resident.
+    // Once an authoritative dimension has been saved and has no players, discard
+    // its object graph and rebuild it from the chunk files on the next portal use.
+    // Remote clients can always receive a fresh snapshot from the server.
+    private static void TrimInactiveDimensions()
+    {
+        foreach(var loaded in LoadedDimensions)
+        {
+            if(loaded==null||loaded==Instance||loaded.GenerationBusy||loaded.isSaving||
+               loaded.worldData.chunkDataDict==null||loaded.worldData.chunkDataDict.Count==0)continue;
+            bool resident=false;
+            if(loaded.DropAuthority&&GameManager.Instance!=null)
+                foreach(var player in GameManager.Instance.players)
+                    if(player!=null&&player.dimension==loaded.dimension&&!player.DimensionTransferInProgress)
+                    {resident=true;break;}
+            if(resident)continue;
+            // Never throw away authoritative edits which have not reached disk.
+            if(loaded.DropAuthority&&loaded.worldData.chunkDataDict.Values.Any(chunk=>chunk.modifiedAfterSave))continue;
+            loaded.ReleaseInactiveDimensionMemory();
+        }
+    }
+
+    private void ReleaseInactiveDimensionMemory()
+    {
+        int dataCount=worldData.chunkDataDict==null?0:worldData.chunkDataDict.Count;
+        int meshCount=worldData.chunkDict==null?0:worldData.chunkDict.Count;
+        if(dataCount==0&&meshCount==0)return;
+        Clear();
+        RestoreDimensionState();
+        Debug.Log("[WorldMemory] Released inactive "+dimension+" dimension: "+dataCount+
+            " data chunks and "+meshCount+" chunk meshes.");
     }
     public static async void SaveAllDimensions()
     {

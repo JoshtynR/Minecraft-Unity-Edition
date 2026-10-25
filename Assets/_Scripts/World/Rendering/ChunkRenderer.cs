@@ -24,35 +24,46 @@ public class ChunkRenderer : MonoBehaviour
     public void Initialize(ChunkData data)
     {
         meshFilter = GetComponent<MeshFilter>();
-        if (mesh == null) mesh = new Mesh();
-        meshFilter.sharedMesh = mesh;
-        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         this.ChunkData = data;
     }
 
     public void RenderMesh(MeshData meshData)
     {
-        if (meshData.sourceChunk != null && !ReferenceEquals(meshData.sourceChunk, ChunkData)) return;
+        if (meshData.sourceChunk != null && !ReferenceEquals(meshData.sourceChunk, ChunkData))
+        {meshData.ReleaseAfterUpload();return;}
         meshData.PrepareForRendering();
-        mesh.Clear();
-        mesh.MarkDynamic();
-        mesh.subMeshCount = 3;
-        mesh.SetVertices(meshData.vertices);
-        mesh.SetUVs(0, meshData.uv);
-        mesh.SetUVs(1, meshData.lightingUVs);
-        mesh.SetUVs(2, meshData.sides);
-        mesh.SetUVs(3, meshData.smoothLightCorners);
-        mesh.SetUVs(4, meshData.faceCoordinates);
-        mesh.SetColors(meshData.colors);
-        mesh.SetNormals(meshData.normals);
-        mesh.SetTriangles(meshData.triangles, 0, false);
-        if (meshData.transparentMesh != null)
-            mesh.SetTriangles(meshData.transparentMesh.triangles, 1, false);
-        if (meshData.waterMesh != null)
-            mesh.SetTriangles(meshData.waterMesh.triangles, 2, false);
-        mesh.bounds = new Bounds(meshData.boundsCenter, meshData.boundsSize);
-        if(meshData.chests!=null||chestVisuals.Count>0)RefreshChestVisuals(meshData.chests);
-        meshData.ReleaseAfterUpload();
+        var uploaded=new Mesh{name="Chunk "+(ChunkData==null?Vector3Int.zero:ChunkData.worldPos),
+            indexFormat=UnityEngine.Rendering.IndexFormat.UInt32,subMeshCount=3};
+        try
+        {
+            uploaded.SetVertices(meshData.vertices);
+            uploaded.SetUVs(0, meshData.uv);
+            uploaded.SetUVs(1, meshData.lightingUVs);
+            uploaded.SetUVs(2, meshData.sides);
+            uploaded.SetUVs(3, meshData.smoothLightCorners);
+            uploaded.SetUVs(4, meshData.faceCoordinates);
+            uploaded.SetColors(meshData.colors);
+            uploaded.SetNormals(meshData.normals);
+            uploaded.SetTriangles(meshData.triangles, 0, false);
+            if (meshData.transparentMesh != null)
+                uploaded.SetTriangles(meshData.transparentMesh.triangles, 1, false);
+            if (meshData.waterMesh != null)
+                uploaded.SetTriangles(meshData.waterMesh.triangles, 2, false);
+            uploaded.bounds = new Bounds(meshData.boundsCenter, meshData.boundsSize);
+            // Chunk meshes are rebuilt rather than edited in place. Discarding
+            // Unity's readable CPU copy leaves only the GPU data after upload.
+            uploaded.UploadMeshData(true);
+            var previous=mesh;mesh=uploaded;uploaded=null;
+            if(meshFilter==null)meshFilter=GetComponent<MeshFilter>();
+            meshFilter.sharedMesh=mesh;
+            if(previous!=null)Destroy(previous);
+            if(meshData.chests!=null||chestVisuals.Count>0)RefreshChestVisuals(meshData.chests);
+        }
+        finally
+        {
+            if(uploaded!=null)Destroy(uploaded);
+            meshData.ReleaseAfterUpload();
+        }
     }
 
     private void RefreshChestVisuals(List<Vector3Int> positions)
@@ -81,8 +92,19 @@ public class ChunkRenderer : MonoBehaviour
         ChunkData.worldRef.AddChunkToUpdate(this);
     }
 
+    public void ReleaseForPool()
+    {
+        if(chestVisuals.Count>0)RefreshChestVisuals(null);
+        ChunkData=null;
+        if(meshFilter==null)meshFilter=GetComponent<MeshFilter>();
+        if(meshFilter!=null)meshFilter.sharedMesh=null;
+        if(mesh!=null)Destroy(mesh);
+        mesh=null;
+    }
+
     private void OnDestroy()
     {
+        ChunkData=null;
         if (mesh != null) Destroy(mesh);
         mesh = null;
     }

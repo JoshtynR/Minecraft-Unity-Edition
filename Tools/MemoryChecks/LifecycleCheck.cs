@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 namespace UnityEngine
 {
- public class Object { public bool destroyed; public static void Destroy(Object o){if(o!=null)o.destroyed=true;} }
+ public class Object { public bool destroyed;public string name; public static void Destroy(Object o){if(o!=null)o.destroyed=true;} }
  public class MonoBehaviour:Object {public GameObject gameObject=new GameObject();public Transform transform=>gameObject.transform; public MeshFilter filter=new MeshFilter(); public T GetComponent<T>() where T:new(){if(typeof(T)==typeof(MeshFilter))return (T)(object)filter;return new T();} }
  public class GameObject:Object {public int layer;public Transform transform=new Transform();public GameObject(string name=""){}public void SetActive(bool active){}public T AddComponent<T>() where T:new()=>new T();}
  public class Transform {public Vector3 localPosition;public void SetParent(Transform parent,bool stays){}}
@@ -15,7 +15,7 @@ namespace UnityEngine
  public struct Vector2 { public float x,y; public Vector2(float x,float y){this.x=x;this.y=y;} }
  public struct Vector3 { public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z); }
  public struct Bounds {public Vector3 center,size;public Bounds(Vector3 center,Vector3 size){this.center=center;this.size=size;}}
- public struct Vector3Int { public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static implicit operator Vector3(Vector3Int p)=>new Vector3(p.x,p.y,p.z);public static Vector3Int operator +(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z); }
+ public struct Vector3Int { public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static Vector3Int zero=>new Vector3Int();public static implicit operator Vector3(Vector3Int p)=>new Vector3(p.x,p.y,p.z);public static Vector3Int operator +(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z); }
  public struct Color {public Color(float r,float g,float b,float a=1){} public static Color Lerp(Color a,Color b,float t)=>a; }
  public static class Time {public static float deltaTime=.02f;}
  public static class Application { public static bool isPlaying=true; }
@@ -30,12 +30,13 @@ namespace UnityEngine
  public static class Debug { public static void LogException(Exception e){throw e;} }
  public class Mesh:Object
  {
-  public int vertexCount=4;public static int created;public int uploads;public int subMeshCount;public Rendering.IndexFormat indexFormat;
+  public int vertexCount=4;public static int created;public int uploads;public int subMeshCount;public Rendering.IndexFormat indexFormat;public bool cpuReleased;
   public List<Vector3> vertices,normals;public Bounds bounds;public List<Vector3> textureUVs;public List<Vector2> faceUVs;public List<Vector2> lightUVs;public List<Vector4> cornerUVs;public Dictionary<int,List<int>> indices=new Dictionary<int,List<int>>();
   public Mesh(){created++;}public void Clear(){}public void MarkDynamic(){}public void SetVertices(List<Vector3> list){vertices=new List<Vector3>(list);vertexCount=list.Count;uploads++;}
   public void SetUVs<T>(int channel,List<T> data){if(channel==4&&data.Count!=vertexCount)throw new Exception("UV5 count does not match mesh vertices");if(channel==0)textureUVs=new List<Vector3>((IEnumerable<Vector3>)(object)data);if(channel==4)faceUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==1)lightUVs=new List<Vector2>((IEnumerable<Vector2>)(object)data);if(channel==3)cornerUVs=new List<Vector4>((IEnumerable<Vector4>)(object)data);}public void SetColors(List<Color> data){}
   public void SetNormals(List<Vector3> data){normals=new List<Vector3>(data);}
   public void SetTriangles(List<int> data,int submesh,bool calculateBounds=true){if(calculateBounds)throw new Exception("bounds calculated during upload");indices[submesh]=new List<int>(data);}
+  public void UploadMeshData(bool noLongerReadable){cpuReleased=noLongerReadable;}
  }
  namespace Rendering { public enum IndexFormat{UInt32} }
 }
@@ -49,15 +50,19 @@ public partial class World
  private void AdvanceAtmosphereClock(float dt){}public double CurrentWorldTicks=>1000;
  public bool GenerationBusy;
  public WorldDimension dimension;private void UpdatePortals(){}private void StreamDimensionPlayers(){}
- public static World Instance;public bool disabled,IsWorldCreated=true;public byte chunksPerFrame=1;
+ public static World Instance;public bool disabled,IsWorldCreated=true,isSaving;public byte chunksPerFrame=1;
  public Color nightColor,dayColor;public float skyLightMultiplier;
  public Data worldData=new Data();public class Data { public Dictionary<Vector3Int,ChunkRenderer> chunkDict=new Dictionary<Vector3Int,ChunkRenderer>(); }
  public int jobs;public TaskCompletionSource<Dictionary<ChunkRenderer,MeshData>> pending;
  private void UpdateWater(){}
  private void UpdateFurnaces(){}
  private void UpdateMobs(){}
+ private void UpdateFallingBlocks(){}
+ private void UpdateLeafDecay(){}
  private void UpdateDroppedItems(){}
  private void UpdateLighting(){}
+ private void ResetBlockSurvival(){}
+ private void ProcessBlockUpdate(Block block){block.OnBlockUpdate();}
  private Task<Dictionary<ChunkRenderer,MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> chunks,bool markModifiedByPlayer)
  {
   if(markModifiedByPlayer)throw new Exception("lighting updates marked player edits");jobs++;
@@ -106,9 +111,10 @@ public static class LifecycleCheck
   Check(geometry.boundsCenter.x==0&&geometry.boundsCenter.y==4&&geometry.boundsSize.x==4&&geometry.boundsSize.y==2,"worker computes bounds including negative coordinates");
   geometry.PrepareForRendering();Check(geometry.normals.Count==12,"worker preparation remains idempotent");
   var empty=new MeshData(true);empty.PrepareForRendering();Check(empty.normals.Count==0&&empty.boundsSize.x==0,"empty chunk bounds and normals");
-  var data=new ChunkData();var renderer=new ChunkRenderer();renderer.Initialize(data);var mesh=renderer.filter.sharedMesh;
-  renderer.Initialize(new ChunkData());Check(renderer.filter.sharedMesh==mesh&&Mesh.created==1,"pool reuse retains owned mesh");
-  var staging=Quad(renderer.ChunkData);renderer.RenderMesh(staging);
+  var data=new ChunkData();var renderer=new ChunkRenderer();renderer.Initialize(data);
+  Check(renderer.filter.sharedMesh==null&&Mesh.created==0,"initialization does not allocate an empty native mesh");
+  var staging=Quad(renderer.ChunkData);renderer.RenderMesh(staging);var mesh=renderer.filter.sharedMesh;
+  Check(mesh!=null&&Mesh.created==1&&mesh.cpuReleased,"chunk upload discards its readable CPU mesh copy");
   Check(mesh.vertices.Count==12,"transparent and water vertices upload exactly once");
   Check(mesh.indices[1][0]==4&&mesh.indices[1][2]==6,"transparent indices offset exactly once");
   Check(mesh.lightUVs.Count==12&&mesh.lightUVs[4].x==15,"lighting channel merged");
@@ -119,12 +125,13 @@ public static class LifecycleCheck
   Check(mesh.normals.Count==12&&mesh.bounds.size.x==3,"renderer uploads worker normals and bounds");
   Check(mesh.faceUVs.Count==12&&mesh.faceUVs[2].x==1,"normalized face coordinates merge independently of cropped images");
   Check(staging.vertices.Count==0&&staging.uv.Count==0&&staging.lightingUVs.Count==0&&staging.normals.Count==0&&staging.transparentMesh.triangles.Count==0&&staging.waterMesh.vertices.Count==0,"managed mesh staging arrays released after native upload");
-  renderer.RenderMesh(new MeshData(true){sourceChunk=renderer.ChunkData});
-  Check(mesh.indices[2].Count==0,"dry rebuild clears previous water triangles");
-  int uploads=mesh.uploads;renderer.Initialize(new ChunkData());renderer.RenderMesh(staging);
-  Check(mesh.uploads==uploads,"stale chunk data rejected after pool reuse");
+  var emptyRebuild=new MeshData(true){sourceChunk=renderer.ChunkData};renderer.RenderMesh(emptyRebuild);
+  var rebuilt=renderer.filter.sharedMesh;
+  Check(rebuilt!=mesh&&mesh.destroyed&&rebuilt.indices[2].Count==0,"rebuild replaces readable mesh and clears previous water triangles");
+  int createdBefore=Mesh.created;renderer.Initialize(new ChunkData());renderer.RenderMesh(new MeshData(true){sourceChunk=data});
+  Check(Mesh.created==createdBefore&&renderer.filter.sharedMesh==rebuilt,"stale chunk data rejected after pool reuse");
   Check(typeof(ChunkRenderer).GetField("MeshData")==null,"renderer doesn't retain staging lists");
-  Invoke(renderer,"OnDestroy");Check(mesh.destroyed,"native mesh owner cleanup");
+  Invoke(renderer,"OnDestroy");Check(rebuilt.destroyed,"native mesh owner cleanup");
   var world=new World();World.Instance=world;renderer=new ChunkRenderer();renderer.Initialize(new ChunkData());
   world.worldData.chunkDict[renderer.ChunkData.worldPos]=renderer;
   for(int i=0;i<100;i++)world.AddChunkToUpdate(renderer);
@@ -132,7 +139,7 @@ public static class LifecycleCheck
   Check(world.jobs==1,"only one active batch");
   var first=world.pending;world.AddChunkToUpdate(renderer);first.SetResult(new Dictionary<ChunkRenderer,MeshData>{{renderer,Quad(renderer.ChunkData)}});
   world.UpdateChunks();Check(world.jobs==2,"changes arriving during build get another batch");
-  world.ResetForTest();var mesh2=renderer.filter.sharedMesh;uploads=mesh2.uploads;
+  world.ResetForTest();var mesh2=renderer.filter.sharedMesh;int uploads=mesh2.uploads;
   world.pending.SetResult(new Dictionary<ChunkRenderer,MeshData>{{renderer,Quad(renderer.ChunkData)}});
   Check(mesh2.uploads==uploads&&world.chunksToUpdate.Count==0,"reset rejects late results and clears queue");
   world.disabled=true;world.AddChunkToUpdate(renderer);world.UpdateChunks();Check(world.jobs==2,"disabled world doesn't dispatch");

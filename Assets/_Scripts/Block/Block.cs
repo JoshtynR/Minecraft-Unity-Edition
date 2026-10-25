@@ -8,7 +8,15 @@ using UnityEngine;
 [Serializable]
 public class Block
 {
-    public Vector3Int position;
+    // A block's local coordinates are always 0..15 on every axis. Packing the
+    // redundant Vector3Int saves eight aligned bytes on each of the millions of
+    // resident Block objects while preserving the existing public API.
+    [NonSerialized] private ushort packedPosition;
+    public Vector3Int position
+    {
+        get => new Vector3Int(packedPosition & 15,(packedPosition >> 4) & 15,(packedPosition >> 8) & 15);
+        private set => packedPosition=(ushort)((value.x & 15)|((value.y & 15)<<4)|((value.z & 15)<<8));
+    }
     public Vector3Int localChunkPosition => position + new Vector3Int(0, section.yOffset, 0);
     public Vector3Int globalWorldPosition => section.dataRef.GetGlobalBlockCoords(localChunkPosition);
 
@@ -272,7 +280,10 @@ public class Block
     public virtual void OnBlockUpdate()
     {
         if(section?.dataRef.worldRef.IsWorldCreated != true) return;
-        
-        // Debug.Log($"Block {type.ToString()} updated");
+        // Water used to allocate a derived Block object for every water cell
+        // solely for this callback. Type dispatch keeps the behavior without a
+        // second object class or replacement allocation on every fluid change.
+        if(type==BlockType.Water)
+            chunkData.worldRef.NotifyWaterBlockChanged(globalWorldPosition);
     }
 }
