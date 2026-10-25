@@ -112,7 +112,8 @@ public class ChunkData
 }
 public partial class World
 {
- public bool GenerationBusy;
+    public bool GenerationBusy;
+    public bool DropAuthority=>Mirror.NetworkServer.active;
     private void QueueSurvivalAround(Vector3Int p) {}
     private void QueueLeavesAroundRemovedLog(Vector3Int p) {}
     private void QueueGravityOnChunkActivation(Block block) {}

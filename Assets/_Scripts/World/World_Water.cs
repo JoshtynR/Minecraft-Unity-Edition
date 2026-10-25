@@ -181,7 +181,7 @@ public partial class World : IWaterWorld
             if(BlockSurvivalRules.IsLog(previousType)&&!BlockSurvivalRules.IsLog(type))QueueLeavesAroundRemovedLog(position);
             QueuePortalValidation(position);
         }
-        if(washedCrop&&NetworkServer.active)DropWheat(position,cropAge);
+        if(washedCrop&&DropAuthority)DropWheat(position,cropAge);
         var changed = chunk.GetBlock(position - chunk.worldPos);
         changed.waterLevel = liquid ? (byte)(level&15) : (byte)0;
         chunk.modifiedAfterSave = true;
@@ -205,7 +205,7 @@ public partial class World : IWaterWorld
                 if(TryGetWaterBlock(state.Key,out _)) { ApplyFluidCode(state.Key,state.Value);states.Remove(state.Key); }
             if(states.Count==0)pendingWaterStates.Remove(chunk.worldPos);
         }
-        if (!NetworkServer.active) return;
+        if (!DropAuthority) return;
         RegisterFluidRuntimeChunk(chunk);
         foreach (var section in chunk.sections)
             foreach (var block in section.blocks)
@@ -271,9 +271,9 @@ public partial class World : IWaterWorld
         for (int i = 0; i < 2 && waterChunksToActivate.Count > 0; i++)
             ActivateWaterChunk(waterChunksToActivate.Dequeue());
         while (waterNotifications.TryDequeue(out var p))
-            if (NetworkServer.active) { waterSimulation.NotifyChanged(WaterPos(p));lavaSimulation.NotifyChanged(WaterPos(p));NotifyFireChange(WaterPos(p));ValidateFarmNeighbors(p); }
+            if (DropAuthority) { waterSimulation.NotifyChanged(WaterPos(p));lavaSimulation.NotifyChanged(WaterPos(p));NotifyFireChange(WaterPos(p));ValidateFarmNeighbors(p); }
 
-        if (NetworkServer.active)
+        if (DropAuthority)
         {
             waterTickTime += Time.deltaTime;
             // 20 game ticks/sec; each material has its own scheduled delay.
