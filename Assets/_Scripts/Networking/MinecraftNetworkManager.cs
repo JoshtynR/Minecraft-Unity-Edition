@@ -17,9 +17,73 @@ public class MinecraftNetworkManager : NetworkManager
     private Coroutine worldRequestRoutine;
     private bool worldRequested;
     private static bool startingHost;
+    public static bool OfflineSessionRequested { get; private set; }
+
+    // Normal local worlds do not need a Mirror server or a bound socket. LAN is
+    // an explicit opt-in because it deliberately makes this machine the host.
+    public static void StartLocalWorld()
+    {
+        if (SettingsManager.LanEnabled) StartLanHost();
+        else StartOfflineWorld();
+    }
+
+    public static void StartOfflineWorld()
+    {
+        if (startingHost || NetworkServer.active || NetworkClient.active)
+        {
+            Debug.LogWarning("World startup requested while a network session is already active. Stop the current session before starting another world.");
+            return;
+        }
+        startingHost = true;
+        try
+        {
+            if (singleton == null) throw new InvalidOperationException("The scene has no active NetworkManager.");
+            PlayerIdentity.BeginSession();
+            OfflineSessionRequested = true;
+            NetworkServer.dontListen = true;
+            WorldLoadingScreen.Begin();
+            string worldScene = string.IsNullOrEmpty(singleton.onlineScene) ? "World" : singleton.onlineScene;
+            SceneManager.LoadScene(worldScene);
+        }
+        catch (Exception error)
+        {
+            OfflineSessionRequested = false;
+            PlayerIdentity.EndSession();
+            WorldLoadingScreen.Cancel();
+            Debug.LogError("Cannot start offline world: " + error);
+        }
+        finally { startingHost = false; }
+    }
+
+    // Used when the World scene is entered directly in the editor. The scene is
+    // already loaded, so only establish the session identity and offline mode.
+    public static void StartOfflineWorldInLoadedScene()
+    {
+        if (NetworkServer.active || NetworkClient.active) return;
+        PlayerIdentity.BeginSession();
+        OfflineSessionRequested = true;
+        NetworkServer.dontListen = true;
+    }
+
+    public static void StartLanHost()
+    {
+        StartNetworkHost(false, true);
+    }
+
+    public static void EndOfflineSession()
+    {
+        if (!OfflineSessionRequested) return;
+        OfflineSessionRequested = false;
+        PlayerIdentity.EndSession();
+    }
 
     // All local host entry points go through this before Mirror starts listening.
     public static void StartGameHost(bool localOnly = true)
+    {
+        StartNetworkHost(localOnly, false);
+    }
+
+    private static void StartNetworkHost(bool localOnly, bool forceLocalTransport)
     {
         if (startingHost || NetworkServer.active || NetworkClient.active)
         {
@@ -30,9 +94,10 @@ public class MinecraftNetworkManager : NetworkManager
         try
         {
             if(singleton==null)throw new InvalidOperationException("The scene has no active NetworkManager.");
-            PrepareClientSession();
-            // Mirror's host client connects in-process. Single-player must not
-            // reserve a public KCP/Steam endpoint (or collide with another build).
+            OfflineSessionRequested = false;
+            PrepareClientSession(forceLocalTransport);
+            // A local-only compatibility host must not reserve a public endpoint.
+            // LAN and Steam hosts deliberately listen for remote connections.
             NetworkServer.dontListen=localOnly;
             singleton.StartHost();
         }
@@ -63,25 +128,27 @@ public class MinecraftNetworkManager : NetworkManager
         finally{startingHost=false;}
     }
 
-    public static void PrepareClientSession()
+    public static void PrepareClientSession(bool forceLocalTransport = false)
     {
         PlayerIdentity.BeginSession();
         var manager = singleton as MinecraftNetworkManager;
         if (manager == null) return;
-        manager.ConfigureSessionTransport();
+        manager.ConfigureSessionTransport(forceLocalTransport);
     }
 
-    private void ConfigureSessionTransport()
+    private void ConfigureSessionTransport(bool forceLocalTransport)
     {
         if (transport is Mirror.FizzySteam.FizzyFacepunch) steamTransport = transport;
-        if (PlayerIdentity.UsingSteam)
+        if (PlayerIdentity.UsingSteam && !forceLocalTransport)
         {
             if (steamTransport != null) transport = steamTransport;
         }
-        else if (transport is Mirror.FizzySteam.FizzyFacepunch)
+        else
         {
-            // The normal prefab already contains KCP. Also support older scenes.
-            var localTransport = GetComponent<KcpTransport>();
+            // LAN and offline-profile hosts use KCP even when Steam is running.
+            // The normal prefab already contains it; also support older scenes.
+            var localTransport = transport as KcpTransport;
+            if (localTransport == null) localTransport = GetComponent<KcpTransport>();
             if (localTransport == null) localTransport = gameObject.AddComponent<KcpTransport>();
             localTransport.enabled = true;
             transport = localTransport;

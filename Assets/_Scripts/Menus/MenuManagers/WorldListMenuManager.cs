@@ -112,7 +112,7 @@ public class WorldListMenuManager : MonoBehaviour
                 joiningMenu.Open();
                 if (!multiplayerMode)
                 {
-                    MinecraftNetworkManager.StartGameHost();
+                    MinecraftNetworkManager.StartLocalWorld();
                 }
                 else
                 {
