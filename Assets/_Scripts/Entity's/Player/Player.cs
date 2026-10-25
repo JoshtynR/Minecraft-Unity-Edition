@@ -322,7 +322,7 @@ public partial class Player : BaseEntity
                 var belowPos = blockPos + Vector3Int.down;
                 var below = world.GetBlock(belowPos);
                 var destination = world.GetBlock(blockPos);
-                BlockType doubled;
+                BlockType doubled = BlockType.Nothing;
                 if (below != null && destination != null &&
                     (destination.type == BlockType.Air || destination.type == BlockType.Nothing) &&
                     StairGeometry.TryDoubleSlab(type, below.type, out doubled))

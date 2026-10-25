@@ -138,7 +138,7 @@ public partial class Player
     private void TickSleeping()
     {
         if(!sleeping)return;
-        var realm=CurrentWorld;var head=realm==null?null:realm.GetBlock(sleepingBed);var foot=realm==null?null:realm.GetBlock(sleepingFoot);
+        var realm=CurrentWorld;var head=realm==null?default(Block):realm.GetBlock(sleepingBed);var foot=realm==null?default(Block):realm.GetBlock(sleepingFoot);
         if((isServer||!networkStarted)&&(health!=sleepHealth||head==null||head.type!=BlockType.Bed||foot==null||foot.type!=BlockType.Bed))WakeFromBed(false);
         else if((isServer||!networkStarted)&&!SleepingAtNight(realm.CurrentWorldTicks))WakeFromBed(true);
         horizontal=vertical=verticalMomentum=0;jumpRequest=false;isSprinting=false;

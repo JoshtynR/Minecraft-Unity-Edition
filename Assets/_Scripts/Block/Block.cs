@@ -119,10 +119,10 @@ public struct Block : IEquatable<Block>
     public static bool operator !=(Block left, Block right) => !left.Equals(right);
     // Preserve the old reference-style null checks while callers migrate: a
     // default Block handle represents no raycast/query result.
-    public static bool operator ==(Block left, object right) => right == null ? !left.initialized : left.Equals(right);
-    public static bool operator !=(Block left, object right) => !(left == right);
-    public static bool operator ==(object left, Block right) => left == null ? !right.initialized : right.Equals(left);
-    public static bool operator !=(object left, Block right) => !(left == right);
+    public static bool operator ==(Block left, Block? right) => !right.HasValue ? !left.initialized : left.Equals(right.Value);
+    public static bool operator !=(Block left, Block? right) => !(left == right);
+    public static bool operator ==(Block? left, Block right) => !left.HasValue ? !right.initialized : right.Equals(left.Value);
+    public static bool operator !=(Block? left, Block right) => !(left == right);
 
     public void Loaded()
     {
