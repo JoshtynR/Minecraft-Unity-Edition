@@ -5,6 +5,14 @@ class Check {
  static MobState Mob(World w,MobType type)=>w.mobs.Spawn(new Vector3(0,64,0),0,type);
  static Player Target(World w,float distance){var player=new Player();player.transform.position=new Vector3(distance,64,0);w.Add(player);return player;}
  static void Main(){
+  Assert(HostileSpawnRules.EffectiveLight(0,15,0)==15,"daylight remains full strength for hostile spawn checks");
+  Assert(HostileSpawnRules.EffectiveLight(0,15,11)==4,"night reduction permits dark surface spawning");
+  Assert(HostileSpawnRules.EffectiveLight(9,0,11)==9,"block light is never reduced by time of day");
+  Assert(HostileSpawnRules.Allows(0,0,0,0),"total darkness always passes the Beta hostile light roll");
+  Assert(!HostileSpawnRules.Allows(8,0,0,7),"effective light eight never permits hostile spawning");
+  Assert(!HostileSpawnRules.Allows(7,0,0,6)&&HostileSpawnRules.Allows(7,0,0,7),"light seven succeeds only on the highest Beta roll");
+  Assert(!HostileSpawnRules.Allows(0,15,0,7)&&HostileSpawnRules.Allows(0,15,11,4),"surface spawning follows day and night skylight");
+  Assert(!HostileSpawnRules.Allows(12,0,15,7),"torches remain spawn-proof at night");
   foreach(MobType type in Enum.GetValues(typeof(MobType)))Assert(MobDefinitions.Get(type).Type==type&&MobBrains.Get(type)!=null,"every registered species has a definition and brain");
   Assert(MobDefinitions.SelectSpawn(false,0)==MobType.Cow&&MobDefinitions.SelectSpawn(false,8)==MobType.Pig&&MobDefinitions.SelectSpawn(false,18)==MobType.Sheep&&MobDefinitions.SelectSpawn(false,30)==MobType.Chicken,"passive spawn selection follows classic creature weights");
   foreach(int fps in new[]{30,60,144,240})
