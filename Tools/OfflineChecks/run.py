@@ -37,6 +37,14 @@ assert 'Offline world ready without starting a Mirror server.' in world_network
 assert 'MinecraftNetworkManager.StartGameHost();' not in world_network
 print('LAN preference UI and direct offline player bootstrap wiring verified.')
 
+world_data=(root/'Assets/_Scripts/World/WorldDataHelper.cs').read_text()
+water=(root/'Assets/_Scripts/World/World_Water.cs').read_text()
+assert 'worldData.owner.DropAuthority || !worldData.owner.isInPlayMode' in world_data
+assert 'if (!DropAuthority) return;' in water and 'if (DropAuthority)' in water
+options=(root/'Assets/Prefabs/OptionsMenu.prefab').read_text()
+assert '  m_Constraint: 1\n  m_ConstraintCount: 2' in options
+print('Offline chunk loading/fluid authority and fixed two-column options layout verified.')
+
 world=(root/'Assets/_Scripts/World/World.cs').read_text()
 assert world.index('IsInitialized = true;') > world.index('NetworkClient.RegisterHandler<StartWorldMessage>')
 server=(root/'Assets/_Scripts/World/WorldServer.cs').read_text()

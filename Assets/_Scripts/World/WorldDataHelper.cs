@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
-using Mirror;
 using UnityEngine;
 
 public static class WorldDataHelper
@@ -130,7 +129,10 @@ public static class WorldDataHelper
     
     public static bool DoesChunkFileExist(WorldData worldData, Vector3Int chunkPos)
     {
-        if (NetworkServer.active || !worldData.owner.isInPlayMode)
+        // A true offline world is authoritative even though Mirror is inactive.
+        // Treating only NetworkServer as authoritative made every saved chunk
+        // look absent and forced a complete regeneration on every offline load.
+        if (worldData.owner.DropAuthority || !worldData.owner.isInPlayMode)
         {
             return File.Exists(World.GetChunkPath(worldData.worldName, chunkPos, worldData.owner.dimension));
         }

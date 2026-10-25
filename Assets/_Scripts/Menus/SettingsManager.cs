@@ -148,6 +148,12 @@ public class SettingsManager : MonoBehaviour
         var clone = Instantiate(source.gameObject, source.transform.parent);
         clone.name = "lanEnabled";
         clone.transform.SetSiblingIndex(source.transform.GetSiblingIndex() + 1);
+        var grid = source.transform.parent.GetComponent<GridLayoutGroup>();
+        if (grid != null)
+        {
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 2;
+        }
         var scaleHandler = clone.GetComponent<guiScaleButton>();
         if (scaleHandler != null) Destroy(scaleHandler);
         var toggleButton = clone.GetComponent<UIToggleButton>();

@@ -23,8 +23,6 @@ public partial class World
     private DroppedItemState[] dropRestore;
     private float dropClock;
     private bool dropSyncRequested;
-    public bool DropAuthority=>!NetworkClient.active||NetworkServer.active;
-
     private void InitializeDroppedItems()
     {
         NetworkClient.RegisterHandler<DropStateMessage>(message=>
