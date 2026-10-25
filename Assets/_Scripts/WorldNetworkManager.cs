@@ -15,14 +15,12 @@ public class WorldNetworkManager : MonoBehaviour
         PlayerIdentity.TryInitializeSteam(480);
         if (!MinecraftNetworkManager.OfflineSessionRequested)
         {
-            // Directly playing the World scene in the editor follows the same
-            // setting as menu-launched worlds instead of silently hosting.
-            if (SettingsManager.LanEnabled)
-            {
-                MinecraftNetworkManager.StartLanHost();
-                return;
-            }
-            MinecraftNetworkManager.StartOfflineWorldInLoadedScene();
+            // Direct World-scene play follows the same proven local-host path as
+            // menu-launched worlds. With LAN disabled Mirror's dontListen mode
+            // does not open a socket or accept remote clients.
+            if (SettingsManager.LanEnabled) MinecraftNetworkManager.StartLanHost();
+            else MinecraftNetworkManager.StartGameHost(true);
+            return;
         }
 
         await StartOfflinePlayer();
