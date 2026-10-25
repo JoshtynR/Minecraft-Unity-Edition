@@ -29,9 +29,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BlackTransparent: 0
+    - _Additive: 0
+    - _BlackCutoff: 0.005
+    - _BlackTransparent: 1
+    - _DstBlend: 10
     - _FogOn: 0
     - _HorizonBand: 0
+    - _SrcBlend: 5
     - _VertexColorOn: 0
     - _ZWrite: 0
     m_Colors:
