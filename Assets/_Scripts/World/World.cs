@@ -58,9 +58,6 @@ public partial class World : MonoBehaviour
     public WorldData worldData;
     public bool IsWorldCreated { get; private set; }
     public bool IsInitialized { get; private set; }
-    // The host owns simulation while networking; a true offline world owns it
-    // whenever there is no remote Mirror client.
-    public bool DropAuthority => !NetworkClient.active || NetworkServer.active;
     
     private Stopwatch fullStopwatch = new Stopwatch();
     

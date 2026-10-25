@@ -696,15 +696,13 @@ public partial class Player : BaseEntity
             {
                 isSprinting = false;
             }
-            if (networkStarted) CmdSetPlayerNamePlateHide(true);
-            else RpcUpdatePlayerNamePlateHidden(true);
+            CmdSetPlayerNamePlateHide(true);
         }
 
         if (Input.GetButtonUp("Crouch"))
         {
             isCrouching = false;
-            if (networkStarted) CmdSetPlayerNamePlateHide(false);
-            else RpcUpdatePlayerNamePlateHidden(false);
+            CmdSetPlayerNamePlateHide(false);
         }
 
         if (Input.GetKeyDown(KeyCode.B))

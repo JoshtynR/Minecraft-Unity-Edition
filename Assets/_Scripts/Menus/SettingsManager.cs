@@ -11,11 +11,6 @@ public class SettingsManager : MonoBehaviour
     public int renderDistance;
     public int guiScale;
     public int fov;
-    public int lanEnabled;
-
-    public static bool LanEnabled => instance != null
-        ? instance.lanEnabled != 0
-        : PlayerPrefs.GetInt("lanEnabled", 0) != 0;
     
     public readonly Dictionary<string,float> settings = new Dictionary<string, float>();
     
@@ -35,7 +30,6 @@ public class SettingsManager : MonoBehaviour
         this.ExecuteAfterFrames(1, () =>
         {
             LoadSettings();
-            EnsureLanToggle();
             foreach (var slider in UISlider.sliders.Values)
             {
                 slider.SetValue(settings[slider.name]);
@@ -57,7 +51,6 @@ public class SettingsManager : MonoBehaviour
         PlayerPrefs.SetInt("renderDistance", renderDistance);
         PlayerPrefs.SetInt("guiScale", guiScale);
         PlayerPrefs.SetInt("fov", fov);
-        PlayerPrefs.SetInt("lanEnabled", lanEnabled);
         
         PlayerPrefs.Save();
         
@@ -70,7 +63,6 @@ public class SettingsManager : MonoBehaviour
         renderDistance = PlayerPrefs.GetInt("renderDistance", 4);
         guiScale = PlayerPrefs.GetInt("guiScale", 2);
         fov = PlayerPrefs.GetInt("fov", 90);
-        lanEnabled = PlayerPrefs.GetInt("lanEnabled", 0);
         
         SetDictionary();
     }
@@ -81,7 +73,6 @@ public class SettingsManager : MonoBehaviour
         settings["renderDistance"] = renderDistance;
         settings["guiScale"] = guiScale;
         settings["fov"] = fov;
-        settings["lanEnabled"] = lanEnabled;
     }
     
     public void SetValue(string name, float value)
@@ -100,9 +91,6 @@ public class SettingsManager : MonoBehaviour
             case "fov":
                 fov = (int)value;
                 break;
-            case "lanEnabled":
-                lanEnabled = (int)value;
-                break;
         }
     }
     
@@ -120,50 +108,11 @@ public class SettingsManager : MonoBehaviour
     
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        this.ExecuteAfterFrames(1, () =>
-        {
-            EnsureLanToggle();
-            foreach (var slider in UISlider.sliders.Values)
-                if (settings.TryGetValue(slider.name, out var sliderValue)) slider.SetValue(sliderValue);
-            foreach (var toggleButton in UIToggleButton.toggleButtons)
-                if (settings.TryGetValue(toggleButton.name, out var toggleValue)) toggleButton.SetValue((int)toggleValue);
-            ApplySettings();
-        });
-    }
-
-    private void EnsureLanToggle()
-    {
-        UIToggleButton source = null;
-        foreach (var toggle in FindObjectsOfType<UIToggleButton>(true))
-        {
-            if (toggle.name == "lanEnabled")
-            {
-                toggle.SetValue(lanEnabled);
-                return;
-            }
-            if (toggle.name == "guiScale") source = toggle;
-        }
-        if (source == null || source.transform.parent == null) return;
-
-        var clone = Instantiate(source.gameObject, source.transform.parent);
-        clone.name = "lanEnabled";
-        clone.transform.SetSiblingIndex(source.transform.GetSiblingIndex() + 1);
-        var grid = source.transform.parent.GetComponent<GridLayoutGroup>();
-        if (grid != null)
-        {
-            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 2;
-        }
-        var scaleHandler = clone.GetComponent<guiScaleButton>();
-        if (scaleHandler != null) Destroy(scaleHandler);
-        var toggleButton = clone.GetComponent<UIToggleButton>();
-        toggleButton.visualNames = new[] { "LAN: OFF", "LAN: ON" };
-        toggleButton.values = new[] { 0, 1 };
-        var button = clone.GetComponent<Button>();
-        button.onClick = new Button.ButtonClickedEvent();
-        button.onClick.AddListener(toggleButton.NextValue);
-        button.onClick.AddListener(SaveSettings);
-        toggleButton.SetValue(lanEnabled);
+        foreach (var slider in UISlider.sliders.Values)
+            slider.SetValue(settings[slider.name]);
+        foreach (var toggleButton in UIToggleButton.toggleButtons)
+            toggleButton.SetValue((int)settings[toggleButton.name]);
+        ApplySettings();
     }
 
     private void OnDestroy()

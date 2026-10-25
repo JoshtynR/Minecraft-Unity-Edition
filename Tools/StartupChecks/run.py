@@ -33,7 +33,7 @@ assert 'WorldSpawnRules.Resolve(world)' in spawn
 assert player.count('if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer))') == 2
 assert 'if (WorldLoadingScreen.IsLoading) return;' in (root / "Assets/_Scripts/Entity's/Player/PlayerInventory.cs").read_text()
 network = (root / 'Assets/_Scripts/Networking/MinecraftNetworkManager.cs').read_text()
-assert network.count('WorldLoadingScreen.Begin();') == 4
+assert network.count('WorldLoadingScreen.Begin();') == 3
 assert 'WorldLoadingScreen.Cancel();' in network
 assert 'WorldLoadingScreen.Begin();' in (root / 'Assets/_Scripts/World/World.cs').read_text()
 assert 'WorldLoadingScreen.Begin();' in (root / 'Assets/_Scripts/Menus/Menu.cs').read_text()
