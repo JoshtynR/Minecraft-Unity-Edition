@@ -20,6 +20,7 @@ public sealed class ZombieBrain : IMobBrain
         world.TickSunlight(mob);
         var target=world.FindMobTarget(mob,false);
         if(target!=null){world.PursueMobTarget(mob,target,1.1f);world.TryMobMelee(mob,target,5);}
+        else world.TickIdleWander(mob);
         return true;
     }
 }
@@ -34,6 +35,7 @@ public sealed class SkeletonBrain : IMobBrain
             world.PursueMobTarget(mob,target,6);
             if(world.MobTargetVisible(mob,target))world.TryShootMobArrow(mob,target);
         }
+        else world.TickIdleWander(mob);
         return true;
     }
 }
@@ -43,6 +45,7 @@ public sealed class CreeperBrain : IMobBrain
     {
         var target=world.FindMobTarget(mob,false);
         if(target!=null)world.PursueMobTarget(mob,target,2.5f);
+        else world.TickIdleWander(mob);
         return world.TickCreeperFuse(mob,target);
     }
 }
@@ -51,7 +54,8 @@ public sealed class SpiderBrain : IMobBrain
     public bool Tick(World world,MobState mob)
     {
         var target=world.FindMobTarget(mob,true);
-        if(target!=null){world.PursueMobTarget(mob,target,1.1f);world.TryMobMelee(mob,target,2);}
+        if(target!=null){world.PursueMobTarget(mob,target,1.1f);world.TrySpiderLeap(mob,target);world.TryMobMelee(mob,target,2);}
+        else world.TickIdleWander(mob);
         return true;
     }
 }

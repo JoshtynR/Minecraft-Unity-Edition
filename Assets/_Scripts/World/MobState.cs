@@ -17,6 +17,7 @@ public sealed class MobState
     public float headYaw,headPitch;
     public bool sheared;
     public int id, health = 10, hurtTicks, hurtCooldown, fleeTicks, decisionTicks, air = 300, fireTicks;
+    public int despawnTicks;
     public Vector3 position, motion;
     public float yaw, targetYaw, fallDistance;
     public bool walking, grounded;
@@ -43,7 +44,7 @@ public static class MobRules
     public static bool Valid(MobState mob) => mob != null && mob.id > 0 && mob.id < int.MaxValue &&
         (int)mob.species>=0 && (int)mob.species<=7 && mob.ageTicks>=0 && mob.ageTicks<=24000 && mob.loveTicks>=0 && mob.loveTicks<=600 && mob.breedCooldown>=0 && mob.breedCooldown<=6000 &&
         mob.fleeceColor>=0&&mob.fleeceColor<16&&mob.health > 0 && mob.health <= MaxHealth(mob.species) && mob.fuseTicks>=0&&mob.fuseTicks<=30&&Finite(mob.position) && Finite(mob.motion) &&
-        Finite(mob.yaw) && Finite(mob.targetYaw) && Finite(mob.fallDistance)&&Finite(mob.headYaw)&&Finite(mob.headPitch)&&mob.eatTicks>=0&&mob.eatTicks<=40&&mob.courtshipTicks>=0&&mob.courtshipTicks<=60;
+        Finite(mob.yaw) && Finite(mob.targetYaw) && Finite(mob.fallDistance)&&Finite(mob.headYaw)&&Finite(mob.headPitch)&&mob.eatTicks>=0&&mob.eatTicks<=40&&mob.courtshipTicks>=0&&mob.courtshipTicks<=60&&mob.despawnTicks>=0;
     public static bool Hostile(MobType species)=>MobDefinitions.Get(species).Hostile;
     public static int MaxHealth(MobType species)=>MobDefinitions.Get(species).MaxHealth;
     public static float Width(MobState mob)=>MobDefinitions.Get(mob.species).Radius*(mob.ageTicks>0?.5f:1);

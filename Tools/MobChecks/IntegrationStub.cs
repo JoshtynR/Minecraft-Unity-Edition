@@ -9,7 +9,6 @@ public static class BlockShapesExtensions {public static bool IsPlant(BlockType 
 public static class BlockSoundRules {public static string Step(BlockType type)=>"step/grass";}
 public struct TestDirection {public Vector3Int vector;public Vector3Int GetVector()=>vector;}
 public static class BlockHelper {public static TestDirection[] directions={new TestDirection{vector=new Vector3Int(0,1,0)}};}
-public static class FluidWorldQueries {public static bool Touches(World w,Vector3 p,float width,float height,BlockType type,out Vector3 flow){flow=Vector3.zero;return false;}public static BlockType AtEye(World w,Vector3 p)=>BlockType.Air;}
 public static class ItemDurability {public static int HitWear(ItemType type)=>1;public static bool Wear(ref InventoryStack stack,int count){stack.damage+=count;return false;}}
 public static class ChestTransactions {public static bool Valid(InventoryStack[] snapshot,InventoryStack cursor)=>snapshot!=null&&snapshot.Length==36;}
 public static class ItemVisualMesh {public static Mesh Build(BlockType type)=>new Mesh{name="Fire geometry double"};}

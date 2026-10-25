@@ -6,6 +6,7 @@ class Check {
  static Player Target(World w,float distance){var player=new Player();player.transform.position=new Vector3(distance,64,0);w.Add(player);return player;}
  static void Main(){
   foreach(MobType type in Enum.GetValues(typeof(MobType)))Assert(MobDefinitions.Get(type).Type==type&&MobBrains.Get(type)!=null,"every registered species has a definition and brain");
+  Assert(MobDefinitions.SelectSpawn(false,0)==MobType.Cow&&MobDefinitions.SelectSpawn(false,8)==MobType.Pig&&MobDefinitions.SelectSpawn(false,18)==MobType.Sheep&&MobDefinitions.SelectSpawn(false,30)==MobType.Chicken,"passive spawn selection follows classic creature weights");
   foreach(int fps in new[]{30,60,144,240})
   {var system=new MobEntitySystem();int ticks=0;for(int frame=0;frame<fps;frame++){system.Accumulate(1f/fps);while(system.TryStep())ticks++;}Assert(ticks==20,"entity system fixed ticks are frame-rate independent");}
   var capped=new MobEntitySystem();capped.Accumulate(100);int caughtUp=0;while(capped.TryStep())caughtUp++;Assert(caughtUp==5,"long frames have bounded entity catch-up");
@@ -28,6 +29,8 @@ class Check {
   world.Step(spider);Assert(player.health==20,"unprovoked spiders are neutral in bright daylight");
   spider.angerTicks=600;world.Step(spider);Assert(player.health==18,"provoked daylight spider attacks");
   world=new World();player=Target(world,1);player.isFlying=true;world.Step(Mob(world,MobType.Zombie));Assert(player.health==20,"flying players are not hostile targets");
+  world=new World();var wandering=Mob(world,MobType.Cow);for(int i=0;i<40&&!wandering.walking;i++){wandering.decisionTicks=0;world.Step(wandering);}Assert(wandering.walking,"idle animals choose a reachable wander path instead of rotating in place");
+  world=new World();player=Target(world,4);spider=Mob(world,MobType.Spider);spider.angerTicks=600;for(int i=0;i<40&&spider.motion.y==0;i++){spider.grounded=true;world.Step(spider);}Assert(spider.motion.y>0,"spiders perform their classic mid-range leap attack");
   world=new World();player=Target(world,2);var creeper=Mob(world,MobType.Creeper);
   for(int i=0;i<29;i++)Assert(world.Step(creeper),"creeper does not explode before thirty ticks");
   Assert(creeper.fuseTicks==29&&world.Step(creeper)==false&&world.mobs.Get(creeper.id)==null,"thirtieth fuse tick explodes and removes creeper once");
@@ -41,7 +44,7 @@ class Check {
   var invulnerable=new Player();invulnerable.health=20;Assert(invulnerable.ApplyMobDamage(2,Vector3.up)&&!invulnerable.ApplyMobDamage(2,Vector3.up)&&invulnerable.health==18,"player hurt window protects from simultaneous mob damage");
 #if FULL_MOB_SYSTEM
   world=new World();player=Target(world,6);player.inventory.held=new InventoryStack(ItemType.Wheat,1);var cow=Mob(world,MobType.Cow);world.Step(cow);Assert(cow.walking&&cow.targetYaw>0,"farm brain follows a player holding wheat");
-  world=new World();player=Target(world,6);player.inventory.held=new InventoryStack(ItemType.Wheat,1);var chicken=Mob(world,MobType.Chicken);world.Step(chicken);Assert(!chicken.walking,"chicken does not follow wheat");player.inventory.held=new InventoryStack(ItemType.Seeds,1);world.Step(chicken);Assert(chicken.walking,"chicken follows seeds");
+  world=new World();player=Target(world,6);player.inventory.held=new InventoryStack(ItemType.Wheat,1);var chicken=Mob(world,MobType.Chicken);chicken.decisionTicks=100;world.Step(chicken);Assert(!chicken.walking,"chicken does not follow wheat");player.inventory.held=new InventoryStack(ItemType.Seeds,1);world.Step(chicken);Assert(chicken.walking,"chicken follows seeds");
   world=new World();var a=Mob(world,MobType.Cow);var b=world.mobs.Spawn(new Vector3(1,64,0),0,MobType.Cow);MobRules.Feed(a);MobRules.Feed(b);
   for(int i=0;i<59;i++)world.Step(a);Assert(world.mobs.Count==2,"breeding waits for courtship");world.Step(a);Assert(world.mobs.Count==3&&a.breedCooldown==6000&&b.breedCooldown==6000,"courtship creates one baby and cools both parents");
   MobState baby=null;foreach(var entity in world.mobs.Entities)if(entity.ageTicks>0)baby=entity;Assert(baby!=null&&baby.ageTicks==24000,"baby starts with twenty-minute growth");
@@ -54,6 +57,8 @@ class Check {
   world=new World();chicken=world.mobs.Spawn(new Vector3(0,72,0),0,MobType.Chicken);for(int i=0;i<200;i++)world.PhysicsStep(chicken);Assert(chicken.health==4&&chicken.position.y>=64,"chicken slow falling lands without fall damage");
   world=new World();var tall=Mob(world,MobType.Zombie);var small=world.mobs.Spawn(tall.position,0,MobType.Chicken);world.cells[new Vector3Int(0,65,0)]=new Block{type=BlockType.Stone};Assert(!world.MobBodyClear(tall,tall.position)&&world.MobBodyClear(small,small.position),"shared collision clearance uses each species height");
   world=new World();foreach(MobType type in Enum.GetValues(typeof(MobType)))world.mobs.Spawn(new Vector3((int)type*3,64,5),0,type);int meshStart=Mesh.all.Count;world.RenderForCheck();Assert(world.RendererCount==8,"all eight species construct their actual render hierarchy");world.ClearForCheck();Assert(world.RendererCount==0&&world.mobs.Count==0,"world teardown removes entities and renderers");for(int i=meshStart;i<Mesh.all.Count;i++)Assert(Mesh.all[i].destroyed,"world releases every owned model mesh");
+  world=new World();cow=Mob(world,MobType.Cow);world.RenderForCheck();world.HitMob(cow.id,10,new Vector3(-1,64,0));Time.deltaTime=.05f;world.RenderForCheck();Assert(MeshRenderer.lastHurt==1&&world.RendererCount==1,"dying body uses the hurt-red shader during its fall");for(int i=1;i<20;i++)world.RenderForCheck();Assert(world.deathSmoke==1&&world.RendererCount==0,"death holds the red body for twenty ticks then emits one smoke puff");
+  world=new World();cow=Mob(world,MobType.Cow);world.RenderForCheck();world.mobs.Remove(cow.id);world.RenderForCheck();Assert(world.RendererCount==0&&world.deathSmoke==0,"ordinary entity removal does not fake a death animation");
   world=new World();for(int i=0;i<40;i++)world.mobs.Spawn(new Vector3(i,64,0),0,(MobType)(i%8));var connection=new Mirror.NetworkConnectionToClient{identity=new GameObject()};world.SendMobSnapshot(connection);Assert(connection.messages.Count==2&&((MobBatchMessage)connection.messages[0]).reset&&!((MobBatchMessage)connection.messages[1]).reset,"generic mob snapshots retain reset and batching semantics");
   var client=new World{DropAuthority=false};client.RegisterForCheck();foreach(var message in connection.messages)Mirror.NetworkClient.Deliver((MobBatchMessage)message);Assert(client.mobs.Count==40,"client restores all species through generic messages");
 #endif

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 
-public struct MobStateMessage : NetworkMessage { public WorldDimension dimension;public MobState mob; public bool removed; }
+public struct MobStateMessage : NetworkMessage { public WorldDimension dimension;public MobState mob; public bool removed,died; }
 public struct MobBatchMessage : NetworkMessage { public WorldDimension dimension;public MobState[] mobs; public bool reset; }
 public struct MobSyncRequest : NetworkMessage { }
 
@@ -14,7 +14,7 @@ public partial class World
     [Tooltip("Enable natural cow, pig, sheep and chicken herds.")]
     public bool spawnPassiveMobs = true;
     [UnityEngine.Serialization.FormerlySerializedAs("maximumActiveCows")]
-    [Range(0,64)] public int maximumActivePassiveMobs = 24;
+    [Range(0,128)] public int maximumActivePassiveMobs = 15;
     // sceneLoaded can restore saves before Start. Keep runtime stores outside
     // Unity serialization and initialize on access, including after script reload.
     [System.NonSerialized] private MobEntitySystem runtimeMobEntities;
@@ -33,6 +33,8 @@ public partial class World
     private List<Vector3Int> mobSpawnCandidates => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobSpawnCandidates, () => new List<Vector3Int>());
     [System.NonSerialized] private List<int> runtimeMobVisualRemovals;
     private List<int> mobVisualRemovals => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobVisualRemovals, () => new List<int>());
+    [System.NonSerialized] private HashSet<int> runtimeMobDeaths;
+    private HashSet<int> mobDeaths => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMobDeaths, () => new HashSet<int>());
     private MobSaveData mobRestore;
     private JavaRandom mobRandom;
     [System.NonSerialized] private Dictionary<MobType,Mesh[]> runtimeMobMeshesByType;
@@ -51,7 +53,9 @@ public partial class World
         {
             if (DropAuthority || message.mob == null) return;
             var world=FindDimension(message.dimension);if(world==null)return;
-            if (message.removed) world.mobs.Remove(message.mob.id); else world.mobs.Apply(message.mob);
+            if (message.removed)
+            {if(message.died)world.mobDeaths.Add(message.mob.id);world.mobs.Remove(message.mob.id);}
+            else world.mobs.Apply(message.mob);
         });
         NetworkClient.RegisterHandler<MobBatchMessage>(message =>
         {
@@ -94,10 +98,11 @@ public partial class World
         if (batch.Count > 0 || first) connection.Send(new MobBatchMessage { dimension=dimension,mobs = batch.ToArray(), reset = first });
         SendMobArrows(connection);
     }
-    private void BroadcastMob(MobState mob, bool removed = false)
+    private void BroadcastMob(MobState mob, bool removed = false, bool died = false)
     {
+        if(removed&&died)mobDeaths.Add(mob.id);
         if(removed)mobEntities.RemoveRuntime(mob.id);
-        if (NetworkServer.active) NetworkServer.SendToAll(new MobStateMessage { dimension=dimension,mob = mob.Copy(), removed = removed });
+        if (NetworkServer.active) NetworkServer.SendToAll(new MobStateMessage { dimension=dimension,mob = mob.Copy(), removed = removed,died=died });
     }
     private void RefreshMobPlayers()
     {
@@ -175,7 +180,7 @@ public partial class World
     }
     private void SpawnNaturalMobs()
     {
-        int passiveCount=0;foreach(var animal in activeMobs)if(!MobRules.Hostile(animal.species))passiveCount++;
+        int passiveCount=0;foreach(var animal in mobs.Entities)if(!MobRules.Hostile(animal.species))passiveCount++;
         if (!spawnPassiveMobs || skyLightReduction >= 7 || maximumActivePassiveMobs <= passiveCount || mobs.Count >= MobStore.Capacity || mobPlayers.Count == 0) return;
         mobSpawnCandidates.Clear();
         foreach(var entry in mobSpawnCooldowns)if(!worldData.chunkDict.ContainsKey(entry.Key)||mobTick>=entry.Value)mobSpawnCandidates.Add(entry.Key);
@@ -184,7 +189,7 @@ public partial class World
         {
             var center = (Vector3)p + new Vector3(chunkSize*.5f,0,chunkSize*.5f);
             float distance = MobPlayerDistance(center);
-            if (distance < 72*72 && distance > 20*20 && !mobSpawnCooldowns.ContainsKey(p)) mobSpawnCandidates.Add(p);
+            if (distance < 128*128 && distance > 24*24 && !mobSpawnCooldowns.ContainsKey(p)) mobSpawnCandidates.Add(p);
         }
         // Visit only a bounded number of loaded chunks per second. This stream
         // never touches terrain/population RNG or rewrites terrain blocks.
@@ -193,11 +198,13 @@ public partial class World
             int index=mobRandom.NextInt(mobSpawnCandidates.Count);var chunk=mobSpawnCandidates[index];mobSpawnCandidates.RemoveAt(index);
             mobSpawnCooldowns[chunk]=mobTick+200;
             if(mobRandom.NextInt(4)!=0)continue;
-            int herd=2+mobRandom.NextInt(3),spawned=0;
-            var species=(MobType)mobRandom.NextInt(4);
+            var species=MobDefinitions.SelectSpawn(false,mobRandom.NextInt(40));
+            var definition=MobDefinitions.Get(species);
+            int herd=definition.MinGroup+mobRandom.NextInt(definition.MaxGroup-definition.MinGroup+1),spawned=0;
+            int anchorX=chunk.x+mobRandom.NextInt(chunkSize),anchorZ=chunk.z+mobRandom.NextInt(chunkSize);
             for(int attempt=0;attempt<24 && spawned<herd && passiveCount+spawned<maximumActivePassiveMobs;attempt++)
             {
-                int x=chunk.x+mobRandom.NextInt(chunkSize),z=chunk.z+mobRandom.NextInt(chunkSize);
+                int x=anchorX+mobRandom.NextInt(11)-5,z=anchorZ+mobRandom.NextInt(11)-5;
                 if(!FindMobGround(x,z,true,species,out var feet) || MobPlayerDistance(feet)<24*24)continue;
                 var mob=mobs.Spawn(feet,mobRandom.NextInt(360),species);if(mob==null)break;
                 BroadcastMob(mob);spawned++;
@@ -233,7 +240,7 @@ public partial class World
                     }
                     else if(!mob.sheared)SpawnItemDrop(new InventoryStack(MobRules.Wool(mob),1),mob.position+Vector3.up*.5f);
                 }
-                BroadcastMob(mob,true);
+                BroadcastMob(mob,true,true);
             }
         }
         else BroadcastMob(mob);
@@ -294,11 +301,6 @@ public partial class World
         bool lava=FluidWorldQueries.Touches(this,mob.position,width,height,BlockType.Lava,out _);
         bool fire=FluidWorldQueries.Touches(this,mob.position,width,height,BlockType.Fire,out _);
         mob.grounded=BlockCollision.Supported(this,mob.position,width,height);
-        if(--mob.decisionTicks<=0)
-        {
-            mob.decisionTicks=40+mobRandom.NextInt(100);mob.walking=mobRandom.NextInt(3)!=0;
-            if(mob.fleeTicks<=0)mob.targetYaw=mobRandom.NextInt(360);
-        }
         if(!TickMobBrain(mob))return;
         mob.yaw=Mathf.MoveTowardsAngle(mob.yaw,mob.targetYaw,15);
         float speed=mob.walking?MobDefinitions.Get(mob.species).WalkSpeed:0;
@@ -353,7 +355,7 @@ public partial class World
                 RefreshMobPlayers();mobEntities.Accumulate(Time.deltaTime);
                 while(mobEntities.TryStep())
                 {
-                    mobTick=mobEntities.Tick;activeMobs.Clear();mobNavigationBudget=2;
+                    mobTick=mobEntities.Tick;activeMobs.Clear();mobNavigationBudget=4;
                     foreach(var mob in mobs.Entities)
                     {
                         bool loaded=MobAreaLoaded(mob.position);float distance=MobPlayerDistance(mob.position);
@@ -364,8 +366,14 @@ public partial class World
                     for(int index=0;index<activeMobs.Count;index++)
                     {
                         var mob=activeMobs[(start+index)%activeMobs.Count];
-                        if(MobRules.Hostile(mob.species)&&MobPlayerDistance(mob.position)>128*128){mobs.Remove(mob.id);BroadcastMob(mob,true);continue;}
-                        if(MobPlayerDistance(mob.position)>=80*80)continue;
+                        float playerDistance=MobPlayerDistance(mob.position);
+                        if(MobRules.Hostile(mob.species))
+                        {
+                            if(playerDistance>128*128){mobs.Remove(mob.id);BroadcastMob(mob,true);continue;}
+                            if(playerDistance>32*32)mob.despawnTicks++;else mob.despawnTicks=0;
+                            if(mob.despawnTicks>600&&mobRandom.NextInt(800)==0){mobs.Remove(mob.id);BroadcastMob(mob,true);continue;}
+                        }
+                        if(playerDistance>=80*80)continue;
                         TickMob(mob);if(mob.health>0&&mobs.Get(mob.id)!=null&&mobTick%3==0)BroadcastMob(mob);
                     }
                     mobEntities.Separate(activeMobs);
@@ -385,9 +393,10 @@ public partial class World
         foreach(var pair in mobVisuals)
         {
             var mob=mobs.Get(pair.Key);
-            if(mob==null ? !pair.Value.AnimateDeath(Time.deltaTime) : !MobAreaLoaded(mob.position))mobVisualRemovals.Add(pair.Key);
+            if(mob==null ? (!mobDeaths.Contains(pair.Key)||!pair.Value.AnimateDeath(Time.deltaTime,this)) : !MobAreaLoaded(mob.position))mobVisualRemovals.Add(pair.Key);
         }
-        foreach(int id in mobVisualRemovals){mobVisuals[id].Dispose();mobVisuals.Remove(id);}
+        foreach(int id in mobVisualRemovals){mobVisuals[id].Dispose();mobVisuals.Remove(id);mobDeaths.Remove(id);}
+        mobDeaths.RemoveWhere(id=>!mobVisuals.ContainsKey(id));
         foreach(var mob in mobs.Entities)
         {
             bool visible=MobAreaLoaded(mob.position);
@@ -423,7 +432,7 @@ public partial class World
         foreach(var pair in mobMaterialsByType)if(pair.Value!=null)Destroy(pair.Value);
         mobMeshesByType.Clear();mobMaterialsByType.Clear();
         foreach(var visual in mobVisuals.Values)visual.Dispose();mobVisuals.Clear();
-        mobEntities.Clear();mobSpawnCooldowns.Clear();activeMobs.Clear();mobPlayers.Clear();mobSpawnCandidates.Clear();mobVisualRemovals.Clear();
+        mobEntities.Clear();mobSpawnCooldowns.Clear();activeMobs.Clear();mobPlayers.Clear();mobSpawnCandidates.Clear();mobVisualRemovals.Clear();mobDeaths.Clear();
         mobSpawnClock=0;mobTick=0;mobSyncRequested=false;mobRandom=null;
         if(discardSave)mobRestore=null;
     }

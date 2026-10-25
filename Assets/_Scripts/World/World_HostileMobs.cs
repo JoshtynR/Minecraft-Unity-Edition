@@ -10,7 +10,7 @@ public partial class World
 {
     [Header("Hostile mobs")]
     public bool spawnHostileMobs=true;
-    [Range(0,128)] public int maximumActiveHostiles=32;
+    [Range(0,128)] public int maximumActiveHostiles=70;
     private sealed class MobArrow
     {public int id,owner,ticks;public Vector3 position,motion;public Vector3Int block;public bool embedded;}
     [System.NonSerialized] private List<MobArrow> runtimeMobArrows;
@@ -36,28 +36,35 @@ public partial class World
     private void SpawnNaturalHostiles()
     {
         if(!spawnHostileMobs||dimension!=WorldDimension.Overworld||mobPlayers.Count==0)return;
-        int count=0;foreach(var animal in activeMobs)if(MobRules.Hostile(animal.species))count++;
+        int count=0;foreach(var animal in mobs.Entities)if(MobRules.Hostile(animal.species))count++;
         if(count>=maximumActiveHostiles||mobs.Count>=MobStore.Capacity)return;
         mobSpawnCandidates.Clear();
         foreach(var chunk in worldData.chunkDict.Keys)
-        {float d=MobPlayerDistance((Vector3)chunk+Vector3.one*8);if(d>24*24&&d<72*72)mobSpawnCandidates.Add(chunk);}
+        {float d=MobPlayerDistance((Vector3)chunk+Vector3.one*8);if(d>24*24&&d<128*128)mobSpawnCandidates.Add(chunk);}
         for(int attempt=0;attempt<24&&mobSpawnCandidates.Count>0;attempt++)
         {
             var chunk=mobSpawnCandidates[mobRandom.NextInt(mobSpawnCandidates.Count)];
-            var feet=(Vector3)(chunk+new Vector3Int(mobRandom.NextInt(16),mobRandom.NextInt(16),mobRandom.NextInt(16)))+new Vector3(.5f,0,.5f);
-            if(MobPlayerDistance(feet)<24*24||!MobAreaLoaded(feet))continue;
-            var block=GetBlock(feet);if(block==null||block.type!=BlockType.Air||Math.Max(block.GetBlockLight(),block.GetSkyLight()-skyLightReduction)>7)continue;
-            var species=(MobType)(4+mobRandom.NextInt(4));
-            var candidate=new MobState{species=species,position=feet};
-            float width=MobRules.Width(candidate),height=MobRules.BodyHeight(candidate);
-            bool clear=BlockCollision.Supported(this,feet,width,height);
-            for(int x=Mathf.FloorToInt(feet.x-width);clear&&x<=Mathf.FloorToInt(feet.x+width);x++)
-            for(int z=Mathf.FloorToInt(feet.z-width);clear&&z<=Mathf.FloorToInt(feet.z+width);z++)
-            for(int y=Mathf.FloorToInt(feet.y);clear&&y<=Mathf.FloorToInt(feet.y+height);y++)
-                if(GetBlock(new Vector3Int(x,y,z)).type!=BlockType.Air)clear=false;
-            foreach(var existing in mobs.Entities)if(MobRules.Bounds(existing).Intersects(MobRules.Bounds(candidate)))clear=false;
-            if(!clear)continue;
-            var mob=mobs.Spawn(feet,mobRandom.NextInt(360),species);if(mob!=null)BroadcastMob(mob);break;
+            var definition=MobDefinitions.Get(MobDefinitions.SelectSpawn(true,mobRandom.NextInt(40)));
+            int anchorX=chunk.x+mobRandom.NextInt(16),anchorY=chunk.y+mobRandom.NextInt(16),anchorZ=chunk.z+mobRandom.NextInt(16);
+            int group=definition.MinGroup+mobRandom.NextInt(definition.MaxGroup-definition.MinGroup+1),spawned=0;
+            for(int member=0;member<group&&count+spawned<maximumActiveHostiles;member++)
+            {
+                Vector3 feet=Vector3.zero;bool found=false;
+                for(int placement=0;placement<8&&!found;placement++)
+                {
+                    feet=new Vector3(anchorX+mobRandom.NextInt(11)-5+.5f,anchorY+mobRandom.NextInt(7)-3,anchorZ+mobRandom.NextInt(11)-5+.5f);
+                    if(MobPlayerDistance(feet)<24*24||!MobAreaLoaded(feet))continue;
+                    var block=GetBlock(feet);if(block==null||block.type!=BlockType.Air||Math.Max(block.GetBlockLight(),block.GetSkyLight()-skyLightReduction)>7)continue;
+                    var candidate=new MobState{species=definition.Type,position=feet};
+                    bool clear=MobWalkable(candidate,feet);
+                    foreach(var existing in mobs.Entities)if(MobRules.Bounds(existing).Intersects(MobRules.Bounds(candidate))){clear=false;break;}
+                    found=clear;
+                }
+                if(!found)continue;
+                var mob=mobs.Spawn(feet,mobRandom.NextInt(360),definition.Type);if(mob==null)break;
+                BroadcastMob(mob);spawned++;
+            }
+            if(spawned>0)break;
         }
     }
     private bool TickMobBrain(MobState mob)
@@ -100,6 +107,15 @@ public partial class World
         var delta=target.transform.position-mob.position;
         if(mob.attackTicks!=0||delta.sqrMagnitude>=2.25f||!MobTargetVisible(mob,target))return;
         mob.attackTicks=20;target.ApplyMobDamage(MobDifficultyDamage(damage),delta);
+    }
+    internal void TrySpiderLeap(MobState mob,Player target)
+    {
+        var delta=target.transform.position-mob.position;float square=delta.x*delta.x+delta.z*delta.z;
+        if(!mob.grounded||mob.attackTicks>0||square<2*2||square>6*6||mobRandom.NextInt(10)!=0)return;
+        float length=Mathf.Sqrt(square);if(length<.001f)return;
+        mob.motion.x=delta.x/length*.4f+mob.motion.x*.2f;
+        mob.motion.z=delta.z/length*.4f+mob.motion.z*.2f;
+        mob.motion.y=.4f;mob.attackTicks=10;
     }
     internal void TryShootMobArrow(MobState mob,Player target)
     {

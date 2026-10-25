@@ -7,13 +7,16 @@ public sealed class MobDefinition
 {
     public readonly MobType Type;
     public readonly int MaxHealth;
+    public readonly int SpawnWeight,MinGroup,MaxGroup;
     public readonly float Radius, Height, WalkSpeed;
     public readonly MobBehaviorKind Behavior;
     public readonly string MaterialResource, SoundFamily, AmbientSound,HurtSound,DeathSound,StepSound;
     public bool Hostile => Behavior != MobBehaviorKind.FarmAnimal;
-    internal MobDefinition(MobType type,int health,float radius,float height,float speed,MobBehaviorKind behavior)
+    internal MobDefinition(MobType type,int health,float radius,float height,float speed,MobBehaviorKind behavior,
+        int spawnWeight=10,int minGroup=4,int maxGroup=4)
     {
         Type=type;MaxHealth=health;Radius=radius;Height=height;WalkSpeed=speed;Behavior=behavior;
+        SpawnWeight=spawnWeight;MinGroup=minGroup;MaxGroup=maxGroup;
         MaterialResource=type+"Material";SoundFamily="mob/"+type.ToString().ToLowerInvariant();
         AmbientSound=type==MobType.Creeper?null:SoundFamily+"/say";
         HurtSound=(type==MobType.Pig||type==MobType.Sheep||type==MobType.Spider||type==MobType.Creeper)?SoundFamily+"/say":SoundFamily+"/hurt";
@@ -25,10 +28,11 @@ public sealed class MobDefinition
 public static class MobDefinitions
 {
     private static readonly MobDefinition[] definitions={
-        new MobDefinition(MobType.Cow,10,.45f,1.3f,.065f,MobBehaviorKind.FarmAnimal),
-        new MobDefinition(MobType.Pig,10,.45f,.9f,.07f,MobBehaviorKind.FarmAnimal),
-        new MobDefinition(MobType.Sheep,8,.45f,1.3f,.07f,MobBehaviorKind.FarmAnimal),
-        new MobDefinition(MobType.Chicken,4,.15f,.7f,.07f,MobBehaviorKind.FarmAnimal),
+        // Beta creature-list weights: sheep 12, pigs/chickens 10, cows 8.
+        new MobDefinition(MobType.Cow,10,.45f,1.3f,.065f,MobBehaviorKind.FarmAnimal,8),
+        new MobDefinition(MobType.Pig,10,.45f,.9f,.07f,MobBehaviorKind.FarmAnimal,10),
+        new MobDefinition(MobType.Sheep,8,.45f,1.3f,.07f,MobBehaviorKind.FarmAnimal,12),
+        new MobDefinition(MobType.Chicken,4,.15f,.7f,.07f,MobBehaviorKind.FarmAnimal,10),
         new MobDefinition(MobType.Zombie,20,.3f,1.8f,.1f,MobBehaviorKind.Zombie),
         new MobDefinition(MobType.Skeleton,20,.3f,1.8f,.1f,MobBehaviorKind.Skeleton),
         new MobDefinition(MobType.Creeper,20,.3f,1.7f,.1f,MobBehaviorKind.Creeper),
@@ -37,4 +41,12 @@ public static class MobDefinitions
     public static bool Valid(MobType type)=>(int)type>=0&&(int)type<definitions.Length;
     public static MobDefinition Get(MobType type)
     {if(!Valid(type))throw new ArgumentOutOfRangeException(nameof(type));return definitions[(int)type];}
+    public static MobType SelectSpawn(bool hostile,int roll)
+    {
+        int first=hostile?4:0,last=hostile?definitions.Length:4,total=0;
+        for(int i=first;i<last;i++)total+=definitions[i].SpawnWeight;
+        roll=((roll%total)+total)%total;
+        for(int i=first;i<last;i++)if((roll-=definitions[i].SpawnWeight)<0)return definitions[i].Type;
+        return definitions[first].Type;
+    }
 }

@@ -66,6 +66,23 @@ public sealed class FluidEffects : MonoBehaviour
         if(kind==4&&Time.unscaledTime>=nextFireSound)
         {nextFireSound=Time.unscaledTime+GameAudio.Variation(3,5);GameAudio.Play("fire/fire",position,.2f);}
     }
+    public void EmitMobDeath(Vector3 position,float radius,float height)
+    {
+        // Classic entity death uses twenty expanding smoke/explode particles.
+        // Reuse the bounded smoke emitter so deaths allocate no GameObjects.
+        for(int i=0;i<20;i++)
+        {
+            var emit=new ParticleSystem.EmitParams();
+            emit.position=position+new Vector3(((float)cosmetic.NextDouble()*2-1)*radius,(float)cosmetic.NextDouble()*height,((float)cosmetic.NextDouble()*2-1)*radius);
+            var center=position+Vector3.up*height*.5f;
+            var outward=new Vector3(emit.position.x-center.x,emit.position.y-center.y,emit.position.z-center.z);
+            emit.velocity=outward.normalized*.15f+Vector3.up*(.2f+(float)cosmetic.NextDouble()*.15f);
+            emit.startLifetime=.65f+(float)cosmetic.NextDouble()*.35f;
+            emit.startSize=.12f+(float)cosmetic.NextDouble()*.12f;
+            emit.startColor=new Color(.72f,.72f,.72f,.85f);
+            emitters[0].Emit(emit,1);
+        }
+    }
     private void Update()
     {
         displayTime+=Time.deltaTime;if(displayTime<.05f)return;displayTime=0;

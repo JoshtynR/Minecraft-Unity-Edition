@@ -14,8 +14,15 @@ public sealed class MobNavigation
     private Vector3Int previousGoal;
     private int nextSearch,index;
     public int SearchCount {get;private set;}
-    private static readonly Vector3Int[] directions={new Vector3Int(1,0,0),new Vector3Int(-1,0,0),new Vector3Int(0,0,1),new Vector3Int(0,0,-1)};
-    private static int Heuristic(Vector3Int a,Vector3Int b)=>10*(Math.Abs(a.x-b.x)+Math.Abs(a.z-b.z))+4*Math.Abs(a.y-b.y);
+    private static readonly Vector3Int[] directions={
+        new Vector3Int(1,0,0),new Vector3Int(-1,0,0),new Vector3Int(0,0,1),new Vector3Int(0,0,-1),
+        new Vector3Int(1,0,1),new Vector3Int(1,0,-1),new Vector3Int(-1,0,1),new Vector3Int(-1,0,-1)};
+    private static readonly int[] vertical={0,1,-1,-2,-3};
+    private static int Heuristic(Vector3Int a,Vector3Int b)
+    {
+        int dx=Math.Abs(a.x-b.x),dz=Math.Abs(a.z-b.z),diagonal=Math.Min(dx,dz);
+        return diagonal*14+(Math.Max(dx,dz)-diagonal)*10+4*Math.Abs(a.y-b.y);
+    }
     public bool SearchDue(Vector3 goal,int tick)=>tick>=nextSearch||(Vector3Int.FloorToInt(goal)-previousGoal).sqrMagnitude>4;
     public Vector3 Steer(MobState mob,Vector3 goal,int tick,Func<Vector3,bool> walkable,Func<Vector3,bool> clear,bool allowSearch=true)
     {
@@ -39,14 +46,19 @@ public sealed class MobNavigation
             if(current.x==goal.x&&current.z==goal.z&&Math.Abs(current.y-goal.y)<=1){best=current;break;}
             foreach(var direction in directions)
             {
-                for(int candidate=0;candidate<3;candidate++)
+                for(int candidate=0;candidate<vertical.Length;candidate++)
                 {
-                    int dy=candidate==0?0:candidate==1?1:-1;var next=current+direction+new Vector3Int(0,dy,0);
-                    if(Math.Abs(next.x-start.x)>16||Math.Abs(next.z-start.z)>16||closed.Contains(next))continue;
+                    int dy=vertical[candidate];var rise=new Vector3Int(0,dy,0);var next=current+direction+rise;
+                    if(Math.Abs(next.x-start.x)>24||Math.Abs(next.z-start.z)>24||closed.Contains(next))continue;
                     if(!walkable((Vector3)next+new Vector3(.5f,0,.5f)))continue;
+                    // Diagonal movement may not squeeze through the joined
+                    // corners of two solid blocks.
+                    if(direction.x!=0&&direction.z!=0&&
+                       (!walkable((Vector3)(current+new Vector3Int(direction.x,0,0)+rise)+new Vector3(.5f,0,.5f))||
+                        !walkable((Vector3)(current+new Vector3Int(0,0,direction.z)+rise)+new Vector3(.5f,0,.5f))))continue;
                     // A one-block ascent needs overhead clearance in the source cell.
                     if(dy==1&&!clear((Vector3)current+new Vector3(.5f,1,.5f)))continue;
-                    int cost=costs[current]+10+Math.Abs(dy)*4;
+                    int cost=costs[current]+(direction.x!=0&&direction.z!=0?14:10)+Math.Abs(dy)*4;
                     if(costs.TryGetValue(next,out int old)&&old<=cost)break;
                     costs[next]=cost;parents[next]=current;if(!open.Contains(next))open.Add(next);break;
                 }
