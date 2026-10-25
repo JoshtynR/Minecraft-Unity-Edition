@@ -4,6 +4,12 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--mcs',default='mcs');ap.add_argument('--mono',default='mono');args=ap.parse_args()
+ game_manager=(ROOT/"Assets/_Scripts/Entity's/Player/GameManager.cs").read_text()
+ dimensions=(ROOT/'Assets/_Scripts/World/World_Dimensions.cs').read_text()
+ travel=(ROOT/"Assets/_Scripts/Entity's/Player/Player_Dimensions.cs").read_text()
+ assert 'players.Clear();' in game_manager and 'if (Instance == this) Instance = null;' in game_manager
+ assert 'dimensions.Clear();' in dimensions and 'ReclaimAfterWorldExit' in dimensions
+ assert travel.index('ReleaseForDimensionGenerationAsync(source)') < travel.index('var destination=World.GetDimension(target)')
  files=['Tools/MemoryChecks/LifecycleCheck.cs','Assets/_Scripts/World/Rendering/MeshData.cs','Assets/_Scripts/World/Rendering/ChunkRenderer.cs','Assets/_Scripts/World/World_UpdateLoop.cs','Assets/_Scripts/World/SkyClock.cs']
  with tempfile.TemporaryDirectory() as tmp:
   player=(ROOT/"Assets/_Scripts/Entity's/Player/Player.cs").read_text()

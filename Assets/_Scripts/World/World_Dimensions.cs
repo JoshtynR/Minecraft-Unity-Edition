@@ -110,6 +110,49 @@ public partial class World
         }
     }
 
+    // Portal generation used to keep the complete source dimension alive while
+    // constructing the complete destination. With millions of managed Block
+    // objects this doubled the peak heap, which Mono then kept reserved.
+    public static async Task<bool> ReleaseForDimensionGenerationAsync(World source)
+    {
+        if(source==null||source.GenerationBusy||source.isSaving||source.worldData.chunkDataDict==null)return false;
+        if(GameManager.Instance!=null)
+            foreach(var player in GameManager.Instance.players)
+                if(player!=null&&player.dimension==source.dimension&&!player.DimensionTransferInProgress)
+                    return false;
+        if(source.DropAuthority&&source.worldData.chunkDataDict.Values.Any(chunk=>chunk.modifiedAfterSave))return false;
+        source.ReleaseInactiveDimensionMemory();
+        await ReclaimUnusedMemoryAsync("before dimension generation");
+        return true;
+    }
+
+    public static async void ReclaimAfterWorldExit()
+    {
+        // Break static roots even if Unity destroys scene objects in an unusual
+        // order. In particular, never let a destroyed dimension survive in the
+        // registry for the lifetime of the menu scene.
+        dimensions.Clear();
+        Instance=null;
+        Overworld=null;
+        try { await ReclaimUnusedMemoryAsync("after world exit"); }
+        catch(Exception error) { Debug.LogException(error); }
+    }
+
+    private static async Task ReclaimUnusedMemoryAsync(string reason)
+    {
+        long before=GC.GetTotalMemory(false);
+        GC.Collect();GC.WaitForPendingFinalizers();GC.Collect();
+        if(!Application.isBatchMode)
+        {
+            var unload=Resources.UnloadUnusedAssets();
+            while(!unload.isDone)await Task.Yield();
+        }
+        GC.Collect();GC.WaitForPendingFinalizers();GC.Collect();
+        long after=GC.GetTotalMemory(false);
+        Debug.Log("[WorldMemory] Reclaimed "+reason+": managed "+(before/(1024*1024))+" MB -> "+
+            (after/(1024*1024))+" MB.");
+    }
+
     private void ReleaseInactiveDimensionMemory()
     {
         int dataCount=worldData.chunkDataDict==null?0:worldData.chunkDataDict.Count;

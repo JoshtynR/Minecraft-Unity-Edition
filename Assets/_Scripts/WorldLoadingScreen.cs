@@ -61,7 +61,7 @@ public sealed class WorldLoadingScreen : MonoBehaviour
     private void SceneLoaded(Scene scene, LoadSceneMode mode)
     {
         if (IsWorldScene(scene.name)) {enteredWorld = true;SuppressPreview();}
-        else if (enteredWorld) Finish();
+        else if (enteredWorld) {World.ReclaimAfterWorldExit();Finish();}
     }
     private void Build()
     {

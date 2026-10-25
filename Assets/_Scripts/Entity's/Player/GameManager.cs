@@ -31,6 +31,20 @@ public class GameManager : MonoBehaviour
         chunkLoadingWorld = null;
     }
 
+    private void OnDestroy()
+    {
+        // A destroyed Unity component can still keep its managed fields alive
+        // when a static points at it. That retained the player and every loaded
+        // chunk after returning to the title screen.
+        if (chunkLoadingCoroutine != null) StopCoroutine(chunkLoadingCoroutine);
+        chunkLoadingCoroutine = null;
+        chunkLoadingWorld = null;
+        localPlayer = null;
+        world = null;
+        players.Clear();
+        if (Instance == this) Instance = null;
+    }
+
     public void StartCheckingForChunks()
     {
         if (localPlayer == null || world == null) return;

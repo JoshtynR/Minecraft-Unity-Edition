@@ -100,6 +100,7 @@ public partial class Player
         dimensionTransfer=true;PauseDimensionTransforms();serverMining=localMining=false;portalTime=0;
         int sequence=++transferSequence;
         var source=CurrentWorld;WorldDimension previous=dimension;Vector3 previousPosition=transform.position;
+        bool sourceReleased=false;
         if(!networkStarted||isLocalPlayer)WorldLoadingScreen.Begin();
 
         try
@@ -121,6 +122,7 @@ public partial class Player
                 var checkpoint=SavePlayer();
                 await source.SaveDimensionAsync();
                 if(source!=null)source.SavePlayer(checkpoint);
+                sourceReleased=await World.ReleaseForDimensionGenerationAsync(source);
             }
             if(this==null)return;
             var destination=World.GetDimension(target);
@@ -156,6 +158,7 @@ public partial class Player
         {
             Debug.LogException(error);
             if(this==null)return;
+            if(sourceReleased&&source!=null)await source.EnsureAreaAsync(Vector3Int.FloorToInt(previousPosition),true);
             dimension=previous;world=source;transform.position=previousPosition;dimensionTransfer=false;ResumeDimensionTransforms();portalCooldown=15;
             portalTravelInProgress=false;
             if(!networkStarted||isLocalPlayer){World.ActivateDimension(source);WorldLoadingScreen.Cancel();}

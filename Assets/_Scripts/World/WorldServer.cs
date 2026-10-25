@@ -14,6 +14,18 @@ public partial class WorldServer : NetworkBehaviour
         instance = this;
     }
 
+    public override void OnStopServer()
+    {
+        StopAllCoroutines();
+        if(instance==this)instance=null;
+        base.OnStopServer();
+    }
+
+    private void OnDestroy()
+    {
+        if(instance==this)instance=null;
+    }
+
     public override void OnStartServer()
     {
         base.OnStartServer();

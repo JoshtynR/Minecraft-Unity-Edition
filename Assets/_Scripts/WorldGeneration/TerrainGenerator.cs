@@ -89,6 +89,11 @@ public class TerrainGenerator : MonoBehaviour
         }
     }
 
+    public void ReleaseMemory()
+    {
+        lock (generatorLock) generators = null;
+    }
+
     private sealed class Generators
     {
         public readonly long seed;

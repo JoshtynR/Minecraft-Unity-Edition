@@ -452,30 +452,42 @@ public partial class World : MonoBehaviour
     
     private void Clear()
     {
+        ReleaseResidentMemory(true, false);
+    }
+
+    private void ReleaseResidentMemory(bool prepareForReload, bool discardSavedState)
+    {
         ResetWater();
-        ResetDroppedItems();
-        ResetFallingBlocks();
-        ResetMobs();
+        ResetDroppedItems(discardSavedState);
+        ResetFallingBlocks(discardSavedState);
+        ResetMobs(discardSavedState);
         furnaceClock=0;
         ResetTreeMeshChanges();
         ResetChunkUpdates();
+        terrainGenerator?.ReleaseMemory();
 
         // Pooled renderers used to retain both a readable native mesh and their
         // previous ChunkData. Release those references before replacing the maps.
-        foreach (var chunk in worldRenderer.GetComponentsInChildren<ChunkRenderer>(true))
+        if(worldRenderer!=null)foreach (var chunk in worldRenderer.GetComponentsInChildren<ChunkRenderer>(true))
         {
             chunk.ReleaseForPool();
-            if(Application.isPlaying)Destroy(chunk.gameObject);
-            else DestroyImmediate(chunk.gameObject);
+            if(prepareForReload)
+            {
+                if(Application.isPlaying)Destroy(chunk.gameObject);
+                else DestroyImmediate(chunk.gameObject);
+            }
         }
-        worldRenderer.chunkPool.Clear();
+        if(worldRenderer!=null)worldRenderer.chunkPool.Clear();
 
-        worldData = new WorldData
+        worldData.chunkDataDict?.Clear();
+        worldData.chunkDict?.Clear();
+
+        worldData = prepareForReload ? new WorldData
         {
             chunkDataDict = new Dictionary<Vector3Int, ChunkData>(),
             chunkDict = new Dictionary<Vector3Int, ChunkRenderer>(),
             worldName = worldName, owner = this
-        };
+        } : default(WorldData);
         isSaving = false;
     }
 
@@ -490,12 +502,14 @@ public partial class World : MonoBehaviour
     private void OnDestroy()
     {
         taskTokenSource.Cancel();
+        // Do not clear collections underneath an in-flight worker. Once the
+        // cancellation unwinds, removing the static roots is enough for the
+        // abandoned graph to be collected.
+        if(!GenerationBusy)ReleaseResidentMemory(false, true);
+        else terrainGenerator?.ReleaseMemory();
         taskTokenSource.Dispose();
         UnregisterDimension();
         ReleaseLightmap();
-        ResetDroppedItems(true);
-        ResetFallingBlocks(true);
-        ResetMobs(true);
         if (!secondaryDimension)
         {
             NetworkClient.UnregisterHandler<StartWorldMessage>();

@@ -28,8 +28,10 @@ public static class DimensionCheck {
   var exit=nether.FindOrCreateExitAsync(new Vector3(0,70,0)).GetAwaiter().GetResult();Check(exit.y==70&&nether.GetBlock(Vector3Int.FloorToInt(exit)).type==BlockType.NetherPortal,"Reuse safe existing portal");
   var player=new GameObject("Player").AddComponent<Player>();player.ForTestAssignWorld(overworld);GameManager.Instance.players.Add(player);World.ActivateDimension(overworld);
   var sync=player.gameObject.AddComponent<Mirror.NetworkTransform>();
+  overworld.worldData.chunkDataDict[new Vector3Int(32,0,0)]=new ChunkData{worldRef=overworld,worldPos=new Vector3Int(32,0,0)};
   nether.generationBarrier=new TaskCompletionSource<bool>();Call(player,"BeginDimensionTravel",WorldDimension.Nether,new Vector3(0,70,0),true);
   Check(player.DimensionTransferInProgress&&WorldLoadingScreen.IsLoading,"Frozen behind loading while destination generates");Check(player.dimension==WorldDimension.Overworld,"Source realm retained during generation");Check(!sync.enabled,"Old transform snapshots pause during travel");
+  Check(overworld.worldData.chunkDataDict.Count==0,"Saved source chunks released before destination generation");
   nether.generationBarrier.SetResult(true);Wait(()=>!player.DimensionTransferInProgress);
   Check(player.dimension==WorldDimension.Nether&&player.CurrentWorld==nether&&World.Instance==nether,"Completed travel updates player and camera world");
   Check(sync.enabled&&sync.resets>0,"Transform interpolation resets on arrival");

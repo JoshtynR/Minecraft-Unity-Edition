@@ -9,7 +9,9 @@ namespace Mirror {
  public class ClientRpcAttribute:Attribute {}
  public class NetworkBehaviour:MonoBehaviour {
   public virtual void OnStartServer(){}
+  public virtual void OnStopServer(){}
   public void StartCoroutine(System.Collections.IEnumerator r){}
+  public void StopAllCoroutines(){}
   public static GameObject Instantiate(GameObject source,Vector3 p,Quaternion q)=>new GameObject("spawned");
  }
  public class NetworkManager {public static NetworkManager singleton=new NetworkManager();public GameObject playerPrefab;}

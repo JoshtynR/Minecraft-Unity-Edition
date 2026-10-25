@@ -30,7 +30,9 @@ namespace UnityEngine {
  }
  public static class Mathf {public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v));public static int Clamp(int v,int a,int b)=>Math.Max(a,Math.Min(b,v));public static float Max(float a,float b)=>Math.Max(a,b);public static int Max(int a,int b)=>Math.Max(a,b);public static int FloorToInt(float v)=>(int)Math.Floor(v);public static int CeilToInt(float v)=>(int)Math.Ceiling(v);public static float Clamp01(float v)=>Clamp(v,0,1);}
  public static class Time {public static float unscaledTime,time,fixedDeltaTime=.05f;}
- public static class Application {public static bool isPlaying=true;}
+ public static class Application {public static bool isPlaying=true,isBatchMode;}
+ public class AsyncOperation {public bool isDone=true;}
+ public static class Resources {public static AsyncOperation UnloadUnusedAssets()=>new AsyncOperation();}
  public static class Debug {public static List<Exception> errors=new List<Exception>();public static void LogException(Exception e){errors.Add(e);}public static void Log(object message){}}
  public static class JsonUtility {static Dictionary<string,object> objects=new Dictionary<string,object>();public static string ToJson(object obj){string key=Guid.NewGuid().ToString();objects[key]=obj;return key;}public static T FromJson<T>(string s)=>(T)objects[s];public static void FromJsonOverwrite(string s,object obj){foreach(var field in obj.GetType().GetFields())if(!field.IsInitOnly&&!field.IsStatic)field.SetValue(obj,field.GetValue(objects[s]));}}
 }
