@@ -136,7 +136,7 @@ namespace Mirror
  public class Transport:UnityEngine.Behaviour{public static Transport activeTransport;}
  public class NetworkManager:UnityEngine.MonoBehaviour
  {
-  public static NetworkManager singleton;public string offlineScene="MainMenu",onlineScene="World";public bool stopped;public int disconnects;
+  public static NetworkManager singleton;public string offlineScene="MainMenu";public bool stopped;public int disconnects;
   public Transport transport;public string networkAddress;public void StartHost(){}
   public virtual void OnStopClient(){}
   public void StopHost(){stopped=true;}public void StopClient(){stopped=true;}
@@ -149,7 +149,6 @@ namespace Mirror
 public class PlayerHudAssets{public TMPro.TMP_FontAsset levelFont;public UnityEngine.Texture2D loadingBackground,guiWidgets;}
 public static class MinecraftUIText{public static UnityEngine.Material CreateMaterial(TMPro.TMP_FontAsset font,float size,bool shadow)=>new UnityEngine.Material();}
 public class Menu {public static Menu currentMenu,lastMenu;public static void CloseCurrentMenu(){}}
-public static class SettingsManager {public static bool LanEnabled;}
 public class Block {public BlockType type=BlockType.Stone;public int sky=15,light;public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
 public class World {public WorldDimension dimension;public static World Instance,Overworld;public bool IsWorldCreated,disabled,IsInitialized;public WorldData worldData=new WorldData();public Func<UnityEngine.Vector3,Block> blockAt;public Block GetBlock(UnityEngine.Vector3 p)=>blockAt==null?new Block():blockAt(p);public static void ReclaimAfterWorldExit(){} }
 public class WorldData{public Dictionary<UnityEngine.Vector3Int,ChunkRenderer> chunkDict=new Dictionary<UnityEngine.Vector3Int,ChunkRenderer>();}

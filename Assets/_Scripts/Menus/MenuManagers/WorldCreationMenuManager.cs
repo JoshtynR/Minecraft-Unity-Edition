@@ -36,7 +36,7 @@ public class WorldCreationMenuManager : MonoBehaviour
         
         if (!multiplayerMode)
         {
-            MinecraftNetworkManager.StartLocalWorld();
+            MinecraftNetworkManager.StartGameHost();
         }
         else
         {

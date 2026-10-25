@@ -31,7 +31,6 @@ namespace UnityEngine
         public static readonly Dictionary<string,string> values=new Dictionary<string,string>();
         public static int saves;
         public static string GetString(string key,string fallback)=>values.ContainsKey(key)?values[key]:fallback;
-        public static int GetInt(string key,int fallback){string value;int parsed;return values.TryGetValue(key,out value)&&int.TryParse(value,out parsed)?parsed:fallback;}
         public static void SetString(string key,string value){values[key]=value;}
         public static void Save(){saves++;}
     }
@@ -39,7 +38,7 @@ namespace UnityEngine
 namespace UnityEngine.SceneManagement
 {
     public struct Scene {public string name;}
-    public static class SceneManager {public static string loaded="MainMenu";public static Scene GetActiveScene()=>new Scene{name=loaded};public static void LoadScene(string name){loaded=name;}}
+    public static class SceneManager {public static Scene GetActiveScene()=>new Scene{name="MainMenu"};public static void LoadScene(string name){}}
 }
 namespace Unity.Mathematics {}
 namespace Unity.VisualScripting {}
@@ -79,7 +78,7 @@ namespace Mirror
     public class NetworkManager:MonoBehaviour
     {
         public static NetworkManager singleton;
-        public Transport transport;public string networkAddress="localhost",offlineScene="MainMenu",onlineScene="World";public int starts,bindAttempts;public bool portOccupied;public Action duringStart;
+        public Transport transport;public string networkAddress="localhost",offlineScene="MainMenu";public int starts,bindAttempts;public bool portOccupied;public Action duringStart;
         public void StartHost(){starts++;duringStart?.Invoke();if(!NetworkServer.dontListen){bindAttempts++;if(portOccupied)throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.AddressAlreadyInUse);}NetworkServer.active=NetworkClient.active=true;}
         public void StopHost(){NetworkServer.Shutdown();StopClient();}public void StopClient(){NetworkClient.active=false;OnStopClient();}
         public virtual void OnClientConnect(){}
@@ -96,7 +95,6 @@ namespace Mirror
 namespace Mirror.FizzySteam {public class FizzyFacepunch:Transport {}}
 namespace kcp2k {public class KcpTransport:Transport {}}
 public class Menu{public static Menu currentMenu,lastMenu;public static int returns;public static void CloseCurrentMenu(){returns++;}}
-public static class SettingsManager {public static bool LanEnabled;}
 public static class WorldLoadingScreen {public static int cancels;public static void Begin(){}public static void Cancel(){cancels++;}public static void ReportProgress(string s,float value){}}
 public class World {public static World Overworld;public bool IsInitialized;}
 public static class LobbyManager {public static Lobby? currentLobby;public struct Lobby {public void Leave(){}}}
@@ -117,14 +115,12 @@ public static class OfflineCheck
     static void Check(bool condition,string message){checks++;if(!condition)throw new Exception(message);}
     static void Reset()
     {
-        MinecraftNetworkManager.EndOfflineSession();
         PlayerIdentity.EndSession();SteamClient.valid=false;SteamClient.throwValidity=false;
         SteamClient.throwName=false;SteamClient.throwInit=false;SteamClient.name="Steam Josh";
         SteamClient.steamId=76561198000000123;SteamClient.nameReads=0;
         NetworkServer.active=NetworkClient.active=false;
         NetworkClient.isConnected=true;NetworkClient.isLoadingScene=false;
         Scheduler.running.Clear();World.Overworld=null;WorldServer.instance=null;
-        UnityEngine.SceneManagement.SceneManager.loaded="MainMenu";SettingsManager.LanEnabled=false;
     }
     public static void Main()
     {
@@ -157,16 +153,8 @@ public static class OfflineCheck
         Reset();var manager=new MinecraftNetworkManager();NetworkManager.singleton=manager;
         var steam=new Mirror.FizzySteam.FizzyFacepunch();manager.transport=steam;
         var kcp=manager.gameObject.AddComponent<kcp2k.KcpTransport>();
-        MinecraftNetworkManager.StartLocalWorld();
-        Check(manager.starts==0&&MinecraftNetworkManager.OfflineSessionRequested,"ordinary local world skips Mirror entirely");
-        Check(UnityEngine.SceneManagement.SceneManager.loaded=="World","offline world loads the configured world scene directly");
-        MinecraftNetworkManager.EndOfflineSession();
-        SettingsManager.LanEnabled=true;UnityEngine.SceneManagement.SceneManager.loaded="MainMenu";
-        MinecraftNetworkManager.StartLocalWorld();
-        Check(manager.starts==1&&manager.bindAttempts==1&&!NetworkServer.dontListen,"LAN opt-in starts a listening KCP host");
-        manager.StopHost();NetworkServer.active=NetworkClient.active=false;SettingsManager.LanEnabled=false;
         MinecraftNetworkManager.StartGameHost();
-        Check(manager.starts==2&&manager.transport==kcp&&Transport.activeTransport==kcp,"compatibility host selects KCP before starting Mirror");
+        Check(manager.starts==1&&manager.transport==kcp&&Transport.activeTransport==kcp,"offline host selects KCP before starting Mirror");
         Check(kcp.enabled&&manager.networkAddress=="localhost","local transport enabled");
         manager.OnClientConnect();
         Scheduler.Step();Check(NetworkClient.messages.Count==0,"connect before world scene does not send an unhandled request");
@@ -176,7 +164,7 @@ public static class OfflineCheck
         NetworkClient.isLoadingScene=false;Scheduler.Step();
         Check((ulong)((WorldServer.StartPlayerMessage)NetworkClient.messages[0]).steamId==1,"world startup sends offline ID without Steam");
         manager.OnClientSceneChanged();Scheduler.Step();Check(NetworkClient.messages.Count==1,"connect and scene callbacks send only one request");
-        MinecraftNetworkManager.StartGameHost();Check(manager.starts==2,"active host is not restarted");
+        MinecraftNetworkManager.StartGameHost();Check(manager.starts==1,"active host is not restarted");
         manager.OnStopClient();NetworkServer.active=NetworkClient.active=false;SteamClient.valid=true;
         MinecraftNetworkManager.StartGameHost();
         Check(manager.transport==steam&&Transport.activeTransport==steam&&PlayerIdentity.UsingSteam,"next Steam session restores configured Steam transport");

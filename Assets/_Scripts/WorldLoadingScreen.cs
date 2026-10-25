@@ -151,11 +151,12 @@ public sealed class WorldLoadingScreen : MonoBehaviour
         var network = NetworkManager.singleton;
         bool inWorld = IsWorldScene(SceneManager.GetActiveScene().name);
         Cancel();
-        if (network != null && NetworkServer.active) network.StopHost();
-        else if (network != null && NetworkClient.active) network.StopClient();
-        else if (inWorld)
-            SceneManager.LoadScene(network != null && !string.IsNullOrEmpty(network.offlineScene) ? network.offlineScene : "MainMenu");
-        else if (Menu.currentMenu != null && Menu.lastMenu != null) Menu.CloseCurrentMenu();
+        if (network != null)
+        {
+            if (NetworkServer.active) network.StopHost(); else network.StopClient();
+        }
+        if (inWorld && (network == null || string.IsNullOrEmpty(network.offlineScene))) SceneManager.LoadScene("MainMenu");
+        else if (!inWorld && Menu.currentMenu != null && Menu.lastMenu != null) Menu.CloseCurrentMenu();
     }
     private void Finish(bool enterGame = false)
     {

@@ -48,7 +48,7 @@ public class WorldButton:Component {public static WorldButton currentWorldButton
 public class UIButton:Component {public void Enable(){}}
 public class WorldCreationMenuManager:Component {public bool multiplayerMode;public static void CreateLobby(string n,int s){}}
 public class WorldSettingsManager {public static WorldSettingsManager Instance=new WorldSettingsManager();public Task LoadWorldSettings(WorldSaveData d){return Task.CompletedTask;}}
-public static class MinecraftNetworkManager {public static void StartLocalWorld(){}public static void StartGameHost(){}}
+public static class MinecraftNetworkManager {public static void StartGameHost(){}}
 public class WorldSaveData {public string worldName;public int seedOffset;}
 public static class World {public static string Decompress(string s){throw new FormatException("bad save");}}
 public static class MenuEnvironment {

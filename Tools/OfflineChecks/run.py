@@ -22,28 +22,11 @@ for name in ["Assets/_Scripts/Entity's/Player/Player.cs",'Assets/_Scripts/World/
 for name in ['WorldCreationMenuManager','WorldListMenuManager']:
     source=(root/('Assets/_Scripts/Menus/MenuManagers/'+name+'.cs')).read_text()
     assert 'NetworkManager.singleton.StartHost();' not in source,name
-    assert 'MinecraftNetworkManager.StartLocalWorld();' in source,name
-print('World creation/loading defaults to true offline play and preserves player identity wiring.')
+    assert 'MinecraftNetworkManager.StartGameHost();' in source,name
+print('World creation/loading, spawn and player identity wiring verified.')
 creation=(root/'Assets/_Scripts/Menus/MenuManagers/WorldCreationMenuManager.cs').read_text()
 assert 'MinecraftNetworkManager.StartGameHost(false);' in creation[creation.index('public static async void CreateLobby'):]
-print('Steam lobby hosting explicitly enables external listening; LAN is opt-in and ordinary local worlds skip Mirror.')
-
-settings=(root/'Assets/_Scripts/Menus/SettingsManager.cs').read_text()
-assert 'PlayerPrefs.GetInt("lanEnabled", 0)' in settings
-assert '"LAN: OFF", "LAN: ON"' in settings
-world_network=(root/'Assets/_Scripts/WorldNetworkManager.cs').read_text()
-assert 'StartOfflinePlayer()' in world_network
-assert 'Offline world ready without starting a Mirror server.' in world_network
-assert 'MinecraftNetworkManager.StartGameHost();' not in world_network
-print('LAN preference UI and direct offline player bootstrap wiring verified.')
-
-world_data=(root/'Assets/_Scripts/World/WorldDataHelper.cs').read_text()
-water=(root/'Assets/_Scripts/World/World_Water.cs').read_text()
-assert 'worldData.owner.DropAuthority || !worldData.owner.isInPlayMode' in world_data
-assert 'if (!DropAuthority) return;' in water and 'if (DropAuthority)' in water
-options=(root/'Assets/Prefabs/OptionsMenu.prefab').read_text()
-assert '  m_Constraint: 1\n  m_ConstraintCount: 2' in options
-print('Offline chunk loading/fluid authority and fixed two-column options layout verified.')
+print('Steam lobby hosting explicitly enables external listening; single-player uses the in-process host connection.')
 
 world=(root/'Assets/_Scripts/World/World.cs').read_text()
 assert world.index('IsInitialized = true;') > world.index('NetworkClient.RegisterHandler<StartWorldMessage>')
