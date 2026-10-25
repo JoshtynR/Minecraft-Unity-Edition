@@ -36,7 +36,9 @@ public sealed class PlayerGameplayAudio : MonoBehaviour
             {distance%=1.67f;GameAudio.Play(BlockSoundRules.Step(below.type),position,.3f,GameAudio.Variation(.9f,1.1f));}
         }
         else distance=0;
-        if(!player.isLocalPlayer)return;
+        // Offline players have no NetworkIdentity authority because Mirror is
+        // intentionally inactive, but they are still the local listener.
+        if(!player.isLocalPlayer&&(Mirror.NetworkClient.active||Mirror.NetworkServer.active))return;
         caveTime-=Time.deltaTime;
         if(caveTime<=0)
         {
