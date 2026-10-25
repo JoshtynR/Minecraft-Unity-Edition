@@ -17,8 +17,8 @@ public static partial class IntegrationCheck
   var w=LavaWorld();var c=w.worldData.chunkDataDict[V(0,0,0)];
   for(byte level=0;level<16;level++)
   {
-   c.SetBlock(V(0,2,0),BlockType.Lava);c.GetBlock(V(0,2,0)).waterLevel=level;
-   c.SetBlock(V(1,2,0),BlockType.Lava);c.GetBlock(V(1,2,0)).waterLevel=(byte)((level+1)&15);
+   c.SetBlock(V(0,2,0),BlockType.Lava);SetLevel(c,V(0,2,0),level);
+   c.SetBlock(V(1,2,0),BlockType.Lava);SetLevel(c,V(1,2,0),(byte)((level+1)&15));
    var save=new ChunkSectionSaveData(c.sections[1]);var restored=ChunkSection.Deserialize(save,c);
    WaterCheck.Assert(save.blocks[0].length==1&&save.blocks[0].waterLevel==level,"lava RLE separates unlike levels");
    WaterCheck.Assert(restored.blocks[0,0,0].type==BlockType.Lava&&restored.blocks[0,0,0].waterLevel==level&&restored.blocks[1,0,0].waterLevel==((level+1)&15),"all lava levels survive actual section load");
@@ -27,7 +27,7 @@ public static partial class IntegrationCheck
   var legacy=new ChunkSectionSaveData{yOffset=0,blocks=new[]{new BlockSaveData{type=BlockType.Lava,length=8}}};
   WaterCheck.Assert(ChunkSection.Deserialize(legacy,c).blocks[0,0,0].waterLevel==0,"older lava saves remain sources");
   for(int x=0;x<2;x++)for(int z=0;z<2;z++)
-  {c.SetBlock(V(x,1,z),BlockType.Lava);c.GetBlock(V(x,1,z)).waterLevel=6;c.SetBlock(V(x,2,z),BlockType.Air);}
+  {c.SetBlock(V(x,1,z),BlockType.Lava);SetLevel(c,V(x,1,z),6);c.SetBlock(V(x,2,z),BlockType.Air);}
   var mesh=new MeshData(false);BlockShapesList.FullBlock.SetFaceVertices(Direction.up,V(0,1,0),mesh);WaterMeshCheck.SetWaterFaceHeight(V(0,1,0),mesh,c);
   WaterCheck.Assert(Math.Abs(mesh.vertices[1].y-1-.0005f-2/9f)<1e-5,"lava mesh uses weighted flow corner heights");
 

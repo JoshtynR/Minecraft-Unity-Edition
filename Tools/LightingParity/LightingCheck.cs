@@ -39,6 +39,7 @@ public class Block
  public byte waterLevel;public BlockType type;public BlockTypeData BlockData=new BlockTypeData();public int sky,light;public ChunkData chunkData;public Vector3Int localChunkPosition;public Vector3Int globalWorldPosition=>chunkData.worldPos+localChunkPosition;public ShapeSlot blockShape=new ShapeSlot();
  public int GetSkyLight()=>sky;public int GetBlockLight()=>light;public void SetSkyLight(int v){sky=v;}public void SetBlockLight(int v){light=v;}
  public Block[] GetNeighbors(){return new[]{Direction.up,Direction.down,Direction.left,Direction.right,Direction.forwards,Direction.backwards}.Select(d=>chunkData.GetBlock(localChunkPosition+d.GetVector())).ToArray();}
+ public Block GetNeighbor(int index){return GetNeighbors()[index];}
 }
 public class BlockLightNode {public Block block;public byte lightLevel;public BlockLightNode(Block b,byte l){block=b;lightLevel=l;}}
 public class ChunkRenderer {}

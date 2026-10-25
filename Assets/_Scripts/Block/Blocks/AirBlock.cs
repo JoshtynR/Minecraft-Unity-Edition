@@ -1,25 +1,8 @@
-﻿
-using JetBrains.Annotations;
 using UnityEngine;
 
-public class AirBlock : Block
+// Legacy factory kept so old editor references still resolve. Runtime cells are
+// packed and no longer use per-type Block subclasses.
+public static class AirBlock
 {
-    public AirBlock(Vector3Int position, [CanBeNull] ChunkSection section = null) : base(BlockType.Air, position, section)
-    {
-    }
-
-    public override void OnBlockPlaced()
-    {
-        
-    }
-
-    public override void OnBlockDestroyed()
-    {
-        
-    }
-
-    public override void OnBlockUpdate()
-    {
-        
-    }
+    public static Block Create(Vector3Int position, ChunkSection section = null) => new Block(BlockType.Air, position, section);
 }

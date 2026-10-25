@@ -1,64 +1,128 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using JetBrains.Annotations;
 using UnityEngine;
 
 [Serializable]
-public class Block
+public struct Block : IEquatable<Block>
 {
-    // A block's local coordinates are always 0..15 on every axis. Packing the
-    // redundant Vector3Int saves eight aligned bytes on each of the millions of
-    // resident Block objects while preserving the existing public API.
+    // A Block is a short-lived handle, not the cell itself. Resident type/state
+    // data lives in ChunkSection.PackedBlockStorage (two bytes per cell).
     [NonSerialized] private ushort packedPosition;
+    [NonSerialized] private ushort detachedCell;
+    [NonSerialized] private bool attached;
+    [NonSerialized] private bool initialized;
     public Vector3Int position
     {
         get => new Vector3Int(packedPosition & 15,(packedPosition >> 4) & 15,(packedPosition >> 8) & 15);
         private set => packedPosition=(ushort)((value.x & 15)|((value.y & 15)<<4)|((value.z & 15)<<8));
     }
-    public Vector3Int localChunkPosition => position + new Vector3Int(0, section.yOffset, 0);
-    public Vector3Int globalWorldPosition => section.dataRef.GetGlobalBlockCoords(localChunkPosition);
+    public Vector3Int localChunkPosition => position + new Vector3Int(0, section == null ? 0 : section.yOffset, 0);
+    public Vector3Int globalWorldPosition => section == null ? position : section.dataRef.GetGlobalBlockCoords(localChunkPosition);
 
     /// <summary>
     /// Note: never set this directly, use <see cref="SetType(BlockType)"/> instead
     /// </summary>
-    public BlockType type;
+    public BlockType type
+    {
+        get => (BlockType)(ReadCell() & 0x0FFF);
+        set
+        {
+            initialized = true;
+            WriteCell(Pack(WheatCropRules.Canonical(value), State));
+        }
+    }
     // Legacy name: shared water/lava metadata. 0 source, 1..7 flow, 8..15 falling.
-    public byte waterLevel;
+    public byte waterLevel
+    {
+        get => State;
+        set { initialized = true; WriteCell(Pack(type, value)); }
+    }
     public BlockTypeData BlockData => BlockDataManager.blockTypeDataDictionary[(int)type];
     
     [NonSerialized] public ChunkSection section;
     public ChunkData chunkData => section.dataRef;
     
-    public BlockShapes blockShape;
+    public BlockShapes blockShape
+    {
+        get => SpecialBlockGeometry.Shape(type, State);
+        set { initialized = true; WriteCell(Pack(type, SpecialBlockGeometry.State(type, value))); }
+    }
+
+    internal ushort PackedCell => ReadCell();
+    internal byte State => (byte)((ReadCell() >> 12) & 15);
+
+    private static ushort Pack(BlockType type, byte state)
+    {
+        return (ushort)(((int)WheatCropRules.Canonical(type) & 0x0FFF) | ((state & 15) << 12));
+    }
+
+    private ushort ReadCell()
+    {
+        return attached && section != null ? section.ReadPackedCell(packedPosition) : detachedCell;
+    }
+
+    private void WriteCell(ushort cell)
+    {
+        if (attached && section != null) section.WritePackedCell(packedPosition, cell);
+        else detachedCell = cell;
+    }
+
+    internal static Block Attached(ushort packedPosition, ChunkSection section)
+    {
+        return new Block { packedPosition = packedPosition, section = section, attached = true, initialized = true };
+    }
 
     public Block(BlockType type, Vector3Int position, ChunkSection section)
     {
-        this.type = WheatCropRules.Canonical(type);
-        this.position = position;
+        packedPosition = 0;
+        detachedCell = 0;
+        attached = false;
+        initialized = true;
         this.section = section;
-        blockShape = WheatCropRules.IsCrop(type) ? SpecialBlockGeometry.Shape(this.type, WheatCropRules.LegacyAge(type)) : BlockShapesExtensions.ForBlock(this.type);
+        this.position = position;
+        byte state = WheatCropRules.IsCrop(type) ? WheatCropRules.LegacyAge(type) : SpecialBlockGeometry.DefaultState(type);
+        detachedCell = Pack(type, state);
     }
 
     public Block(Block block)
     {
-        this.type = block.type;
-        this.waterLevel = block.waterLevel;
-        this.position = block.position;
-        this.section = block.section;
-        blockShape = SpecialBlockGeometry.Shape(type, SpecialBlockGeometry.State(type, block.blockShape));
+        packedPosition = block.packedPosition;
+        detachedCell = block.ReadCell();
+        attached = false;
+        initialized = block.initialized;
+        section = block.section;
     }
 
     public Block Reset(Block block)
     {
-        this.type = block.type;
-        this.waterLevel = block.waterLevel;
-        this.position = block.position;
-        this.section = block.section;
-        blockShape = SpecialBlockGeometry.Shape(type, SpecialBlockGeometry.State(type, block.blockShape));
+        packedPosition = block.packedPosition;
+        detachedCell = block.ReadCell();
+        attached = false;
+        initialized = block.initialized;
+        section = block.section;
         return this;
     }
+
+    public bool Equals(Block other)
+    {
+        if (!initialized || !other.initialized) return initialized == other.initialized;
+        if (attached || other.attached)
+            return attached == other.attached && ReferenceEquals(section, other.section) && packedPosition == other.packedPosition;
+        return packedPosition == other.packedPosition && ReadCell() == other.ReadCell() && ReferenceEquals(section, other.section);
+    }
+
+    public override bool Equals(object obj) => obj is Block && Equals((Block)obj);
+    public override int GetHashCode()
+    {
+        unchecked { return ((section == null ? 0 : section.GetHashCode()) * 397) ^ packedPosition ^ (attached ? 0x40000000 : ReadCell()); }
+    }
+    public static bool operator ==(Block left, Block right) => left.Equals(right);
+    public static bool operator !=(Block left, Block right) => !left.Equals(right);
+    // Preserve the old reference-style null checks while callers migrate: a
+    // default Block handle represents no raycast/query result.
+    public static bool operator ==(Block left, object right) => right == null ? !left.initialized : left.Equals(right);
+    public static bool operator !=(Block left, object right) => !(left == right);
+    public static bool operator ==(object left, Block right) => left == null ? !right.initialized : right.Equals(left);
+    public static bool operator !=(object left, Block right) => !(left == right);
 
     public void Loaded()
     {
@@ -119,11 +183,8 @@ public class Block
     internal void InitializeGeneratedType(BlockType type)
     {
         byte cropAge = WheatCropRules.LegacyAge(type);
-        this.type = WheatCropRules.Canonical(type);
-        waterLevel = 0;
-        blockShape = WheatCropRules.IsCrop(this.type)
-            ? SpecialBlockGeometry.Shape(this.type, cropAge)
-            : BlockShapesExtensions.ForBlock(this.type);
+        initialized = true;
+        WriteCell(Pack(type, WheatCropRules.IsCrop(type) ? cropAge : SpecialBlockGeometry.DefaultState(type)));
     }
 
     private void SetTypeCore(BlockType type)
@@ -139,9 +200,7 @@ public class Block
         var brokeBlock = this.type != BlockType.Nothing && type == BlockType.Air;
         var oldType = this.type;
 
-        this.type = type;
-        waterLevel = 0;
-        blockShape = WheatCropRules.IsCrop(type) ? SpecialBlockGeometry.Shape(type, cropAge) : BlockShapesExtensions.ForBlock(type);
+        WriteCell(Pack(type, WheatCropRules.IsCrop(type) ? cropAge : SpecialBlockGeometry.DefaultState(type)));
 
         if (brokeBlock)
         {
@@ -166,9 +225,12 @@ public class Block
             SetBlockLight(BlockData.lightEmission);
             if (BlockData.lightEmission > 0)
                 chunkData.blockLightUpdateQueue.Enqueue(new BlockLightNode(this, BlockData.lightEmission));
-            foreach (var neighbor in GetNeighbors())
+            for (int i = 0; i < 6; i++)
+            {
+                var neighbor = GetNeighbor(i);
                 if (neighbor.type != BlockType.Nothing && neighbor.GetBlockLight() > 0)
                     chunkData.blockLightUpdateQueue.Enqueue(new BlockLightNode(neighbor, (byte)neighbor.GetBlockLight()));
+            }
         }
         if (chunkData.isGenerated && chunkData.worldRef.IsWorldCreated)
             chunkData.worldRef.NotifyWaterBlockChanged(globalWorldPosition);
@@ -212,7 +274,13 @@ public class Block
         if (BlockDataManager.blockTypeDataDictionary[(int)oldType].opacity == 15)
         {
             // Block
-            if(GetNeighbors().Any(n => n.GetBlockLight() > 0))
+            bool hasLitNeighbor = false;
+            for (int i = 0; i < 6 && !hasLitNeighbor; i++)
+            {
+                var neighbor = GetNeighbor(i);
+                hasLitNeighbor = neighbor.type != BlockType.Nothing && neighbor.GetBlockLight() > 0;
+            }
+            if(hasLitNeighbor)
             {
                 chunkData.blockLightRemoveQueue.Enqueue(new BlockLightNode(this, (byte)GetBlockLight()));
                 SetBlockLight(0);
@@ -233,28 +301,33 @@ public class Block
         }
     }
     
-    public Block[] GetNeighbors()
+    public Block GetNeighbor(int index)
     {
-        return new Block[] {
-            chunkData.GetBlock(localChunkPosition + Vector3Int.left),
-            chunkData.GetBlock(localChunkPosition + Vector3Int.right),
-            chunkData.GetBlock(localChunkPosition + Vector3Int.forward),
-            chunkData.GetBlock(localChunkPosition + Vector3Int.back),
-            chunkData.GetBlock(localChunkPosition + Vector3Int.up),
-            chunkData.GetBlock(localChunkPosition + Vector3Int.down),
-        };
+        Vector3Int offset;
+        switch (index)
+        {
+            case 0: offset = Vector3Int.left; break;
+            case 1: offset = Vector3Int.right; break;
+            case 2: offset = Vector3Int.forward; break;
+            case 3: offset = Vector3Int.back; break;
+            case 4: offset = Vector3Int.up; break;
+            default: offset = Vector3Int.down; break;
+        }
+        return chunkData.GetBlock(localChunkPosition + offset);
     }
 
-    public virtual void OnBlockPlaced()
+    public void OnBlockPlaced()
     {
         if(!section.dataRef.worldRef.IsWorldCreated) return;
         
         // Debug.Log($"Block {type.ToString()} placed");
-        chunkData.worldRef.ExecuteAfterFrames(1, () => chunkData.worldRef.blockToUpdate.Enqueue(this));
+        var self = this;
+        var world = chunkData.worldRef;
+        world.ExecuteAfterFrames(1, () => world.blockToUpdate.Enqueue(self));
         UpdateNeighbours();
     }
     
-    public virtual void OnBlockDestroyed()
+    public void OnBlockDestroyed()
     {
         if(section?.dataRef.worldRef.IsWorldCreated != true) return;
         // Debug.Log($"Block {type.ToString()} destroyed");
@@ -272,12 +345,13 @@ public class Block
             var neighbour = section.dataRef.GetBlock(pos);
             if (neighbour != null)
             {
-                chunkData.worldRef.ExecuteAfterFrames(1, () => chunkData.worldRef.blockToUpdate.Enqueue(neighbour));
+                var world = chunkData.worldRef;
+                world.ExecuteAfterFrames(1, () => world.blockToUpdate.Enqueue(neighbour));
             }
         }
     }
 
-    public virtual void OnBlockUpdate()
+    public void OnBlockUpdate()
     {
         if(section?.dataRef.worldRef.IsWorldCreated != true) return;
         // Water used to allocate a derived Block object for every water cell
