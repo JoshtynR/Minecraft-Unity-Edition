@@ -17,5 +17,11 @@ public partial class World
         if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
         if(kind!=255)fluidEffects.Emit(position,kind);
     }
+    public void PlayMobDeathSmoke(Vector3 position,float radius,float height)
+    {
+        if(Instance!=this||Application.isBatchMode||!Application.isPlaying)return;
+        if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
+        fluidEffects.EmitMobDeath(position,radius,height);
+    }
     private void DisposeFluidEffects(){if(fluidEffects!=null)Destroy(fluidEffects);fluidEffects=null;}
 }

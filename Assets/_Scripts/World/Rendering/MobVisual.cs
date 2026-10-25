@@ -7,14 +7,18 @@ public sealed class MobVisual
     public readonly GameObject root;
     private readonly Transform[] parts;
     private readonly MeshRenderer[] renderers;
+    private readonly Color[] tints;
     private readonly MaterialPropertyBlock properties = new MaterialPropertyBlock();
     private Vector3 previous;
     private float walk, amplitude, deathTime, yaw;
+    private readonly float deathRadius,deathHeight;
+    private bool deathSmoke;
     private float soundTime=GameAudio.Variation(4,12),stepDistance;
     private GameObject heart,flames;
     public MobVisual(Transform parent,MobState mob,Mesh[] meshes,Material material)
     {
-        parts=new Transform[meshes.Length];renderers=new MeshRenderer[meshes.Length];
+        parts=new Transform[meshes.Length];renderers=new MeshRenderer[meshes.Length];tints=new Color[meshes.Length];
+        deathRadius=MobRules.Width(mob);deathHeight=MobRules.BodyHeight(mob);
         root=new GameObject(mob.species+" "+mob.id);root.transform.SetParent(parent,false);
         root.transform.position=previous=mob.position;root.transform.rotation=Quaternion.Euler(0,mob.yaw,0);
         for(int i=0;i<parts.Length;i++)
@@ -67,16 +71,22 @@ public sealed class MobVisual
         for(int i=0;i<renderers.Length;i++)
         {
             if(renderers[i]==null)continue;
-            properties.SetColor("_Tint",mob.species==MobType.Sheep&&(i==2||i==3||i>=9)?MobRules.FleeceTint(mob.fleeceColor):Color.white);
+            tints[i]=mob.species==MobType.Sheep&&(i==2||i==3||i>=9)?MobRules.FleeceTint(mob.fleeceColor):Color.white;
+            properties.SetColor("_Tint",tints[i]);
             renderers[i].SetPropertyBlock(properties);
         }
         UpdateEffects(mob,world);
     }
-    public bool AnimateDeath(float delta)
+    public bool AnimateDeath(float delta,World world)
     {
         deathTime+=delta;
         float progress=Mathf.Sqrt(Mathf.Max(0,(deathTime*20-1)/20*1.6f));
         root.transform.rotation=Quaternion.Euler(0,yaw,Mathf.Min(1,progress)*90);
+        properties.SetFloat("_Hurt",1);properties.SetFloat("_Flash",0);
+        for(int i=0;i<renderers.Length;i++)if(renderers[i]!=null)
+        {properties.SetColor("_Tint",tints[i]);renderers[i].SetPropertyBlock(properties);}
+        if(deathTime>=1&&!deathSmoke)
+        {deathSmoke=true;if(world!=null)world.PlayMobDeathSmoke(root.transform.position,deathRadius,deathHeight);}
         return deathTime<1;
     }
     private GameObject Effect(string name,Mesh mesh,Material material)

@@ -33,6 +33,7 @@ namespace UnityEngine
  public struct Vector3
  {
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
+  public float magnitude=>(float)Math.Sqrt(x*x+y*y+z*z);public Vector3 normalized=>magnitude<.000001f?new Vector3():new Vector3(x/magnitude,y/magnitude,z/magnitude);
   public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);
   public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
   public static Vector3 operator *(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);

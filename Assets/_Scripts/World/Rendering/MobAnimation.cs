@@ -50,7 +50,9 @@ public static class MobAnimation
         else if(mob.species==MobType.Zombie||mob.species==MobType.Skeleton)
         {
             float pose=mob.targetMemoryTicks>0||mob.species==MobType.Zombie?-90:0;
-            Rotate(parts,2,Quaternion.Euler(pose+angle*.15f,0,0));Rotate(parts,3,Quaternion.Euler(pose-angle*.15f,0,0));
+            float attack=mob.attackTicks>0?Mathf.Sin((20-mob.attackTicks)/20f*Mathf.PI)*35:0;
+            Rotate(parts,2,Quaternion.Euler(pose+angle*.15f-attack,0,attack*.2f));
+            Rotate(parts,3,Quaternion.Euler(pose-angle*.15f-attack,0,-attack*.2f));
         }
     }
 }

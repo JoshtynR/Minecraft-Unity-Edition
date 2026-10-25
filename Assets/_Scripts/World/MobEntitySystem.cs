@@ -66,7 +66,10 @@ public sealed class MobEntity
     public readonly MobState State;
     public readonly MobNavigation Navigation=new MobNavigation();
     public readonly Func<Vector3,bool> Walkable,Clear;
-    public Player Target;
+    public Player Target,WatchTarget;
+    public Vector3 WanderGoal,LastPosition;
+    public int StuckTicks,LookTicks;
+    public bool HasWanderGoal;
     internal MobEntity(World world,MobState state)
-    {State=state;Walkable=position=>world.MobWalkable(state,position);Clear=position=>world.MobBodyClear(state,position);}
+    {State=state;LastPosition=state.position;Walkable=position=>world.MobPathable(state,position);Clear=position=>world.MobBodyClear(state,position);}
 }
