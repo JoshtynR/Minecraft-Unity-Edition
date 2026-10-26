@@ -19,4 +19,7 @@ public static class HostileSpawnRules
         randomLightLimit=Math.Max(0,Math.Min(7,randomLightLimit));
         return EffectiveLight(blockLight,skyLight,skyLightReduction)<=randomLightLimit;
     }
+
+    public static bool SurfaceEligible(int skyLightReduction)
+    {return EffectiveLight(0,15,skyLightReduction)<=7;}
 }

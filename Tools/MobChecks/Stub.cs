@@ -109,6 +109,7 @@ public partial class World:MonoBehaviour {
  public Dictionary<Vector3Int,Block> cells=new Dictionary<Vector3Int,Block>();public Block GetBlock(Vector3 p)=>GetBlock(Vector3Int.FloorToInt(p));public Block GetBlock(Vector3Int p)=>cells.TryGetValue(p,out var block)?block:new Block{type=p.y<64?(p.y==63?BlockType.Grass:BlockType.Stone):BlockType.Air,sky=p.y<64?0:15};
 #if !FULL_MOB_SYSTEM
  private bool MobAreaLoaded(Vector3 p)=>true;private float MobPlayerDistance(Vector3 p){float d=float.MaxValue;foreach(var player in mobPlayers)d=Math.Min(d,(player.transform.position-p).sqrMagnitude);return d;}
+ private bool FindMobGround(int x,int z,bool grass,MobType species,out Vector3 feet){feet=new Vector3(x+.5f,64,z+.5f);return true;}
  private void BroadcastMob(MobState c,bool removed=false){}
  private bool DamageMob(MobState mob,int amount,Vector3 away)=>MobRules.Hurt(mob,amount,away);
 #endif

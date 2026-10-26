@@ -13,4 +13,5 @@ with tempfile.TemporaryDirectory() as folder:
 hostiles=(root/'Assets/_Scripts/World/World_HostileMobs.cs').read_text()
 assert 'HostileSpawnRules.Allows(block.GetBlockLight(),block.GetSkyLight(),skyLightReduction,mobRandom.NextInt(8))' in hostiles
 assert 'anchorY=mobRandom.NextInt(worldHeight)' in hostiles, 'Hostiles must sample the full-height chunk column'
+assert 'placement<4' in hostiles and 'FindMobGround(x,z,false,definition.Type,out feet)' in hostiles, 'Night spawning must reserve bounded attempts for exposed terrain'
 print('Production hostile placement uses the verified Beta light roll.')
