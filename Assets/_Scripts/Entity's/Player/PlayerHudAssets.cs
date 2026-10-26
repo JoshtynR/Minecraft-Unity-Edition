@@ -17,6 +17,9 @@ public class PlayerHudAssets : ScriptableObject
     public Texture2D chestSkin;
     public Texture2D chestContainer;
     public Texture2D waterOverlay,fireOverlay;
+    [Tooltip("Packed 256x256 Minecraft particle atlas. Runtime effects animate regions of this sheet directly.")]
+    public Texture2D particleAtlas;
+    [Tooltip("Legacy per-particle fallbacks. The packed atlas is preferred when assigned.")]
     public Texture2D smokeParticle,splashParticle,lavaParticle,bubbleParticle;
     public AudioClip fluidFizz,fluidSplash,fluidFlow;
     public AudioClip itemPickup;
