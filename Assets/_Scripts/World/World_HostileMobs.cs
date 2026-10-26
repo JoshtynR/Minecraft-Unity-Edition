@@ -45,7 +45,10 @@ public partial class World
         {
             var chunk=mobSpawnCandidates[mobRandom.NextInt(mobSpawnCandidates.Count)];
             var definition=MobDefinitions.Get(MobDefinitions.SelectSpawn(true,mobRandom.NextInt(40)));
-            int anchorX=chunk.x+mobRandom.NextInt(16),anchorY=chunk.y+mobRandom.NextInt(16),anchorZ=chunk.z+mobRandom.NextInt(16);
+            // ChunkData is a full-height column and its key always has y=0.
+            // Sampling chunk.y + 0..15 trapped every hostile attempt in the
+            // bottom sixteen blocks. Beta chooses a random height in the world.
+            int anchorX=chunk.x+mobRandom.NextInt(chunkSize),anchorY=mobRandom.NextInt(worldHeight),anchorZ=chunk.z+mobRandom.NextInt(chunkSize);
             int group=definition.MinGroup+mobRandom.NextInt(definition.MaxGroup-definition.MinGroup+1),spawned=0;
             for(int member=0;member<group&&count+spawned<maximumActiveHostiles;member++)
             {

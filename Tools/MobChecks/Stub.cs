@@ -100,7 +100,11 @@ public partial class World:MonoBehaviour {
 #if !FULL_MOB_SYSTEM
  private List<Player> mobPlayers=new List<Player>();private List<MobState> activeMobs=new List<MobState>();private List<Vector3Int> mobSpawnCandidates=new List<Vector3Int>();private MobEntitySystem mobEntities=new MobEntitySystem();public MobEntitySystem MobEntities=>mobEntities;public MobStore mobs=>mobEntities.Store;private JavaRandom mobRandom=new JavaRandom(173);private int mobTick;
 #endif
- public int skyLightReduction=11,worldHeight=128;public float gamma;public bool blocked;public int edits,drops,deathSmoke;public RendererRoot worldRenderer=new RendererRoot();
+ public int skyLightReduction=11,worldHeight=128;
+#if !FULL_MOB_SYSTEM
+ public int chunkSize=16;
+#endif
+ public float gamma;public bool blocked;public int edits,drops,deathSmoke;public RendererRoot worldRenderer=new RendererRoot();
  private sealed class Data {public Dictionary<Vector3Int,int> chunkDict=new Dictionary<Vector3Int,int>();}private Data worldData=new Data();
  public Dictionary<Vector3Int,Block> cells=new Dictionary<Vector3Int,Block>();public Block GetBlock(Vector3 p)=>GetBlock(Vector3Int.FloorToInt(p));public Block GetBlock(Vector3Int p)=>cells.TryGetValue(p,out var block)?block:new Block{type=p.y<64?(p.y==63?BlockType.Grass:BlockType.Stone):BlockType.Air,sky=p.y<64?0:15};
 #if !FULL_MOB_SYSTEM
