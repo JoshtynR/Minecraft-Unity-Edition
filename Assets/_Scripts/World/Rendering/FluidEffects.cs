@@ -136,7 +136,10 @@ public sealed class FluidEffects : MonoBehaviour
     }
     public void EmitBlockBreak(World world,Vector3Int cell,BlockType type)
     {
-        if(world==null||type==BlockType.Air||type==BlockType.Nothing||!BlockDataManager.blockTypeDataDictionary.TryGetValue((int)type,out var data)||data==null)return;
+        if(world==null||type==BlockType.Air||type==BlockType.Nothing)return;
+        int typeIndex=(int)type;var definitions=BlockDataManager.blockTypeDataDictionary;
+        if(definitions==null||typeIndex<0||typeIndex>=definitions.Length)return;
+        var data=definitions[typeIndex];if(data==null)return;
         var texture=data.textureData.side!=null?data.textureData.side:data.textureData.top!=null?data.textureData.top:data.textureData.bottom;
         if(texture==null)return;
         int index=BreakEmitter(texture);var ps=breakEmitters[index];
@@ -152,7 +155,7 @@ public sealed class FluidEffects : MonoBehaviour
             var outward=position-center;
             var emit=new ParticleSystem.EmitParams{position=position,velocity=outward*1.4f+Vector3.up*.05f,
                 startLifetime=.45f+(float)cosmetic.NextDouble()*.35f,startSize=.1f+(float)cosmetic.NextDouble()*.06f,
-                startRotation=(float)cosmetic.NextDouble()*Mathf.PI*2,startColor=color};
+                rotation3D=new Vector3(0,0,(float)cosmetic.NextDouble()*Mathf.PI*2),startColor=color};
             ps.Emit(emit,1);
         }
     }
