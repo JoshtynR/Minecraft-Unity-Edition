@@ -6,13 +6,19 @@ using UnityEngine;
 // tests, so stairs, fences, water, and unloaded chunks use the same safety rules.
 public sealed class MobNavigation
 {
-    private readonly List<Vector3Int> open=new List<Vector3Int>();
+    private struct OpenNode
+    {
+        public Vector3Int cell;
+        public int cost,score,order;
+    }
+    private readonly List<OpenNode> open=new List<OpenNode>();
     private readonly Dictionary<Vector3Int,int> costs=new Dictionary<Vector3Int,int>();
     private readonly Dictionary<Vector3Int,Vector3Int> parents=new Dictionary<Vector3Int,Vector3Int>();
     private readonly HashSet<Vector3Int> closed=new HashSet<Vector3Int>();
     private readonly List<Vector3> path=new List<Vector3>();
     private Vector3Int previousGoal;
     private int nextSearch,index;
+    private int openOrder;
     public int SearchCount {get;private set;}
     private static readonly Vector3Int[] directions={
         new Vector3Int(1,0,0),new Vector3Int(-1,0,0),new Vector3Int(0,0,1),new Vector3Int(0,0,-1),
@@ -22,6 +28,32 @@ public sealed class MobNavigation
     {
         int dx=Math.Abs(a.x-b.x),dz=Math.Abs(a.z-b.z),diagonal=Math.Min(dx,dz);
         return diagonal*14+(Math.Max(dx,dz)-diagonal)*10+4*Math.Abs(a.y-b.y);
+    }
+    private static bool Before(OpenNode a,OpenNode b)=>a.score<b.score||(a.score==b.score&&a.order<b.order);
+    private void Push(Vector3Int cell,int cost,int score)
+    {
+        var node=new OpenNode{cell=cell,cost=cost,score=score,order=openOrder++};
+        int child=open.Count;open.Add(node);
+        while(child>0)
+        {
+            int parent=(child-1)/2;if(Before(open[parent],node))break;
+            open[child]=open[parent];child=parent;
+        }
+        open[child]=node;
+    }
+    private OpenNode Pop()
+    {
+        var root=open[0];int lastIndex=open.Count-1;var last=open[lastIndex];open.RemoveAt(lastIndex);
+        if(lastIndex==0)return root;
+        int parent=0;
+        while(true)
+        {
+            int left=parent*2+1;if(left>=lastIndex)break;
+            int right=left+1,child=right<lastIndex&&Before(open[right],open[left])?right:left;
+            if(Before(last,open[child]))break;
+            open[parent]=open[child];parent=child;
+        }
+        open[parent]=last;return root;
     }
     public bool SearchDue(Vector3 goal,int tick)=>tick>=nextSearch||(Vector3Int.FloorToInt(goal)-previousGoal).sqrMagnitude>4;
     public Vector3 Steer(MobState mob,Vector3 goal,int tick,Func<Vector3,bool> walkable,Func<Vector3,bool> clear,bool allowSearch=true)
@@ -35,13 +67,13 @@ public sealed class MobNavigation
     private void Search(Vector3Int start,Vector3Int goal,Func<Vector3,bool> walkable,Func<Vector3,bool> clear)
     {
         SearchCount++;
-        open.Clear();closed.Clear();costs.Clear();parents.Clear();path.Clear();open.Add(start);costs[start]=0;
+        open.Clear();closed.Clear();costs.Clear();parents.Clear();path.Clear();openOrder=0;Push(start,0,Heuristic(start,goal));costs[start]=0;
         Vector3Int best=start;int bestDistance=Heuristic(start,goal);
-        for(int expanded=0;expanded<192&&open.Count>0;expanded++)
+        for(int expanded=0;expanded<192&&open.Count>0;)
         {
-            int selected=0,score=int.MaxValue;
-            for(int i=0;i<open.Count;i++){int value=costs[open[i]]+Heuristic(open[i],goal);if(value<score){score=value;selected=i;}}
-            var current=open[selected];open.RemoveAt(selected);closed.Add(current);
+            var selected=Pop();var current=selected.cell;
+            if(closed.Contains(current)||!costs.TryGetValue(current,out int currentCost)||currentCost!=selected.cost)continue;
+            closed.Add(current);expanded++;
             int distance=Heuristic(current,goal);if(distance<bestDistance){best=current;bestDistance=distance;}
             if(current.x==goal.x&&current.z==goal.z&&Math.Abs(current.y-goal.y)<=1){best=current;break;}
             foreach(var direction in directions)
@@ -58,9 +90,9 @@ public sealed class MobNavigation
                         !walkable((Vector3)(current+new Vector3Int(0,0,direction.z)+rise)+new Vector3(.5f,0,.5f))))continue;
                     // A one-block ascent needs overhead clearance in the source cell.
                     if(dy==1&&!clear((Vector3)current+new Vector3(.5f,1,.5f)))continue;
-                    int cost=costs[current]+(direction.x!=0&&direction.z!=0?14:10)+Math.Abs(dy)*4;
+                    int cost=currentCost+(direction.x!=0&&direction.z!=0?14:10)+Math.Abs(dy)*4;
                     if(costs.TryGetValue(next,out int old)&&old<=cost)break;
-                    costs[next]=cost;parents[next]=current;if(!open.Contains(next))open.Add(next);break;
+                    costs[next]=cost;parents[next]=current;Push(next,cost,cost+Heuristic(next,goal));break;
                 }
             }
         }

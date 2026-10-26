@@ -11,6 +11,7 @@ public sealed class DroppedItemVisual
     private float collectionTime;
     private Vector3 collectionStart,collectionTarget;
     private int lastAge=-1;
+    private int lastCopies=-1,lastSky=-1,lastBlock=-1;
     private float ageTime;
     public DroppedItemVisual(Transform parent,InventoryStack stack,Mesh mesh,Material material,bool flat)
     {
@@ -38,12 +39,15 @@ public sealed class DroppedItemVisual
         root.transform.rotation=Quaternion.Euler(0,flat&&camera!=null?camera.transform.eulerAngles.y:DroppedItemRules.Rotation(age,state.hover),0);
         int visible=DroppedItemRules.Copies(state.stack.count);
         var block=world.GetBlock(Vector3Int.FloorToInt(state.position+Vector3.up*.25f));
-        properties.SetVector("_LightLevels",new Vector4(block==null?15:block.GetSkyLight(),block==null?0:block.GetBlockLight(),1,0));
+        int sky=block==null?15:block.GetSkyLight(),blockLight=block==null?0:block.GetBlockLight();
+        bool lightingChanged=sky!=lastSky||blockLight!=lastBlock;
+        if(lightingChanged){lastSky=sky;lastBlock=blockLight;properties.SetVector("_LightLevels",new Vector4(sky,blockLight,1,0));}
         for(int i=0;i<4;i++)
         {
-            copies[i].gameObject.SetActive(i<visible);
-            renderers[i].SetPropertyBlock(properties);
+            if(lastCopies!=visible)copies[i].gameObject.SetActive(i<visible);
+            if(lightingChanged&&i<visible)renderers[i].SetPropertyBlock(properties);
         }
+        lastCopies=visible;
     }
     public void BeginPickup(Vector3 target)
     {collecting=true;collectionTime=0;collectionStart=root.transform.position;collectionTarget=target;}

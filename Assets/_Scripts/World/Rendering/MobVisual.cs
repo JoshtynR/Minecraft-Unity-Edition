@@ -12,7 +12,9 @@ public sealed class MobVisual
     private Vector3 previous;
     private float walk, amplitude, deathTime, yaw;
     private readonly float deathRadius,deathHeight;
-    private bool deathSmoke;
+    private bool deathSmoke,deathPropertiesApplied,shearedInitialized,lastSheared;
+    private int lastSky=-1,lastBlock=-1,lastHurt=-1,lastFleece=-1;
+    private float lastFlash=-1;
     private float soundTime=GameAudio.Variation(4,12),stepDistance;
     private GameObject heart,flames;
     public MobVisual(Transform parent,MobState mob,Mesh[] meshes,Material material)
@@ -41,7 +43,11 @@ public sealed class MobVisual
     public void Update(MobState mob,World world,float delta)
     {
         root.transform.localScale=Vector3.one*(mob.ageTicks>0?.5f:1);
-        if(mob.species==MobType.Sheep)for(int i=0;i<parts.Length;i++)if(i==2||i==3||i>=9)parts[i].gameObject.SetActive(!mob.sheared);
+        if(mob.species==MobType.Sheep&&(!shearedInitialized||lastSheared!=mob.sheared))
+        {
+            shearedInitialized=true;lastSheared=mob.sheared;
+            for(int i=0;i<parts.Length;i++)if(i==2||i==3||i>=9)parts[i].gameObject.SetActive(!mob.sheared);
+        }
         float t=1-Mathf.Exp(-15*delta);
         root.transform.position=Vector3.Lerp(root.transform.position,mob.position,t);
         yaw=Mathf.LerpAngle(root.transform.eulerAngles.y,mob.yaw,t);root.transform.rotation=Quaternion.Euler(0,yaw,0);
@@ -65,15 +71,19 @@ public sealed class MobVisual
         MobAnimation.Apply(parts,mob,walk,amplitude);
         if(mob.species==MobType.Creeper)root.transform.localScale=Vector3.one*(1+mob.fuseTicks/30f*.15f);
         var sample=world.GetBlock(mob.position+Vector3.up*(MobRules.BodyHeight(mob)*.66f));
-        properties.SetVector("_LightLevels",new Vector4(sample==null?15:sample.GetSkyLight(),sample==null?0:sample.GetBlockLight(),1,0));
-        properties.SetFloat("_Hurt",mob.hurtTicks>0?1:0);
-        properties.SetFloat("_Flash",mob.species==MobType.Creeper&&mob.fuseTicks>0&&(mob.fuseTicks/3)%2==0?.8f:0);
-        for(int i=0;i<renderers.Length;i++)
+        int sky=sample==null?15:sample.GetSkyLight(),block=sample==null?0:sample.GetBlockLight(),hurt=mob.hurtTicks>0?1:0;
+        float flash=mob.species==MobType.Creeper&&mob.fuseTicks>0&&(mob.fuseTicks/3)%2==0?.8f:0;
+        int fleece=mob.species==MobType.Sheep?mob.fleeceColor:0;
+        if(sky!=lastSky||block!=lastBlock||hurt!=lastHurt||flash!=lastFlash||fleece!=lastFleece)
         {
-            if(renderers[i]==null)continue;
-            tints[i]=mob.species==MobType.Sheep&&(i==2||i==3||i>=9)?MobRules.FleeceTint(mob.fleeceColor):Color.white;
-            properties.SetColor("_Tint",tints[i]);
-            renderers[i].SetPropertyBlock(properties);
+            lastSky=sky;lastBlock=block;lastHurt=hurt;lastFlash=flash;lastFleece=fleece;
+            properties.SetVector("_LightLevels",new Vector4(sky,block,1,0));properties.SetFloat("_Hurt",hurt);properties.SetFloat("_Flash",flash);
+            for(int i=0;i<renderers.Length;i++)
+            {
+                if(renderers[i]==null)continue;
+                tints[i]=mob.species==MobType.Sheep&&(i==2||i==3||i>=9)?MobRules.FleeceTint(fleece):Color.white;
+                properties.SetColor("_Tint",tints[i]);renderers[i].SetPropertyBlock(properties);
+            }
         }
         UpdateEffects(mob,world);
     }
@@ -82,9 +92,12 @@ public sealed class MobVisual
         deathTime+=delta;
         float progress=Mathf.Sqrt(Mathf.Max(0,(deathTime*20-1)/20*1.6f));
         root.transform.rotation=Quaternion.Euler(0,yaw,Mathf.Min(1,progress)*90);
-        properties.SetFloat("_Hurt",1);properties.SetFloat("_Flash",0);
-        for(int i=0;i<renderers.Length;i++)if(renderers[i]!=null)
-        {properties.SetColor("_Tint",tints[i]);renderers[i].SetPropertyBlock(properties);}
+        if(!deathPropertiesApplied)
+        {
+            deathPropertiesApplied=true;properties.SetFloat("_Hurt",1);properties.SetFloat("_Flash",0);
+            for(int i=0;i<renderers.Length;i++)if(renderers[i]!=null)
+            {properties.SetColor("_Tint",tints[i]);renderers[i].SetPropertyBlock(properties);}
+        }
         if(deathTime>=1&&!deathSmoke)
         {deathSmoke=true;if(world!=null)world.PlayMobDeathSmoke(root.transform.position,deathRadius,deathHeight);}
         return deathTime<1;
