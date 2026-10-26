@@ -54,6 +54,8 @@ class Check {
 #if FULL_MOB_SYSTEM
   world=new World();Target(world,0);Assert(world.SpawnHostilesForCheck()>0,"night spawning samples the full-height chunk column and finds surface air");
   foreach(var hostile in world.mobs.Entities)Assert(hostile.position.y==64,"bounded nighttime spawning reserves attempts for the exposed surface");
+  world=new World{water=true};Assert(!world.SpawnMobNear(Vector3.zero,MobType.Zombie),"natural mob spawning rejects bodies intersecting water");
+  world=new World{water=true,mobBank=true};Target(world,4);zombie=Mob(world,MobType.Zombie);zombie.motion.x=.2f;world.PhysicsStep(zombie);Assert(zombie.motion.y>=.29f,"swimming mobs jump when their forward path meets a bank");
   world=new World();player=Target(world,6);player.inventory.held=new InventoryStack(ItemType.Wheat,1);var cow=Mob(world,MobType.Cow);world.Step(cow);Assert(cow.walking&&cow.targetYaw>0,"farm brain follows a player holding wheat");
   world=new World();player=Target(world,6);player.inventory.held=new InventoryStack(ItemType.Wheat,1);var chicken=Mob(world,MobType.Chicken);chicken.decisionTicks=100;world.Step(chicken);Assert(!chicken.walking,"chicken does not follow wheat");player.inventory.held=new InventoryStack(ItemType.Seeds,1);world.Step(chicken);Assert(chicken.walking,"chicken follows seeds");
   world=new World();var a=Mob(world,MobType.Cow);var b=world.mobs.Spawn(new Vector3(1,64,0),0,MobType.Cow);MobRules.Feed(a);MobRules.Feed(b);

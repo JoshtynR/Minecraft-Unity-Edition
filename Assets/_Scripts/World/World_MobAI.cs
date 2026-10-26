@@ -22,6 +22,13 @@ public partial class World
         return true;
     }
     internal bool MobWalkable(MobState mob,Vector3 position)=>MobBodyClear(mob,position)&&BlockCollision.Supported(this,position,MobRules.Width(mob),MobRules.BodyHeight(mob));
+    internal bool MobSpawnable(MobState mob,Vector3 position)
+    {
+        float width=MobRules.Width(mob),height=MobRules.BodyHeight(mob);
+        if(FluidWorldQueries.Touches(this,position,width,height,BlockType.Water,out _)||
+           FluidWorldQueries.Touches(this,position,width,height,BlockType.Lava,out _))return false;
+        return MobWalkable(mob,position);
+    }
     internal bool MobPathable(MobState mob,Vector3 position)
     {
         if(!MobBodyClear(mob,position))return false;

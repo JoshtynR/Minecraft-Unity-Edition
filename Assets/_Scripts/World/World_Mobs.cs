@@ -144,7 +144,7 @@ public partial class World
     private bool MobSpawnClear(Vector3 position,MobType species)
     {
         var candidate=new MobState{species=species,position=position};
-        if(!MobWalkable(candidate,position))return false;
+        if(!MobSpawnable(candidate,position))return false;
         foreach(var other in mobs.Entities)if(MobRules.Bounds(other).Intersects(MobRules.Bounds(candidate)))return false;
         return true;
     }
@@ -313,7 +313,9 @@ public partial class World
         mob.motion.z=Mathf.Lerp(mob.motion.z,desired.z,mob.grounded?.35f:.1f);
         if(water||lava)
         {
-            mob.motion.y=Mathf.Min(.12f,mob.motion.y*.8f+.02f);
+            // Preserve a bank-jump impulse until the body clears the water;
+            // ordinary swimming still rises at the classic gentle rate.
+            if(mob.motion.y<=.12f)mob.motion.y=Mathf.Min(.12f,mob.motion.y*.8f+.02f);
             mob.motion.x+=(float)current.x*.014f;mob.motion.z+=(float)current.z*.014f;mob.fallDistance=0;
         }
         else if(mob.grounded&&mob.motion.y<=0)mob.motion.y=-.08f;
@@ -331,7 +333,8 @@ public partial class World
         if(!water&&!lava&&!landed)
         {mob.motion.y=(mob.motion.y-.08f)*.98f;if(mob.species==MobType.Chicken&&mob.motion.y<0)mob.motion.y*=.6f;}
         bool blocked=Mathf.Abs(move.x-mob.motion.x)>.0001f||Mathf.Abs(move.z-mob.motion.z)>.0001f;
-        if(blocked && (mob.grounded||landed))
+        if(blocked&&water)mob.motion.y=.3f;
+        else if(blocked && (mob.grounded||landed))
         {mob.motion.y=.42f;mob.targetYaw+=mobRandom.NextInt(61)-30;}
         if(blocked&&mob.species==MobType.Spider)mob.motion.y=.2f;
         if(mob.position.y<-64){mobs.Remove(mob.id);BroadcastMob(mob,true);return;}
