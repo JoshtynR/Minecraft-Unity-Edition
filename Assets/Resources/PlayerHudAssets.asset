@@ -23,6 +23,7 @@ MonoBehaviour:
   chestContainer: {fileID: 2800000, guid: 6b8fdecc7993e024dbc6591d03546e2f, type: 3}
   waterOverlay: {fileID: 0}
   fireOverlay: {fileID: 2800000, guid: 5b5ed73cbc1c99a4ab65f2e474ee8227, type: 3}
+  particleAtlas: {fileID: 2800000, guid: e992850716868fd4f982a0a81ee6939b, type: 3}
   smokeParticle: {fileID: 2800000, guid: 6cb7021b86ad7f2409306e556a08b757, type: 3}
   splashParticle: {fileID: 2800000, guid: 87adbd74e5674a445b6ce5c11bbbf250, type: 3}
   lavaParticle: {fileID: 2800000, guid: 1fa6a17cb460e1a4fbd5cf1788c4d970, type: 3}

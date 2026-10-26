@@ -10,6 +10,7 @@ public static class PlayerHudAssetSetup
     public const string CraftingPath = "Assets/Textures/Minecraft/gui/container/crafting_table.png";
     public const string FurnacePath = "Assets/Textures/Minecraft/gui/container/furnace.png";
     public const string CloudPath = "Assets/Textures/Minecraft/environment/clouds.png";
+    public const string ParticleAtlasPath = "Assets/Textures/Minecraft/particle/particles.png";
     static PlayerHudAssetSetup() { EditorApplication.delayCall += Bind; }
 
     [MenuItem("Minecraft/Textures/Refresh GUI and Chest Assets")]
@@ -43,6 +44,7 @@ public static class PlayerHudAssetSetup
         var waterOverlay=config.waterOverlay!=null?config.waterOverlay:Prepare("Assets/Textures/Minecraft/misc/underwater.png");
         var fireOverlay=config.fireOverlay!=null?config.fireOverlay:Prepare("Assets/Textures/Minecraft/block/fire_0.png");
         if(fireOverlay==null)fireOverlay=Prepare("Assets/Textures/Minecraft/fire_0.png");
+        var particleAtlas=Prepare(ParticleAtlasPath);
         var smokeParticle=config.smokeParticle!=null?config.smokeParticle:Prepare("Assets/Textures/Minecraft/particle/generic_0.png");
         var splashParticle=config.splashParticle!=null?config.splashParticle:Prepare("Assets/Textures/Minecraft/particle/splash_0.png");
         var lavaParticle=config.lavaParticle!=null?config.lavaParticle:Prepare("Assets/Textures/Minecraft/particle/lava.png");
@@ -60,6 +62,7 @@ public static class PlayerHudAssetSetup
             (chestContainer == null || config.chestContainer == chestContainer) &&
             (waterOverlay == null || config.waterOverlay == waterOverlay) &&
             (fireOverlay == null || config.fireOverlay == fireOverlay)&&
+            (particleAtlas == null || config.particleAtlas == particleAtlas)&&
             (smokeParticle == null || config.smokeParticle == smokeParticle)&&
             (splashParticle == null || config.splashParticle == splashParticle)&&
             (lavaParticle == null || config.lavaParticle == lavaParticle)&&
@@ -86,6 +89,7 @@ public static class PlayerHudAssetSetup
         if (chestContainer != null) config.chestContainer = chestContainer;
         if (waterOverlay != null) config.waterOverlay=waterOverlay;
         if (fireOverlay != null) config.fireOverlay=fireOverlay;
+        if (particleAtlas != null) config.particleAtlas=particleAtlas;
         if (smokeParticle != null) config.smokeParticle=smokeParticle;
         if (splashParticle != null) config.splashParticle=splashParticle;
         if (lavaParticle != null) config.lavaParticle=lavaParticle;
@@ -120,7 +124,8 @@ public class PlayerHudIconImporter : AssetPostprocessor
     private void OnPreprocessTexture()
     {
         if (assetPath != PlayerHudAssetSetup.IconsPath && assetPath != PlayerHudAssetSetup.BreakPath &&
-            assetPath != PlayerHudAssetSetup.InventoryPath && assetPath != PlayerHudAssetSetup.CraftingPath && assetPath != PlayerHudAssetSetup.FurnacePath) return;
+            assetPath != PlayerHudAssetSetup.InventoryPath && assetPath != PlayerHudAssetSetup.CraftingPath && assetPath != PlayerHudAssetSetup.FurnacePath &&
+            assetPath != PlayerHudAssetSetup.ParticleAtlasPath) return;
         var importer = (TextureImporter)assetImporter;
         importer.filterMode = FilterMode.Point;
         importer.mipmapEnabled = false;
@@ -136,6 +141,7 @@ public class PlayerHudIconImporter : AssetPostprocessor
                 path == PlayerHudAssetSetup.InventoryPath || path == PlayerHudAssetSetup.CraftingPath || path == PlayerHudAssetSetup.FurnacePath || path=="Assets/Textures/Minecraft/entity/chest/normal.png" ||
                 path=="Assets/Textures/Minecraft/block/normal.png" || path=="Assets/Textures/Minecraft/gui/container/generic_54.png" ||
                 path=="Assets/Textures/Minecraft/environment/sun.png" || path=="Assets/Textures/Minecraft/environment/moon_phases.png" || path=="Assets/Textures/Minecraft/environment/clouds.png" ||
+                path==PlayerHudAssetSetup.ParticleAtlasPath ||
                 path=="Assets/Textures/sprites/options_background.png" || path=="Assets/Textures/Player/player.mat" || path=="Assets/Textures/Player/steve.png" ||
                 path=="Assets/Textures/Minecraft/entity/steve.png" || path=="Assets/Textures/Minecraft/entity/player/wide/steve.png")
             { EditorApplication.delayCall += PlayerHudAssetSetup.Bind; break; }

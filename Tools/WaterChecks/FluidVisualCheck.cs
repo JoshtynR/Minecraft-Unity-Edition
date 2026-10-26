@@ -57,18 +57,20 @@ namespace UnityEngine
  public enum TextureFormat {RGBA32}public enum FilterMode {Bilinear}public enum TextureWrapMode {Clamp}
  public class Font:Object {}
  public class Texture2D:Texture {public int width=16,height=16;public Color[] pixels;public FilterMode filterMode;public TextureWrapMode wrapMode;public Texture2D(){}public Texture2D(int w,int h,TextureFormat format,bool mip){width=w;height=h;}public void SetPixels(Color[] colors){pixels=colors;}public void Apply(){}public static Texture2D whiteTexture=new Texture2D();}
+ public class Sprite:Object {public Texture2D texture;public Rect rect;public static Sprite Create(Texture2D texture,Rect rect,Vector2 pivot,float pixelsPerUnit)=>new Sprite{texture=texture,rect=rect};}
+ public class AnimationCurve {public static AnimationCurve Linear(float a,float b,float c,float d)=>new AnimationCurve();}
  public class Material:Object {public Texture mainTexture;public Material(Material m){}}
  public static class Resources {public static Dictionary<string,Object> items=new Dictionary<string,Object>();public static T Load<T>(string key) where T:Object {Object o;return items.TryGetValue(key,out o)?(T)o:null;}}
  public class AudioClip:Object {public static AudioClip Create(string name,int a,int b,int c,bool d)=>new AudioClip{name=name};public void SetData(float[] v,int start){}}
  public enum AudioRolloffMode {Linear}
  public class AudioSource:Component {public bool playOnAwake;public float spatialBlend,maxDistance;public AudioRolloffMode rolloffMode;public void PlayOneShot(AudioClip c,float v){}}
  public enum ParticleSystemStopBehavior {StopEmittingAndClear}public enum ParticleSystemSimulationSpace {World}
- public enum ParticleSystemAnimationMode {Grid}public enum ParticleSystemAnimationType {WholeSheet}
+ public enum ParticleSystemAnimationMode {Grid,Sprites}public enum ParticleSystemAnimationType {WholeSheet}
  public class ParticleSystem:Component
  {
-  public struct MinMaxCurve {public float min,max;public MinMaxCurve(float value){min=max=value;}public MinMaxCurve(float low,float high){min=low;max=high;}}
+  public struct MinMaxCurve {public float min,max;public AnimationCurve curve;public MinMaxCurve(float value){min=max=value;curve=null;}public MinMaxCurve(float low,float high){min=low;max=high;curve=null;}public MinMaxCurve(float multiplier,AnimationCurve value){min=max=multiplier;curve=value;}}
   public class MainModule {public bool loop,playOnAwake;public int maxParticles;public float gravityModifier;public ParticleSystemSimulationSpace simulationSpace;}
-  public class TextureSheetAnimationModule {public bool enabled;public ParticleSystemAnimationMode mode;public int numTilesX,numTilesY;public ParticleSystemAnimationType animation;public MinMaxCurve frameOverTime,startFrame;}
+  public class TextureSheetAnimationModule {public bool enabled;public ParticleSystemAnimationMode mode;public int numTilesX,numTilesY;public ParticleSystemAnimationType animation;public MinMaxCurve frameOverTime,startFrame;public List<Sprite> sprites=new List<Sprite>();public int spriteCount=>sprites.Count;public void AddSprite(Sprite sprite){sprites.Add(sprite);}}
   public class Toggle {public bool enabled;}
   public struct EmitParams {public Vector3 position,velocity;public float startLifetime,startSize,startRotation;public Color startColor;}
   public MainModule main=new MainModule();public Toggle emission=new Toggle(),shape=new Toggle();public TextureSheetAnimationModule textureSheetAnimation=new TextureSheetAnimationModule();public int emitted;public int particleCount=>emitted;
@@ -134,7 +136,7 @@ public static class FluidVisualCheck
  static void Call(object o,string method,params object[] args)=>o.GetType().GetMethod(method,BindingFlags.Instance|BindingFlags.NonPublic).Invoke(o,args);
  public static void Main()
  {
-  var template=new Material(null);var assets=new PlayerHudAssets{fluidFizz=new AudioClip{name="userFizz"},fluidSplash=new AudioClip{name="userSplash"}};
+  var template=new Material(null);var atlas=new Texture2D{width=256,height=256};var assets=new PlayerHudAssets{particleAtlas=atlas,fluidFizz=new AudioClip{name="userFizz"},fluidSplash=new AudioClip{name="userSplash"}};
   Resources.items["FluidParticleMaterial"]=template;Resources.items["PlayerHudAssets"]=assets;
   var world=World.Instance=new GameObject("World").AddComponent<World>();
   var player=new GameObject("Player").AddComponent<Player>();player.world=world;
@@ -155,11 +157,14 @@ public static class FluidVisualCheck
   Check(world.transform.position.x==0&&world.transform.position.y==0,"positional sound never moves the world transform");
   var emitters=(ParticleSystem[])typeof(FluidEffects).GetField("emitters",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(fluidEffects);
   Check(emitters[0].emitted==8&&emitters[0].main.loop&&emitters[0].main.maxParticles==256,"smoke emitter reuses a bounded looping system");
+  Check(emitters[0].textureSheetAnimation.mode==ParticleSystemAnimationMode.Sprites&&emitters[0].textureSheetAnimation.spriteCount==8&&emitters[1].textureSheetAnimation.spriteCount==4,"packed atlas drives animated smoke and splash sequences");
+  Check(emitters[2].GetComponent<ParticleSystemRenderer>().sharedMaterial.mainTexture==atlas&&emitters[4].textureSheetAnimation.spriteCount==1,"lava, bubbles, and fire sample the shared particle atlas directly");
   var stoneTexture=new Texture2D();BlockDataManager.blockTypeDataDictionary[(int)BlockType.Stone]=new BlockTypeData{textureData=new TextureData{side=stoneTexture}};
   world.PlayBlockBreakParticles(new Vector3Int(1,2,3),BlockType.Stone);
   var breakEmitters=(ParticleSystem[])typeof(FluidEffects).GetField("breakEmitters",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(fluidEffects);
   Check(breakEmitters[0].emitted==64&&breakEmitters[0].textureSheetAnimation.numTilesX==4&&breakEmitters[0].textureSheetAnimation.numTilesY==4,"block destruction emits the classic 4x4x4 texture-chip burst");
-  Call(fluidEffects,"OnDestroy");Check(emitters[0].gameObject.destroyed&&!template.destroyed&&!assets.fluidFizz.destroyed&&!assets.fluidSplash.destroyed,"cleanup destroys owned emitters and preserves borrowed assets");
+  var ownedSprite=emitters[0].textureSheetAnimation.sprites[0];
+  Call(fluidEffects,"OnDestroy");Check(emitters[0].gameObject.destroyed&&ownedSprite.destroyed&&!atlas.destroyed&&!template.destroyed&&!assets.fluidFizz.destroyed&&!assets.fluidSplash.destroyed,"cleanup destroys owned emitters and sprites while preserving borrowed assets");
   world.blocks[new Vector3Int(0,0,0)]=new Block{type=BlockType.Lava};world.blocks[new Vector3Int(0,1,0)].type=BlockType.Lava;
   Call(player,"AdvanceFluidHazards",.05f);Check(player.health==16&&player.burning,"actual player adapter applies authoritative lava damage");
   world.blocks[new Vector3Int(0,0,0)].type=BlockType.Water;world.blocks[new Vector3Int(0,1,0)].type=BlockType.Water;

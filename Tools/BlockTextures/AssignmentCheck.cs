@@ -145,6 +145,7 @@ public static class AssignmentCheck
    var steve=Image(root+"/entity/steve.png",64,64,10);
    var fireOverlay=Image(root+"/fire_0.png",16,512);
    var bubbleParticle=Image(root+"/particle/bubble.png");
+   var particleAtlas=Image(PlayerHudAssetSetup.ParticleAtlasPath,256,256);
    var widgets=Image(root+"/gui/widgets.png",256,256);
    var guiFont=new Font();UnityEditor.AssetDatabase.assets["Assets/UI/Font/MinecraftRegular.otf"]=guiFont;
    var smokeParticle=Image(root+"/particle/generic_0.png");
@@ -185,6 +186,7 @@ public static class AssignmentCheck
    guiImporter.mipmapEnabled=true;guiImporter.npotScale=UnityEditor.TextureImporterNPOTScale.ToNearest;
    PlayerHudAssetSetup.Bind();
    Check(hud.fireOverlay==fireOverlay&&hud.bubbleParticle==bubbleParticle&&hud.smokeParticle==smokeParticle,"fluid effects bind the actual root fire sheet and particle folder");
+   Check(hud.particleAtlas==particleAtlas,"animated effects bind the packed particle sheet directly");
    Check(hud.guiFont==guiFont&&hud.guiWidgets==widgets,"death screen binds Minecraft font and GUI button artwork");
    hud.bubbleParticle=original;PlayerHudAssetSetup.Bind();Check(hud.bubbleParticle==original,"fluid effects preserve user particle overrides");
    Check(ReferenceEquals(hud.chestSkin,chestSkin)&&ReferenceEquals(hud.chestContainer,chestContainer),"editor binds user's modern chest sheet and container GUI without modifying block catalog");

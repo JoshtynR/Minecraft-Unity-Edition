@@ -1,11 +1,14 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Bounded reusable emitters; no objects or materials are allocated per burst.
 public sealed class FluidEffects : MonoBehaviour
 {
     private const int BreakEmitterCount=8;
-    private readonly ParticleSystem[] emitters=new ParticleSystem[4];
-    private readonly Material[] materials=new Material[4];
+    private const int EffectEmitterCount=6;
+    private readonly ParticleSystem[] emitters=new ParticleSystem[EffectEmitterCount];
+    private readonly Material[] materials=new Material[EffectEmitterCount];
+    private readonly List<Sprite> atlasSprites=new List<Sprite>(48);
     private readonly ParticleSystem[] breakEmitters=new ParticleSystem[BreakEmitterCount];
     private readonly Material[] breakMaterials=new Material[BreakEmitterCount];
     private readonly Texture[] breakTextures=new Texture[BreakEmitterCount];
@@ -20,7 +23,8 @@ public sealed class FluidEffects : MonoBehaviour
     {
         var template=Resources.Load<Material>("FluidParticleMaterial");
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
-        for(int i=0;i<4;i++)
+        var atlas=assets==null?null:assets.particleAtlas;
+        for(int i=0;i<EffectEmitterCount;i++)
         {
             var go=new GameObject("FluidParticles"+i);go.transform.SetParent(transform,false);
             var ps=go.AddComponent<ParticleSystem>();ps.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -31,9 +35,10 @@ public sealed class FluidEffects : MonoBehaviour
             if(template!=null)
             {
                 materials[i]=new Material(template);renderer.sharedMaterial=materials[i];
-                Texture image=assets==null?null:i==0?assets.smokeParticle:i==1?assets.splashParticle:i==2?assets.lavaParticle:assets.bubbleParticle;
+                Texture image=atlas!=null?atlas:assets==null?null:i==0||i==5?assets.smokeParticle:i==1?assets.splashParticle:i==2?assets.lavaParticle:assets.bubbleParticle;
                 if(image!=null)materials[i].mainTexture=image;
             }
+            if(atlas!=null)ConfigureAtlasAnimation(ps,atlas,i);
             renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;
             emitters[i]=ps;
             ps.Play();
@@ -61,6 +66,23 @@ public sealed class FluidEffects : MonoBehaviour
         flow=assets!=null&&assets.fluidFlow!=null?assets.fluidFlow:GameAudio.Find("liquid/water");
         if(flow==null)flow=splash;
     }
+    private void ConfigureAtlasAnimation(ParticleSystem ps,Texture2D atlas,int effect)
+    {
+        var animation=ps.textureSheetAnimation;animation.enabled=true;animation.mode=ParticleSystemAnimationMode.Sprites;
+        if(effect==0)for(int i=0;i<8;i++)AddAtlasSprite(animation,atlas,i*8,0,8,8);
+        else if(effect==1)for(int i=0;i<4;i++)AddAtlasSprite(animation,atlas,24+i*8,8,8,8);
+        else if(effect==2)AddAtlasSprite(animation,atlas,8,24,8,8);
+        else if(effect==3)AddAtlasSprite(animation,atlas,0,16,8,8);
+        else if(effect==4)AddAtlasSprite(animation,atlas,0,24,8,8);
+        else for(int i=0;i<12;i++)AddAtlasSprite(animation,atlas,i*16,i>=9?147:148,16,16);
+        animation.frameOverTime=new ParticleSystem.MinMaxCurve(1,AnimationCurve.Linear(0,0,1,1));
+        animation.startFrame=new ParticleSystem.MinMaxCurve(0);
+    }
+    private void AddAtlasSprite(ParticleSystem.TextureSheetAnimationModule animation,Texture2D atlas,int x,int top,int width,int height)
+    {
+        var sprite=Sprite.Create(atlas,new Rect(x,atlas.height-top-height,width,height),new Vector2(.5f,.5f),width);
+        sprite.name="ParticleAtlas_"+x+"_"+top;atlasSprites.Add(sprite);animation.AddSprite(sprite);
+    }
     private AudioClip Noise(string name,bool low)
     {
         const int rate=22050;var samples=new float[rate/3];float previous=0;
@@ -70,14 +92,14 @@ public sealed class FluidEffects : MonoBehaviour
     }
     public void Emit(Vector3 position,byte kind)
     {
-        int index=kind==0||kind==4?0:kind==1?1:kind==2?2:3;
+        int index=kind==0?0:kind==1?1:kind==2?2:kind==4?4:3;
         for(int i=0;i<(kind==2?1:8);i++)
         {
             var emit=new ParticleSystem.EmitParams();
             emit.position=position+new Vector3((float)cosmetic.NextDouble()-.5f,.1f,(float)cosmetic.NextDouble()-.5f);
             emit.velocity=new Vector3(((float)cosmetic.NextDouble()-.5f)*.5f,index==0?.8f:index==2?2:1,((float)cosmetic.NextDouble()-.5f)*.5f);
-            emit.startLifetime=index==0?1.2f:.6f;emit.startSize=index==0?.2f:.1f;
-            emit.startColor=index==0?new Color(.55f,.55f,.55f,.7f):index==2?new Color(1,.45f,.05f,1):new Color(.45f,.65f,1,.8f);
+            emit.startLifetime=index==0?1.2f:index==4?.5f:.6f;emit.startSize=index==0?.2f:index==4?.16f:.1f;
+            emit.startColor=index==0?new Color(.55f,.55f,.55f,.7f):index==1||index==3?new Color(.45f,.65f,1,.8f):Color.white;
             emitters[index].Emit(emit,1);
         }
         if(kind<2)GameAudio.PlayClip(kind==0?fizz:splash,position,kind==0?.5f:.35f);
@@ -100,7 +122,7 @@ public sealed class FluidEffects : MonoBehaviour
             emit.startLifetime=.65f+(float)cosmetic.NextDouble()*.35f;
             emit.startSize=.12f+(float)cosmetic.NextDouble()*.12f;
             emit.startColor=new Color(.72f,.72f,.72f,.85f);
-            emitters[0].Emit(emit,1);
+            emitters[5].Emit(emit,1);
         }
     }
     private int BreakEmitter(Texture texture)
@@ -154,6 +176,7 @@ public sealed class FluidEffects : MonoBehaviour
     {
         foreach(var ps in emitters)if(ps!=null)Destroy(ps.gameObject);
         foreach(var material in materials)if(material!=null)Destroy(material);
+        foreach(var sprite in atlasSprites)if(sprite!=null)Destroy(sprite);
         foreach(var ps in breakEmitters)if(ps!=null)Destroy(ps.gameObject);
         foreach(var material in breakMaterials)if(material!=null)Destroy(material);
         if(fizz!=null&&ownsFizz)Destroy(fizz);
