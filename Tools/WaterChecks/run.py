@@ -55,6 +55,7 @@ def main():
         production.append('Menus/MenuManagers/EscapeMenuManager.cs')
         production.append('BlockSoundRules.cs')
         production.append('World/SkyClock.cs')
+        production.append('World/LightmapLighting.cs')
         subprocess.run([args.mcs,'-langversion:latest',f'-out:{visual}',str(ROOT/'Tools/AudioChecks/SilentGameAudio.cs'),str(ROOT/'Tools/WaterChecks/FluidVisualCheck.cs'),*[str(ROOT/'Assets/_Scripts'/p) for p in production]],check=True)
         subprocess.run([args.mono,str(visual)],check=True)
 

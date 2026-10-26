@@ -1,10 +1,15 @@
 using UnityEngine;
 
-// Four bounded reusable emitters; no objects/materials are allocated per splash.
+// Bounded reusable emitters; no objects or materials are allocated per burst.
 public sealed class FluidEffects : MonoBehaviour
 {
+    private const int BreakEmitterCount=8;
     private readonly ParticleSystem[] emitters=new ParticleSystem[4];
     private readonly Material[] materials=new Material[4];
+    private readonly ParticleSystem[] breakEmitters=new ParticleSystem[BreakEmitterCount];
+    private readonly Material[] breakMaterials=new Material[BreakEmitterCount];
+    private readonly Texture[] breakTextures=new Texture[BreakEmitterCount];
+    private int nextBreakEmitter;
     private AudioClip fizz,splash;
     private AudioClip flow;
     private bool ownsFizz,ownsSplash;
@@ -32,6 +37,21 @@ public sealed class FluidEffects : MonoBehaviour
             renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;
             emitters[i]=ps;
             ps.Play();
+        }
+        for(int i=0;i<BreakEmitterCount;i++)
+        {
+            var go=new GameObject("BlockBreakParticles"+i);go.transform.SetParent(transform,false);
+            var ps=go.AddComponent<ParticleSystem>();ps.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main=ps.main;main.loop=false;main.playOnAwake=false;main.maxParticles=128;
+            main.simulationSpace=ParticleSystemSimulationSpace.World;main.gravityModifier=1;
+            var emission=ps.emission;emission.enabled=false;var shape=ps.shape;shape.enabled=false;
+            var animation=ps.textureSheetAnimation;animation.enabled=true;animation.mode=ParticleSystemAnimationMode.Grid;
+            animation.numTilesX=4;animation.numTilesY=4;animation.animation=ParticleSystemAnimationType.WholeSheet;
+            animation.frameOverTime=new ParticleSystem.MinMaxCurve(0);animation.startFrame=new ParticleSystem.MinMaxCurve(0,1);
+            var renderer=ps.GetComponent<ParticleSystemRenderer>();
+            if(template!=null){breakMaterials[i]=new Material(template);renderer.sharedMaterial=breakMaterials[i];}
+            renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;renderer.receiveShadows=false;
+            breakEmitters[i]=ps;ps.Play();
         }
         fizz=assets!=null&&assets.fluidFizz!=null?assets.fluidFizz:GameAudio.Find("random/fizz");
         splash=assets!=null&&assets.fluidSplash!=null?assets.fluidSplash:GameAudio.Find("liquid/splash");
@@ -83,6 +103,37 @@ public sealed class FluidEffects : MonoBehaviour
             emitters[0].Emit(emit,1);
         }
     }
+    private int BreakEmitter(Texture texture)
+    {
+        for(int i=0;i<BreakEmitterCount;i++)if(breakTextures[i]==texture)return i;
+        for(int i=0;i<BreakEmitterCount;i++)if(breakEmitters[i].particleCount==0)
+        {breakTextures[i]=texture;if(breakMaterials[i]!=null)breakMaterials[i].mainTexture=texture;return i;}
+        int index=nextBreakEmitter++%BreakEmitterCount;
+        breakEmitters[index].Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);
+        breakTextures[index]=texture;if(breakMaterials[index]!=null)breakMaterials[index].mainTexture=texture;breakEmitters[index].Play();return index;
+    }
+    public void EmitBlockBreak(World world,Vector3Int cell,BlockType type)
+    {
+        if(world==null||type==BlockType.Air||type==BlockType.Nothing||!BlockDataManager.blockTypeDataDictionary.TryGetValue((int)type,out var data)||data==null)return;
+        var texture=data.textureData.side!=null?data.textureData.side:data.textureData.top!=null?data.textureData.top:data.textureData.bottom;
+        if(texture==null)return;
+        int index=BreakEmitter(texture);var ps=breakEmitters[index];
+        var sample=world.GetBlock(cell);int sky=sample==null?15:sample.GetSkyLight(),block=sample==null?0:sample.GetBlockLight();
+        var light=LightmapLighting.Sample(sky,block,LightmapLighting.SunBrightness(SkyClock.Angle(world.CurrentWorldTicks)),world.gamma,world.dimension==WorldDimension.Nether);
+        var tint=data.albedoTint;var color=new Color(tint.r*light.r,tint.g*light.g,tint.b*light.b,tint.a);
+        var center=(Vector3)cell+Vector3.one*.5f;
+        // Classic destroy effects divide the block into a 4x4x4 grid. The
+        // texture-sheet module independently chooses one of sixteen face chips.
+        for(int x=0;x<4;x++)for(int y=0;y<4;y++)for(int z=0;z<4;z++)
+        {
+            var position=(Vector3)cell+new Vector3((x+.5f)/4,(y+.5f)/4,(z+.5f)/4);
+            var outward=position-center;
+            var emit=new ParticleSystem.EmitParams{position=position,velocity=outward*1.4f+Vector3.up*.05f,
+                startLifetime=.45f+(float)cosmetic.NextDouble()*.35f,startSize=.1f+(float)cosmetic.NextDouble()*.06f,
+                startRotation=(float)cosmetic.NextDouble()*Mathf.PI*2,startColor=color};
+            ps.Emit(emit,1);
+        }
+    }
     private void Update()
     {
         displayTime+=Time.deltaTime;if(displayTime<.05f)return;displayTime=0;
@@ -103,6 +154,8 @@ public sealed class FluidEffects : MonoBehaviour
     {
         foreach(var ps in emitters)if(ps!=null)Destroy(ps.gameObject);
         foreach(var material in materials)if(material!=null)Destroy(material);
+        foreach(var ps in breakEmitters)if(ps!=null)Destroy(ps.gameObject);
+        foreach(var material in breakMaterials)if(material!=null)Destroy(material);
         if(fizz!=null&&ownsFizz)Destroy(fizz);
         if(splash!=null&&ownsSplash)Destroy(splash);
     }
