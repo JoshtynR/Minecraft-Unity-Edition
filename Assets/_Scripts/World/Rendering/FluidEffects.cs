@@ -4,6 +4,7 @@ using UnityEngine;
 // Bounded reusable emitters; no objects or materials are allocated per burst.
 public sealed class FluidEffects : MonoBehaviour
 {
+    private const float MinecraftTicksPerSecond=20;
     private const int BreakEmitterCount=8;
     private const int EffectEmitterCount=6;
     private readonly ParticleSystem[] emitters=new ParticleSystem[EffectEmitterCount];
@@ -29,7 +30,8 @@ public sealed class FluidEffects : MonoBehaviour
             var go=new GameObject("FluidParticles"+i);go.transform.SetParent(transform,false);
             var ps=go.AddComponent<ParticleSystem>();ps.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);
             var main=ps.main;main.loop=true;main.playOnAwake=false;main.maxParticles=256;
-            main.simulationSpace=ParticleSystemSimulationSpace.World;main.gravityModifier=i==2?.8f:0;
+            main.simulationSpace=ParticleSystemSimulationSpace.World;
+            main.gravityModifier=i==1?1.63f:i==2?1.22f:0;
             var emission=ps.emission;emission.enabled=false;var shape=ps.shape;shape.enabled=false;
             var renderer=ps.GetComponent<ParticleSystemRenderer>();
             if(template!=null)
@@ -48,7 +50,7 @@ public sealed class FluidEffects : MonoBehaviour
             var go=new GameObject("BlockBreakParticles"+i);go.transform.SetParent(transform,false);
             var ps=go.AddComponent<ParticleSystem>();ps.Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);
             var main=ps.main;main.loop=false;main.playOnAwake=false;main.maxParticles=128;
-            main.simulationSpace=ParticleSystemSimulationSpace.World;main.gravityModifier=1;
+            main.simulationSpace=ParticleSystemSimulationSpace.World;main.gravityModifier=1.63f;
             var emission=ps.emission;emission.enabled=false;var shape=ps.shape;shape.enabled=false;
             var animation=ps.textureSheetAnimation;animation.enabled=true;animation.mode=ParticleSystemAnimationMode.Grid;
             animation.numTilesX=4;animation.numTilesY=4;animation.animation=ParticleSystemAnimationType.WholeSheet;
@@ -69,12 +71,12 @@ public sealed class FluidEffects : MonoBehaviour
     private void ConfigureAtlasAnimation(ParticleSystem ps,Texture2D atlas,int effect)
     {
         var animation=ps.textureSheetAnimation;animation.enabled=true;animation.mode=ParticleSystemAnimationMode.Sprites;
-        if(effect==0)for(int i=0;i<8;i++)AddAtlasSprite(animation,atlas,i*8,0,8,8);
-        else if(effect==1)for(int i=0;i<4;i++)AddAtlasSprite(animation,atlas,24+i*8,8,8,8);
+        // Beta's generic/explode particles count texture indices down from 7.
+        if(effect==0||effect==4||effect==5)for(int i=7;i>=0;i--)AddAtlasSprite(animation,atlas,i*8,0,8,8);
+        // Splash/rain is texture index 21, not the later four-frame animation.
+        else if(effect==1)AddAtlasSprite(animation,atlas,40,8,8,8);
         else if(effect==2)AddAtlasSprite(animation,atlas,8,24,8,8);
         else if(effect==3)AddAtlasSprite(animation,atlas,0,16,8,8);
-        else if(effect==4)AddAtlasSprite(animation,atlas,0,24,8,8);
-        else for(int i=0;i<12;i++)AddAtlasSprite(animation,atlas,i*16,i>=9?147:148,16,16);
         animation.frameOverTime=new ParticleSystem.MinMaxCurve(1,AnimationCurve.Linear(0,0,1,1));
         animation.startFrame=new ParticleSystem.MinMaxCurve(0);
     }
@@ -93,13 +95,37 @@ public sealed class FluidEffects : MonoBehaviour
     public void Emit(Vector3 position,byte kind)
     {
         int index=kind==0?0:kind==1?1:kind==2?2:kind==4?4:3;
-        for(int i=0;i<(kind==2?1:8);i++)
+        int count=kind==0||kind==1?8:1;
+        for(int i=0;i<count;i++)
         {
             var emit=new ParticleSystem.EmitParams();
-            emit.position=position+new Vector3((float)cosmetic.NextDouble()-.5f,.1f,(float)cosmetic.NextDouble()-.5f);
-            emit.velocity=new Vector3(((float)cosmetic.NextDouble()-.5f)*.5f,index==0?.8f:index==2?2:1,((float)cosmetic.NextDouble()-.5f)*.5f);
-            emit.startLifetime=index==0?1.2f:index==4?.5f:.6f;emit.startSize=index==0?.2f:index==4?.16f:.1f;
-            emit.startColor=index==0?new Color(.55f,.55f,.55f,.7f):index==1||index==3?new Color(.45f,.65f,1,.8f):Color.white;
+            float x=RandomSigned(.5f),z=RandomSigned(.5f);
+            if(kind==0||kind==4)
+            {
+                float shade=RandomRange(.3f,.6f);
+                emit.position=position+new Vector3(x,.7f,z);
+                emit.velocity=new Vector3(RandomSigned(.4f),RandomRange(.2f,.6f),RandomSigned(.4f));
+                emit.startLifetime=MinecraftLifetime(8,.8f,.2f)*(kind==0?2.5f:1.5f);
+                emit.startSize=RandomRange(.35f,.55f);emit.startColor=new Color(shade,shade,shade,1);
+            }
+            else if(kind==1)
+            {
+                emit.position=position+new Vector3(x,0,z);
+                emit.velocity=new Vector3(RandomSigned(1.2f),RandomRange(2,4),RandomSigned(1.2f));
+                emit.startLifetime=MinecraftLifetime(8,.8f,.2f);emit.startSize=RandomRange(.08f,.16f);emit.startColor=Color.white;
+            }
+            else if(kind==2)
+            {
+                emit.position=position+new Vector3(x,.5f,z);
+                emit.velocity=new Vector3(RandomSigned(.4f)*MinecraftTicksPerSecond,RandomRange(.05f,.45f)*MinecraftTicksPerSecond,RandomSigned(.4f)*MinecraftTicksPerSecond);
+                emit.startLifetime=MinecraftLifetime(16,.8f,.2f);emit.startSize=RandomRange(.16f,.24f);emit.startColor=Color.white;
+            }
+            else
+            {
+                emit.position=position+new Vector3(RandomSigned(.2f),RandomSigned(.1f),RandomSigned(.2f));
+                emit.velocity=new Vector3(RandomSigned(.2f),RandomRange(1.5f,3),RandomSigned(.2f));
+                emit.startLifetime=MinecraftLifetime(8,.8f,.2f);emit.startSize=RandomRange(.08f,.14f);emit.startColor=Color.white;
+            }
             emitters[index].Emit(emit,1);
         }
         if(kind<2)GameAudio.PlayClip(kind==0?fizz:splash,position,kind==0?.5f:.35f);
@@ -116,14 +142,20 @@ public sealed class FluidEffects : MonoBehaviour
         {
             var emit=new ParticleSystem.EmitParams();
             emit.position=position+new Vector3(((float)cosmetic.NextDouble()*2-1)*radius,(float)cosmetic.NextDouble()*height,((float)cosmetic.NextDouble()*2-1)*radius);
-            var center=position+Vector3.up*height*.5f;
-            var outward=new Vector3(emit.position.x-center.x,emit.position.y-center.y,emit.position.z-center.z);
-            emit.velocity=outward.normalized*.15f+Vector3.up*(.2f+(float)cosmetic.NextDouble()*.15f);
-            emit.startLifetime=.65f+(float)cosmetic.NextDouble()*.35f;
-            emit.startSize=.12f+(float)cosmetic.NextDouble()*.12f;
-            emit.startColor=new Color(.72f,.72f,.72f,.85f);
+            emit.velocity=new Vector3(Gaussian()*.4f,Gaussian()*.4f,Gaussian()*.4f);
+            emit.startLifetime=RandomRange(6,9)/MinecraftTicksPerSecond;
+            emit.startSize=RandomRange(.15f,.3f);
+            float shade=RandomRange(.7f,1);emit.startColor=new Color(shade,shade,shade,1);
             emitters[5].Emit(emit,1);
         }
+    }
+    private float RandomSigned(float radius){return ((float)cosmetic.NextDouble()*2-1)*radius;}
+    private float RandomRange(float minimum,float maximum){return minimum+(float)cosmetic.NextDouble()*(maximum-minimum);}
+    private float MinecraftLifetime(float numeratorTicks,float span,float floor){return numeratorTicks/(RandomRange(0,span)+floor)/MinecraftTicksPerSecond;}
+    private float Gaussian()
+    {
+        float a=Mathf.Max(.000001f,(float)cosmetic.NextDouble());
+        return Mathf.Sqrt(-2*Mathf.Log(a))*Mathf.Cos((float)cosmetic.NextDouble()*Mathf.PI*2);
     }
     private int BreakEmitter(Texture texture)
     {
@@ -140,12 +172,14 @@ public sealed class FluidEffects : MonoBehaviour
         int typeIndex=(int)type;var definitions=BlockDataManager.blockTypeDataDictionary;
         if(definitions==null||typeIndex<0||typeIndex>=definitions.Length)return;
         var data=definitions[typeIndex];if(data==null)return;
-        var texture=data.textureData.side!=null?data.textureData.side:data.textureData.top!=null?data.textureData.top:data.textureData.bottom;
+        // EntityDiggingFX asks the block for side zero, which is the bottom
+        // face. This notably makes grass debris use dirt rather than grass-side.
+        var texture=data.textureData.bottom!=null?data.textureData.bottom:data.textureData.side!=null?data.textureData.side:data.textureData.top;
         if(texture==null)return;
         int index=BreakEmitter(texture);var ps=breakEmitters[index];
         var sample=world.GetBlock(cell);int sky=sample==null?15:sample.GetSkyLight(),block=sample==null?0:sample.GetBlockLight();
         var light=LightmapLighting.Sample(sky,block,LightmapLighting.SunBrightness(SkyClock.Angle(world.CurrentWorldTicks)),world.gamma,world.dimension==WorldDimension.Nether);
-        var tint=data.albedoTint;var color=new Color(tint.r*light.r,tint.g*light.g,tint.b*light.b,tint.a);
+        var tint=data.albedoTint;var color=new Color(tint.r*light.r*.6f,tint.g*light.g*.6f,tint.b*light.b*.6f,tint.a);
         var center=(Vector3)cell+Vector3.one*.5f;
         // Classic destroy effects divide the block into a 4x4x4 grid. The
         // texture-sheet module independently chooses one of sixteen face chips.
@@ -153,9 +187,8 @@ public sealed class FluidEffects : MonoBehaviour
         {
             var position=(Vector3)cell+new Vector3((x+.5f)/4,(y+.5f)/4,(z+.5f)/4);
             var outward=position-center;
-            var emit=new ParticleSystem.EmitParams{position=position,velocity=outward*1.4f+Vector3.up*.05f,
-                startLifetime=.45f+(float)cosmetic.NextDouble()*.35f,startSize=.1f+(float)cosmetic.NextDouble()*.06f,
-                rotation3D=new Vector3(0,0,(float)cosmetic.NextDouble()*Mathf.PI*2),startColor=color};
+            var emit=new ParticleSystem.EmitParams{position=position,velocity=outward*MinecraftTicksPerSecond,
+                startLifetime=MinecraftLifetime(4,.9f,.1f),startSize=RandomRange(.12f,.24f),startColor=color};
             ps.Emit(emit,1);
         }
     }
@@ -170,7 +203,7 @@ public sealed class FluidEffects : MonoBehaviour
             var b=player.CurrentWorld.GetBlock(p);if(b==null)continue;
             if(b.type==BlockType.Lava&&cosmetic.Next(100)==0)
             {var above=player.CurrentWorld.GetBlock(p+Vector3Int.up);if(above!=null&&above.type==BlockType.Air)Emit((Vector3)p+Vector3.one*.5f,2);}
-            else if(b.type==BlockType.Fire&&cosmetic.Next(8)==0)Emit((Vector3)p+Vector3.up*.5f,4);
+            else if(b.type==BlockType.Fire&&cosmetic.Next(8)==0)Emit((Vector3)p+Vector3.one*.5f,4);
             else if(b.type==BlockType.Water&&b.waterLevel>0&&b.waterLevel<8&&cosmetic.Next(64)==0&&Time.unscaledTime>=nextFlowSound)
             {nextFlowSound=Time.unscaledTime+GameAudio.Variation(1,2);GameAudio.PlayClip(flow,p,.12f);}
         }
