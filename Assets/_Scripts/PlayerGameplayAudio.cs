@@ -8,7 +8,7 @@ public sealed class PlayerGameplayAudio : MonoBehaviour
     private Vector3 previous;
     private int previousHealth,previousLevel;
     private bool initialized;
-    private float distance,caveTime;
+    private float distance,particleDistance,caveTime;
     private void Awake(){player=GetComponent<Player>();caveTime=GameAudio.Variation(90,180);}
     private void LateUpdate()
     {
@@ -22,7 +22,7 @@ public sealed class PlayerGameplayAudio : MonoBehaviour
         previousHealth=player.health;previousLevel=player.experienceLevel;
         var moved=position-previous;previous=position;
         float travel=new Vector2(moved.x,moved.z).magnitude;
-        if(player.health<=0||player.isFlying||player.isCrouching||travel>4){distance=0;return;}
+        if(player.health<=0||player.isFlying||player.isCrouching||travel>4){distance=particleDistance=0;return;}
         var below=world.GetBlock(position+Vector3.down*.1f);
         if(player.InWater)
         {
@@ -31,11 +31,19 @@ public sealed class PlayerGameplayAudio : MonoBehaviour
         }
         else if(below!=null&&BlockSoundRules.Material(below.type)!=null&&Mathf.Abs(moved.y)<.25f)
         {
+            if(player.isSprinting&&player.isGrounded&&travel>0)
+            {
+                particleDistance+=travel;int budget=4;
+                var velocity=new Vector3(moved.x,0,moved.z)*(1/Mathf.Max(.001f,Time.deltaTime));
+                while(particleDistance>=.25f&&budget-->0)
+                {particleDistance-=.25f;world.PlaySprintParticles(position,velocity,below);}
+            }
+            else particleDistance=0;
             distance+=travel;
             if(distance>=1.67f)
             {distance%=1.67f;GameAudio.Play(BlockSoundRules.Step(below.type),position,.3f,GameAudio.Variation(.9f,1.1f));}
         }
-        else distance=0;
+        else distance=particleDistance=0;
         if(!player.isLocalPlayer)return;
         caveTime-=Time.deltaTime;
         if(caveTime<=0)

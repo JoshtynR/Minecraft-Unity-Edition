@@ -29,5 +29,17 @@ public partial class World
         if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
         fluidEffects.EmitBlockBreak(this,position,type);
     }
+    public void PlayBlockHitParticles(Vector3Int position,BlockType type,Vector3 hitPoint)
+    {
+        if(Instance!=this||Application.isBatchMode||!Application.isPlaying)return;
+        if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
+        fluidEffects.EmitBlockHit(this,position,type,hitPoint);
+    }
+    public void PlaySprintParticles(Vector3 position,Vector3 horizontalVelocity,Block surface)
+    {
+        if(Instance!=this||Application.isBatchMode||!Application.isPlaying)return;
+        if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
+        fluidEffects.EmitSprintDust(this,position,horizontalVelocity,surface);
+    }
     private void DisposeFluidEffects(){if(fluidEffects!=null)Destroy(fluidEffects);fluidEffects=null;}
 }

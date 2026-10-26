@@ -10,6 +10,7 @@ public partial class Player
     private float localMineProgress, localMineClock, serverMineProgress, serverMineClock;
     private float nextLocalMineTime;
     private float nextMineSoundTime;
+    private float nextMineParticleTime;
     private double nextServerMineTime;
     private BlockBreakOverlay crackOverlay;
     private int localMineSlot,serverMineSlot;
@@ -39,6 +40,7 @@ public partial class Player
             localMining = true; localMinePosition = position; localMineType = block.type;
             localMineSlot=inventory.selectedSlotIndex;localMineItem=held;
             localMineProgress = localMineClock = 0;
+            nextMineParticleTime=Time.time;
             if (networkStarted && !isServer) CmdBeginMining(position, block.type, targetHitPoint,localMineSlot,inventory.DropInventorySnapshot(),knownItemWearRevision);
             else BeginServerMining(position, block.type, targetHitPoint);
         }
@@ -47,6 +49,11 @@ public partial class Player
         {
             nextMineSoundTime=Time.time+.25f;
             GameAudio.Play(BlockSoundRules.Step(localMineType),targetHitPoint,.25f,.5f);
+        }
+        if(Time.time>=nextMineParticleTime)
+        {
+            nextMineParticleTime=Time.time+.1f;
+            world.PlayBlockHitParticles(localMinePosition,localMineType,targetHitPoint);
         }
         while (localMineClock >= 0.05f)
         {
