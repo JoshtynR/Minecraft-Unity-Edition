@@ -51,7 +51,7 @@ namespace UnityEngine
  public struct Vector2 {public static Vector2 zero=>new Vector2();public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public static class Input {public static Vector3 mousePosition;}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;width=w;height=h;}public bool Contains(Vector2 p)=>p.x>=x&&p.x<x+width&&p.y>=y&&p.y<y+height;}
- public static class Mathf {public const float PI=(float)Math.PI;public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static float Clamp01(float n)=>Math.Max(0,Math.Min(1,n));public static int FloorToInt(float n)=>(int)Math.Floor(n);}
+ public static class Mathf {public const float PI=(float)Math.PI;public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static float Clamp01(float n)=>Math.Max(0,Math.Min(1,n));public static int FloorToInt(float n)=>(int)Math.Floor(n);public static float Sqrt(float n)=>(float)Math.Sqrt(n);public static float Log(float n)=>(float)Math.Log(n);public static float Cos(float n)=>(float)Math.Cos(n);}
  public enum CursorLockMode {None,Locked}public static class Cursor {public static CursorLockMode lockState=CursorLockMode.Locked;public static bool visible;}
  public class Texture:Object {}
  public enum TextureFormat {RGBA32}public enum FilterMode {Bilinear}public enum TextureWrapMode {Clamp}
@@ -157,12 +157,14 @@ public static class FluidVisualCheck
   Check(world.transform.position.x==0&&world.transform.position.y==0,"positional sound never moves the world transform");
   var emitters=(ParticleSystem[])typeof(FluidEffects).GetField("emitters",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(fluidEffects);
   Check(emitters[0].emitted==8&&emitters[0].main.loop&&emitters[0].main.maxParticles==256,"smoke emitter reuses a bounded looping system");
-  Check(emitters[0].textureSheetAnimation.mode==ParticleSystemAnimationMode.Sprites&&emitters[0].textureSheetAnimation.spriteCount==8&&emitters[1].textureSheetAnimation.spriteCount==4,"packed atlas drives animated smoke and splash sequences");
-  Check(emitters[2].GetComponent<ParticleSystemRenderer>().sharedMaterial.mainTexture==atlas&&emitters[4].textureSheetAnimation.spriteCount==1,"lava, bubbles, and fire sample the shared particle atlas directly");
-  var stoneTexture=new Texture2D();BlockDataManager.blockTypeDataDictionary[(int)BlockType.Stone]=new BlockTypeData{textureData=new TextureData{side=stoneTexture}};
+  Check(emitters[0].textureSheetAnimation.mode==ParticleSystemAnimationMode.Sprites&&emitters[0].textureSheetAnimation.spriteCount==8&&emitters[1].textureSheetAnimation.spriteCount==1,"packed atlas drives reverse generic smoke frames and Beta's fixed splash cell");
+  Check(emitters[2].GetComponent<ParticleSystemRenderer>().sharedMaterial.mainTexture==atlas&&emitters[4].textureSheetAnimation.spriteCount==8&&emitters[5].textureSheetAnimation.spriteCount==8,"lava, fire smoke, and mob explosions sample their classic atlas cells");
+  Check(emitters[0].textureSheetAnimation.sprites[0].rect.x==56&&emitters[1].textureSheetAnimation.sprites[0].rect.x==40,"classic generic animation starts at index seven and splash uses index twenty-one");
+  var stoneTexture=new Texture2D();var stoneBottom=new Texture2D();BlockDataManager.blockTypeDataDictionary[(int)BlockType.Stone]=new BlockTypeData{textureData=new TextureData{side=stoneTexture,bottom=stoneBottom}};
   world.PlayBlockBreakParticles(new Vector3Int(1,2,3),BlockType.Stone);
   var breakEmitters=(ParticleSystem[])typeof(FluidEffects).GetField("breakEmitters",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(fluidEffects);
   Check(breakEmitters[0].emitted==64&&breakEmitters[0].textureSheetAnimation.numTilesX==4&&breakEmitters[0].textureSheetAnimation.numTilesY==4,"block destruction emits the classic 4x4x4 texture-chip burst");
+  Check(breakEmitters[0].GetComponent<ParticleSystemRenderer>().sharedMaterial.mainTexture==stoneBottom&&Math.Abs(breakEmitters[0].main.gravityModifier-1.63f)<.001f,"block chips use Beta side zero and Beta gravity");
   var ownedSprite=emitters[0].textureSheetAnimation.sprites[0];
   Call(fluidEffects,"OnDestroy");Check(emitters[0].gameObject.destroyed&&ownedSprite.destroyed&&!atlas.destroyed&&!template.destroyed&&!assets.fluidFizz.destroyed&&!assets.fluidSplash.destroyed,"cleanup destroys owned emitters and sprites while preserving borrowed assets");
   world.blocks[new Vector3Int(0,0,0)]=new Block{type=BlockType.Lava};world.blocks[new Vector3Int(0,1,0)].type=BlockType.Lava;
