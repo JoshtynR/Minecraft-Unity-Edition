@@ -37,7 +37,7 @@ public sealed class FluidEffects : MonoBehaviour
             if(template!=null)
             {
                 materials[i]=new Material(template);renderer.sharedMaterial=materials[i];
-                Texture image=atlas!=null?atlas:assets==null?null:i==0||i==5?assets.smokeParticle:i==1?assets.splashParticle:i==2?assets.lavaParticle:assets.bubbleParticle;
+                Texture image=atlas!=null?atlas:assets==null?null:i==0||i==4||i==5?assets.smokeParticle:i==1?assets.splashParticle:i==2?assets.lavaParticle:assets.bubbleParticle;
                 if(image!=null)materials[i].mainTexture=image;
             }
             if(atlas!=null)ConfigureAtlasAnimation(ps,atlas,i);
@@ -142,9 +142,11 @@ public sealed class FluidEffects : MonoBehaviour
         {
             var emit=new ParticleSystem.EmitParams();
             emit.position=position+new Vector3(((float)cosmetic.NextDouble()*2-1)*radius,(float)cosmetic.NextDouble()*height,((float)cosmetic.NextDouble()*2-1)*radius);
-            emit.velocity=new Vector3(Gaussian()*.4f,Gaussian()*.4f,Gaussian()*.4f);
-            emit.startLifetime=RandomRange(6,9)/MinecraftTicksPerSecond;
-            emit.startSize=RandomRange(.15f,.3f);
+            emit.velocity=new Vector3((Gaussian()*.02f+RandomSigned(.05f))*MinecraftTicksPerSecond,
+                (Gaussian()*.02f+RandomSigned(.05f))*MinecraftTicksPerSecond,
+                (Gaussian()*.02f+RandomSigned(.05f))*MinecraftTicksPerSecond);
+            emit.startLifetime=MinecraftLifetime(4,.9f,.1f);
+            emit.startSize=RandomRange(.1f,.14f);
             float shade=RandomRange(.7f,1);emit.startColor=new Color(shade,shade,shade,1);
             emitters[5].Emit(emit,1);
         }
@@ -157,6 +159,13 @@ public sealed class FluidEffects : MonoBehaviour
         float a=Mathf.Max(.000001f,(float)cosmetic.NextDouble());
         return Mathf.Sqrt(-2*Mathf.Log(a))*Mathf.Cos((float)cosmetic.NextDouble()*Mathf.PI*2);
     }
+    private Vector3 ClassicChipVelocity(Vector3 baseMotion)
+    {
+        var motion=baseMotion+new Vector3(RandomSigned(.4f),RandomSigned(.4f),RandomSigned(.4f));
+        float length=motion.magnitude;if(length<.00001f)motion=Vector3.up;else motion*=1/length;
+        float speed=((float)cosmetic.NextDouble()+(float)cosmetic.NextDouble()+1)*.15f;
+        return motion*(speed*.4f*MinecraftTicksPerSecond)+Vector3.up*(.1f*MinecraftTicksPerSecond);
+    }
     private int BreakEmitter(Texture texture)
     {
         for(int i=0;i<BreakEmitterCount;i++)if(breakTextures[i]==texture)return i;
@@ -166,20 +175,29 @@ public sealed class FluidEffects : MonoBehaviour
         breakEmitters[index].Stop(true,ParticleSystemStopBehavior.StopEmittingAndClear);
         breakTextures[index]=texture;if(breakMaterials[index]!=null)breakMaterials[index].mainTexture=texture;breakEmitters[index].Play();return index;
     }
+    private bool BlockParticle(World world,Vector3Int cell,BlockType type,Texture preferred,out ParticleSystem ps,out Color color)
+    {
+        ps=null;color=Color.white;
+        if(world==null||type==BlockType.Air||type==BlockType.Nothing)return false;
+        int typeIndex=(int)type;var definitions=BlockDataManager.blockTypeDataDictionary;
+        if(definitions==null||typeIndex<0||typeIndex>=definitions.Length)return false;
+        var data=definitions[typeIndex];if(data==null)return false;
+        var texture=preferred!=null?preferred:data.textureData.side!=null?data.textureData.side:data.textureData.top!=null?data.textureData.top:data.textureData.bottom;
+        if(texture==null)return false;
+        ps=breakEmitters[BreakEmitter(texture)];
+        var sample=world.GetBlock(cell);int sky=sample==null?15:sample.GetSkyLight(),block=sample==null?0:sample.GetBlockLight();
+        var light=LightmapLighting.Sample(sky,block,LightmapLighting.SunBrightness(SkyClock.Angle(world.CurrentWorldTicks)),world.gamma,world.dimension==WorldDimension.Nether);
+        var tint=data.albedoTint;color=new Color(tint.r*light.r*.6f,tint.g*light.g*.6f,tint.b*light.b*.6f,tint.a);return true;
+    }
     public void EmitBlockBreak(World world,Vector3Int cell,BlockType type)
     {
-        if(world==null||type==BlockType.Air||type==BlockType.Nothing)return;
         int typeIndex=(int)type;var definitions=BlockDataManager.blockTypeDataDictionary;
-        if(definitions==null||typeIndex<0||typeIndex>=definitions.Length)return;
-        var data=definitions[typeIndex];if(data==null)return;
+        if(definitions==null||typeIndex<0||typeIndex>=definitions.Length||definitions[typeIndex]==null)return;
+        var data=definitions[typeIndex];
         // EntityDiggingFX asks the block for side zero, which is the bottom
         // face. This notably makes grass debris use dirt rather than grass-side.
         var texture=data.textureData.bottom!=null?data.textureData.bottom:data.textureData.side!=null?data.textureData.side:data.textureData.top;
-        if(texture==null)return;
-        int index=BreakEmitter(texture);var ps=breakEmitters[index];
-        var sample=world.GetBlock(cell);int sky=sample==null?15:sample.GetSkyLight(),block=sample==null?0:sample.GetBlockLight();
-        var light=LightmapLighting.Sample(sky,block,LightmapLighting.SunBrightness(SkyClock.Angle(world.CurrentWorldTicks)),world.gamma,world.dimension==WorldDimension.Nether);
-        var tint=data.albedoTint;var color=new Color(tint.r*light.r*.6f,tint.g*light.g*.6f,tint.b*light.b*.6f,tint.a);
+        if(!BlockParticle(world,cell,type,texture,out var ps,out var color))return;
         var center=(Vector3)cell+Vector3.one*.5f;
         // Classic destroy effects divide the block into a 4x4x4 grid. The
         // texture-sheet module independently chooses one of sixteen face chips.
@@ -187,23 +205,56 @@ public sealed class FluidEffects : MonoBehaviour
         {
             var position=(Vector3)cell+new Vector3((x+.5f)/4,(y+.5f)/4,(z+.5f)/4);
             var outward=position-center;
-            var emit=new ParticleSystem.EmitParams{position=position,velocity=outward*MinecraftTicksPerSecond,
+            var emit=new ParticleSystem.EmitParams{position=position,velocity=ClassicChipVelocity(outward),
                 startLifetime=MinecraftLifetime(4,.9f,.1f),startSize=RandomRange(.12f,.24f),startColor=color};
             ps.Emit(emit,1);
         }
+    }
+    public void EmitBlockHit(World world,Vector3Int cell,BlockType type,Vector3 hitPoint)
+    {
+        int typeIndex=(int)type;var definitions=BlockDataManager.blockTypeDataDictionary;
+        if(definitions==null||typeIndex<0||typeIndex>=definitions.Length||definitions[typeIndex]==null)return;
+        var data=definitions[typeIndex];var local=hitPoint-(Vector3)cell;
+        float bottom=Mathf.Abs(local.y),top=Mathf.Abs(1-local.y);
+        Texture texture=bottom<top?data.textureData.bottom:data.textureData.top;
+        if(Mathf.Min(bottom,top)>.01f)texture=data.textureData.side;
+        if(!BlockParticle(world,cell,type,texture,out var ps,out var color))return;
+        var p=(Vector3)cell+new Vector3(RandomRange(.1f,.9f),RandomRange(.1f,.9f),RandomRange(.1f,.9f));
+        float edge=bottom<top?0:1;if(Mathf.Min(bottom,top)<=.01f)p.y=cell.y+edge+(edge==0?-.1f:.1f);
+        else
+        {
+            float left=Mathf.Abs(local.x),right=Mathf.Abs(1-local.x),back=Mathf.Abs(local.z),front=Mathf.Abs(1-local.z);
+            float nearest=Mathf.Min(Mathf.Min(left,right),Mathf.Min(back,front));
+            if(nearest==left)p.x=cell.x-.1f;else if(nearest==right)p.x=cell.x+1.1f;else if(nearest==back)p.z=cell.z-.1f;else p.z=cell.z+1.1f;
+        }
+        var emit=new ParticleSystem.EmitParams{position=p,velocity=ClassicChipVelocity(Vector3.zero)*.2f,
+            startLifetime=MinecraftLifetime(4,.9f,.1f),startSize=RandomRange(.07f,.14f),startColor=color};
+        ps.Emit(emit,1);
+    }
+    public void EmitSprintDust(World world,Vector3 position,Vector3 horizontalVelocity,Block block)
+    {
+        if(block==null)return;int typeIndex=(int)block.type;var definitions=BlockDataManager.blockTypeDataDictionary;
+        if(definitions==null||typeIndex<0||typeIndex>=definitions.Length||definitions[typeIndex]==null)return;
+        var texture=definitions[typeIndex].textureData.top!=null?definitions[typeIndex].textureData.top:definitions[typeIndex].textureData.side;
+        var cell=block.globalWorldPosition;
+        if(!BlockParticle(world,cell,block.type,texture,out var ps,out var color))return;
+        var emit=new ParticleSystem.EmitParams{position=position+new Vector3(RandomSigned(.3f),.08f,RandomSigned(.3f)),
+            velocity=new Vector3(-horizontalVelocity.x*.2f,1.5f,-horizontalVelocity.z*.2f),
+            startLifetime=RandomRange(.25f,.5f),startSize=RandomRange(.08f,.14f),startColor=color};
+        ps.Emit(emit,1);
     }
     private void Update()
     {
         displayTime+=Time.deltaTime;if(displayTime<.05f)return;displayTime=0;
         var player=GameManager.Instance==null?null:GameManager.Instance.localPlayer;
         if(player==null||player.CurrentWorld==null)return;
-        for(int i=0;i<16;i++)
+        for(int i=0;i<128;i++)
         {
             var p=Vector3Int.FloorToInt(player.transform.position)+new Vector3Int(cosmetic.Next(-8,9),cosmetic.Next(-4,5),cosmetic.Next(-8,9));
             var b=player.CurrentWorld.GetBlock(p);if(b==null)continue;
             if(b.type==BlockType.Lava&&cosmetic.Next(100)==0)
             {var above=player.CurrentWorld.GetBlock(p+Vector3Int.up);if(above!=null&&above.type==BlockType.Air)Emit((Vector3)p+Vector3.one*.5f,2);}
-            else if(b.type==BlockType.Fire&&cosmetic.Next(8)==0)Emit((Vector3)p+Vector3.one*.5f,4);
+            else if(b.type==BlockType.Fire)Emit((Vector3)p+Vector3.one*.5f,4);
             else if(b.type==BlockType.Water&&b.waterLevel>0&&b.waterLevel<8&&cosmetic.Next(64)==0&&Time.unscaledTime>=nextFlowSound)
             {nextFlowSound=Time.unscaledTime+GameAudio.Variation(1,2);GameAudio.PlayClip(flow,p,.12f);}
         }

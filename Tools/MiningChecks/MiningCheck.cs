@@ -58,18 +58,21 @@ public enum Direction {down,up,backwards,forwards,left,right}
 public static class BlockHelper {public static Direction[] directions=(Direction[])Enum.GetValues(typeof(Direction));}
 public class ChunkData {}
 public class ShapeSlot {public BlockShapes orientation;public static implicit operator BlockShapes(ShapeSlot s)=>s.orientation;public BlockShape shape=new BlockShape(0,0,0,16,16,16);public BlockShape GetShape()=>shape;}
-public class Block {public BlockType type;public Vector3Int globalWorldPosition;public ShapeSlot blockShape=new ShapeSlot();}
+public class TextureData {public int FaceIndex(BlockType type,Direction direction)=>0;}
+public class BlockTypeData {public TextureData textureData=new TextureData();}
+public class Block {public BlockType type;public Vector3Int globalWorldPosition;public ShapeSlot blockShape=new ShapeSlot();public BlockTypeData BlockData=new BlockTypeData();}
 public struct MiningDropProbe {public BlockType type;public bool Empty=>type==BlockType.Nothing;}
 public class World
 {
  public List<InventoryStack> drops=new List<InventoryStack>();
  public InventoryStack MiningItemDrop(BlockType type,ItemType tool,int damage)=>ToolMining.Drop(type,tool,1,1,0,damage);
  public bool SpawnItemDrop(InventoryStack drop,Vector3 position){drops.Add(drop);return true;}
- public bool IsWorldCreated=true;public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();public int edits;
+ public bool IsWorldCreated=true;public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();public int edits,hitParticles;
  public bool chestProtected;public bool CanReplaceChest(Vector3Int position,BlockType next)=>!chestProtected;
  public Block GetBlock(Vector3 p)=>GetBlock(new Vector3Int((int)Math.Floor(p.x),(int)Math.Floor(p.y),(int)Math.Floor(p.z)));
  public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block{type=BlockType.Air,globalWorldPosition=p};}
  public void SetBlock(Vector3Int p,BlockType type){edits++;blocks[p].type=type;}
+ public void PlayBlockHitParticles(Vector3Int p,BlockType type,Vector3 hitPoint){hitParticles++;}
 }
 public class WorldServer {public static WorldServer instance;public void BroadcastBlock(World world,Vector3Int p,BlockType t,byte facing){} }
 public class Inventory
@@ -184,7 +187,7 @@ public static class MiningCheck
   var bedrock=Setup(BlockType.Bedrock);bedrock.Begin(bedrock.aimed,BlockType.Bedrock);for(int i=0;i<500;i++)bedrock.Step();Check(bedrock.world.edits==0,"bedrock never removed");
   var chest=Setup(BlockType.Chest);chest.world.chestProtected=true;chest.Begin(chest.aimed,BlockType.Chest);for(int i=0;i<200;i++)chest.Step();Check(chest.world.edits==0,"filled or open chest rejects mining before destruction");
   chest.world.chestProtected=false;chest.Begin(chest.aimed,BlockType.Chest);chest.Step();chest.world.chestProtected=true;for(int i=0;i<200;i++)chest.Step();Check(chest.world.edits==0,"chest opened or filled after mining began cancels destruction");
-  Resources.assets=new PlayerHudAssets{blockBreak=new Texture2D(),blockBreakMaterial=new Material()};var visual=Setup(BlockType.Log);Input.held=true;visual.Visual();Check(Material.last.frame.x==0.1f&&Mesh.last.vertices.Count==24,"ten-frame strip and six-face overlay");var ownedMesh=Mesh.last;var ownedMaterial=Material.last;Input.held=false;visual.Visual();visual.Cleanup();Check(ownedMesh.destroyed&&ownedMaterial.destroyed,"overlay destroys owned mesh/material");
+  Resources.assets=new PlayerHudAssets{blockBreak=new Texture2D(),blockBreakMaterial=new Material()};var visual=Setup(BlockType.Log);Input.held=true;visual.Visual();Check(Material.last.frame.x==0.1f&&Mesh.last.vertices.Count==24,"ten-frame strip and six-face overlay");Check(visual.world.hitParticles==1,"held mining emits one face chip on its bounded cadence");var ownedMesh=Mesh.last;var ownedMaterial=Material.last;Input.held=false;visual.Visual();visual.Cleanup();Check(ownedMesh.destroyed&&ownedMaterial.destroyed,"overlay destroys owned mesh/material");
   foreach(var stair in new[]{BlockType.WoodenStairs,BlockType.CobblestoneStairs})
   for(byte facing=0;facing<4;facing++)
   {

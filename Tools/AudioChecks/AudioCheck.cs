@@ -49,6 +49,7 @@ static class AudioCheck
   var observer=player.gameObject.AddComponent<PlayerGameplayAudio>();Tick(observer);Check(!Voices().Any(v=>v.isPlaying),"spawning player does not trigger a step or damage sound");
   player.transform.position=new Vector3(1.8f,0,0);Tick(observer);Check(Voices().Single(v=>v.isPlaying).clip.name.StartsWith("stone"),"walking plays sound for the supporting block");
   StopVoices();player.isCrouching=true;player.transform.position=new Vector3(3.6f,0,0);Tick(observer);Check(!Voices().Any(v=>v.isPlaying),"sneaking is silent");player.isCrouching=false;
+  player.isSprinting=true;player.transform.position=new Vector3(3.9f,0,0);Tick(observer);Check(World.Instance.sprintParticles==1,"sprinting emits supporting-block dust by distance rather than frame rate");player.isSprinting=false;
   player.transform.position=new Vector3(100,0,0);Tick(observer);Check(!Voices().Any(v=>v.isPlaying),"teleport does not generate a burst of footsteps");
   player.health=18;Tick(observer);Check(Voices().Single(v=>v.isPlaying).clip.name=="classic_hurt","health loss plays classic player hurt sound");
   StopVoices();Tick(observer);Check(!Voices().Any(v=>v.isPlaying),"unchanged health never repeats hurt sound");

@@ -34,7 +34,7 @@ namespace UnityEngine
  {
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
   public float magnitude=>(float)Math.Sqrt(x*x+y*y+z*z);public Vector3 normalized=>magnitude<.000001f?new Vector3():new Vector3(x/magnitude,y/magnitude,z/magnitude);
-  public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);
+  public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 zero=>new Vector3();
   public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
   public static Vector3 operator -(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
   public static Vector3 operator *(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);
@@ -51,7 +51,7 @@ namespace UnityEngine
  public struct Vector2 {public static Vector2 zero=>new Vector2();public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public static class Input {public static Vector3 mousePosition;}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;width=w;height=h;}public bool Contains(Vector2 p)=>p.x>=x&&p.x<x+width&&p.y>=y&&p.y<y+height;}
- public static class Mathf {public const float PI=(float)Math.PI;public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static float Clamp01(float n)=>Math.Max(0,Math.Min(1,n));public static int FloorToInt(float n)=>(int)Math.Floor(n);public static float Sqrt(float n)=>(float)Math.Sqrt(n);public static float Log(float n)=>(float)Math.Log(n);public static float Cos(float n)=>(float)Math.Cos(n);}
+ public static class Mathf {public const float PI=(float)Math.PI;public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static float Abs(float x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static float Clamp01(float n)=>Math.Max(0,Math.Min(1,n));public static int FloorToInt(float n)=>(int)Math.Floor(n);public static float Sqrt(float n)=>(float)Math.Sqrt(n);public static float Log(float n)=>(float)Math.Log(n);public static float Cos(float n)=>(float)Math.Cos(n);}
  public enum CursorLockMode {None,Locked}public static class Cursor {public static CursorLockMode lockState=CursorLockMode.Locked;public static bool visible;}
  public class Texture:Object {}
  public enum TextureFormat {RGBA32}public enum FilterMode {Bilinear}public enum TextureWrapMode {Clamp}
@@ -73,9 +73,9 @@ namespace UnityEngine
   public class TextureSheetAnimationModule {public bool enabled;public ParticleSystemAnimationMode mode;public int numTilesX,numTilesY;public ParticleSystemAnimationType animation;public MinMaxCurve frameOverTime,startFrame;public List<Sprite> sprites=new List<Sprite>();public int spriteCount=>sprites.Count;public void AddSprite(Sprite sprite){sprites.Add(sprite);}}
   public class Toggle {public bool enabled;}
   public struct EmitParams {public Vector3 position,velocity,rotation3D;public float startLifetime,startSize;public Color startColor;}
-  public MainModule main=new MainModule();public Toggle emission=new Toggle(),shape=new Toggle();public TextureSheetAnimationModule textureSheetAnimation=new TextureSheetAnimationModule();public int emitted;public int particleCount=>emitted;
+  public MainModule main=new MainModule();public Toggle emission=new Toggle(),shape=new Toggle();public TextureSheetAnimationModule textureSheetAnimation=new TextureSheetAnimationModule();public int emitted;public EmitParams lastEmit;public int particleCount=>emitted;
   void Awake(){gameObject.AddComponent<ParticleSystemRenderer>();}
-  public void Stop(bool b,ParticleSystemStopBehavior s){}public void Play(){}public void Emit(EmitParams p,int n){emitted+=n;}
+  public void Stop(bool b,ParticleSystemStopBehavior s){}public void Play(){}public void Emit(EmitParams p,int n){lastEmit=p;emitted+=n;}
  }
  public class ParticleSystemRenderer:Component {public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public bool receiveShadows;}
  public enum FogMode {Exponential,Linear}public enum CameraClearFlags {SolidColor,Skybox}
@@ -94,7 +94,7 @@ namespace UnityEngine
  public class GUISkin {public GUIStyle label=new GUIStyle();}
  public static class GUI {public static Color color;public static int depth;public static Matrix4x4 matrix;public static GUISkin skin=new GUISkin();public static List<string> labels=new List<string>();public static int clickButton=-1,buttons;public static void DrawTextureWithTexCoords(Rect r,Texture t,Rect uv){}public static void DrawTexture(Rect r,Texture t){}public static void Box(Rect r,string s){}public static void Label(Rect r,string s){}public static List<Tuple<Rect,string,Color,bool,int>> draws=new List<Tuple<Rect,string,Color,bool,int>>();public static void Label(Rect r,string s,GUIStyle style){labels.Add(s);draws.Add(Tuple.Create(r,s,style.normal.textColor,style.richText,style.fontSize));}public static bool Button(Rect r,string s,GUIStyle style)=>buttons++==clickButton;}
 }
-public class Block {public BlockType type;public byte waterLevel,blockShape;public int sky=15,light;public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
+public class Block {public BlockType type;public byte waterLevel,blockShape;public int sky=15,light;public Vector3Int globalWorldPosition;public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
 public static class SpecialBlockGeometry {public static bool NormalCube(BlockType t)=>t==BlockType.Stone;public static byte State(BlockType t,byte shape)=>shape;public static Vector3Int PartnerOffset(BlockType t,byte state)=>Vector3Int.right;}
 public partial class World:MonoBehaviour
 {
@@ -160,11 +160,19 @@ public static class FluidVisualCheck
   Check(emitters[0].textureSheetAnimation.mode==ParticleSystemAnimationMode.Sprites&&emitters[0].textureSheetAnimation.spriteCount==8&&emitters[1].textureSheetAnimation.spriteCount==1,"packed atlas drives reverse generic smoke frames and Beta's fixed splash cell");
   Check(emitters[2].GetComponent<ParticleSystemRenderer>().sharedMaterial.mainTexture==atlas&&emitters[4].textureSheetAnimation.spriteCount==8&&emitters[5].textureSheetAnimation.spriteCount==8,"lava, fire smoke, and mob explosions sample their classic atlas cells");
   Check(emitters[0].textureSheetAnimation.sprites[0].rect.x==56&&emitters[1].textureSheetAnimation.sprites[0].rect.x==40,"classic generic animation starts at index seven and splash uses index twenty-one");
-  var stoneTexture=new Texture2D();var stoneBottom=new Texture2D();BlockDataManager.blockTypeDataDictionary[(int)BlockType.Stone]=new BlockTypeData{textureData=new TextureData{side=stoneTexture,bottom=stoneBottom}};
+  var stoneTexture=new Texture2D();var stoneBottom=new Texture2D();BlockDataManager.blockTypeDataDictionary[(int)BlockType.Stone]=new BlockTypeData{textureData=new TextureData{side=stoneTexture,top=stoneBottom,bottom=stoneBottom}};
   world.PlayBlockBreakParticles(new Vector3Int(1,2,3),BlockType.Stone);
   var breakEmitters=(ParticleSystem[])typeof(FluidEffects).GetField("breakEmitters",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(fluidEffects);
   Check(breakEmitters[0].emitted==64&&breakEmitters[0].textureSheetAnimation.numTilesX==4&&breakEmitters[0].textureSheetAnimation.numTilesY==4,"block destruction emits the classic 4x4x4 texture-chip burst");
   Check(breakEmitters[0].GetComponent<ParticleSystemRenderer>().sharedMaterial.mainTexture==stoneBottom&&Math.Abs(breakEmitters[0].main.gravityModifier-1.63f)<.001f,"block chips use Beta side zero and Beta gravity");
+  Check(breakEmitters[0].lastEmit.velocity.magnitude<6,"destroy chips use randomized classic velocity instead of exploding radially");
+  fluidEffects.EmitBlockHit(world,new Vector3Int(1,2,3),BlockType.Stone,new Vector3(1.5f,3,3.5f));
+  Check(breakEmitters[0].emitted==65&&breakEmitters[0].lastEmit.startSize<=.14f,"mining emits one smaller chip from the struck face");
+  var surface=new Block{type=BlockType.Stone,globalWorldPosition=new Vector3Int(0,0,0)};
+  fluidEffects.EmitSprintDust(world,new Vector3(.5f,1,.5f),new Vector3(4,0,0),surface);
+  Check(breakEmitters[0].emitted==66&&breakEmitters[0].lastEmit.velocity.x<0,"sprint dust uses the supporting block and trails player motion");
+  fluidEffects.EmitMobDeath(new Vector3(0,1,0),.3f,1.8f);Check(emitters[5].emitted==20&&emitters[5].textureSheetAnimation.spriteCount==8,"mob death uses twenty small classic explode particles");
+  fluidEffects.Emit(new Vector3(0,0,0),4);Check(emitters[4].emitted==1,"fire emits a dedicated large-smoke particle");
   var ownedSprite=emitters[0].textureSheetAnimation.sprites[0];
   Call(fluidEffects,"OnDestroy");Check(emitters[0].gameObject.destroyed&&ownedSprite.destroyed&&!atlas.destroyed&&!template.destroyed&&!assets.fluidFizz.destroyed&&!assets.fluidSplash.destroyed,"cleanup destroys owned emitters and sprites while preserving borrowed assets");
   world.blocks[new Vector3Int(0,0,0)]=new Block{type=BlockType.Lava};world.blocks[new Vector3Int(0,1,0)].type=BlockType.Lava;
