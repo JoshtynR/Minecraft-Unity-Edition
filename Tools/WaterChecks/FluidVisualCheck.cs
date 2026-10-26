@@ -72,7 +72,7 @@ namespace UnityEngine
   public class MainModule {public bool loop,playOnAwake;public int maxParticles;public float gravityModifier;public ParticleSystemSimulationSpace simulationSpace;}
   public class TextureSheetAnimationModule {public bool enabled;public ParticleSystemAnimationMode mode;public int numTilesX,numTilesY;public ParticleSystemAnimationType animation;public MinMaxCurve frameOverTime,startFrame;public List<Sprite> sprites=new List<Sprite>();public int spriteCount=>sprites.Count;public void AddSprite(Sprite sprite){sprites.Add(sprite);}}
   public class Toggle {public bool enabled;}
-  public struct EmitParams {public Vector3 position,velocity;public float startLifetime,startSize,startRotation;public Color startColor;}
+  public struct EmitParams {public Vector3 position,velocity,rotation3D;public float startLifetime,startSize;public Color startColor;}
   public MainModule main=new MainModule();public Toggle emission=new Toggle(),shape=new Toggle();public TextureSheetAnimationModule textureSheetAnimation=new TextureSheetAnimationModule();public int emitted;public int particleCount=>emitted;
   void Awake(){gameObject.AddComponent<ParticleSystemRenderer>();}
   public void Stop(bool b,ParticleSystemStopBehavior s){}public void Play(){}public void Emit(EmitParams p,int n){emitted+=n;}
@@ -213,4 +213,4 @@ public static class FluidVisualCheck
 public enum WorldDimension {Nether=-1,Overworld=0}
 public class TextureData {public UnityEngine.Texture2D side,top,bottom;}
 public class BlockTypeData {public TextureData textureData=new TextureData();public UnityEngine.Color albedoTint=UnityEngine.Color.white;}
-public static class BlockDataManager {public static System.Collections.Generic.Dictionary<int,BlockTypeData> blockTypeDataDictionary=new System.Collections.Generic.Dictionary<int,BlockTypeData>();}
+public static class BlockDataManager {public static BlockTypeData[] blockTypeDataDictionary=new BlockTypeData[256];}
