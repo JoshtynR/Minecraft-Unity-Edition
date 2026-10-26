@@ -82,9 +82,9 @@ public struct InventoryStack {public ItemType type;public int count,damage;publi
 public static class InventoryRules {public static int Capacity(InventoryStack[] a,ItemType t,int x,int y)=>1;public static void Insert(InventoryStack[] a,ItemType t,int n,int x,int y){}}
 public static class BetaItemCatalog {public struct Entry {public int SourceId,Metadata;}public static bool TryGet(ItemType t,out Entry e){e=new Entry();return false;}}
 public static class GameAudio {public static int sounds;public static float Variation(float a,float b)=>(a+b)*.5f;public static void Broadcast(string s,Vector3 p,float v,float pitch,World w){sounds++;}public static void Play(string s,Vector3 p,float v,float pitch=1){sounds++;}}
-public static class BlockCollision {public static bool Supported(World w,Vector3 p,float width,float height)=>p.y<=64.001f;public static Vector3 Resolve(World w,Vector3 p,float r,float h,Vector3 move,bool step){if(p.y+move.y<64)move.y=64-p.y;return move;}public static bool OverlapsBody(Vector3 p,float r,float h,Vector3Int cell,Bounds box)=>new Bounds(p+Vector3.up*(h*.5f),new Vector3(r*2,h,r*2)).Intersects(new Bounds((Vector3)cell+box.center,box.size));}
+public static class BlockCollision {public static bool Supported(World w,Vector3 p,float width,float height)=>p.y<=64.001f;public static Vector3 Resolve(World w,Vector3 p,float r,float h,Vector3 move,bool step){if(p.y+move.y<64)move.y=64-p.y;if(w.mobBank){move.x=0;move.z=0;}return move;}public static bool OverlapsBody(Vector3 p,float r,float h,Vector3Int cell,Bounds box)=>new Bounds(p+Vector3.up*(h*.5f),new Vector3(r*2,h,r*2)).Intersects(new Bounds((Vector3)cell+box.center,box.size));}
 public static class BlockTargeting {public static Block Raycast(World w,Vector3 p,Vector3 d,float distance,out Vector3Int cell,out Vector3 point){cell=new Vector3Int();point=p+d*distance;return w.blocked?new Block{type=BlockType.Stone}:null;}}
-public static class FluidWorldQueries {public static bool Touches(World w,Vector3 p,float width,float height,BlockType type,out Vector3 flow){flow=Vector3.zero;return false;}public static BlockType AtEye(World w,Vector3 p)=>BlockType.Air;}
+public static class FluidWorldQueries {public static bool Touches(World w,Vector3 p,float width,float height,BlockType type,out Vector3 flow){flow=Vector3.zero;return w.water&&type==BlockType.Water;}public static BlockType AtEye(World w,Vector3 p)=>w.water?BlockType.Water:BlockType.Air;}
 public partial class Player:MonoBehaviour {
  public PlayerInventory inventory=new PlayerInventory();
  public WorldDimension dimension;
@@ -104,7 +104,7 @@ public partial class World:MonoBehaviour {
 #if !FULL_MOB_SYSTEM
  public int chunkSize=16;
 #endif
- public float gamma;public bool blocked;public int edits,drops,deathSmoke;public RendererRoot worldRenderer=new RendererRoot();
+ public float gamma;public bool blocked,water,mobBank;public int edits,drops,deathSmoke;public RendererRoot worldRenderer=new RendererRoot();
  private sealed class Data {public Dictionary<Vector3Int,int> chunkDict=new Dictionary<Vector3Int,int>();}private Data worldData=new Data();
  public Dictionary<Vector3Int,Block> cells=new Dictionary<Vector3Int,Block>();public Block GetBlock(Vector3 p)=>GetBlock(Vector3Int.FloorToInt(p));public Block GetBlock(Vector3Int p)=>cells.TryGetValue(p,out var block)?block:new Block{type=p.y<64?(p.y==63?BlockType.Grass:BlockType.Stone):BlockType.Air,sky=p.y<64?0:15};
 #if !FULL_MOB_SYSTEM

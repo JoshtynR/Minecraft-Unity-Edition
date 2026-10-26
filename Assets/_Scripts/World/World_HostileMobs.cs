@@ -74,7 +74,7 @@ public partial class World
                     if(block==null||block.type!=BlockType.Air||
                        !HostileSpawnRules.Allows(block.GetBlockLight(),block.GetSkyLight(),skyLightReduction,mobRandom.NextInt(8)))continue;
                     var candidate=new MobState{species=definition.Type,position=feet};
-                    bool clear=MobWalkable(candidate,feet);
+                    bool clear=MobSpawnable(candidate,feet);
                     foreach(var existing in mobs.Entities)if(MobRules.Bounds(existing).Intersects(MobRules.Bounds(candidate))){clear=false;break;}
                     found=clear;
                 }
