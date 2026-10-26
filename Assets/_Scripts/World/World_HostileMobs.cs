@@ -40,7 +40,11 @@ public partial class World
         if(count>=maximumActiveHostiles||mobs.Count>=MobStore.Capacity)return;
         mobSpawnCandidates.Clear();
         foreach(var chunk in worldData.chunkDict.Keys)
-        {float d=MobPlayerDistance((Vector3)chunk+Vector3.one*8);if(d>24*24&&d<128*128)mobSpawnCandidates.Add(chunk);}
+        {
+            var center=(Vector3)chunk+new Vector3(chunkSize*.5f,0,chunkSize*.5f);
+            float d=MobHorizontalPlayerDistance(center);if(d>24*24&&d<128*128)mobSpawnCandidates.Add(chunk);
+        }
+        bool surfaceNight=HostileSpawnRules.SurfaceEligible(skyLightReduction);
         for(int attempt=0;attempt<24&&mobSpawnCandidates.Count>0;attempt++)
         {
             var chunk=mobSpawnCandidates[mobRandom.NextInt(mobSpawnCandidates.Count)];
@@ -55,7 +59,16 @@ public partial class World
                 Vector3 feet=Vector3.zero;bool found=false;
                 for(int placement=0;placement<8&&!found;placement++)
                 {
-                    feet=new Vector3(anchorX+mobRandom.NextInt(11)-5+.5f,anchorY+mobRandom.NextInt(7)-3,anchorZ+mobRandom.NextInt(11)-5+.5f);
+                    int x=anchorX+mobRandom.NextInt(11)-5,z=anchorZ+mobRandom.NextInt(11)-5;
+                    // The original game sweeps far more eligible chunks than
+                    // this bounded runtime spawner. Reserve half the nighttime
+                    // budget for the exposed column top so caves cannot consume
+                    // every attempt before the surface is ever considered.
+                    if(surfaceNight&&placement<4)
+                    {
+                        if(!FindMobGround(x,z,false,definition.Type,out feet))continue;
+                    }
+                    else feet=new Vector3(x+.5f,anchorY+mobRandom.NextInt(7)-3,z+.5f);
                     if(MobPlayerDistance(feet)<24*24||!MobAreaLoaded(feet))continue;
                     var block=GetBlock(feet);
                     if(block==null||block.type!=BlockType.Air||
@@ -71,6 +84,16 @@ public partial class World
             }
             if(spawned>0)break;
         }
+    }
+    private float MobHorizontalPlayerDistance(Vector3 position)
+    {
+        float distance=float.MaxValue;
+        foreach(var player in mobPlayers)
+        {
+            var p=player.transform.position;float x=p.x-position.x,z=p.z-position.z;
+            distance=Mathf.Min(distance,x*x+z*z);
+        }
+        return distance;
     }
     private bool TickMobBrain(MobState mob)
     {

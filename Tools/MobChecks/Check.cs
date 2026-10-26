@@ -13,6 +13,7 @@ class Check {
   Assert(!HostileSpawnRules.Allows(7,0,0,6)&&HostileSpawnRules.Allows(7,0,0,7),"light seven succeeds only on the highest Beta roll");
   Assert(!HostileSpawnRules.Allows(0,15,0,7)&&HostileSpawnRules.Allows(0,15,11,4),"surface spawning follows day and night skylight");
   Assert(!HostileSpawnRules.Allows(12,0,15,7),"torches remain spawn-proof at night");
+  Assert(!HostileSpawnRules.SurfaceEligible(7)&&HostileSpawnRules.SurfaceEligible(8),"surface attempts begin exactly when reduced skylight reaches the hostile range");
   foreach(MobType type in Enum.GetValues(typeof(MobType)))Assert(MobDefinitions.Get(type).Type==type&&MobBrains.Get(type)!=null,"every registered species has a definition and brain");
   Assert(MobDefinitions.SelectSpawn(false,0)==MobType.Cow&&MobDefinitions.SelectSpawn(false,8)==MobType.Pig&&MobDefinitions.SelectSpawn(false,18)==MobType.Sheep&&MobDefinitions.SelectSpawn(false,30)==MobType.Chicken,"passive spawn selection follows classic creature weights");
   foreach(int fps in new[]{30,60,144,240})
@@ -52,6 +53,7 @@ class Check {
   var invulnerable=new Player();invulnerable.health=20;Assert(invulnerable.ApplyMobDamage(2,Vector3.up)&&!invulnerable.ApplyMobDamage(2,Vector3.up)&&invulnerable.health==18,"player hurt window protects from simultaneous mob damage");
 #if FULL_MOB_SYSTEM
   world=new World();Target(world,0);Assert(world.SpawnHostilesForCheck()>0,"night spawning samples the full-height chunk column and finds surface air");
+  foreach(var hostile in world.mobs.Entities)Assert(hostile.position.y==64,"bounded nighttime spawning reserves attempts for the exposed surface");
   world=new World();player=Target(world,6);player.inventory.held=new InventoryStack(ItemType.Wheat,1);var cow=Mob(world,MobType.Cow);world.Step(cow);Assert(cow.walking&&cow.targetYaw>0,"farm brain follows a player holding wheat");
   world=new World();player=Target(world,6);player.inventory.held=new InventoryStack(ItemType.Wheat,1);var chicken=Mob(world,MobType.Chicken);chicken.decisionTicks=100;world.Step(chicken);Assert(!chicken.walking,"chicken does not follow wheat");player.inventory.held=new InventoryStack(ItemType.Seeds,1);world.Step(chicken);Assert(chicken.walking,"chicken follows seeds");
   world=new World();var a=Mob(world,MobType.Cow);var b=world.mobs.Spawn(new Vector3(1,64,0),0,MobType.Cow);MobRules.Feed(a);MobRules.Feed(b);
