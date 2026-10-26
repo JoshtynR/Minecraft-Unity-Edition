@@ -210,7 +210,8 @@ public partial class World : MonoBehaviour
     private Task<ConcurrentDictionary<ChunkRenderer, MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> dataToRender, bool markModifiedByPlayer = true)
     {
         var jobs = dataToRender.Distinct().Where(chunk => chunk != null)
-            .Select(chunk => new KeyValuePair<ChunkRenderer, ChunkData>(chunk, chunk.ChunkData)).ToArray();
+            .Select(chunk => new KeyValuePair<ChunkRenderer, ChunkData>(chunk, chunk.ChunkData))
+            .Where(job => job.Value != null).ToArray();
         if (markModifiedByPlayer)
             foreach (var job in jobs) job.Value.modifiedByPlayer = true;
         var options = ChunkWorkerOptions();
@@ -301,6 +302,7 @@ public partial class World : MonoBehaviour
 
     public async void SetBlocks(ChunkRenderer chunk, IEnumerable<Vector3Int> blockPoss, BlockType blockType, byte stairFacing = 0)
     {
+        if(disabled||chunk==null||chunk.ChunkData==null||blockPoss==null)return;
         if(WheatCropRules.IsLegacy(blockType)){stairFacing=WheatCropRules.LegacyAge(blockType);blockType=WheatCropRules.Crop;}
         var neightBourUpdates = new HashSet<ChunkRenderer>();
         
@@ -392,12 +394,23 @@ public partial class World : MonoBehaviour
         }
         neightBourUpdates.Add(chunk);
 
-        var meshData = await UpdateMeshDataAsync(neightBourUpdates.ToList());
-        
-        foreach (var chunkRenderer in neightBourUpdates)
+        var meshTask=UpdateMeshDataAsync(neightBourUpdates.ToList());
+        try { await meshTask; }
+        catch(System.OperationCanceledException) { return; }
+        var meshData=meshTask.Result;
+
+        // A scene unload or streaming eviction can release renderers while the
+        // worker is building their meshes. Apply only results still owned by
+        // this world's live chunk map, and release every stale result.
+        var liveChunks=worldData.chunkDict;
+        foreach (var result in meshData)
         {
-            if (chunkRenderer != null && worldData.chunkDict.TryGetValue(chunkRenderer.ChunkData.worldPos, out var current) && current == chunkRenderer)
-                chunkRenderer.UpdateChunk(meshData[chunkRenderer]);
+            var chunkRenderer=result.Key;
+            var data=chunkRenderer!=null?chunkRenderer.ChunkData:null;
+            ChunkRenderer current;
+            if(!disabled&&liveChunks!=null&&data!=null&&liveChunks.TryGetValue(data.worldPos,out current)&&ReferenceEquals(current,chunkRenderer))
+                chunkRenderer.UpdateChunk(result.Value);
+            else result.Value?.ReleaseAfterUpload();
         }
     }
 
