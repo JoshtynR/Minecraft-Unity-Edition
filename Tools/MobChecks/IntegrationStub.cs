@@ -20,5 +20,6 @@ public partial class World {
  public void RenderForCheck()=>UpdateMobVisuals();public void ClearForCheck()=>ResetMobs(true);public void RegisterForCheck()=>InitializeMobs();
  public void FrameForCheck(float dt){Time.deltaTime=dt;UpdateMobs();}
  public void RestoreForCheck(MobSaveData data){RestoreMobs(data);EnsureMobsRestored();}
+ public int SpawnHostilesForCheck(){spawnHostileMobs=true;skyLightReduction=11;for(int i=0;i<40&&mobs.Count==0;i++)SpawnNaturalHostiles();return mobs.Count;}
  public int RendererCount=>mobVisuals.Count;
 }

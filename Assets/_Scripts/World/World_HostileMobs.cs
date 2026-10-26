@@ -45,7 +45,10 @@ public partial class World
         {
             var chunk=mobSpawnCandidates[mobRandom.NextInt(mobSpawnCandidates.Count)];
             var definition=MobDefinitions.Get(MobDefinitions.SelectSpawn(true,mobRandom.NextInt(40)));
-            int anchorX=chunk.x+mobRandom.NextInt(16),anchorY=chunk.y+mobRandom.NextInt(16),anchorZ=chunk.z+mobRandom.NextInt(16);
+            // ChunkData is a full-height column and its key always has y=0.
+            // Sampling chunk.y + 0..15 trapped every hostile attempt in the
+            // bottom sixteen blocks. Beta chooses a random height in the world.
+            int anchorX=chunk.x+mobRandom.NextInt(chunkSize),anchorY=mobRandom.NextInt(worldHeight),anchorZ=chunk.z+mobRandom.NextInt(chunkSize);
             int group=definition.MinGroup+mobRandom.NextInt(definition.MaxGroup-definition.MinGroup+1),spawned=0;
             for(int member=0;member<group&&count+spawned<maximumActiveHostiles;member++)
             {
@@ -101,7 +104,14 @@ public partial class World
         if(target!=null&&target.IsMobTarget&&mob.targetMemoryTicks>0&&(target.transform.position-mob.position).sqrMagnitude<32*32)return target;
         agent.Target=null;return null;
     }
-    internal bool MobTargetVisible(MobState mob,Player target)=>MobCanSee(mob.position+Vector3.up*(MobRules.BodyHeight(mob)*.85f),target.transform.position+Vector3.up*1.5f);
+    internal bool MobTargetVisible(MobState mob,Player target)
+    {
+        if(target==null)return false;
+        var agent=GetMobAgent(mob);
+        if(agent.VisibilityTick==mobTick&&agent.VisibilityTarget==target)return agent.Visibility;
+        agent.VisibilityTick=mobTick;agent.VisibilityTarget=target;
+        return agent.Visibility=MobCanSee(mob.position+Vector3.up*(MobRules.BodyHeight(mob)*.85f),target.transform.position+Vector3.up*1.5f);
+    }
     internal void PursueMobTarget(MobState mob,Player target,float stopDistance)
     {SteerMobTo(mob,target.transform.position,stopDistance,MobTargetVisible(mob,target));LookMobAt(mob,target.transform.position+Vector3.up*1.5f);}
     internal void TryMobMelee(MobState mob,Player target,int damage)
@@ -223,7 +233,11 @@ public partial class World
             }
             if(!arrow.embedded){arrow.position=next;arrow.motion*=.99f;arrow.motion.y-=.03f;}
             var message=new MobArrowMessage{dimension=dimension,id=arrow.id,position=arrow.position,direction=arrow.motion,removed=remove,embedded=arrow.embedded};
-            if(NetworkServer.active)NetworkServer.SendToAll(message);else ReceiveMobArrow(message);
+            if(NetworkServer.active)
+            // Host mode already owns this state, so only serialize when a real
+            // remote client exists in addition to the in-process host client.
+            {if(NetworkServer.connections.Count>(NetworkClient.active?1:0))NetworkServer.SendToAll(message);}
+            else ReceiveMobArrow(message);
             if(remove)mobArrows.RemoveAt(i);
         }
     }

@@ -58,4 +58,14 @@ def main():
         subprocess.run([args.mcs,'-langversion:latest',f'-out:{visual}',str(ROOT/'Tools/AudioChecks/SilentGameAudio.cs'),str(ROOT/'Tools/WaterChecks/FluidVisualCheck.cs'),*[str(ROOT/'Assets/_Scripts'/p) for p in production]],check=True)
         subprocess.run([args.mono,str(visual)],check=True)
 
+    falling=(ROOT/'Assets/_Scripts/World/World_FallingBlocks.cs').read_text()
+    activation=falling[falling.index('    internal void QueueSnowSupportOnChunkActivation'):falling.index('    public FallingBlockState[] CaptureFallingBlocks')]
+    survival=(ROOT/'Assets/_Scripts/World/World_BlockSurvival.cs').read_text()
+    placement=(ROOT/'Assets/_Scripts/World/World.cs').read_text()
+    assert 'IsFallingBlock' not in activation and 'block.type!=BlockType.SnowLayer' in activation
+    assert 'IsFallingBlock(block.type) && TryStartFallingBlock' in survival
+    assert 'QueueSurvivalAround(pos);' in placement
+    assert 'DropAuthority&&!isSaving&&fallingBlocks.Count>0' in falling
+    print('Sand/gravel gravity is block-update driven and idles with no active falling entities.')
+
 if __name__=='__main__': main()

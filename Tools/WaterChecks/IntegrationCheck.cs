@@ -115,7 +115,7 @@ public partial class World
  public bool GenerationBusy;
     private void QueueSurvivalAround(Vector3Int p) {}
     private void QueueLeavesAroundRemovedLog(Vector3Int p) {}
-    private void QueueGravityOnChunkActivation(Block block) {}
+    private void QueueSnowSupportOnChunkActivation(Block block) {}
     public bool CanPlaceSurvivalBlock(Vector3Int p,BlockType t,byte state)=>true;
     public void DropWheat(Vector3Int p,int age) {}
     private void TickFarming(WaterPosition p,Block block) {}
@@ -332,6 +332,10 @@ public static partial class IntegrationCheck
         WaterCheck.Assert(populationWorld.GetWaterCell(new WaterPosition(0,1,0))==WaterSimulation.Unloaded,"water waits for unpopulated contributors");
         foreach(var contributor in contributors)contributor.betaPopulationDone=true;
         WaterCheck.Assert(populationWorld.GetWaterCell(new WaterPosition(0,1,0))==WaterSimulation.Air,"water resumes after every contributing owner completes");
+        int guardedEdits=populationWorld.playerEdits;
+        populationWorld.SetBlock((ChunkRenderer)null,V(0,1,0),BlockType.Stone);
+        populationWorld.SetBlock(new ChunkRenderer(),V(0,1,0),BlockType.Stone);
+        WaterCheck.Assert(populationWorld.playerEdits==guardedEdits,"released or missing chunk renderers reject late block edits safely");
         contributors[3].betaPopulationDone=false;
         WaterCheck.Assert(populationWorld.GetWaterCell(new WaterPosition(0,1,0))==WaterSimulation.Unloaded,"completed target owner alone is insufficient for water");
         var recordChunk=contributors[0];var recordPosition=V(0,1,0);

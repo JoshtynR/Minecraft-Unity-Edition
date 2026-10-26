@@ -51,6 +51,7 @@ class Check {
   world=new World{blocked=true};Target(world,6);world.Step(Mob(world,MobType.Skeleton));Assert(world.ArrowCount==0,"skeleton does not shoot through cover");
   var invulnerable=new Player();invulnerable.health=20;Assert(invulnerable.ApplyMobDamage(2,Vector3.up)&&!invulnerable.ApplyMobDamage(2,Vector3.up)&&invulnerable.health==18,"player hurt window protects from simultaneous mob damage");
 #if FULL_MOB_SYSTEM
+  world=new World();Target(world,0);Assert(world.SpawnHostilesForCheck()>0,"night spawning samples the full-height chunk column and finds surface air");
   world=new World();player=Target(world,6);player.inventory.held=new InventoryStack(ItemType.Wheat,1);var cow=Mob(world,MobType.Cow);world.Step(cow);Assert(cow.walking&&cow.targetYaw>0,"farm brain follows a player holding wheat");
   world=new World();player=Target(world,6);player.inventory.held=new InventoryStack(ItemType.Wheat,1);var chicken=Mob(world,MobType.Chicken);chicken.decisionTicks=100;world.Step(chicken);Assert(!chicken.walking,"chicken does not follow wheat");player.inventory.held=new InventoryStack(ItemType.Seeds,1);world.Step(chicken);Assert(chicken.walking,"chicken follows seeds");
   world=new World();var a=Mob(world,MobType.Cow);var b=world.mobs.Spawn(new Vector3(1,64,0),0,MobType.Cow);MobRules.Feed(a);MobRules.Feed(b);

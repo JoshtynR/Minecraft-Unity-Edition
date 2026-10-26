@@ -67,7 +67,7 @@ public partial class World
     public void RestoreDroppedItems(DroppedItemState[] saved)
     {ResetDroppedItems();dropRestore=DropAuthority?saved:null;}
     public void BroadcastDrop(DroppedItemState item)
-    {if(NetworkServer.active)NetworkServer.SendToAll(new DropStateMessage{dimension=dimension,item=item.Copy()});}
+    {if(NetworkServer.active&&NetworkServer.connections.Count>(NetworkClient.active?1:0))NetworkServer.SendToAll(new DropStateMessage{dimension=dimension,item=item.Copy()});}
     public void BroadcastDropRemoval(int id)
     {BroadcastDrop(new DroppedItemState{id=id,stack=new InventoryStack()});}
     public int PickupItemDrop(int id,Vector3 position,InventoryStack[] inventory)
@@ -82,7 +82,7 @@ public partial class World
             {
                 Vector3 collector=position+Vector3.up;
                 BeginItemPickup(id,collector);
-                if(NetworkServer.active)NetworkServer.SendToAll(new DropStateMessage{dimension=dimension,item=new DroppedItemState{id=id},pickedUp=true,collector=collector});
+                if(NetworkServer.active&&NetworkServer.connections.Count>(NetworkClient.active?1:0))NetworkServer.SendToAll(new DropStateMessage{dimension=dimension,item=new DroppedItemState{id=id},pickedUp=true,collector=collector});
             }
             else BroadcastDrop(item);
         }
@@ -166,6 +166,7 @@ public partial class World
     }
     private void UpdateDropVisuals()
     {
+        var camera=DropCamera();
         removedDropVisuals.Clear();
         foreach(var pair in dropVisuals)if(droppedItems.Get(pair.Key)==null&&!pair.Value.AnimatePickup())removedDropVisuals.Add(pair.Key);
         foreach(int id in removedDropVisuals){dropVisuals[id].Dispose();dropVisuals.Remove(id);}
@@ -194,7 +195,7 @@ public partial class World
                 }
                 visual=new DroppedItemVisual(worldRenderer.transform,item.stack,mesh,material,flat);dropVisuals.Add(item.id,visual);
             }
-            if(visual!=null){visual.root.SetActive(visible);if(visible)visual.Update(item,this,DropCamera());}
+            if(visual!=null){if(visual.root.activeSelf!=visible)visual.root.SetActive(visible);if(visible)visual.Update(item,this,camera);}
         }
     }
     private static Camera DropCamera()

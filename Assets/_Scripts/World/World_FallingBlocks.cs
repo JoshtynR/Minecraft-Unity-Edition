@@ -82,16 +82,17 @@ public partial class World
         return true;
     }
 
-    internal void QueueGravityOnChunkActivation(Block block)
+    // Sand and gravel are intentionally not checked here. Like Beta, they begin
+    // falling from a scheduled neighbour/block update, not from a full scan when
+    // a chunk streams in. Snow still needs one load-time support validation.
+    internal void QueueSnowSupportOnChunkActivation(Block block)
     {
-        if(!DropAuthority||block==null)return;
+        if(!DropAuthority||block==null||block.type!=BlockType.SnowLayer)return;
         var type=block.type;
-        if(!IsFallingBlock(type)&&type!=BlockType.SnowLayer)return;
         var position=block.globalWorldPosition;
         var below=GetBlock(position+Vector3Int.down);
         if(below==null||below.type==BlockType.Nothing)return;
-        if(IsFallingBlock(type)?FallingBlockCanPassThrough(below.type):
-            !BlockSurvivalRules.CanSurvive(type,SpecialBlockGeometry.State(type,block.blockShape),position,p=>GetBlock(p).type))
+        if(!BlockSurvivalRules.CanSurvive(type,SpecialBlockGeometry.State(type,block.blockShape),position,p=>GetBlock(p).type))
             QueueSurvivalAt(position);
     }
 
@@ -144,7 +145,7 @@ public partial class World
         EnsureFallingBlocksRestored();
         if(!DropAuthority&&!fallingBlockSyncRequested&&NetworkClient.ready)
         {fallingBlockSyncRequested=true;NetworkClient.Send(new FallingBlockSyncRequest());}
-        if(DropAuthority&&!isSaving)
+        if(DropAuthority&&!isSaving&&fallingBlocks.Count>0)
         {
             fallingBlockClock+=Time.deltaTime;
             int ticks=0;
@@ -156,6 +157,7 @@ public partial class World
             }
             fallingBlockClock=Mathf.Min(fallingBlockClock,.25f);
         }
+        else fallingBlockClock=0;
         if(Instance==this&&(!NetworkServer.active||NetworkClient.active))UpdateFallingBlockVisuals();
     }
 
