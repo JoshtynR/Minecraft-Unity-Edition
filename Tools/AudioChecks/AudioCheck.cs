@@ -42,6 +42,10 @@ static class AudioCheck
   StopVoices();Camera.main=new GameObject("Camera").AddComponent<Camera>();GameAudio.PlayClip(clip,new Vector3(100,0,0),1);
   Check(!Voices().Any(v=>v.isPlaying),"distant sounds do not consume voices");Camera.main=null;
   World.Instance=new World{IsWorldCreated=true};var player=new GameObject("Player").AddComponent<Player>();player.isLocalPlayer=true;
+  GameAudio.BroadcastBlock(BlockType.Stone,new Vector3Int(1,2,3),true,World.Instance);Check(World.Instance.breakParticles==1,"offline block breaking triggers one local debris burst");StopVoices();
+  GameAudio.BroadcastBlock(BlockType.Stone,new Vector3Int(1,2,3),false,World.Instance);Check(World.Instance.breakParticles==1,"block placement does not trigger destruction debris");StopVoices();
+  WorldServer.instance=new WorldServer();Mirror.NetworkServer.active=true;GameAudio.BroadcastBlock(BlockType.Stone,new Vector3Int(1,2,3),true,World.Instance);
+  Check(World.Instance.breakParticles==2,"host block breaking broadcasts exactly one debris burst");Mirror.NetworkServer.active=false;WorldServer.instance=null;StopVoices();
   var observer=player.gameObject.AddComponent<PlayerGameplayAudio>();Tick(observer);Check(!Voices().Any(v=>v.isPlaying),"spawning player does not trigger a step or damage sound");
   player.transform.position=new Vector3(1.8f,0,0);Tick(observer);Check(Voices().Single(v=>v.isPlaying).clip.name.StartsWith("stone"),"walking plays sound for the supporting block");
   StopVoices();player.isCrouching=true;player.transform.position=new Vector3(3.6f,0,0);Tick(observer);Check(!Voices().Any(v=>v.isPlaying),"sneaking is silent");player.isCrouching=false;

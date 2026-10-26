@@ -23,5 +23,11 @@ public partial class World
         if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
         fluidEffects.EmitMobDeath(position,radius,height);
     }
+    public void PlayBlockBreakParticles(Vector3Int position,BlockType type)
+    {
+        if(Instance!=this||Application.isBatchMode||!Application.isPlaying)return;
+        if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
+        fluidEffects.EmitBlockBreak(this,position,type);
+    }
     private void DisposeFluidEffects(){if(fluidEffects!=null)Destroy(fluidEffects);fluidEffects=null;}
 }

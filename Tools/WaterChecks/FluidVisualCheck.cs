@@ -36,6 +36,7 @@ namespace UnityEngine
   public float magnitude=>(float)Math.Sqrt(x*x+y*y+z*z);public Vector3 normalized=>magnitude<.000001f?new Vector3():new Vector3(x/magnitude,y/magnitude,z/magnitude);
   public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);
   public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
+  public static Vector3 operator -(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
   public static Vector3 operator *(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);
  }
  public struct Vector3Int
@@ -50,7 +51,7 @@ namespace UnityEngine
  public struct Vector2 {public static Vector2 zero=>new Vector2();public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public static class Input {public static Vector3 mousePosition;}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;width=w;height=h;}public bool Contains(Vector2 p)=>p.x>=x&&p.x<x+width&&p.y>=y&&p.y<y+height;}
- public static class Mathf {public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static float Clamp01(float n)=>Math.Max(0,Math.Min(1,n));public static int FloorToInt(float n)=>(int)Math.Floor(n);}
+ public static class Mathf {public const float PI=(float)Math.PI;public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static float Clamp01(float n)=>Math.Max(0,Math.Min(1,n));public static int FloorToInt(float n)=>(int)Math.Floor(n);}
  public enum CursorLockMode {None,Locked}public static class Cursor {public static CursorLockMode lockState=CursorLockMode.Locked;public static bool visible;}
  public class Texture:Object {}
  public enum TextureFormat {RGBA32}public enum FilterMode {Bilinear}public enum TextureWrapMode {Clamp}
@@ -62,12 +63,15 @@ namespace UnityEngine
  public enum AudioRolloffMode {Linear}
  public class AudioSource:Component {public bool playOnAwake;public float spatialBlend,maxDistance;public AudioRolloffMode rolloffMode;public void PlayOneShot(AudioClip c,float v){}}
  public enum ParticleSystemStopBehavior {StopEmittingAndClear}public enum ParticleSystemSimulationSpace {World}
+ public enum ParticleSystemAnimationMode {Grid}public enum ParticleSystemAnimationType {WholeSheet}
  public class ParticleSystem:Component
  {
+  public struct MinMaxCurve {public float min,max;public MinMaxCurve(float value){min=max=value;}public MinMaxCurve(float low,float high){min=low;max=high;}}
   public class MainModule {public bool loop,playOnAwake;public int maxParticles;public float gravityModifier;public ParticleSystemSimulationSpace simulationSpace;}
+  public class TextureSheetAnimationModule {public bool enabled;public ParticleSystemAnimationMode mode;public int numTilesX,numTilesY;public ParticleSystemAnimationType animation;public MinMaxCurve frameOverTime,startFrame;}
   public class Toggle {public bool enabled;}
-  public struct EmitParams {public Vector3 position,velocity;public float startLifetime,startSize;public Color startColor;}
-  public MainModule main=new MainModule();public Toggle emission=new Toggle(),shape=new Toggle();public int emitted;
+  public struct EmitParams {public Vector3 position,velocity;public float startLifetime,startSize,startRotation;public Color startColor;}
+  public MainModule main=new MainModule();public Toggle emission=new Toggle(),shape=new Toggle();public TextureSheetAnimationModule textureSheetAnimation=new TextureSheetAnimationModule();public int emitted;public int particleCount=>emitted;
   void Awake(){gameObject.AddComponent<ParticleSystemRenderer>();}
   public void Stop(bool b,ParticleSystemStopBehavior s){}public void Play(){}public void Emit(EmitParams p,int n){emitted+=n;}
  }
@@ -88,11 +92,11 @@ namespace UnityEngine
  public class GUISkin {public GUIStyle label=new GUIStyle();}
  public static class GUI {public static Color color;public static int depth;public static Matrix4x4 matrix;public static GUISkin skin=new GUISkin();public static List<string> labels=new List<string>();public static int clickButton=-1,buttons;public static void DrawTextureWithTexCoords(Rect r,Texture t,Rect uv){}public static void DrawTexture(Rect r,Texture t){}public static void Box(Rect r,string s){}public static void Label(Rect r,string s){}public static List<Tuple<Rect,string,Color,bool,int>> draws=new List<Tuple<Rect,string,Color,bool,int>>();public static void Label(Rect r,string s,GUIStyle style){labels.Add(s);draws.Add(Tuple.Create(r,s,style.normal.textColor,style.richText,style.fontSize));}public static bool Button(Rect r,string s,GUIStyle style)=>buttons++==clickButton;}
 }
-public class Block {public BlockType type;public byte waterLevel,blockShape;}
+public class Block {public BlockType type;public byte waterLevel,blockShape;public int sky=15,light;public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
 public static class SpecialBlockGeometry {public static bool NormalCube(BlockType t)=>t==BlockType.Stone;public static byte State(BlockType t,byte shape)=>shape;public static Vector3Int PartnerOffset(BlockType t,byte state)=>Vector3Int.right;}
 public partial class World:MonoBehaviour
 {
- public bool overworldFog=true;public double CurrentWorldTicks=>1000;public int renderDistance=6,chunkSize=16;
+ public bool overworldFog=true;public double CurrentWorldTicks=>1000;public int renderDistance=6,chunkSize=16;public float gamma;
  public World worldRenderer=>this;public WorldDimension dimension;public static System.Threading.Tasks.Task SaveAllDimensionsAsync()=>System.Threading.Tasks.Task.CompletedTask;
  public static World Instance;public bool IsWorldCreated=true;public int worldHeight=12;
  public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();
@@ -151,6 +155,10 @@ public static class FluidVisualCheck
   Check(world.transform.position.x==0&&world.transform.position.y==0,"positional sound never moves the world transform");
   var emitters=(ParticleSystem[])typeof(FluidEffects).GetField("emitters",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(fluidEffects);
   Check(emitters[0].emitted==8&&emitters[0].main.loop&&emitters[0].main.maxParticles==256,"smoke emitter reuses a bounded looping system");
+  var stoneTexture=new Texture2D();BlockDataManager.blockTypeDataDictionary[(int)BlockType.Stone]=new BlockTypeData{textureData=new TextureData{side=stoneTexture}};
+  world.PlayBlockBreakParticles(new Vector3Int(1,2,3),BlockType.Stone);
+  var breakEmitters=(ParticleSystem[])typeof(FluidEffects).GetField("breakEmitters",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(fluidEffects);
+  Check(breakEmitters[0].emitted==64&&breakEmitters[0].textureSheetAnimation.numTilesX==4&&breakEmitters[0].textureSheetAnimation.numTilesY==4,"block destruction emits the classic 4x4x4 texture-chip burst");
   Call(fluidEffects,"OnDestroy");Check(emitters[0].gameObject.destroyed&&!template.destroyed&&!assets.fluidFizz.destroyed&&!assets.fluidSplash.destroyed,"cleanup destroys owned emitters and preserves borrowed assets");
   world.blocks[new Vector3Int(0,0,0)]=new Block{type=BlockType.Lava};world.blocks[new Vector3Int(0,1,0)].type=BlockType.Lava;
   Call(player,"AdvanceFluidHazards",.05f);Check(player.health==16&&player.burning,"actual player adapter applies authoritative lava damage");
@@ -198,6 +206,6 @@ public static class FluidVisualCheck
 }
 
 public enum WorldDimension {Nether=-1,Overworld=0}
-public class TextureData {public UnityEngine.Texture2D side,top;}
-public class BlockTypeData {public TextureData textureData=new TextureData();}
+public class TextureData {public UnityEngine.Texture2D side,top,bottom;}
+public class BlockTypeData {public TextureData textureData=new TextureData();public UnityEngine.Color albedoTint=UnityEngine.Color.white;}
 public static class BlockDataManager {public static System.Collections.Generic.Dictionary<int,BlockTypeData> blockTypeDataDictionary=new System.Collections.Generic.Dictionary<int,BlockTypeData>();}
