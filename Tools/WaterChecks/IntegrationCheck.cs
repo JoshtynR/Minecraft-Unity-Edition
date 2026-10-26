@@ -115,7 +115,7 @@ public partial class World
  public bool GenerationBusy;
     private void QueueSurvivalAround(Vector3Int p) {}
     private void QueueLeavesAroundRemovedLog(Vector3Int p) {}
-    private void QueueGravityOnChunkActivation(Block block) {}
+    private void QueueSnowSupportOnChunkActivation(Block block) {}
     public bool CanPlaceSurvivalBlock(Vector3Int p,BlockType t,byte state)=>true;
     public void DropWheat(Vector3Int p,int age) {}
     private void TickFarming(WaterPosition p,Block block) {}
