@@ -65,7 +65,8 @@ public sealed class FluidEffects : MonoBehaviour
                 if(!p.fullBright&&world!=null)
                 {
                     var sample=world.GetBlock(Vector3Int.FloorToInt(center));int sky=sample==null?15:sample.GetSkyLight(),block=sample==null?0:sample.GetBlockLight();
-                    light=LightmapLighting.Sample(sky,block,LightmapLighting.SunBrightness(SkyClock.Angle(world.CurrentWorldTicks)),world.gamma,world.dimension==WorldDimension.Nether);
+                    var sampled=LightmapLighting.Sample(sky,block,LightmapLighting.SunBrightness(SkyClock.Angle(world.CurrentWorldTicks)),world.gamma,world.dimension==WorldDimension.Nether);
+                    light=new Color(sampled.r,sampled.g,sampled.b,1);
                 }
                 if(p.motion==Motion.Portal){float glow=p.age/(float)p.maxAge;glow*=glow;glow*=glow;light=Color.Lerp(light,Color.white,glow);}
                 var color=new Color(p.color.r*light.r,p.color.g*light.g,p.color.b*light.b,p.color.a);
@@ -241,7 +242,7 @@ public sealed class FluidEffects : MonoBehaviour
         if(p.motion==Motion.Bubble)
         {
             p.velocity.y+=.002f;Move(p,out _);p.velocity*=.85f;
-            var block=world==null?null:world.GetBlock(Vector3Int.FloorToInt(p.position));return block==null||block.type!=BlockType.Water||p.age++>=p.maxAge;
+            if(world==null)return true;var block=world.GetBlock(Vector3Int.FloorToInt(p.position));return block==null||block.type!=BlockType.Water||p.age++>=p.maxAge;
         }
         if(p.motion==Motion.Rain)
         {
@@ -277,7 +278,7 @@ public sealed class FluidEffects : MonoBehaviour
     private Camera ActiveCamera()
     {var player=GameManager.Instance==null?null:GameManager.Instance.localPlayer;return player!=null&&player.cam!=null?player.cam.GetComponent<Camera>():Camera.main;}
     private bool Flammable(Vector3Int position)
-    {var block=world==null?null:world.GetBlock(position);return block!=null&&BetaFireSimulation.Flammability(block.type)>0;}
+    {if(world==null)return false;var block=world.GetBlock(position);return block!=null&&BetaFireSimulation.Flammability(block.type)>0;}
     private void LargeSmoke(Vector3 position)=>effects[4].Add(NewSmoke(position,Vector3.zero,2.5f));
     private void EmitFire(Vector3Int cell)
     {
