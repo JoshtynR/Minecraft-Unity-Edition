@@ -27,6 +27,8 @@ public sealed class MobDefinition
 
 public static class MobDefinitions
 {
+    private static readonly MobType[] hostileSpawnOrder={MobType.Spider,MobType.Zombie,MobType.Skeleton,MobType.Creeper};
+    private static readonly MobType[] passiveSpawnOrder={MobType.Sheep,MobType.Pig,MobType.Chicken,MobType.Cow};
     private static readonly MobDefinition[] definitions={
         // Beta creature-list weights: sheep 12, pigs/chickens 10, cows 8.
         new MobDefinition(MobType.Cow,10,.45f,1.3f,.065f,MobBehaviorKind.FarmAnimal,8),
@@ -43,10 +45,12 @@ public static class MobDefinitions
     {if(!Valid(type))throw new ArgumentOutOfRangeException(nameof(type));return definitions[(int)type];}
     public static MobType SelectSpawn(bool hostile,int roll)
     {
-        int first=hostile?4:0,last=hostile?definitions.Length:4,total=0;
-        for(int i=first;i<last;i++)total+=definitions[i].SpawnWeight;
+        // BiomeGenBase list order matters to the weighted roll even though the
+        // same species occur in every ordinary Beta overworld biome.
+        var order=hostile?hostileSpawnOrder:passiveSpawnOrder;
+        int total=0;for(int i=0;i<order.Length;i++)total+=Get(order[i]).SpawnWeight;
         roll=((roll%total)+total)%total;
-        for(int i=first;i<last;i++)if((roll-=definitions[i].SpawnWeight)<0)return definitions[i].Type;
-        return definitions[first].Type;
+        for(int i=0;i<order.Length;i++)if((roll-=Get(order[i]).SpawnWeight)<0)return order[i];
+        return order[0];
     }
 }
