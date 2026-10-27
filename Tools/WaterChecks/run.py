@@ -51,7 +51,7 @@ def main():
         subprocess.run([args.mcs,'-langversion:latest','-checked+',f'-out:{binary}',*map(str,sources)],check=True)
         subprocess.run([args.mono,str(binary)],check=True)
         visual=tmp/'visual.exe'
-        production=['World/WaterSimulation.cs','World/FluidTickScheduler.cs','World/BetaFluidPhysics.cs','World/FluidWorldQueries.cs','World/World_FluidEffects.cs','World/WorldSpawnRules.cs','World/Rendering/FluidEffects.cs','World/Rendering/FluidCameraEffects.cs',"Entity's/Player/Player_Fluids.cs","Entity's/Player/PlayerHudAssets.cs",'Block/BlockType.cs']
+        production=['World/WaterSimulation.cs','World/FluidTickScheduler.cs','World/BetaFluidPhysics.cs','World/BetaFireSimulation.cs','World/FluidWorldQueries.cs','World/World_FluidEffects.cs','World/WorldSpawnRules.cs','World/Rendering/FluidEffects.cs','World/Rendering/FluidCameraEffects.cs',"Entity's/Player/Player_Fluids.cs","Entity's/Player/PlayerHudAssets.cs",'Block/BlockType.cs']
         production.append('Menus/MenuManagers/EscapeMenuManager.cs')
         production.append('BlockSoundRules.cs')
         production.append('World/SkyClock.cs')
