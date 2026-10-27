@@ -34,67 +34,7 @@ public partial class World
         return distance<.01f||BlockTargeting.Raycast(this,from,delta/distance,distance,out _,out _)==null;
     }
     private void SpawnNaturalHostiles()
-    {
-        if(!spawnHostileMobs||dimension!=WorldDimension.Overworld||mobPlayers.Count==0)return;
-        int count=0;foreach(var animal in mobs.Entities)if(MobRules.Hostile(animal.species))count++;
-        if(count>=maximumActiveHostiles||mobs.Count>=MobStore.Capacity)return;
-        mobSpawnCandidates.Clear();
-        foreach(var chunk in worldData.chunkDict.Keys)
-        {
-            var center=(Vector3)chunk+new Vector3(chunkSize*.5f,0,chunkSize*.5f);
-            float d=MobHorizontalPlayerDistance(center);if(d>24*24&&d<128*128)mobSpawnCandidates.Add(chunk);
-        }
-        bool surfaceNight=HostileSpawnRules.SurfaceEligible(skyLightReduction);
-        for(int attempt=0;attempt<24&&mobSpawnCandidates.Count>0;attempt++)
-        {
-            var chunk=mobSpawnCandidates[mobRandom.NextInt(mobSpawnCandidates.Count)];
-            var definition=MobDefinitions.Get(MobDefinitions.SelectSpawn(true,mobRandom.NextInt(40)));
-            // ChunkData is a full-height column and its key always has y=0.
-            // Sampling chunk.y + 0..15 trapped every hostile attempt in the
-            // bottom sixteen blocks. Beta chooses a random height in the world.
-            int anchorX=chunk.x+mobRandom.NextInt(chunkSize),anchorY=mobRandom.NextInt(worldHeight),anchorZ=chunk.z+mobRandom.NextInt(chunkSize);
-            int group=definition.MinGroup+mobRandom.NextInt(definition.MaxGroup-definition.MinGroup+1),spawned=0;
-            for(int member=0;member<group&&count+spawned<maximumActiveHostiles;member++)
-            {
-                Vector3 feet=Vector3.zero;bool found=false;
-                for(int placement=0;placement<8&&!found;placement++)
-                {
-                    int x=anchorX+mobRandom.NextInt(11)-5,z=anchorZ+mobRandom.NextInt(11)-5;
-                    // The original game sweeps far more eligible chunks than
-                    // this bounded runtime spawner. Reserve half the nighttime
-                    // budget for the exposed column top so caves cannot consume
-                    // every attempt before the surface is ever considered.
-                    if(surfaceNight&&placement<4)
-                    {
-                        if(!FindMobGround(x,z,false,definition.Type,out feet))continue;
-                    }
-                    else feet=new Vector3(x+.5f,anchorY+mobRandom.NextInt(7)-3,z+.5f);
-                    if(MobPlayerDistance(feet)<24*24||!MobAreaLoaded(feet))continue;
-                    var block=GetBlock(feet);
-                    if(block==null||block.type!=BlockType.Air||
-                       !HostileSpawnRules.Allows(block.GetBlockLight(),block.GetSkyLight(),skyLightReduction,mobRandom.NextInt(8)))continue;
-                    var candidate=new MobState{species=definition.Type,position=feet};
-                    bool clear=MobSpawnable(candidate,feet);
-                    foreach(var existing in mobs.Entities)if(MobRules.Bounds(existing).Intersects(MobRules.Bounds(candidate))){clear=false;break;}
-                    found=clear;
-                }
-                if(!found)continue;
-                var mob=mobs.Spawn(feet,mobRandom.NextInt(360),definition.Type);if(mob==null)break;
-                BroadcastMob(mob);spawned++;
-            }
-            if(spawned>0)break;
-        }
-    }
-    private float MobHorizontalPlayerDistance(Vector3 position)
-    {
-        float distance=float.MaxValue;
-        foreach(var player in mobPlayers)
-        {
-            var p=player.transform.position;float x=p.x-position.x,z=p.z-position.z;
-            distance=Mathf.Min(distance,x*x+z*z);
-        }
-        return distance;
-    }
+    {SpawnCreatureCategory(true);}
     private bool TickMobBrain(MobState mob)
     {
         if(mob.attackTicks>0)mob.attackTicks--;

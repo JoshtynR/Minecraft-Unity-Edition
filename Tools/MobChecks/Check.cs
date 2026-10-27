@@ -12,10 +12,13 @@ class Check {
   Assert(!HostileSpawnRules.Allows(8,0,0,7),"effective light eight never permits hostile spawning");
   Assert(!HostileSpawnRules.Allows(7,0,0,6)&&HostileSpawnRules.Allows(7,0,0,7),"light seven succeeds only on the highest Beta roll");
   Assert(!HostileSpawnRules.Allows(0,15,0,7)&&HostileSpawnRules.Allows(0,15,11,4),"surface spawning follows day and night skylight");
+  Assert(!HostileSpawnRules.Allows(0,15,11,14,7)&&HostileSpawnRules.Allows(0,15,11,15,7),"Beta raw skylight uses its independent 0..31 roll");
   Assert(!HostileSpawnRules.Allows(12,0,15,7),"torches remain spawn-proof at night");
   Assert(!HostileSpawnRules.SurfaceEligible(7)&&HostileSpawnRules.SurfaceEligible(8),"surface attempts begin exactly when reduced skylight reaches the hostile range");
+  Assert(HostileSpawnRules.CategoryCap(70,289)==79&&HostileSpawnRules.CategoryCap(15,289)==16,"category caps scale by unique eligible chunks like SpawnerAnimals");
   foreach(MobType type in Enum.GetValues(typeof(MobType)))Assert(MobDefinitions.Get(type).Type==type&&MobBrains.Get(type)!=null,"every registered species has a definition and brain");
-  Assert(MobDefinitions.SelectSpawn(false,0)==MobType.Cow&&MobDefinitions.SelectSpawn(false,8)==MobType.Pig&&MobDefinitions.SelectSpawn(false,18)==MobType.Sheep&&MobDefinitions.SelectSpawn(false,30)==MobType.Chicken,"passive spawn selection follows classic creature weights");
+  Assert(MobDefinitions.SelectSpawn(false,0)==MobType.Sheep&&MobDefinitions.SelectSpawn(false,12)==MobType.Pig&&MobDefinitions.SelectSpawn(false,22)==MobType.Chicken&&MobDefinitions.SelectSpawn(false,32)==MobType.Cow,"passive spawn selection follows classic list order and weights");
+  Assert(MobDefinitions.SelectSpawn(true,0)==MobType.Spider&&MobDefinitions.SelectSpawn(true,10)==MobType.Zombie&&MobDefinitions.SelectSpawn(true,20)==MobType.Skeleton&&MobDefinitions.SelectSpawn(true,30)==MobType.Creeper,"hostile selection follows the Beta biome list order");
   foreach(int fps in new[]{30,60,144,240})
   {var system=new MobEntitySystem();int ticks=0;for(int frame=0;frame<fps;frame++){system.Accumulate(1f/fps);while(system.TryStep())ticks++;}Assert(ticks==20,"entity system fixed ticks are frame-rate independent");}
   var capped=new MobEntitySystem();capped.Accumulate(100);int caughtUp=0;while(capped.TryStep())caughtUp++;Assert(caughtUp==5,"long frames have bounded entity catch-up");

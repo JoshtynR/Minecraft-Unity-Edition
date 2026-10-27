@@ -77,7 +77,7 @@ public enum SurvivalDifficulty {Easy,Normal,Hard}
 public enum BlockType {Nothing,Air,Grass,Dirt,Stone,Bedrock,Water,Lava,Fire,SnowLayer}
 public class BlockData {public bool generateCollider=true;}
 public class Block {public BlockType type;public int sky,light,blockShape;public BlockData BlockData=new BlockData();public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
-public static class SpecialBlockGeometry {public static bool NoCollision(BlockType t)=>t==BlockType.Air;public static int CollisionCount(BlockType t)=>1;public static Bounds CollisionPart(BlockType t,int s,int p)=>new Bounds(Vector3.one*.5f,Vector3.one);}
+public static class SpecialBlockGeometry {public static bool NormalCube(BlockType t)=>t==BlockType.Grass||t==BlockType.Dirt||t==BlockType.Stone||t==BlockType.Bedrock;public static bool NoCollision(BlockType t)=>t==BlockType.Air;public static int CollisionCount(BlockType t)=>1;public static Bounds CollisionPart(BlockType t,int s,int p)=>new Bounds(Vector3.one*.5f,Vector3.one);}
 public struct InventoryStack {public ItemType type;public int count,damage;public bool Empty=>count<=0;public InventoryStack(ItemType t,int c,int d=0){type=t;count=c;damage=d;}public void Normalize(){if(count<=0)type=ItemType.Nothing;}}
 public static class InventoryRules {public static int Capacity(InventoryStack[] a,ItemType t,int x,int y)=>1;public static void Insert(InventoryStack[] a,ItemType t,int n,int x,int y){}}
 public static class BetaItemCatalog {public struct Entry {public int SourceId,Metadata;}public static bool TryGet(ItemType t,out Entry e){e=new Entry();return false;}}
@@ -110,6 +110,7 @@ public partial class World:MonoBehaviour {
 #if !FULL_MOB_SYSTEM
  private bool MobAreaLoaded(Vector3 p)=>true;private float MobPlayerDistance(Vector3 p){float d=float.MaxValue;foreach(var player in mobPlayers)d=Math.Min(d,(player.transform.position-p).sqrMagnitude);return d;}
  private bool FindMobGround(int x,int z,bool grass,MobType species,out Vector3 feet){feet=new Vector3(x+.5f,64,z+.5f);return true;}
+ private void SpawnCreatureCategory(bool hostile){}
  private void BroadcastMob(MobState c,bool removed=false){}
  private bool DamageMob(MobState mob,int amount,Vector3 away)=>MobRules.Hurt(mob,amount,away);
 #endif

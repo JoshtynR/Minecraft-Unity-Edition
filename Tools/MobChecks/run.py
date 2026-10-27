@@ -7,11 +7,13 @@ with tempfile.TemporaryDirectory() as folder:
     sources+=['Assets/_Scripts/World/Rendering/MobProjectileGeometry.cs']
     subprocess.run([a.mcs,'-langversion:latest','-out:'+str(binary),*[str(root/s) for s in sources]],check=True)
     subprocess.run([a.mono,str(binary)],check=True)
-    integration=sources+['Assets/_Scripts/World/World_Mobs.cs','Assets/_Scripts/World/World_MobRendering.cs','Assets/_Scripts/World/Rendering/MobModelGeometry.cs','Assets/_Scripts/World/Rendering/MobAnimation.cs','Assets/_Scripts/World/Rendering/MobVisual.cs',"Assets/_Scripts/Entity's/Player/Player_Mobs.cs",'Tools/MobChecks/IntegrationStub.cs']
+    integration=sources+['Assets/_Scripts/World/World_Mobs.cs','Assets/_Scripts/World/World_MobSpawning.cs','Assets/_Scripts/World/World_MobRendering.cs','Assets/_Scripts/World/Rendering/MobModelGeometry.cs','Assets/_Scripts/World/Rendering/MobAnimation.cs','Assets/_Scripts/World/Rendering/MobVisual.cs',"Assets/_Scripts/Entity's/Player/Player_Mobs.cs",'Tools/MobChecks/IntegrationStub.cs']
     subprocess.run([a.mcs,'-langversion:latest','-define:FULL_MOB_SYSTEM','-out:'+str(binary),*[str(root/s) for s in integration]],check=True)
     subprocess.run([a.mono,str(binary)],check=True)
 hostiles=(root/'Assets/_Scripts/World/World_HostileMobs.cs').read_text()
-assert 'HostileSpawnRules.Allows(block.GetBlockLight(),block.GetSkyLight(),skyLightReduction,mobRandom.NextInt(8))' in hostiles
-assert 'anchorY=mobRandom.NextInt(worldHeight)' in hostiles, 'Hostiles must sample the full-height chunk column'
-assert 'placement<4' in hostiles and 'FindMobGround(x,z,false,definition.Type,out feet)' in hostiles, 'Night spawning must reserve bounded attempts for exposed terrain'
-print('Production hostile placement uses the verified Beta light roll.')
+spawning=(root/'Assets/_Scripts/World/World_MobSpawning.cs').read_text()
+assert 'mobRandom.NextInt(32),mobRandom.NextInt(8)' in spawning
+assert 'for(int group=0;group<3' in spawning and 'attempt<4' in spawning
+assert 'for(int x=-8;x<=8;x++)' in spawning and 'CategoryCap' in spawning
+assert 'mobRandom.NextInt(hostile?50:40)' in spawning and 'speciesRoll>=40' in spawning
+print('Production spawning uses Beta eligible chunks, pack walks, caps and independent light rolls.')

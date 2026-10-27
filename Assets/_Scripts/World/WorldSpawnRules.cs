@@ -12,7 +12,7 @@ public static class WorldSpawnRules
         if (world == null) return new Vector3(.5f, FallbackFloorY + 1, .5f);
 
         Vector3 spawn;
-        if (TryFindNatural(world, out spawn)) return spawn;
+        if (TryFindNatural(world, out spawn)){world.RememberMobWorldSpawn(spawn);return spawn;}
 
         // A valid loaded Overworld should virtually always have a natural
         // candidate. Still guarantee respawn for ocean-only, obstructed, or
@@ -25,7 +25,7 @@ public static class WorldSpawnRules
         var chunkPosition = WorldDataHelper.GetChunkPosition(world, floor);
         var renderer = WorldDataHelper.GetChunk(world, chunkPosition);
         if (renderer != null) world.AddChunkToUpdate(renderer, true);
-        return new Vector3(.5f, floorY + 1, .5f);
+        spawn=new Vector3(.5f, floorY + 1, .5f);world.RememberMobWorldSpawn(spawn);return spawn;
     }
 
     public static bool TryFindNatural(World world, out Vector3 spawn)
