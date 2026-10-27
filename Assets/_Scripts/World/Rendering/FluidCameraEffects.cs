@@ -20,7 +20,14 @@ public sealed class FluidCameraEffects : MonoBehaviour
     private float sleepShownAt=-1;
     private bool confirmTitle;
     private float deathGuiScale=1;
-    private void Awake(){view=GetComponent<Camera>();assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");}
+    private Material portalEffect;
+    private Texture portalTexture;
+    private void Awake()
+    {
+        view=GetComponent<Camera>();assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
+        var template=Resources.Load<Material>("PortalScreenMaterial");
+        if(template!=null)portalEffect=new Material(template){name="Portal screen effect (runtime)"};
+    }
     private void OnPreCull()
     {
         Restore();if(player==null||player.CurrentWorld==null)return;
@@ -52,6 +59,31 @@ public sealed class FluidCameraEffects : MonoBehaviour
     }
     private void OnPostRender(){Restore();}
     private void OnDisable(){Restore();}
+    private void OnDestroy(){if(portalEffect!=null)Destroy(portalEffect);}
+
+    private void OnRenderImage(RenderTexture source,RenderTexture destination)
+    {
+        float intensity=player==null?0:player.PortalOverlay;
+        if(portalEffect==null||intensity<=0)
+        {Graphics.Blit(source,destination);return;}
+        if(portalTexture==null)
+        {
+            var definitions=BlockDataManager.blockTypeDataDictionary;
+            int index=(int)BlockType.NetherPortal;
+            if(definitions!=null&&index>=0&&index<definitions.Length&&definitions[index]!=null)
+            {
+                var data=definitions[index].textureData;
+                if(data!=null)portalTexture=data.side!=null?data.side:data.top;
+            }
+        }
+        if(portalTexture==null){Graphics.Blit(source,destination);return;}
+        int rows=Mathf.Max(1,portalTexture.height/Mathf.Max(1,portalTexture.width));
+        portalEffect.SetTexture("_PortalTex",portalTexture);
+        portalEffect.SetFloat("_PortalRows",rows);
+        portalEffect.SetFloat("_PortalFrame",Mathf.Floor(Time.time*20)%rows);
+        portalEffect.SetFloat("_Intensity",intensity);
+        Graphics.Blit(source,destination,portalEffect);
+    }
     private void Restore()
     {
         if(!applied)return;
@@ -75,18 +107,6 @@ public sealed class FluidCameraEffects : MonoBehaviour
         deathShownAt=-1;confirmTitle=false;
         if(player==null||assets==null||Event.current.type!=EventType.Repaint)return;
         var old=GUI.color;int depth=GUI.depth;GUI.depth=100;
-        if(player.PortalOverlay>0)
-        {
-            var data=BlockDataManager.blockTypeDataDictionary[(int)BlockType.NetherPortal].textureData;
-            var texture=data.side!=null?data.side:data.top;
-            if(texture!=null)
-            {
-                int rows=Mathf.Max(1,texture.height/texture.width);
-                int frame=Mathf.FloorToInt(Time.time*20)%rows;
-                GUI.color=new Color(1,1,1,.15f+player.PortalOverlay*.65f);
-                GUI.DrawTextureWithTexCoords(new Rect(0,0,Screen.width,Screen.height),texture,new Rect(0,1-(frame+1f)/rows,1,1f/rows));
-            }
-        }
         if(medium==BlockType.Water&&assets.waterOverlay!=null)
         {
             GUI.color=new Color(1,1,1,.1f);var offset=player.transform.eulerAngles;

@@ -19,6 +19,7 @@ public class MeshData
 
     public MeshData waterMesh;         // alpha-blended water only
     public MeshData transparentMesh;   // secondary container for transparent faces (if you use it)
+    public MeshData portalMesh;        // alpha-blended Nether portal surfaces
 
     public MeshData(bool isMainMesh)
     {
@@ -26,6 +27,7 @@ public class MeshData
         {
             transparentMesh = new MeshData(false);
             waterMesh = new MeshData(false);
+            portalMesh = new MeshData(false);
         }
     }
 
@@ -41,6 +43,7 @@ public class MeshData
         if (prepared) return;
         AppendGeometry(transparentMesh);
         AppendGeometry(waterMesh);
+        AppendGeometry(portalMesh);
         lightingUVs.Capacity = skyLight.Count;
         for (int i = 0; i < skyLight.Count; i++)
             lightingUVs.Add(new Vector2(skyLight[i], blockLight[i]));
@@ -63,6 +66,7 @@ public class MeshData
         AccumulateNormals(triangles);
         if (transparentMesh != null) AccumulateNormals(transparentMesh.triangles);
         if (waterMesh != null) AccumulateNormals(waterMesh.triangles);
+        if (portalMesh != null) AccumulateNormals(portalMesh.triangles);
         for (int i = 0; i < normals.Count; i++)
         {
             var n = normals[i];
@@ -165,6 +169,7 @@ public class MeshData
         ReleaseLists(this);
         if(transparentMesh!=null)ReleaseLists(transparentMesh);
         if(waterMesh!=null)ReleaseLists(waterMesh);
+        if(portalMesh!=null)ReleaseLists(portalMesh);
         chests=null;
     }
 
