@@ -47,7 +47,9 @@ public static class BlockHelper
 
         if (SpecialBlockGeometry.Handles(blockType))
         {
-            GetFaceDataIn(Direction.forwards, pos, SpecialBlockGeometry.NonOccluding(blockType) ? meshData.transparentMesh : meshData, block, blockTypeData, chunk);
+            var target = blockType == BlockType.NetherPortal ? (meshData.portalMesh ?? meshData.transparentMesh ?? meshData) :
+                SpecialBlockGeometry.NonOccluding(blockType) ? meshData.transparentMesh : meshData;
+            GetFaceDataIn(Direction.forwards, pos, target, block, blockTypeData, chunk);
             return meshData;
         }
 

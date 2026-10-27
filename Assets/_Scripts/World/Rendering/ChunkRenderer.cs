@@ -33,7 +33,7 @@ public class ChunkRenderer : MonoBehaviour
         {meshData.ReleaseAfterUpload();return;}
         meshData.PrepareForRendering();
         var uploaded=new Mesh{name="Chunk "+(ChunkData==null?Vector3Int.zero:ChunkData.worldPos),
-            indexFormat=UnityEngine.Rendering.IndexFormat.UInt32,subMeshCount=3};
+            indexFormat=UnityEngine.Rendering.IndexFormat.UInt32,subMeshCount=4};
         try
         {
             uploaded.SetVertices(meshData.vertices);
@@ -49,6 +49,8 @@ public class ChunkRenderer : MonoBehaviour
                 uploaded.SetTriangles(meshData.transparentMesh.triangles, 1, false);
             if (meshData.waterMesh != null)
                 uploaded.SetTriangles(meshData.waterMesh.triangles, 2, false);
+            if (meshData.portalMesh != null)
+                uploaded.SetTriangles(meshData.portalMesh.triangles, 3, false);
             uploaded.bounds = new Bounds(meshData.boundsCenter, meshData.boundsSize);
             // Chunk meshes are rebuilt rather than edited in place. Discarding
             // Unity's readable CPU copy leaves only the GPU data after upload.

@@ -9,6 +9,9 @@
             #ifdef VOXEL_WATER
                 float _WaterOpacity;
             #endif
+            #ifdef VOXEL_PORTAL
+                float _PortalOpacity;
+            #endif
             struct appdata
             {
                 float4 vertex : POSITION;
@@ -63,6 +66,8 @@
                 float4 col = (_TextureOn > 0.5) ? UNITY_SAMPLE_TEX2DARRAY(_BlockFaceTextures, i.uv) : float4(1,1,1,1);
                 #ifdef VOXEL_WATER
                     col.a *= saturate(_WaterOpacity) * i.color.a;
+                #elif defined(VOXEL_PORTAL)
+                    col.a *= saturate(_PortalOpacity) * i.color.a;
                 #else
                     clip(col.a - 0.5);
                 #endif
