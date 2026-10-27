@@ -1,5 +1,6 @@
 // Compile actual camera/effect/player adapters without a Unity installation.
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -29,7 +30,7 @@ namespace UnityEngine
   public T AddComponent<T>() where T:Component,new(){var c=new T{gameObject=this};components[typeof(T)]=c;typeof(T).GetMethod("Awake",BindingFlags.Instance|BindingFlags.NonPublic)?.Invoke(c,null);return c;}
   public T GetComponent<T>() where T:Component {Component c;return components.TryGetValue(typeof(T),out c)?(T)c:null;}
  }
- public class Transform:Component {public Vector3 position,eulerAngles;public Transform parent;public Transform Find(string path)=>this;public void SetParent(Transform t,bool world){parent=t;}}
+ public class Transform:Component {public Vector3 position,eulerAngles;public Transform parent;public Vector3 right=>new Vector3(1,0,0);public Vector3 up=>new Vector3(0,1,0);public Transform Find(string path)=>this;public void SetParent(Transform t,bool world){parent=t;}}
  public struct Vector3
  {
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
@@ -38,6 +39,7 @@ namespace UnityEngine
   public static Vector3 operator +(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
   public static Vector3 operator -(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
   public static Vector3 operator *(Vector3 a,float b)=>new Vector3(a.x*b,a.y*b,a.z*b);
+  public static Vector3 Lerp(Vector3 a,Vector3 b,float t)=>a+(b-a)*t;
  }
  public struct Vector3Int
  {
@@ -50,7 +52,7 @@ namespace UnityEngine
  public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a=1){this.r=r;this.g=g;this.b=b;this.a=a;}public static Color Lerp(Color a,Color b,float t)=>a;public static Color white=>new Color(1,1,1,1);public static Color black=>new Color(0,0,0,1);}
  public struct Vector2 {public static Vector2 zero=>new Vector2();public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public static class Input {public static Vector3 mousePosition;}
- public struct Rect {public float x,y,width,height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;width=w;height=h;}public bool Contains(Vector2 p)=>p.x>=x&&p.x<x+width&&p.y>=y&&p.y<y+height;}
+ public struct Rect {public float x,y,width,height;public float xMin=>x;public float xMax=>x+width;public float yMin=>y;public float yMax=>y+height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;width=w;height=h;}public bool Contains(Vector2 p)=>p.x>=x&&p.x<x+width&&p.y>=y&&p.y<y+height;}
  public static class Mathf {public const float PI=(float)Math.PI;public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static float Abs(float x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static float Clamp01(float n)=>Math.Max(0,Math.Min(1,n));public static int FloorToInt(float n)=>(int)Math.Floor(n);public static float Sqrt(float n)=>(float)Math.Sqrt(n);public static float Log(float n)=>(float)Math.Log(n);public static float Cos(float n)=>(float)Math.Cos(n);}
  public enum CursorLockMode {None,Locked}public static class Cursor {public static CursorLockMode lockState=CursorLockMode.Locked;public static bool visible;}
  public class Texture:Object {}
@@ -60,6 +62,9 @@ namespace UnityEngine
  public class Sprite:Object {public Texture2D texture;public Rect rect;public static Sprite Create(Texture2D texture,Rect rect,Vector2 pivot,float pixelsPerUnit)=>new Sprite{texture=texture,rect=rect};}
  public class AnimationCurve {public static AnimationCurve Linear(float a,float b,float c,float d)=>new AnimationCurve();}
  public class Material:Object {public Texture mainTexture;public Material(Material m){}}
+ public class Mesh:Object {public Vector3[] vertices;public Vector2[] uv;public Color[] colors;public int[] triangles;public void MarkDynamic(){}public void Clear(){vertices=null;}public void SetVertices(Vector3[] a,int start,int count){vertices=new Vector3[count];Array.Copy(a,start,vertices,0,count);}public void SetUVs(int channel,Vector2[] a,int start,int count){uv=new Vector2[count];Array.Copy(a,start,uv,0,count);}public void SetColors(Color[] a,int start,int count){colors=new Color[count];Array.Copy(a,start,colors,0,count);}public void SetTriangles(int[] a,int start,int count,int submesh,bool bounds){triangles=new int[count];Array.Copy(a,start,triangles,0,count);}public void RecalculateBounds(){}}
+ public class MeshFilter:Component {public Mesh sharedMesh;}
+ public class MeshRenderer:Component {public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public bool receiveShadows;}
  public static class Resources {public static Dictionary<string,Object> items=new Dictionary<string,Object>();public static T Load<T>(string key) where T:Object {Object o;return items.TryGetValue(key,out o)?(T)o:null;}}
  public class AudioClip:Object {public static AudioClip Create(string name,int a,int b,int c,bool d)=>new AudioClip{name=name};public void SetData(float[] v,int start){}}
  public enum AudioRolloffMode {Linear}
@@ -79,7 +84,7 @@ namespace UnityEngine
  }
  public class ParticleSystemRenderer:Component {public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public bool receiveShadows;}
  public enum FogMode {Exponential,Linear}public enum CameraClearFlags {SolidColor,Skybox}
- public class Camera:Component {public float farClipPlane=1000;public Color backgroundColor;public CameraClearFlags clearFlags=CameraClearFlags.Skybox;}
+ public class Camera:Component {public static Camera main;public float farClipPlane=1000;public Color backgroundColor;public CameraClearFlags clearFlags=CameraClearFlags.Skybox;}
  public static class RenderSettings {public static bool fog;public static Color fogColor;public static float fogDensity,fogStartDistance,fogEndDistance;public static FogMode fogMode;}
  public static class Shader {static Vector4 fog;public static Vector4 GetGlobalVector(string key)=>fog;public static void SetGlobalVector(string key,Vector4 value){fog=value;}}
  public static class Application {public static bool isBatchMode,isPlaying=true;}
@@ -134,6 +139,10 @@ public static class FluidVisualCheck
  static int count;
  static void Check(bool condition,string why){count++;if(!condition)throw new Exception(why);}
  static void Call(object o,string method,params object[] args)=>o.GetType().GetMethod(method,BindingFlags.Instance|BindingFlags.NonPublic).Invoke(o,args);
+ static Array Layers(FluidEffects effects,string name)=>(Array)typeof(FluidEffects).GetField(name,BindingFlags.Instance|BindingFlags.NonPublic).GetValue(effects);
+ static object LayerAt(Array layers,int index)=>layers.GetValue(index);
+ static IList Particles(object layer)=>(IList)layer.GetType().GetField("particles",BindingFlags.Instance|BindingFlags.Public).GetValue(layer);
+ static T Field<T>(object target,string name)=>(T)target.GetType().GetField(name,BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).GetValue(target);
  public static void Main()
  {
   var template=new Material(null);var atlas=new Texture2D{width=256,height=256};var assets=new PlayerHudAssets{particleAtlas=atlas,fluidFizz=new AudioClip{name="userFizz"},fluidSplash=new AudioClip{name="userSplash"}};
@@ -141,7 +150,7 @@ public static class FluidVisualCheck
   var world=World.Instance=new GameObject("World").AddComponent<World>();
   var player=new GameObject("Player").AddComponent<Player>();player.world=world;
   player.transform.position=new Vector3(.5f,0,.5f);player.cam=new GameObject("Camera").transform;
-  var camera=player.cam.gameObject.AddComponent<Camera>();player.cam.position=new Vector3(.5f,1.5f,.5f);
+  var camera=Camera.main=player.cam.gameObject.AddComponent<Camera>();player.cam.position=new Vector3(.5f,1.5f,.5f);
   world.blocks[new Vector3Int(0,1,0)]=new Block{type=BlockType.Water};
   Call(player,"UpdateFluidView");var effect=player.cam.GetComponent<FluidCameraEffects>();
   Shader.SetGlobalVector("_FluidFog",new Vector4(1,2,3,4));RenderSettings.fog=false;
@@ -155,26 +164,29 @@ public static class FluidVisualCheck
   Call(effect,"OnPostRender");Check(RenderSettings.fogStartDistance==3&&RenderSettings.fogEndDistance==7,"overworld fog range restored for other cameras");
   var fluidEffects=world.GetComponent<FluidEffects>();fluidEffects.Emit(new Vector3(8,9,10),0);
   Check(world.transform.position.x==0&&world.transform.position.y==0,"positional sound never moves the world transform");
-  var emitters=(ParticleSystem[])typeof(FluidEffects).GetField("emitters",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(fluidEffects);
-  Check(emitters[0].emitted==8&&emitters[0].main.loop&&emitters[0].main.maxParticles==256,"smoke emitter reuses a bounded looping system");
-  Check(emitters[0].textureSheetAnimation.mode==ParticleSystemAnimationMode.Sprites&&emitters[0].textureSheetAnimation.spriteCount==8&&emitters[1].textureSheetAnimation.spriteCount==1,"packed atlas drives reverse generic smoke frames and Beta's fixed splash cell");
-  Check(emitters[2].GetComponent<ParticleSystemRenderer>().sharedMaterial.mainTexture==atlas&&emitters[4].textureSheetAnimation.spriteCount==8&&emitters[5].textureSheetAnimation.spriteCount==8,"lava, fire smoke, and mob explosions sample their classic atlas cells");
-  Check(emitters[0].textureSheetAnimation.sprites[0].rect.x==56&&emitters[1].textureSheetAnimation.sprites[0].rect.x==40,"classic generic animation starts at index seven and splash uses index twenty-one");
+  var effectLayers=Layers(fluidEffects,"effects");var smokeLayer=LayerAt(effectLayers,0);
+  Check(Particles(smokeLayer).Count==8,"classic smoke creates eight bounded hand-ticked particle entities");
+  var smoke=Particles(smokeLayer)[0];var smokeUv=Field<Rect>(smoke,"uv");
+  Check(Math.Abs(smokeUv.x-56/256f)<.00001f&&Field<Texture>(smokeLayer,"texture")==atlas,"generic smoke begins on classic atlas index seven without Unity sheet animation");
+  Check(Field<Texture>(LayerAt(effectLayers,2),"texture")==atlas&&Field<Texture>(LayerAt(effectLayers,4),"texture")==atlas,"lava and fire particles share the packed classic atlas mesh batches");
+  var smokeStart=Field<Vector3>(smoke,"position");Call(fluidEffects,"Update");
+  Check(Field<int>(smoke,"age")==1&&Field<Vector3>(smoke,"position").y>smokeStart.y,"particles advance with one deterministic Minecraft tick instead of Unity frame integration");
   var stoneTexture=new Texture2D();var stoneBottom=new Texture2D();BlockDataManager.blockTypeDataDictionary[(int)BlockType.Stone]=new BlockTypeData{textureData=new TextureData{side=stoneTexture,top=stoneBottom,bottom=stoneBottom}};
   world.PlayBlockBreakParticles(new Vector3Int(1,2,3),BlockType.Stone);
-  var breakEmitters=(ParticleSystem[])typeof(FluidEffects).GetField("breakEmitters",BindingFlags.Instance|BindingFlags.NonPublic).GetValue(fluidEffects);
-  Check(breakEmitters[0].emitted==64&&breakEmitters[0].textureSheetAnimation.numTilesX==4&&breakEmitters[0].textureSheetAnimation.numTilesY==4,"block destruction emits the classic 4x4x4 texture-chip burst");
-  Check(breakEmitters[0].GetComponent<ParticleSystemRenderer>().sharedMaterial.mainTexture==stoneBottom&&Math.Abs(breakEmitters[0].main.gravityModifier-1.63f)<.001f,"block chips use Beta side zero and Beta gravity");
-  Check(breakEmitters[0].lastEmit.velocity.magnitude<6,"destroy chips use randomized classic velocity instead of exploding radially");
+  var blockLayers=Layers(fluidEffects,"blocks");var blockLayer=LayerAt(blockLayers,0);var chips=Particles(blockLayer);
+  Check(chips.Count==64,"block destruction emits the classic 4x4x4 texture-chip burst");
+  Check(Field<Texture>(blockLayer,"texture")==stoneBottom&&Math.Abs(Field<float>(chips[0],"gravity")-1)<.001f,"block chips use Beta side zero and one classic gravity unit per tick");
+  Check(Field<Vector3>(chips[chips.Count-1],"velocity").magnitude<.3f,"destroy chips use classic per-tick randomized motion instead of Unity force");
   fluidEffects.EmitBlockHit(world,new Vector3Int(1,2,3),BlockType.Stone,new Vector3(1.5f,3,3.5f));
-  Check(breakEmitters[0].emitted==65&&breakEmitters[0].lastEmit.startSize<=.14f,"mining emits one smaller chip from the struck face");
+  Check(chips.Count==65&&Field<float>(chips[chips.Count-1],"scale")<=.36f,"mining emits one smaller chip from the struck face");
   var surface=new Block{type=BlockType.Stone,globalWorldPosition=new Vector3Int(0,0,0)};
   fluidEffects.EmitSprintDust(world,new Vector3(.5f,1,.5f),new Vector3(4,0,0),surface);
-  Check(breakEmitters[0].emitted==66&&breakEmitters[0].lastEmit.velocity.x<0,"sprint dust uses the supporting block and trails player motion");
-  fluidEffects.EmitMobDeath(new Vector3(0,1,0),.3f,1.8f);Check(emitters[5].emitted==20&&emitters[5].textureSheetAnimation.spriteCount==8,"mob death uses twenty small classic explode particles");
-  fluidEffects.Emit(new Vector3(0,0,0),4);Check(emitters[4].emitted==1,"fire emits a dedicated large-smoke particle");
-  var ownedSprite=emitters[0].textureSheetAnimation.sprites[0];
-  Call(fluidEffects,"OnDestroy");Check(emitters[0].gameObject.destroyed&&ownedSprite.destroyed&&!atlas.destroyed&&!template.destroyed&&!assets.fluidFizz.destroyed&&!assets.fluidSplash.destroyed,"cleanup destroys owned emitters and sprites while preserving borrowed assets");
+  Check(chips.Count==66&&Field<Vector3>(chips[chips.Count-1],"velocity").x<0,"sprint dust uses the supporting block and trails player motion");
+  fluidEffects.EmitMobDeath(new Vector3(0,1,0),.3f,1.8f);Check(Particles(LayerAt(effectLayers,5)).Count==20,"mob death uses twenty hand-ticked classic explode particles");
+  fluidEffects.Emit(new Vector3(0,0,0),4);Check(Particles(LayerAt(effectLayers,4)).Count==1,"fire emits a dedicated large-smoke particle");
+  Call(fluidEffects,"LateUpdate");var ownedRoot=Field<GameObject>(smokeLayer,"root");var ownedMesh=Field<Mesh>(smokeLayer,"mesh");
+  Check(ownedMesh.vertices.Length==32,"camera-facing smoke is rendered as exact four-vertex Minecraft quads");
+  Call(fluidEffects,"OnDestroy");Check(ownedRoot.destroyed&&ownedMesh.destroyed&&!atlas.destroyed&&!template.destroyed&&!assets.fluidFizz.destroyed&&!assets.fluidSplash.destroyed,"cleanup destroys owned particle meshes while preserving borrowed assets");
   world.blocks[new Vector3Int(0,0,0)]=new Block{type=BlockType.Lava};world.blocks[new Vector3Int(0,1,0)].type=BlockType.Lava;
   Call(player,"AdvanceFluidHazards",.05f);Check(player.health==16&&player.burning,"actual player adapter applies authoritative lava damage");
   world.blocks[new Vector3Int(0,0,0)].type=BlockType.Water;world.blocks[new Vector3Int(0,1,0)].type=BlockType.Water;
