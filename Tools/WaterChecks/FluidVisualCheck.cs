@@ -108,6 +108,7 @@ public partial class World:MonoBehaviour
  public static World Instance;public bool IsWorldCreated=true;public int worldHeight=12;
  public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();
  public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(p,out b)?b:new Block{type=BlockType.Air};}
+ internal void RememberMobWorldSpawn(Vector3 position){}
  public static bool FluidHasSolidMaterial(BlockType t)=>t!=BlockType.Air&&t!=BlockType.Water&&t!=BlockType.Lava;
  public void AddChunkToUpdate(ChunkRenderer renderer,bool first=false){}
 }

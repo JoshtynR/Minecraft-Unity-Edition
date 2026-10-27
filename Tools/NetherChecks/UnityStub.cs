@@ -88,6 +88,7 @@ public partial class World:UnityEngine.MonoBehaviour {
  public void Awake(){RegisterDimension();}
  public Block GetBlock(UnityEngine.Vector3Int p){if(blocks.TryGetValue(p,out var b))return b;return new Block{type=baseBlock==null?BlockType.Air:baseBlock(p),chunkData=new ChunkData{worldRef=this}};}
  public Block GetBlock(UnityEngine.Vector3 p)=>GetBlock(UnityEngine.Vector3Int.FloorToInt(p));
+ internal void RememberMobWorldSpawn(UnityEngine.Vector3 position){}
  public Task EnsureAreaAsync(UnityEngine.Vector3Int p,bool full=false){generationCalls++;return generationBarrier==null?Task.CompletedTask:generationBarrier.Task;}
  public void GenerateWorld(UnityEngine.Vector3Int p){}
  public void RequestChunkStreaming(UnityEngine.Vector3Int p){GenerateWorld(p);}
