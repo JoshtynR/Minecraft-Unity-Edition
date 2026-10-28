@@ -8,6 +8,7 @@ with tempfile.TemporaryDirectory() as tmp:
  controller=(ROOT/"Assets/_Scripts/Entity's/BaseEntity.cs").read_text()
  paths.append('Assets/_Scripts/WheatCropRules.cs')
  paths.append('Assets/_Scripts/Block/BlockSurvivalRules.cs')
+ paths.append('Assets/_Scripts/World/GrassSpreadRules.cs')
  paths.append('Assets/_Scripts/BlockSoundRules.cs')
  paths.append('Tools/ShapeChecks/SpecialCheck.cs')
  paths.append('Tools/ShapeChecks/SpecialTextureCheck.cs')
