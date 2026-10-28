@@ -50,7 +50,7 @@ public static partial class LightingCheck
    b.blockShape.orientation=SpecialBlockGeometry.Shape(type,s);b.blockShape.shape=b.blockShape.orientation.GetShape();
    BlockDataManager.blockTypeDataDictionary[(int)type].isTransparent=false;
    var main=BlockHelper.GetMeshData(chunk,p,new MeshData(true),type);
-   var mesh=SpecialBlockGeometry.NonOccluding(type)?main.transparentMesh:main;
+   var mesh=type==BlockType.NetherPortal?main.portalMesh:SpecialBlockGeometry.NonOccluding(type)?main.transparentMesh:main;
    int count=mesh.vertices.Count;
    Check(count==mesh.colors.Count&&count==mesh.uv.Count&&count==mesh.skyLight.Count&&count==mesh.blockLight.Count&&count==mesh.sides.Count&&count==mesh.smoothLightCorners.Count&&count==mesh.faceCoordinates.Count,"all special world render channels align: "+type);
    if(type==BlockType.Furnace)Check(mesh.sides.All(v=>v.x>=.5f),"opaque directional blocks sample outside their dark cell");

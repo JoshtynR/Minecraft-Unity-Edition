@@ -92,6 +92,9 @@ public static partial class LightingCheck
    renderMesh=BlockHelper.GetMeshData(renderChunk,renderPos,new MeshData(true),cutout);
    Check(renderMesh.transparentMesh.vertices.Count>0&&renderMesh.waterMesh.vertices.Count==0,"cutout blocks stay out of blended water pass");
   }
+  var glassChunk=new ChunkData();Add(glassChunk,renderPos,BlockType.Glass);Add(glassChunk,renderPos+Vector3Int.right,BlockType.Glass);
+  renderMesh=BlockHelper.GetMeshData(glassChunk,renderPos,new MeshData(true),BlockType.Glass);
+  Check(renderMesh.transparentMesh.vertices.Count==20,"touching glass blocks cull their shared internal face");
   // Actual propagation adapter: a mixed-opacity corridor crossing chunk ownership.
   var corridor=new ChunkData();corridor.worldRef.worldHeight=8;
   for(int x=0;x<6;x++)Add(corridor,new Vector3Int(x,2,0));
