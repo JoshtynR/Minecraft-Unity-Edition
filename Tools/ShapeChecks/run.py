@@ -17,11 +17,9 @@ with tempfile.TemporaryDirectory() as tmp:
  extra=Path(tmp)/'Controller.cs';extra.write_text('using UnityEngine;public partial class Controller{'+methods+'}')
  fluid=Path(tmp)/'ControllerFluid.cs'
  fluid.write_text((ROOT/"Assets/_Scripts/Entity's/BaseEntity_Fluids.cs").read_text().replace('public abstract partial class BaseEntity','public partial class Controller'))
- material=Path(tmp)/'FluidMaterials.cs';code=(ROOT/'Assets/_Scripts/World/World_Water.cs').read_text()
- material.write_text('public partial class World{'+code[code.index('    public static bool FluidHasSolidMaterial'):code.index('    public void SetLavaCell')]+'}')
  paths.extend(['Assets/_Scripts/World/FluidWorldQueries.cs','Assets/_Scripts/World/BetaFluidPhysics.cs','Assets/_Scripts/World/WaterSimulation.cs','Assets/_Scripts/World/FluidTickScheduler.cs','Tools/ShapeChecks/FluidControllerCheck.cs'])
  player=(ROOT/"Assets/_Scripts/Entity's/Player/Player.cs").read_text()
  placement=Path(tmp)/'PlayerPlacement.cs'
  placement.write_text('using UnityEngine;using Mirror;public partial class Player{'+player[player.index('    private bool TryUseBlock()'):player.index('    public Block TargetedBlock(')]+'}')
- subprocess.run([a.mcs,'-langversion:latest','-out:'+str(binary),*[str(ROOT/p) for p in paths],str(extra),str(placement),str(fluid),str(material)],check=True)
+ subprocess.run([a.mcs,'-langversion:latest','-out:'+str(binary),*[str(ROOT/p) for p in paths],str(extra),str(placement),str(fluid)],check=True)
  subprocess.run([a.mono,str(binary)],check=True)

@@ -28,6 +28,7 @@ public partial class Player
  public Objects objects=new Objects();public Transform transform=new Transform(),cam=new Transform();public World world=new World();public Inventory inventory=new Inventory();public bool networkStarted,isCrouching;public float reach=5,entityWidth=.3f,entityHeight=1.8f;public Vector3Int aimed,placement;
  private object TargetedMob()=>null;
  private bool TryUseNetherBed(Block block)=>false;
+ private bool TryUseBed(Block block)=>false;
  private bool TryUseFarming(Block block,Vector3Int adjacent)=>false;
  public bool UseForCheck()=>TryUseBlock();
  public Block TargetedBlock(float reach,out Vector3Int adjacent){adjacent=placement;return world.GetBlock(aimed);}
@@ -42,9 +43,20 @@ public static class PlacementCheck
   {
    var p=new Player{aimed=new Vector3Int(0,0,0),placement=new Vector3Int(0,1,0)};p.transform.position=new Vector3(10,10,10);
    p.world.SetBlock(p.aimed,BlockType.Stone);p.inventory.slots[0].type=ItemType.WoodenStairs;
-   p.objects.body.forward=facing==0?new Vector3(1,0,0):facing==1?new Vector3(-1,0,0):facing==2?new Vector3(0,0,1):new Vector3(0,0,-1);
+   p.cam.forward=facing==0?new Vector3(1,0,0):facing==1?new Vector3(-1,0,0):facing==2?new Vector3(0,0,1):new Vector3(0,0,-1);
+   p.objects.body.forward=p.cam.forward*-1; // Movement-facing body must not steer placement.
    Check(p.PlaceBlock()&&StairGeometry.Facing(p.world.GetBlock(p.placement).blockShape)==facing&&p.inventory.slots[0].count==63,"offline placement applies direction and consumes one item");
-   p.networkStarted=true;p.inventory.slots[0].type=ItemType.CobblestoneStairs;Check(p.PlaceBlock()&&Mirror.NetworkClient.last.stairFacing==facing,"network placement carries direction");
+   p.world.SetBlock(p.placement,BlockType.Air);p.networkStarted=true;p.inventory.slots[0].type=ItemType.CobblestoneStairs;
+   Check(p.PlaceBlock()&&Mirror.NetworkClient.last.stairFacing==facing,"network placement carries direction");
+  }
+  var chestStates=new byte[]{4,5,2,3};
+  for(int direction=0;direction<4;direction++)
+  {
+   var p=new Player{aimed=new Vector3Int(0,0,0),placement=new Vector3Int(0,1,0)};p.transform.position=new Vector3(10,10,10);
+   p.world.SetBlock(p.aimed,BlockType.Stone);p.inventory.slots[0].type=ItemType.Chest;
+   p.cam.forward=direction==0?new Vector3(1,0,0):direction==1?new Vector3(-1,0,0):direction==2?new Vector3(0,0,1):new Vector3(0,0,-1);
+   p.objects.body.forward=p.cam.forward*-1;
+   Check(p.PlaceBlock()&&SpecialBlockGeometry.State(BlockType.Chest,p.world.GetBlock(p.placement).blockShape)==chestStates[direction],"chest front faces the viewing player rather than movement direction");
   }
   foreach(var slab in new[]{BlockType.StoneSlab,BlockType.SandstoneSlab,BlockType.WoodenSlab,BlockType.CobblestoneSlab})
   {
