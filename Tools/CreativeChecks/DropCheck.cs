@@ -10,6 +10,7 @@ public static class BlockCollision
     {if(feet.y+move.y<0)move.y=-feet.y;return move;}
     public static bool TouchesBlock(World world,Vector3 feet,float radius,float height,BlockType type)
     {return world.GetBlock(Vector3Int.FloorToInt(feet)).type==type;}
+    public static bool Supported(World world,Vector3 feet,float radius,float height)=>feet.y<=0;
 }
 public static class FluidWorldQueries
 {

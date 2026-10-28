@@ -41,6 +41,7 @@ public partial class World : IFireWorld
                 if(!TryGetWaterBlock(BlockPos(p),out var block))continue;
                 if(block.type==BlockType.Lava)fluidFire.IgniteFromLava(p);
                 else if(block.type==BlockType.Fire)fluidFire.Tick(p);
+                else if(block.type==BlockType.Grass)TickGrass(p);
                 else if(WheatCropRules.IsCrop(block.type)||WheatCropRules.IsSoil(block.type))TickFarming(p,block);
             }
         }

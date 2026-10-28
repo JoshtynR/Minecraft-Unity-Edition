@@ -19,9 +19,19 @@ public partial class World
     private List<DroppedItemState> dropTickBuffer => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeDropTickBuffer, () => new List<DroppedItemState>());
     [System.NonSerialized] private List<int> runtimeRemovedDropVisuals;
     private List<int> removedDropVisuals => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeRemovedDropVisuals, () => new List<int>());
+    [System.NonSerialized] private HashSet<int> runtimeSleepingDrops;
+    private HashSet<int> sleepingDrops => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeSleepingDrops, () => new HashSet<int>());
+    [System.NonSerialized] private Dictionary<Vector3Int,List<DroppedItemState>> runtimeDropMergeBuckets;
+    private Dictionary<Vector3Int,List<DroppedItemState>> dropMergeBuckets => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeDropMergeBuckets, () => new Dictionary<Vector3Int,List<DroppedItemState>>());
+    [System.NonSerialized] private HashSet<int> runtimeMergedDrops;
+    private HashSet<int> mergedDrops => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeMergedDrops, () => new HashSet<int>());
+    [System.NonSerialized] private List<DroppedItemState> runtimeDropVisualCandidates;
+    private List<DroppedItemState> dropVisualCandidates => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeDropVisualCandidates, () => new List<DroppedItemState>());
     private Mesh dropBillboard;
     private DroppedItemState[] dropRestore;
     private float dropClock;
+    private float nextDropVisualRefresh;
+    private int dropTick;
     private bool dropSyncRequested;
     public bool DropAuthority=>!NetworkClient.active||NetworkServer.active;
 
@@ -118,6 +128,25 @@ public partial class World
                 foreach(var item in dropTickBuffer)
                 {
                     if(item.position.y<-64){droppedItems.Remove(item.id);BroadcastDropRemoval(item.id);continue;}
+                    if(sleepingDrops.Contains(item.id))
+                    {
+                        var restingCell=GetBlock(Vector3Int.FloorToInt(item.position));
+                        // Match moving entities: unloaded chunks pause age and
+                        // pickup delay instead of despawning saved drops.
+                        if(restingCell==null||restingCell.type==BlockType.Nothing)continue;
+                        if(item.pickupDelay>0)item.pickupDelay--;
+                        item.age++;
+                        if(item.age>=DroppedItemRules.Lifetime)
+                        {sleepingDrops.Remove(item.id);droppedItems.Remove(item.id);BroadcastDropRemoval(item.id);continue;}
+                        // Resting entities do not need swept collision every tick.
+                        // Periodically validate support/hazards so block changes
+                        // still wake or destroy them without a permanent poll.
+                        if(item.age%20!=0)continue;
+                        bool hazard=restingCell!=null&&(restingCell.type==BlockType.Fire||restingCell.type==BlockType.Lava||restingCell.type==BlockType.Water)||
+                            BlockCollision.TouchesBlock(this,item.position,DroppedItemRules.HalfWidth,DroppedItemRules.Height,BlockType.Cactus);
+                        if(!hazard&&BlockCollision.Supported(this,item.position,DroppedItemRules.HalfWidth,DroppedItemRules.Height))continue;
+                        sleepingDrops.Remove(item.id);
+                    }
                     // Beta cactus destroys item entities immediately on contact.
                     // Test the entity box, not only its center voxel, so an item
                     // touching the inset cactus edge cannot survive in a neighbor.
@@ -139,12 +168,47 @@ public partial class World
                     var below=GetBlock(Vector3Int.FloorToInt(item.position+Vector3.down*.01f));
                     bool alive=DroppedItemRules.Tick(item,(feet,move)=>BlockCollision.Resolve(this,feet,DroppedItemRules.HalfWidth,DroppedItemRules.Height,move,false),
                         below!=null&&below.type==BlockType.Ice?.98f:.6f,current,block.type==BlockType.Lava,block.type==BlockType.Fire);
-                    if(!alive){droppedItems.Remove(item.id);BroadcastDropRemoval(item.id);}
-                    else if(item.age%5==0)BroadcastDrop(item);
+                    if(!alive){sleepingDrops.Remove(item.id);droppedItems.Remove(item.id);BroadcastDropRemoval(item.id);}
+                    else
+                    {
+                        if(item.motion.sqrMagnitude<.000001f&&block.type!=BlockType.Water&&block.type!=BlockType.Lava&&block.type!=BlockType.Fire&&
+                            BlockCollision.Supported(this,item.position,DroppedItemRules.HalfWidth,DroppedItemRules.Height))sleepingDrops.Add(item.id);
+                        if(item.age%5==0&&!sleepingDrops.Contains(item.id))BroadcastDrop(item);
+                    }
                 }
+                if(++dropTick%10==0)MergeNearbyDrops();
             }
         }
         if(Instance==this&&(!NetworkServer.active||NetworkClient.active))UpdateDropVisuals();
+    }
+    private void MergeNearbyDrops()
+    {
+        dropMergeBuckets.Clear();mergedDrops.Clear();dropTickBuffer.Clear();dropTickBuffer.AddRange(droppedItems.Items);
+        foreach(var item in dropTickBuffer)
+        {
+            if(item==null||mergedDrops.Contains(item.id))continue;
+            int limit=InventoryRules.Limit(item.stack.type);
+            var key=Vector3Int.FloorToInt(item.position*2f);
+            DroppedItemState target=null;
+            for(int x=-1;x<=1&&target==null;x++)for(int y=-1;y<=1&&target==null;y++)for(int z=-1;z<=1&&target==null;z++)
+            {
+                if(!dropMergeBuckets.TryGetValue(key+new Vector3Int(x,y,z),out var bucket))continue;
+                foreach(var candidate in bucket)
+                    if(!mergedDrops.Contains(candidate.id)&&candidate.stack.type==item.stack.type&&candidate.stack.damage==item.stack.damage&&candidate.stack.count<limit&&
+                        (candidate.position-item.position).sqrMagnitude<=.25f){target=candidate;break;}
+            }
+            if(target!=null)
+            {
+                int moved=System.Math.Min(item.stack.count,limit-target.stack.count);
+                target.stack.count+=moved;item.stack.count-=moved;
+                target.pickupDelay=System.Math.Max(target.pickupDelay,item.pickupDelay);
+                target.age=System.Math.Min(target.age,item.age);BroadcastDrop(target);
+                if(item.stack.count<=0)
+                {mergedDrops.Add(item.id);sleepingDrops.Remove(item.id);droppedItems.Remove(item.id);BroadcastDropRemoval(item.id);continue;}
+            }
+            if(!dropMergeBuckets.TryGetValue(key,out var ownBucket))dropMergeBuckets[key]=ownBucket=new List<DroppedItemState>();
+            ownBucket.Add(item);
+        }
     }
     private void PushDropOutOfBlock(DroppedItemState item,Vector3Int cell,BlockType type)
     {
@@ -170,8 +234,13 @@ public partial class World
         removedDropVisuals.Clear();
         foreach(var pair in dropVisuals)if(droppedItems.Get(pair.Key)==null&&!pair.Value.AnimatePickup())removedDropVisuals.Add(pair.Key);
         foreach(int id in removedDropVisuals){dropVisuals[id].Dispose();dropVisuals.Remove(id);}
-        foreach(var item in droppedItems.Items)
+        if(Time.unscaledTime>=nextDropVisualRefresh)
         {
+            nextDropVisualRefresh=Time.unscaledTime+.25f;dropVisualCandidates.Clear();dropVisualCandidates.AddRange(droppedItems.Items);
+        }
+        foreach(var item in dropVisualCandidates)
+        {
+            if(droppedItems.Get(item.id)!=item)continue;
             var block=GetBlock(Vector3Int.FloorToInt(item.position));
             bool visible=block!=null&&block.type!=BlockType.Nothing;
             if(!dropVisuals.TryGetValue(item.id,out var visual)&&visible)
@@ -210,6 +279,7 @@ public partial class World
         foreach(var material in dropMaterials.Values)if(material!=null)Destroy(material);dropMaterials.Clear();
         if(dropBillboard!=null)Destroy(dropBillboard);dropBillboard=null;
         if(discardSave)dropRestore=null;
-        droppedItems.Restore(null);dropClock=0;dropSyncRequested=false;dropTickBuffer.Clear();
+        droppedItems.Restore(null);dropClock=0;dropTick=0;dropSyncRequested=false;dropTickBuffer.Clear();sleepingDrops.Clear();
+        dropMergeBuckets.Clear();mergedDrops.Clear();dropVisualCandidates.Clear();nextDropVisualRefresh=0;
     }
 }

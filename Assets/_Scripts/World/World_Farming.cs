@@ -79,6 +79,29 @@ public partial class World
         }
     }
 
+    private void TickGrass(WaterPosition position)
+    {
+        var p=BlockPos(position);
+        var above=GetBlock(p+Vector3Int.up);
+        if(above==null||above.type==BlockType.Nothing)return;
+        int lightAbove=FarmLight(above);
+        if(GrassSpreadRules.ShouldDecay(lightAbove,above.BlockData.opacity))
+        {
+            // Beta only converts covered grass on one of four selected ticks.
+            if(fluidRandom.NextInt(4)==0)SetFarmBlock(p,BlockType.Dirt);
+            return;
+        }
+        if(!GrassSpreadRules.CanSpreadFrom(lightAbove))return;
+
+        // One nearby dirt candidate per selected grass tick: X/Z +/-1 and
+        // Y -3..+1, exactly matching BlockGrass.updateTick in Beta 1.7.3.
+        var candidate=p+new Vector3Int(fluidRandom.NextInt(3)-1,fluidRandom.NextInt(5)-3,fluidRandom.NextInt(3)-1);
+        var dirt=GetBlock(candidate);var candidateAbove=GetBlock(candidate+Vector3Int.up);
+        if(dirt==null||candidateAbove==null||dirt.type==BlockType.Nothing||candidateAbove.type==BlockType.Nothing)return;
+        if(GrassSpreadRules.CanBecomeGrass(dirt.type,FarmLight(candidateAbove),candidateAbove.BlockData.opacity))
+            SetFarmBlock(candidate,BlockType.Grass);
+    }
+
     public bool UseFarmItem(Vector3Int target, Vector3Int adjacent, ref InventoryStack held)
     {
         var block = GetBlock(target); if (block == null || held.Empty) return false;

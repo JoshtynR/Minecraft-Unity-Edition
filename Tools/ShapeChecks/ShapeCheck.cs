@@ -19,7 +19,7 @@ namespace UnityEngine
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;} }
  public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
  public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}}
- public static class Mathf {public static float Abs(float f)=>Math.Abs(f);public static float Clamp(float f,float a,float b)=>Math.Max(a,Math.Min(b,f));public static int FloorToInt(float f)=>(int)Math.Floor(f);public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int Max(int a,int b)=>Math.Max(a,b);}
+ public static class Mathf {public static float Abs(float f)=>Math.Abs(f);public static int Abs(int n)=>Math.Abs(n);public static float Clamp(float f,float a,float b)=>Math.Max(a,Math.Min(b,f));public static int FloorToInt(float f)=>(int)Math.Floor(f);public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static int Max(int a,int b)=>Math.Max(a,b);}
 }
 public enum Direction {down,up,backwards,forwards,left,right}
 public static class DirectionExtensions {public static Vector3Int GetVector(this Direction d){switch(d){case Direction.up:return Vector3Int.up;case Direction.down:return Vector3Int.down;case Direction.left:return Vector3Int.left;case Direction.right:return Vector3Int.right;case Direction.forwards:return Vector3Int.forward;default:return Vector3Int.back;}}}

@@ -46,7 +46,7 @@ namespace UnityEngine
  {
   public Bounds bounds;public void SetNormals(List<Vector3> normals){}
   public UnityEngine.Rendering.IndexFormat indexFormat;public int subMeshCount;public void Clear(){vertices=new List<Vector3>();}public void MarkDynamic(){}
-  public List<Vector3> vertices;public void SetVertices(List<Vector3> v){vertices=v;}public void SetUVs<T>(int channel,List<T> uv){}public void SetUVs(int channel,Vector2[] uv){}public void SetTriangles(List<int> t,int sub,bool calculateBounds=true){}public void SetColors(List<Color> c){}public void RecalculateNormals(){}public void RecalculateBounds(){}
+  public List<Vector3> vertices;public void SetVertices(List<Vector3> v){vertices=v;}public void SetUVs<T>(int channel,List<T> uv){}public void SetUVs(int channel,Vector2[] uv){}public void SetTriangles(List<int> t,int sub,bool calculateBounds=true){}public void SetColors(List<Color> c){}public void RecalculateNormals(){}public void RecalculateBounds(){}public void UploadMeshData(bool discard){}
  }
  public class MeshFilter:Component {public Mesh sharedMesh;}
  public class MeshRenderer:Component {public UnityEngine.Rendering.ShadowCastingMode shadowCastingMode;public Material sharedMaterial;public void SetPropertyBlock(MaterialPropertyBlock properties){}}
@@ -179,7 +179,7 @@ public partial class Player:MonoBehaviour
 {
  public World CurrentWorld=>World.Instance;public WorldDimension dimension;public bool DimensionTransferInProgress;private bool dimensionTransfer;
  private bool serverMining;
- public bool escapeMenuOpen,networkStarted,isServer=true;public float reach=4.5f,eyeHeight=1.578f;public int health=20;
+ public bool escapeMenuOpen,networkStarted,isServer=true,sleeping;public float reach=4.5f,eyeHeight=1.578f;public int health=20;
  public PlayerInventory inventory=>GetComponent<PlayerInventory>();public World world=>World.Instance;
  public Transform cam;public Mirror.NetworkConnection connectionToClient=new Mirror.NetworkConnection();
 }

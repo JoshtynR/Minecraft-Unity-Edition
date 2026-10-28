@@ -48,6 +48,20 @@ public static partial class ShapeCheck
   byte next;
   Check(SpecialBlockGeometry.TryUse(BlockType.WoodenDoor,8,out next)&&next==12,"upper door interaction retains half and toggles open");
   Check(!SpecialBlockGeometry.TryUse(BlockType.IronDoor,0,out next),"iron doors are not hand-toggleable");
+  var doorOrigin=new Vector3Int(8,8,8);
+  Func<Vector3Int,BlockType> emptyDoorWorld=p=>BlockType.Air;
+  Check(SpecialBlockGeometry.DoorPlacement(BlockType.WoodenDoor,1,doorOrigin,emptyDoorWorld)==1,"single door preserves the Beta yaw orientation");
+  Func<Vector3Int,BlockType> leftDoorWorld=p=>p.Equals(doorOrigin+Vector3Int.right)||p.Equals(doorOrigin+Vector3Int.right+Vector3Int.up)?BlockType.WoodenDoor:BlockType.Air;
+  Check(SpecialBlockGeometry.DoorPlacement(BlockType.WoodenDoor,1,doorOrigin,leftDoorWorld)==4,"adjacent door reverses the hinge for a centred double door");
+  Func<Vector3Int,BlockType> solidRightWorld=p=>p.Equals(doorOrigin+Vector3Int.left)||p.Equals(doorOrigin+Vector3Int.left+Vector3Int.up)?BlockType.Stone:BlockType.Air;
+  Check(SpecialBlockGeometry.DoorPlacement(BlockType.WoodenDoor,1,doorOrigin,solidRightWorld)==4,"solid-side count selects the unobstructed door hinge");
+  var closedTrap=SpecialBlockGeometry.Selection(BlockType.Trapdoor,2);var openTrap=SpecialBlockGeometry.Selection(BlockType.Trapdoor,6);
+  Check(closedTrap.yMax==3&&openTrap.xMin==13&&openTrap.yMax==16,"trapdoor switches from a three-pixel floor plate to its attached wall");
+  Check(SpecialBlockGeometry.TryUse(BlockType.Trapdoor,2,out next)&&next==6,"trapdoor interaction toggles its open metadata bit");
+  Check(GrassSpreadRules.ShouldDecay(3,15)&&!GrassSpreadRules.ShouldDecay(4,15)&&!GrassSpreadRules.ShouldDecay(3,1),"grass decay requires both darkness and an opaque cover");
+  Check(GrassSpreadRules.CanSpreadFrom(9)&&!GrassSpreadRules.CanSpreadFrom(8),"grass spread uses the Beta source-light threshold");
+  Check(GrassSpreadRules.CanBecomeGrass(BlockType.Dirt,4,1)&&GrassSpreadRules.CanBecomeGrass(BlockType.Dirt,15,0),"dirt under leaves or air can become grass");
+  Check(!GrassSpreadRules.CanBecomeGrass(BlockType.Dirt,15,3)&&!GrassSpreadRules.CanBecomeGrass(BlockType.Stone,15,0),"opaque cover and non-dirt candidates reject grass spread");
   Check(SpecialBlockGeometry.TryUse(BlockType.RedstoneRepeater,15,out next)&&next==3,"repeater delay cycles without rotating");
   Func<Vector3Int,BlockType> curve=p=>(p.x==1&&p.z==0&&p.y==0)||(p.x==0&&p.z==1&&p.y==0)?BlockType.Rail:BlockType.Air;
   Check(SpecialBlockGeometry.RailState(BlockType.Rail,0,new Vector3Int(),curve)==6,"rail turns south-east corner");
@@ -75,6 +89,13 @@ public static partial class ShapeCheck
   }
   var climb=new MeshData(false);SpecialBlockMesh.Append(BlockType.RedstoneWire,15,new Vector3Int(),p=>p.x==1&&p.y==0?BlockType.Stone:p.x==1&&p.y==1?BlockType.RedstoneWire:BlockType.Air,d=>0,new Color(),climb);
   Check(climb.vertices.Count==16&&Near(climb.colors[0].r,1),"dust climbs solid side to upper wire and powered tint is retained");
+  for(byte state=0;state<2;state++)
+  {
+   var portal=new MeshData(false);SpecialBlockMesh.Append(BlockType.NetherPortal,state,new Vector3Int(),null,d=>3,new Color(1,1,1,1),portal);
+   Check(portal.vertices.Count==8&&portal.triangles.Count==12,"portal emits only its front and back faces");
+   foreach(var v in portal.vertices)
+    Check(state==0?Math.Abs(v.z-.375f)<.001f||Math.Abs(v.z-.625f)<.001f:Math.Abs(v.x-.375f)<.001f||Math.Abs(v.x-.625f)<.001f,"portal vertices stay on the two oriented broad planes");
+  }
   Console.WriteLine((checks-start)+" special model/state/connection/attachment checks passed.");
  }
 }

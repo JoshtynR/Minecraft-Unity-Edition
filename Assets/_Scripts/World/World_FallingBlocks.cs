@@ -70,8 +70,7 @@ public partial class World
         if(current==null||current.type!=expected||below==null||!FallingBlockCanPassThrough(below.type))return false;
 
         EnsureFallingBlocksRestored();
-        SetBlock(position,BlockType.Air);
-        if(GetBlock(position).type!=BlockType.Air)return false;
+        if(!SetFallingBlockCell(position,BlockType.Air,0))return false;
         if(NetworkServer.active&&WorldServer.instance!=null)
             WorldServer.instance.BroadcastBlock(this,position,BlockType.Air,0);
 
@@ -176,7 +175,9 @@ public partial class World
         bool grounded=requested.y<0&&moved.y>requested.y+.00001f;
         if(grounded){state.motion.y=0;LandFallingBlock(state);return;}
         if(state.position.y<-64||state.age>600){DropFallingBlock(state);return;}
-        if(state.age%2==0)BroadcastFallingBlock(state);
+        // Five snapshots per second are enough for the interpolated visual and
+        // halve the traffic/copies used by a large collapsing sand column.
+        if(state.age%4==0)BroadcastFallingBlock(state);
     }
 
     private void LandFallingBlock(FallingBlockState state)
@@ -188,10 +189,38 @@ public partial class World
             FallingBlockCanPassThrough(targetBlock.type)&&below.type!=BlockType.Nothing&&!FallingBlockCanPassThrough(below.type);
         RemoveFallingBlock(state.id);
         if(!canSet){SpawnFallingBlockDrop(state);return;}
-        SetBlock(target,state.type,state.blockState);
+        if(!SetFallingBlockCell(target,state.type,state.blockState))
+        {SpawnFallingBlockDrop(state);return;}
         if(NetworkServer.active&&WorldServer.instance!=null)
             WorldServer.instance.BroadcastBlock(this,target,state.type,state.blockState);
         GameAudio.BroadcastBlock(state.type,target,false,this);
+    }
+
+    // Falling columns used to call World.SetBlock for every start and landing.
+    // That async method immediately builds a mesh, so a single column could
+    // launch many redundant jobs for the same chunk. Mutate the cell now and
+    // feed the affected renderers into the world's deduplicated update queue.
+    private bool SetFallingBlockCell(Vector3Int position,BlockType type,byte state)
+    {
+        if(position.y<0||position.y>=worldHeight)return false;
+        var origin=WorldDataHelper.GetChunkPosition(this,position);
+        var renderer=WorldDataHelper.GetChunk(this,origin);
+        if(renderer==null||renderer.ChunkData==null)return false;
+        WorldDataHelper.SetBlock(this,position,type);
+        var changed=GetBlock(position);
+        if(changed==null||changed.type!=type)return false;
+        changed.blockShape=SpecialBlockGeometry.Shape(type,state);
+        renderer.ModifiedByPlayer=true;renderer.ChunkData.modifiedAfterSave=true;
+        QueueSurvivalAround(position);QueuePortalValidation(position);
+        AddChunkToUpdate(renderer);
+        if(renderer.ChunkData.IsOnEdge(position))
+            foreach(var neighbor in renderer.ChunkData.GetNeighbourChunk(position))
+            {
+                if(neighbor==null)continue;
+                var neighborRenderer=WorldDataHelper.GetChunk(this,neighbor.worldPos);
+                if(neighborRenderer!=null)AddChunkToUpdate(neighborRenderer);
+            }
+        return true;
     }
 
     private void DropFallingBlock(FallingBlockState state)

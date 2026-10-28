@@ -157,7 +157,12 @@ public partial class Player
             if (serverMineProgress < 1) continue;
             serverMining = false;
             nextServerMineTime = NetworkTime.time + 0.25;
-            var drop = world.MiningItemDrop(serverMineType,serverMineItem.type,serverMineItem.damage);
+            // Beta's upper door block has idDropped == 0. SetBlock removes the
+            // paired lower half too, so allowing this drop would duplicate a
+            // door whenever the player mined its upper half.
+            bool upperDoor=SpecialBlockGeometry.IsDoor(serverMineType)&&
+                (SpecialBlockGeometry.State(block.type,block.blockShape)&8)!=0;
+            var drop = upperDoor?new InventoryStack():world.MiningItemDrop(serverMineType,serverMineItem.type,serverMineItem.damage);
             var replacement = BlockType.Air;
             if (serverMineType == BlockType.Ice)
             {

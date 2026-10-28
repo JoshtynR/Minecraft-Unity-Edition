@@ -80,8 +80,13 @@ public static class BlockHelper
                 // intentionally in the opaque draw pass, so relying on the material
                 // flag here opened holes in terrain whenever the camera entered it.
                 bool fluidNeighbor = neighbourBlockType == BlockType.Water || neighbourBlockType == BlockType.Lava;
-                bool visible = fluidNeighbor || BlockShapesExtensions.IsPlant(neighbourBlockType) || SpecialBlockGeometry.NonOccluding(neighbourBlockType) || !shape.TouchesCellBoundary(dir) || neighbourBlockTypeData.isTransparent ||
-                    !(StairGeometry.IsStair(neighbourBlockType) ? StairGeometry.CoversFace(StairGeometry.Facing(neighbourBlock.blockShape), shape, dir.GetOpposite()) : neighborShape.CoversBoundaryFace(shape, dir.GetOpposite()));
+                // Transparent blocks normally expose the face behind them, but
+                // adjacent glass cubes share a seamless boundary. Do not build
+                // the two invisible internal quads between matching glass cells.
+                bool joinedGlass = blockType == BlockType.Glass && neighbourBlockType == BlockType.Glass;
+                bool visible = !joinedGlass && (fluidNeighbor || BlockShapesExtensions.IsPlant(neighbourBlockType) || SpecialBlockGeometry.NonOccluding(neighbourBlockType) || !shape.TouchesCellBoundary(dir) || neighbourBlockTypeData.isTransparent ||
+                    !(StairGeometry.IsStair(neighbourBlockType) ? StairGeometry.CoversFace(StairGeometry.Facing(neighbourBlock.blockShape), shape, dir.GetOpposite()) : neighborShape.CoversBoundaryFace(shape, dir.GetOpposite())));
+
                 if (blockType == BlockType.Water || blockType == BlockType.Lava)
                 {
                     if (neighbourBlockType != blockType && neighbourBlockType != BlockType.Ice && (dir == Direction.up || visible))
