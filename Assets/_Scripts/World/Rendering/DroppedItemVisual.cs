@@ -12,6 +12,8 @@ public sealed class DroppedItemVisual
     private Vector3 collectionStart,collectionTarget;
     private int lastAge=-1;
     private int lastCopies=-1,lastSky=-1,lastBlock=-1;
+    private Vector3Int lastLightCell=new Vector3Int(int.MinValue,int.MinValue,int.MinValue);
+    private float nextLightSample;
     private float ageTime;
     public DroppedItemVisual(Transform parent,InventoryStack stack,Mesh mesh,Material material,bool flat)
     {
@@ -38,8 +40,15 @@ public sealed class DroppedItemVisual
         placed=true;
         root.transform.rotation=Quaternion.Euler(0,flat&&camera!=null?camera.transform.eulerAngles.y:DroppedItemRules.Rotation(age,state.hover),0);
         int visible=DroppedItemRules.Copies(state.stack.count);
-        var block=world.GetBlock(Vector3Int.FloorToInt(state.position+Vector3.up*.25f));
-        int sky=block==null?15:block.GetSkyLight(),blockLight=block==null?0:block.GetBlockLight();
+        var lightCell=Vector3Int.FloorToInt(state.position+Vector3.up*.25f);
+        bool sampleLight=lightCell!=lastLightCell||Time.unscaledTime>=nextLightSample;
+        int sky=lastSky<0?15:lastSky,blockLight=lastBlock<0?0:lastBlock;
+        if(sampleLight)
+        {
+            lastLightCell=lightCell;nextLightSample=Time.unscaledTime+.25f;
+            var block=world.GetBlock(lightCell);
+            sky=block==null?15:block.GetSkyLight();blockLight=block==null?0:block.GetBlockLight();
+        }
         bool lightingChanged=sky!=lastSky||blockLight!=lastBlock;
         if(lightingChanged){lastSky=sky;lastBlock=blockLight;properties.SetVector("_LightLevels",new Vector4(sky,blockLight,1,0));}
         for(int i=0;i<4;i++)

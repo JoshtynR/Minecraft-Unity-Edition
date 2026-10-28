@@ -51,6 +51,14 @@ public partial class World
     internal void RememberMobWorldSpawn(Vector3 position)
     {mobSpawnPoint=position;mobSpawnPointKnown=true;}
 
+    private void TrackMobCandidate(MobState mob)
+    {
+        if(mob!=null&&!mobTickCandidates.Contains(mob))mobTickCandidates.Add(mob);
+        // Make a newly spawned mob visible immediately instead of waiting for
+        // the quarter-second render-candidate refresh.
+        if(mob!=null&&!mobVisualCandidates.Contains(mob))mobVisualCandidates.Add(mob);
+    }
+
     private bool BetaSpawnCell(Vector3Int cell)
     {
         if(cell.y<1||cell.y+1>=worldHeight)return false;
@@ -91,7 +99,11 @@ public partial class World
         if(dimension!=WorldDimension.Overworld||mobPlayers.Count==0||worldData.chunkDict==null||mobs.Count>=MobStore.Capacity)return;
         if(hostile?!spawnHostileMobs:!spawnPassiveMobs)return;
         RefreshEligibleMobChunks();int eligible=mobSpawnCandidates.Count;if(eligible==0)return;
-        int count=0;foreach(var entity in mobs.Entities)if(MobRules.Hostile(entity.species)==hostile)count++;
+        // Persisted mobs in unloaded chunks must not consume the active-area
+        // cap. Beta counts entities in the eligible loaded region only.
+        int count=0;
+        foreach(var entity in mobTickCandidates)
+            if(MobRules.Hostile(entity.species)==hostile&&MobAreaLoaded(entity.position)&&MobPlayerDistance(entity.position)<128*128)count++;
         int cap=HostileSpawnRules.CategoryCap(hostile?maximumActiveHostiles:maximumActivePassiveMobs,eligible);
         // SpawnerAnimals uses <=, so a final pack may carry the category over
         // the scaled cap before the next tick stops spawning it.
@@ -124,6 +136,7 @@ public partial class World
                     var feet=new Vector3(px+.5f,py,pz+.5f);
                     if(MobPlayerDistance(feet)<24*24||(feet-worldSpawn).sqrMagnitude<24*24||!BetaSpecificSpawn(species,feet))continue;
                     var mob=mobs.Spawn(feet,mobRandom.NextFloat()*360,species);if(mob==null)return;
+                    TrackMobCandidate(mob);
                     if(species==MobType.Sheep)mob.fleeceColor=BetaSheepColor();
                     BroadcastMob(mob);spawnedInChunk++;
                 }

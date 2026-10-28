@@ -14,6 +14,8 @@ public sealed class MobVisual
     private readonly float deathRadius,deathHeight;
     private bool deathSmoke,deathPropertiesApplied,shearedInitialized,lastSheared;
     private int lastSky=-1,lastBlock=-1,lastHurt=-1,lastFleece=-1;
+    private Vector3Int lastLightCell=new Vector3Int(int.MinValue,int.MinValue,int.MinValue);
+    private float nextLightSample;
     private float lastFlash=-1;
     private float soundTime=GameAudio.Variation(4,12),stepDistance;
     private GameObject heart,flames;
@@ -70,8 +72,15 @@ public sealed class MobVisual
         amplitude=Mathf.Lerp(amplitude,Mathf.Clamp01(moved/Mathf.Max(.0001f,delta)*.2f),t);
         MobAnimation.Apply(parts,mob,walk,amplitude);
         if(mob.species==MobType.Creeper)root.transform.localScale=Vector3.one*(1+mob.fuseTicks/30f*.15f);
-        var sample=world.GetBlock(mob.position+Vector3.up*(MobRules.BodyHeight(mob)*.66f));
-        int sky=sample==null?15:sample.GetSkyLight(),block=sample==null?0:sample.GetBlockLight(),hurt=mob.hurtTicks>0?1:0;
+        var lightCell=Vector3Int.FloorToInt(mob.position+Vector3.up*(MobRules.BodyHeight(mob)*.66f));
+        bool sampleLight=lightCell!=lastLightCell||Time.unscaledTime>=nextLightSample;
+        int sky=lastSky<0?15:lastSky,block=lastBlock<0?0:lastBlock,hurt=mob.hurtTicks>0?1:0;
+        if(sampleLight)
+        {
+            lastLightCell=lightCell;nextLightSample=Time.unscaledTime+.25f;
+            var sample=world.GetBlock(lightCell);
+            sky=sample==null?15:sample.GetSkyLight();block=sample==null?0:sample.GetBlockLight();
+        }
         float flash=mob.species==MobType.Creeper&&mob.fuseTicks>0&&(mob.fuseTicks/3)%2==0?.8f:0;
         int fleece=mob.species==MobType.Sheep?mob.fleeceColor:0;
         if(sky!=lastSky||block!=lastBlock||hurt!=lastHurt||flash!=lastFlash||fleece!=lastFleece)
