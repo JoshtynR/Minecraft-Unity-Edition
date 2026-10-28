@@ -75,6 +75,13 @@ public static partial class ShapeCheck
   }
   var climb=new MeshData(false);SpecialBlockMesh.Append(BlockType.RedstoneWire,15,new Vector3Int(),p=>p.x==1&&p.y==0?BlockType.Stone:p.x==1&&p.y==1?BlockType.RedstoneWire:BlockType.Air,d=>0,new Color(),climb);
   Check(climb.vertices.Count==16&&Near(climb.colors[0].r,1),"dust climbs solid side to upper wire and powered tint is retained");
+  for(byte state=0;state<2;state++)
+  {
+   var portal=new MeshData(false);SpecialBlockMesh.Append(BlockType.NetherPortal,state,new Vector3Int(),null,d=>3,new Color(1,1,1,1),portal);
+   Check(portal.vertices.Count==8&&portal.triangles.Count==12,"portal emits only its front and back faces");
+   foreach(var v in portal.vertices)
+    Check(state==0?Near(v.z,.375f)||Near(v.z,.625f):Near(v.x,.375f)||Near(v.x,.625f),"portal vertices stay on the two oriented broad planes");
+  }
   Console.WriteLine((checks-start)+" special model/state/connection/attachment checks passed.");
  }
 }

@@ -123,6 +123,18 @@ public static class SpecialBlockMesh
             }
             Rotate(mesh,start,pos,(s&3)*Math.PI/2);return;
         }
+        if(t==BlockType.NetherPortal)
+        {
+            // A portal is a two-sided animated plane with selection thickness,
+            // not a textured cuboid. Rendering its four thin edge faces wraps
+            // the animation into stretched strips along the frame.
+            var portal=SpecialBlockGeometry.Selection(t,s);
+            var first=(s&1)==0?Direction.backwards:Direction.left;
+            var second=(s&1)==0?Direction.forwards:Direction.right;
+            PortalFace(portal,first,pos,layer(first),tint,mesh);
+            PortalFace(portal,second,pos,layer(second),tint,mesh);
+            return;
+        }
         if(t==BlockType.PistonHead)
         {
             int start=mesh.vertices.Count;Cube(B(0,12,0,16,16,16),pos,d=>Texture(parts,d==Direction.up?((s&8)!=0?BlockTexturePart.PistonStickyFace:BlockTexturePart.PistonFace):d==Direction.down?BlockTexturePart.PistonInner:BlockTexturePart.PistonSide,layer(d)),tint,mesh);
@@ -169,6 +181,11 @@ public static class SpecialBlockMesh
     { Quad(p,V(0,0,bottom),V(0,1.4f,top),V(1,1.4f,top),V(1,0,bottom),layer,tint,m,true); }
     private static BlockShape B(float a,float b,float c,float d,float e,float f)=>SpecialBlockGeometry.Box(a,b,c,d,e,f);
     private static Vector3 V(float x,float y,float z)=>new Vector3(x,y,z);
+    private static void PortalFace(BlockShape bounds,Direction direction,Vector3Int pos,int layer,Color tint,MeshData mesh)
+    {
+        bounds.SetFaceVertices(direction,pos,mesh);mesh.AddQuadTriangles();
+        mesh.AddFaceUVs(layer,bounds.FaceUVTransform(direction));mesh.AddQuadColor(tint);
+    }
     private static void Cube(BlockShape b,Vector3Int pos,Func<Direction,int> layer,Color tint,MeshData m,bool fullUV=false)
     {
         float x=b.xMax-b.xMin,y=b.yMax-b.yMin,z=b.zMax-b.zMin;
