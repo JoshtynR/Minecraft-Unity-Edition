@@ -48,6 +48,16 @@ public static partial class ShapeCheck
   byte next;
   Check(SpecialBlockGeometry.TryUse(BlockType.WoodenDoor,8,out next)&&next==12,"upper door interaction retains half and toggles open");
   Check(!SpecialBlockGeometry.TryUse(BlockType.IronDoor,0,out next),"iron doors are not hand-toggleable");
+  var doorOrigin=new Vector3Int(8,8,8);
+  Func<Vector3Int,BlockType> emptyDoorWorld=p=>BlockType.Air;
+  Check(SpecialBlockGeometry.DoorPlacement(BlockType.WoodenDoor,1,doorOrigin,emptyDoorWorld)==1,"single door preserves the Beta yaw orientation");
+  Func<Vector3Int,BlockType> leftDoorWorld=p=>p.Equals(doorOrigin+Vector3Int.right)||p.Equals(doorOrigin+Vector3Int.right+Vector3Int.up)?BlockType.WoodenDoor:BlockType.Air;
+  Check(SpecialBlockGeometry.DoorPlacement(BlockType.WoodenDoor,1,doorOrigin,leftDoorWorld)==4,"adjacent door reverses the hinge for a centred double door");
+  Func<Vector3Int,BlockType> solidRightWorld=p=>p.Equals(doorOrigin+Vector3Int.left)||p.Equals(doorOrigin+Vector3Int.left+Vector3Int.up)?BlockType.Stone:BlockType.Air;
+  Check(SpecialBlockGeometry.DoorPlacement(BlockType.WoodenDoor,1,doorOrigin,solidRightWorld)==4,"solid-side count selects the unobstructed door hinge");
+  var closedTrap=SpecialBlockGeometry.Selection(BlockType.Trapdoor,2);var openTrap=SpecialBlockGeometry.Selection(BlockType.Trapdoor,6);
+  Check(closedTrap.yMax==3&&openTrap.xMin==13&&openTrap.yMax==16,"trapdoor switches from a three-pixel floor plate to its attached wall");
+  Check(SpecialBlockGeometry.TryUse(BlockType.Trapdoor,2,out next)&&next==6,"trapdoor interaction toggles its open metadata bit");
   Check(SpecialBlockGeometry.TryUse(BlockType.RedstoneRepeater,15,out next)&&next==3,"repeater delay cycles without rotating");
   Func<Vector3Int,BlockType> curve=p=>(p.x==1&&p.z==0&&p.y==0)||(p.x==0&&p.z==1&&p.y==0)?BlockType.Rail:BlockType.Air;
   Check(SpecialBlockGeometry.RailState(BlockType.Rail,0,new Vector3Int(),curve)==6,"rail turns south-east corner");

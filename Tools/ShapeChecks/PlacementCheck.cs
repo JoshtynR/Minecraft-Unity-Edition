@@ -76,6 +76,15 @@ public static class PlacementCheck
   user.world.SetBlock(user.aimed,BlockType.WoodenDoor,10);
   Check(user.UseForCheck()&&Mirror.NetworkClient.last.position.y==1&&Mirror.NetworkClient.last.stairFacing==6&&user.inventory.slots[0].count==64,"upper door use addresses lower half and consumes no item");
   user.isCrouching=true;Check(!user.UseForCheck(),"crouch bypasses block use for placement");
+  var door=new Player{aimed=new Vector3Int(0,0,0),placement=new Vector3Int(0,1,0)};door.transform.position=new Vector3(10,10,10);
+  door.world.SetBlock(door.aimed,BlockType.Stone);door.inventory.slots[0].type=ItemType.WoodenDoor;door.cam.forward=new Vector3(0,0,1);
+  Check(door.PlaceBlock()&&SpecialBlockGeometry.State(BlockType.WoodenDoor,door.world.GetBlock(door.placement).blockShape)==1,"door places only from a solid top face with Beta yaw metadata");
+  door.aimed=new Vector3Int(2,1,0);door.placement=new Vector3Int(1,1,0);door.world.SetBlock(door.aimed,BlockType.Stone);
+  Check(!door.PlaceBlock()&&door.inventory.slots[0].count==63,"door rejects placement from a side face");
+  var hatch=new Player{aimed=new Vector3Int(5,2,5),placement=new Vector3Int(4,2,5)};hatch.transform.position=new Vector3(20,20,20);
+  hatch.world.SetBlock(hatch.aimed,BlockType.Stone);hatch.inventory.slots[0].type=ItemType.Trapdoor;
+  Check(hatch.PlaceBlock()&&SpecialBlockGeometry.State(BlockType.Trapdoor,hatch.world.GetBlock(hatch.placement).blockShape)==2,"trapdoor records and validates its supporting wall");
+  hatch.placement=new Vector3Int(5,3,5);Check(!hatch.PlaceBlock()&&hatch.inventory.slots[0].count==63,"trapdoor rejects top and bottom faces");
   var material=new Player();material.inventory.slots[0].type=ItemType.Coal;
   Check(!material.PlaceBlock()&&material.inventory.slots[0].count==64,"standalone item cannot be interpreted as a world block");
   material.inventory.slots[0].type=ItemType.Stone;material.inventory.slots[0].count=0;
@@ -96,6 +105,12 @@ public static class PlacementCheck
   Check(!rules.CanPlaceSurvivalBlock(at,BlockType.SugarCane,0),"sugar cane rejects dry soil");
   rules.SetBlock(at+Vector3Int.down,BlockType.Stone);
   Check(rules.CanPlaceSurvivalBlock(at,BlockType.SnowLayer,0)&&rules.CanPlaceSurvivalBlock(at,BlockType.RedstoneWire,0),"snow and redstone require solid floor support");
+  var pairBase=new Vector3Int(12,4,12);rules.SetBlock(pairBase+Vector3Int.down,BlockType.Stone);rules.SetBlock(pairBase,BlockType.WoodenDoor,1);rules.SetBlock(pairBase+Vector3Int.up,BlockType.WoodenDoor,9);
+  Check(BlockSurvivalRules.CanSurvive(BlockType.WoodenDoor,1,pairBase,p=>rules.GetBlock(p).type)&&BlockSurvivalRules.CanSurvive(BlockType.WoodenDoor,9,pairBase+Vector3Int.up,p=>rules.GetBlock(p).type),"both door halves survive as one supported pair");
+  rules.SetBlock(pairBase+Vector3Int.down,BlockType.Air);Check(!BlockSurvivalRules.CanSurvive(BlockType.WoodenDoor,1,pairBase,p=>rules.GetBlock(p).type),"door pair breaks when its floor support is removed");
+  var trapBase=new Vector3Int(16,4,16);rules.SetBlock(trapBase+Vector3Int.right,BlockType.Stone);
+  Check(BlockSurvivalRules.CanSurvive(BlockType.Trapdoor,2,trapBase,p=>rules.GetBlock(p).type),"trapdoor survives while its selected wall is solid");
+  rules.SetBlock(trapBase+Vector3Int.right,BlockType.Air);Check(!BlockSurvivalRules.CanSurvive(BlockType.Trapdoor,2,trapBase,p=>rules.GetBlock(p).type),"trapdoor breaks when its selected wall is removed");
   Check(SpecialBlockGeometry.State(BlockType.Leaves,SpecialBlockGeometry.Shape(BlockType.Leaves,4))==4,"player-placed leaf no-decay metadata round-trips");
   rules.blocks.Clear();for(int x=0;x<4;x++)rules.SetBlock(at+new Vector3Int(x,0,0),BlockType.Leaves);rules.SetBlock(at+new Vector3Int(4,0,0),BlockType.Log);
   Check(BlockSurvivalRules.LeafConnection(at,p=>rules.GetBlock(p).type)==BlockSurvivalRules.LeafConnectionState.Connected,"leaves find a log through four connected leaf steps");
@@ -104,7 +119,7 @@ public static class PlacementCheck
   Check(BlockSurvivalRules.LeafConnection(at,p=>p.x==7?BlockType.Nothing:rules.GetBlock(p).type)==BlockSurvivalRules.LeafConnectionState.Unknown,"unloaded leaf boundary defers decay");
   var crafter=new Player{aimed=new Vector3Int(3,2,4)};crafter.world.SetBlock(crafter.aimed,BlockType.CraftingTable);
   Check(crafter.UseForCheck()&&crafter.inventory.tablePosition.Equals(crafter.aimed),"right-click dispatches crafting tables to the new inventory interface");
-  Console.WriteLine("39 production placement and block-survival checks passed (Unity/network mocked).");
+  Console.WriteLine("47 production placement and block-survival checks passed (Unity/network mocked).");
  }
 }
 

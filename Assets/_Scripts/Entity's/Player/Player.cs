@@ -313,6 +313,13 @@ public partial class Player : BaseEntity
                 // Beta metadata bit 4 marks player-placed leaves as permanent.
                 if (BlockSurvivalRules.IsLeaves(type)) facing = 4;
                 if ((type == BlockType.Ladder || type == BlockType.WallSign || type == BlockType.Trapdoor || type == BlockType.StoneButton) && normal.y != 0) return false;
+                // ItemDoor only accepts the top face, then chooses its hinge
+                // from adjacent doors and the two-block-high solid walls.
+                if (SpecialBlockGeometry.IsDoor(type))
+                {
+                    if (normal.x != 0 || normal.y != 1 || normal.z != 0) return false;
+                    facing = SpecialBlockGeometry.DoorPlacement(type,facing,blockPos,p=>world.GetBlock(p).type);
+                }
                 if (SpecialBlockGeometry.IsTorch(type) && normal.y < 0) return false;
                 if (!SpecialBlockGeometry.CanAttach(type,facing,blockPos,p => world.GetBlock(p).type)) return false;
                 if (SpecialBlockGeometry.IsDoor(type) || type == BlockType.Bed)

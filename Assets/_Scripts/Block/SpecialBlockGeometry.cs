@@ -130,6 +130,22 @@ public static class SpecialBlockGeometry
         int q=s&3,sign=(s&8)==0?1:-1;
         return q==0?new Vector3Int(0,0,sign):q==1?new Vector3Int(-sign,0,0):q==2?new Vector3Int(0,0,-sign):new Vector3Int(sign,0,0);
     }
+    // ItemDoor.placeDoorBlock from Beta 1.7.3. A neighboring door or the
+    // heavier solid side reverses the hinge and sets metadata bit 4, which is
+    // what makes a pair of doors open away from their shared centre seam.
+    public static byte DoorPlacement(BlockType type,byte state,Vector3Int pos,Func<Vector3Int,BlockType> get)
+    {
+        state=(byte)(state&3);
+        if(!IsDoor(type)||get==null)return state;
+        Vector3Int offset=state==0?Vector3Int.forward:state==1?Vector3Int.left:state==2?Vector3Int.back:Vector3Int.right;
+        Vector3Int left=pos+new Vector3Int(-offset.x,-offset.y,-offset.z),right=pos+offset;
+        int leftSolids=(NormalCube(get(left))?1:0)+(NormalCube(get(left+Vector3Int.up))?1:0);
+        int rightSolids=(NormalCube(get(right))?1:0)+(NormalCube(get(right+Vector3Int.up))?1:0);
+        bool leftDoor=get(left)==type||get(left+Vector3Int.up)==type;
+        bool rightDoor=get(right)==type||get(right+Vector3Int.up)==type;
+        if((leftDoor&&!rightDoor)||rightSolids>leftSolids)state=(byte)(((state-1)&3)|4);
+        return state;
+    }
     public static bool NormalCube(BlockType t)
     {
         if(t==BlockType.Nothing||t==BlockType.Air||t==BlockType.Water||t==BlockType.Lava||t==BlockType.Glass||t==BlockType.Ice||t==BlockType.Leaves||t==BlockType.SpruceLeaves||t==BlockType.BirchLeaves||t==BlockType.Piston||t==BlockType.StickyPiston||t==BlockType.MonsterSpawner)return false;
