@@ -58,9 +58,12 @@ public partial class World
         if (chunks.Count == 0) return;
         int session = chunkUpdateSession;
         chunkUpdateInProgress = true;
+        var buildWatch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             var meshes = await UpdateMeshDataAsync(chunks, false);
+            buildWatch.Stop();
+            var uploadWatch = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 if (!IsWorkSessionCurrent(session)) return;
@@ -75,6 +78,9 @@ public partial class World
             {
                 // Also release results rejected after pooling, reset or unload.
                 ChunkMeshPipeline.Release(meshes.Values);
+                uploadWatch.Stop();
+                if (logGenerationTimings)
+                    Debug.Log("[ChunkRendering] columns=" + chunks.Count + " buildWaitMs=" + buildWatch.ElapsedMilliseconds + " applyAndYieldMs=" + uploadWatch.ElapsedMilliseconds + " queued=" + chunksToUpdate.Count);
             }
         }
         catch (OperationCanceledException) { }
