@@ -1769,7 +1769,7 @@ MonoBehaviour:
   SteamAppID: 480
   AllowSteamRelay: 1
   UseNextGenSteamNetworking: 1
-  InitFacepunch: 1
+  InitFacepunch: 0
   SteamUserID: 0
 --- !u!114 &1212241215
 MonoBehaviour:

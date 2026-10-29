@@ -12,6 +12,7 @@ public partial class Player
     private bool TryUseMob(bool milk)
     {
         var mob=TargetedMob();if(mob==null)return false;
+        if(networkStarted&&!NetworkClient.ready)return true;
         // A mob blocks mining/placement behind it, even when the held item has no interaction.
         if(milk && inventory.HeldItem().type!=ItemType.Bucket && inventory.HeldItem().type!=MobRules.BreedingFood(mob) && inventory.HeldItem().type!=ItemType.Shears && MobRules.DyeColor(inventory.HeldItem().type)<0)return true;
         if(inventory.DropRequestPending || Time.unscaledTime<nextLocalMobAction)return true;
