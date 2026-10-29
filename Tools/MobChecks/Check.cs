@@ -5,6 +5,20 @@ class Check {
  static MobState Mob(World w,MobType type)=>w.mobs.Spawn(new Vector3(0,64,0),0,type);
  static Player Target(World w,float distance){var player=new Player();player.transform.position=new Vector3(distance,64,0);w.Add(player);return player;}
  static void Main(){
+  var indexedStore=new MobStore();var nearby=new System.Collections.Generic.List<MobState>();
+  var indexedMob=indexedStore.Spawn(new Vector3(-.1f,64,-.1f),0,MobType.Cow);
+  for(int i=0;i<2000;i++)indexedStore.Spawn(new Vector3(1000+i*16,64,1000),0,MobType.Cow);
+  indexedStore.QueryNearby(new Vector3(0,64,0),2,nearby);
+  Assert(nearby.Contains(indexedMob)&&indexedStore.LastSpatialCandidates==1,"local mob query inspects one candidate instead of 2001 saved mobs across negative cell borders");
+  indexedMob.position=new Vector3(-17,64,-17);indexedStore.UpdatePosition(indexedMob);
+  indexedStore.QueryNearby(new Vector3(0,64,0),2,nearby);Assert(nearby.Count==0,"movement removes a mob from its old spatial bucket");
+  indexedStore.QueryNearby(indexedMob.position,2,nearby);Assert(nearby.Contains(indexedMob),"movement registers the destination bucket");
+  var replacement=indexedMob.Copy();replacement.position=new Vector3(1,64,1);indexedStore.Apply(replacement);
+  indexedStore.QueryNearby(new Vector3(0,64,0),2,nearby);Assert(nearby.Count==1&&ReferenceEquals(nearby[0],indexedStore.Get(indexedMob.id)),"network snapshot replacement updates index identity and position");
+  indexedStore.Remove(indexedMob.id);indexedStore.QueryNearby(new Vector3(0,64,0),2,nearby);Assert(nearby.Count==0,"removed mobs leave no indexed ghost");
+  var spatialSave=new MobSaveData{entities=indexedStore.Capture()};indexedStore.Restore(spatialSave);
+  indexedStore.QueryNearby(new Vector3(1000,64,1000),2,nearby);Assert(nearby.Count==1,"restore rebuilds saved mob spatial buckets");
+  indexedStore.Restore(null);indexedStore.QueryNearby(new Vector3(1000,64,1000),2,nearby);Assert(nearby.Count==0,"world teardown clears spatial buckets");
   foreach(int fps in new[]{30,60,144,240})
   {
    var visualMotion=new EntityVisualMotion();visualMotion.Step(Vector3.zero,0,.2f);

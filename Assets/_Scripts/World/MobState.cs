@@ -119,6 +119,42 @@ public sealed class MobStore
 {
     public const int Capacity = 4096;
     private readonly Dictionary<int,MobState> animals = new Dictionary<int,MobState>();
+    private readonly Dictionary<Vector3Int,HashSet<int>> spatialBuckets=new Dictionary<Vector3Int,HashSet<int>>();
+    private readonly Dictionary<int,Vector3Int> spatialCells=new Dictionary<int,Vector3Int>();
+    private const float SpatialCellSize=8;
+    public int LastSpatialCandidates {get;private set;}
+    private static Vector3Int SpatialCell(Vector3 p)=>Vector3Int.FloorToInt(p*(1/SpatialCellSize));
+    private void RemoveSpatial(int id)
+    {
+        if(!spatialCells.TryGetValue(id,out var cell))return;
+        if(spatialBuckets.TryGetValue(cell,out var bucket))
+        {bucket.Remove(id);if(bucket.Count==0)spatialBuckets.Remove(cell);}
+        spatialCells.Remove(id);
+    }
+    public void UpdatePosition(MobState mob)
+    {
+        if(mob==null||!ReferenceEquals(Get(mob.id),mob))return;
+        var cell=SpatialCell(mob.position);
+        if(spatialCells.TryGetValue(mob.id,out var previous)&&previous.Equals(cell))return;
+        RemoveSpatial(mob.id);
+        if(!spatialBuckets.TryGetValue(cell,out var bucket))spatialBuckets[cell]=bucket=new HashSet<int>();
+        bucket.Add(mob.id);spatialCells[mob.id]=cell;
+    }
+    // Broad-phase cube query; callers still perform precise body/ray tests.
+    // Caller-owned output avoids an iterator or list allocation per query.
+    public void QueryNearby(Vector3 position,float radius,List<MobState> output)
+    {
+        output.Clear();LastSpatialCandidates=0;
+        if(!MobRules.Finite(position)||!MobRules.Finite(radius)||radius<0)return;
+        var extent=new Vector3(radius,radius,radius);
+        var min=SpatialCell(position-extent);var max=SpatialCell(position+extent);
+        for(int x=min.x;x<=max.x;x++)for(int y=min.y;y<=max.y;y++)for(int z=min.z;z<=max.z;z++)
+        {
+            if(!spatialBuckets.TryGetValue(new Vector3Int(x,y,z),out var bucket))continue;
+            foreach(var id in bucket)
+            {LastSpatialCandidates++;if(animals.TryGetValue(id,out var mob))output.Add(mob);}
+        }
+    }
     public int NextId { get; private set; } = 1;
     public int Count => animals.Count;
     public IEnumerable<MobState> Entities => animals.Values;
@@ -129,13 +165,13 @@ public sealed class MobStore
     {
         if ((int)species<0||(int)species>7||!MobRules.Finite(position) || !MobRules.Finite(yaw) || Count >= Capacity || NextId >= int.MaxValue) return null;
         var mob = new MobState { id = NextId++, position = position, yaw = yaw, targetYaw = yaw,species=species,health=MobDefinitions.Get(species).MaxHealth };
-        animals.Add(mob.id, mob); return mob;
+        animals.Add(mob.id, mob);UpdatePosition(mob);return mob;
     }
-    public bool Remove(int id) => animals.Remove(id);
+    public bool Remove(int id) {RemoveSpatial(id);return animals.Remove(id);}
     public void Apply(MobState mob)
     {
         if (!MobRules.Valid(mob) || (!animals.ContainsKey(mob.id) && Count >= Capacity)) return;
-        animals[mob.id] = mob.Copy(); NextId = Math.Max(NextId, mob.id + 1);
+        RemoveSpatial(mob.id);animals[mob.id] = mob.Copy();UpdatePosition(animals[mob.id]);NextId = Math.Max(NextId, mob.id + 1);
     }
     public MobState[] Capture()
     {
@@ -145,7 +181,7 @@ public sealed class MobStore
     }
     public void Restore(MobSaveData data)
     {
-        animals.Clear(); NextId = 1;
+        animals.Clear();spatialBuckets.Clear();spatialCells.Clear();LastSpatialCandidates=0;NextId = 1;
         if (data == null) return;
         var saved=data.entities??data.animals;
         if (saved != null)

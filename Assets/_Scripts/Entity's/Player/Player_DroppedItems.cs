@@ -1,4 +1,5 @@
 using Mirror;
+using System.Collections.Generic;
 using UnityEngine;
 
 public partial class Player
@@ -7,6 +8,7 @@ public partial class Player
     private InventoryStack[] lastServerDropReply;
     private bool lastServerDropAccepted,awaitingNetworkDrop;
     private float nextDropPickup;
+    private readonly List<DroppedItemState> nearbyPickupItems=new List<DroppedItemState>(16);
     private int cursorDropRequestId,lastServerCursorDropRequest;
     private InventoryStack[] lastServerCursorInventory;
     private InventoryStack lastServerCursorReply;
@@ -25,7 +27,8 @@ public partial class Player
         {RequestDropAction(true,inventory.selectedSlotIndex);return;}
         if(Time.unscaledTime<nextDropPickup)return;
         nextDropPickup=Time.unscaledTime+.1f;
-        foreach(var item in world.droppedItems.Items)
+        world.droppedItems.QueryNearby(transform.position,2,nearbyPickupItems);
+        foreach(var item in nearbyPickupItems)
         {
             if(!DroppedItemRules.CanPickup(item,transform.position))continue;
             var snapshot=inventory.DropInventorySnapshot();
