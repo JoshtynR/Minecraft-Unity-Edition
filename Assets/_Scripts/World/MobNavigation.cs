@@ -16,6 +16,15 @@ public sealed class MobNavigation
     private readonly Dictionary<Vector3Int,Vector3Int> parents=new Dictionary<Vector3Int,Vector3Int>();
     private readonly HashSet<Vector3Int> closed=new HashSet<Vector3Int>();
     private readonly List<Vector3> path=new List<Vector3>();
+    private readonly Dictionary<Vector3Int,bool> walkableCache=new Dictionary<Vector3Int,bool>();
+    private readonly Dictionary<Vector3Int,bool> clearCache=new Dictionary<Vector3Int,bool>();
+    public int LastQueryCount {get;private set;}
+    private bool Query(Vector3 position,Func<Vector3,bool> test,Dictionary<Vector3Int,bool> cache)
+    {
+        var cell=Vector3Int.FloorToInt(position);
+        if(cache.TryGetValue(cell,out var result))return result;
+        LastQueryCount++;result=test(position);cache[cell]=result;return result;
+    }
     private Vector3Int previousGoal;
     private int nextSearch,index;
     private int openOrder;
@@ -67,6 +76,9 @@ public sealed class MobNavigation
     private void Search(Vector3Int start,Vector3Int goal,Func<Vector3,bool> walkable,Func<Vector3,bool> clear)
     {
         SearchCount++;
+        // Collision tests are immutable within this synchronous search. Do not
+        // retain results across searches: blocks may have changed meanwhile.
+        walkableCache.Clear();clearCache.Clear();LastQueryCount=0;
         open.Clear();closed.Clear();costs.Clear();parents.Clear();path.Clear();openOrder=0;Push(start,0,Heuristic(start,goal));costs[start]=0;
         Vector3Int best=start;int bestDistance=Heuristic(start,goal);
         for(int expanded=0;expanded<192&&open.Count>0;)
@@ -82,14 +94,14 @@ public sealed class MobNavigation
                 {
                     int dy=vertical[candidate];var rise=new Vector3Int(0,dy,0);var next=current+direction+rise;
                     if(Math.Abs(next.x-start.x)>24||Math.Abs(next.z-start.z)>24||closed.Contains(next))continue;
-                    if(!walkable((Vector3)next+new Vector3(.5f,0,.5f)))continue;
+                    if(!Query((Vector3)next+new Vector3(.5f,0,.5f),walkable,walkableCache))continue;
                     // Diagonal movement may not squeeze through the joined
                     // corners of two solid blocks.
                     if(direction.x!=0&&direction.z!=0&&
-                       (!walkable((Vector3)(current+new Vector3Int(direction.x,0,0)+rise)+new Vector3(.5f,0,.5f))||
-                        !walkable((Vector3)(current+new Vector3Int(0,0,direction.z)+rise)+new Vector3(.5f,0,.5f))))continue;
+                       (!Query((Vector3)(current+new Vector3Int(direction.x,0,0)+rise)+new Vector3(.5f,0,.5f),walkable,walkableCache)||
+                        !Query((Vector3)(current+new Vector3Int(0,0,direction.z)+rise)+new Vector3(.5f,0,.5f),walkable,walkableCache)))continue;
                     // A one-block ascent needs overhead clearance in the source cell.
-                    if(dy==1&&!clear((Vector3)current+new Vector3(.5f,1,.5f)))continue;
+                    if(dy==1&&!Query((Vector3)current+new Vector3(.5f,1,.5f),clear,clearCache))continue;
                     int cost=currentCost+(direction.x!=0&&direction.z!=0?14:10)+Math.Abs(dy)*4;
                     if(costs.TryGetValue(next,out int old)&&old<=cost)break;
                     costs[next]=cost;parents[next]=current;Push(next,cost,cost+Heuristic(next,goal));break;

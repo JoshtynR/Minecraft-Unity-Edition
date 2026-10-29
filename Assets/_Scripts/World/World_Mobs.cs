@@ -288,7 +288,7 @@ public partial class World
         bool fire=FluidWorldQueries.Touches(this,mob.position,width,height,BlockType.Fire,out _);
         mob.grounded=BlockCollision.Supported(this,mob.position,width,height);
         if(!TickMobBrain(mob))return;
-        mob.yaw=Mathf.MoveTowardsAngle(mob.yaw,mob.targetYaw,15);
+        mob.yaw=Mathf.MoveTowardsAngle(mob.yaw,mob.targetYaw,30);
         float speed=mob.walking?MobDefinitions.Get(mob.species).WalkSpeed:0;
         if(mob.fleeTicks>0)speed*=1.8f;
         float angle=mob.yaw*Mathf.Deg2Rad;
@@ -339,7 +339,9 @@ public partial class World
         if(DropAuthority)
         {
             EnsureMobsRestored();
-            if(!isSaving&&!GenerationBusy)
+            // Raw chunk generation and meshing do not mutate existing voxel
+            // cells. Only the population worker writes cross-chunk features.
+            if(!isSaving&&System.Threading.Volatile.Read(ref betaPopulationJobs)==0)
             {
                 RefreshMobPlayers();mobEntities.Accumulate(Time.deltaTime);
                 while(mobEntities.TryStep())
@@ -378,12 +380,12 @@ public partial class World
                         float playerDistance=activeMobDistances[(start+index)%activeMobDistances.Count];
                         if(mobs.Get(mob.id)==null)continue;
                         if(playerDistance>=80*80)continue;
-                        TickMob(mob);if(mob.health>0&&mobs.Get(mob.id)!=null&&mobTick%4==0)BroadcastMob(mob);
+                        TickMob(mob);if(mob.health>0&&mobs.Get(mob.id)!=null&&(mobTick+mob.id)%4==0)BroadcastMob(mob);
                     }
                     mobEntities.Separate(activeMobs);
                     TickMobArrows();
                     // EnumCreatureType order is monster, creature, waterCreature.
-                    SpawnNaturalHostiles();SpawnNaturalMobs();
+                    if(!GenerationBusy){SpawnNaturalHostiles();SpawnNaturalMobs();}
                 }
             }
         }
