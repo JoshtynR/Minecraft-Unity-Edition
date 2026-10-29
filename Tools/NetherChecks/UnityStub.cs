@@ -56,7 +56,8 @@ public struct WorldData {public string worldName;public World owner;public Dicti
 public class WorldRenderer:UnityEngine.MonoBehaviour {public UnityEngine.GameObject chunkPrefab;}
 public class TerrainGenerator:UnityEngine.MonoBehaviour {public bool dumpBetaParity;}
 public class Block {public UnityEngine.Vector3Int globalWorldPosition;public BlockType type;public byte blockShape;public ChunkData chunkData;}
-public class ChunkData {public UnityEngine.Vector3Int worldPos;public bool modifiedByPlayer,modifiedAfterSave,HasPendingLighting,betaPopulationDone;public World worldRef;public Dictionary<UnityEngine.Vector3Int,Block> blocks=new Dictionary<UnityEngine.Vector3Int,Block>();public static ChunkData Deserialize(ChunkSaveData s,World w)=>new ChunkData{worldRef=w,worldPos=s.position};public void UpdateLight(){HasPendingLighting=false;}}
+public class MeshData {public ChunkData sourceChunk;public void ReleaseAfterUpload(){}}
+public class ChunkData {public MeshData GetMeshData()=>new MeshData{sourceChunk=this};public UnityEngine.Vector3Int worldPos;public bool modifiedByPlayer,modifiedAfterSave,HasPendingLighting,betaPopulationDone;public World worldRef;public Dictionary<UnityEngine.Vector3Int,Block> blocks=new Dictionary<UnityEngine.Vector3Int,Block>();public static ChunkData Deserialize(ChunkSaveData s,World w)=>new ChunkData{worldRef=w,worldPos=s.position};public void UpdateLight(){HasPendingLighting=false;}}
 public class ChunkSaveData {public static int serializations;public UnityEngine.Vector3Int position;public static ChunkSaveData Serialize(ChunkData d){serializations++;return new ChunkSaveData{position=d.worldPos};}}
 public class ChunkRenderer:UnityEngine.MonoBehaviour {public ChunkData ChunkData;public void Initialize(ChunkData d){ChunkData=d;}public void UpdateChunk(object mesh){}}
 public class WorldSaveData {public object fluidTicks,droppedItems,fallingBlocks,mobs;public object SavedMobs=>mobs;}
@@ -80,7 +81,7 @@ public static class WorldDataHelper {
 public partial class World:UnityEngine.MonoBehaviour {
  public static World Instance;public string worldName="test";public long betaWorldSeed;public bool spawnPassiveMobs=true,DropAuthority=true,GenerateMoreChunks=true,isSaving,disabled,IsWorldCreated=true;public int worldHeight=128,renderDistance=1,chunkSize=16,chunksPerFrame=1;public float lastLightmapGamma;
  public WorldData worldData;public WorldRenderer worldRenderer;public TerrainGenerator terrainGenerator;public UnityEngine.Events.UnityEvent OnWorldCreated,OnNewChunksGenerated;
- private int lastBetaSkyDarkness,lastBetaBrightnessBoost;private readonly SemaphoreSlim generationGate=new SemaphoreSlim(1,1);private readonly CancellationToken worldCancellationToken=CancellationToken.None;private bool chunkUpdateInProgress,waterMeshBuildInProgress;
+ private int lastBetaSkyDarkness,lastBetaBrightnessBoost;private readonly SemaphoreSlim generationGate=new SemaphoreSlim(1,1);private readonly CancellationToken worldCancellationToken=CancellationToken.None;private bool chunkUpdateInProgress;
  public List<ChunkRenderer> chunksToUpdate=new List<ChunkRenderer>();public Queue<Block> blockToUpdate=new Queue<Block>();
  public ContainerStore chests=new ContainerStore(),furnaces=new ContainerStore();
  public TaskCompletionSource<bool> generationBarrier;public int generationCalls,saves,meshRebuilds;
@@ -106,10 +107,11 @@ public partial class World:UnityEngine.MonoBehaviour {
  public object[] CaptureDroppedItems()=>new object[0];
  public object[] CaptureFallingBlocks()=>new object[0];
  public static string Compress(string s)=>s;public static string Decompress(string s)=>s;
- private void ResetChunkUpdates(){}
+ private void ResetChunkUpdates(){workLifetime.Invalidate();}
+ private bool IsLiveChunk(ChunkRenderer renderer)=>renderer!=null&&renderer.ChunkData!=null&&worldData.chunkDict.TryGetValue(renderer.ChunkData.worldPos,out var current)&&ReferenceEquals(renderer,current);
  public Task CastLightFirstTime(List<ChunkData> chunks)=>Task.CompletedTask;
  private ParallelOptions ChunkWorkerOptions()=>new ParallelOptions{MaxDegreeOfParallelism=2};
- public Task<Dictionary<UnityEngine.Vector3Int,object>> CreateMeshDataAsync(List<ChunkData> chunks){meshRebuilds++;return Task.FromResult(new Dictionary<UnityEngine.Vector3Int,object>());}
+ public Task<Dictionary<UnityEngine.Vector3Int,MeshData>> CreateMeshDataAsync(List<ChunkData> chunks){meshRebuilds++;return Task.FromResult(chunks.ToDictionary(c=>c.worldPos,c=>c.GetMeshData()));}
  public void AddChunkToUpdate(ChunkRenderer c,bool first){}
  public bool CanPlaceSurvivalBlock(UnityEngine.Vector3Int p,BlockType t,byte state)=>true;
  public bool CanReplaceChest(UnityEngine.Vector3Int p,BlockType t)=>true;public void ReceiveWaterState(UnityEngine.Vector3Int p,byte state){}

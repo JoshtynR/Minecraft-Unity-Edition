@@ -61,26 +61,6 @@ namespace UnityEngine
  public static class QualitySettings {public static ColorSpace activeColorSpace=ColorSpace.Linear;}
  public struct Color {public float r,g,b,a;public Color(float r,float g,float b,float a){this.r=r;this.g=g;this.b=b;this.a=a;}public Color linear=>new Color(Decode(r),Decode(g),Decode(b),a);static float Decode(float v)=>(float)(v<=.04045?v/12.92:Math.Pow((v+.055)/1.055,2.4));public static Color black=>new Color(0,0,0,1);public static Color white=>new Color(1,1,1,1);public static Color clear=>new Color(0,0,0,0);}
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
- [Serializable] public struct Vector3
- {
-  public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
-  public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 operator*(Vector3 v,float s)=>new Vector3(v.x*s,v.y*s,v.z*s);
-  public static Vector3 up=>new Vector3(0,1,0);public static Vector3 down=>new Vector3(0,-1,0);
-  public Vector3 normalized=>magnitude<.000001f?zero:new Vector3(x/magnitude,y/magnitude,z/magnitude);
-  public static Vector3 operator/(Vector3 v,float n)=>new Vector3(v.x/n,v.y/n,v.z/n);
-  public float sqrMagnitude=>x*x+y*y+z*z;public float magnitude=>(float)Math.Sqrt(sqrMagnitude);
-  public static Vector3 operator-(Vector3 a,Vector3 b)=>new Vector3(a.x-b.x,a.y-b.y,a.z-b.z);
-  public static Vector3 Lerp(Vector3 a,Vector3 b,float t)=>a+(b-a)*t;
-  public static Vector3 operator+(Vector3 a,Vector3 b)=>new Vector3(a.x+b.x,a.y+b.y,a.z+b.z);
- }
- [Serializable] public struct Vector3Int
- {
-  public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}public static Vector3Int zero=>new Vector3Int();public static Vector3Int up=>new Vector3Int(0,1,0);public static Vector3Int down=>new Vector3Int(0,-1,0);
-  public static implicit operator Vector3(Vector3Int v)=>new Vector3(v.x,v.y,v.z);
-  public static Vector3Int operator+(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3Int operator-(Vector3Int a,Vector3Int b)=>new Vector3Int(a.x-b.x,a.y-b.y,a.z-b.z);
-  public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));
-  public static bool operator==(Vector3Int a,Vector3Int b)=>a.x==b.x&&a.y==b.y&&a.z==b.z;public static bool operator!=(Vector3Int a,Vector3Int b)=>!(a==b);public override bool Equals(object value)=>value is Vector3Int&&(Vector3Int)value==this;public override int GetHashCode()=>x*31+y*17+z;
- }
  public struct Vector4 {public static Vector4 zero=>new Vector4();public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}}
  public struct Quaternion {public static Quaternion Euler(float x,float y,float z)=>new Quaternion();}
  public struct Rect {public float x,y,width,height;public Rect(float x,float y,float width,float height){this.x=x;this.y=y;this.width=width;this.height=height;}}

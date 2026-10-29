@@ -48,8 +48,6 @@ public partial class World : MonoBehaviour
     public bool disabled;
     public bool binaryCompressSaves = true;
 
-    [System.NonSerialized] private CancellationTokenSource runtimeTaskTokenSource;
-    private CancellationTokenSource taskTokenSource => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeTaskTokenSource, () => new CancellationTokenSource());
     private CancellationToken worldCancellationToken;
 
     public UnityEvent OnWorldCreated;
@@ -207,7 +205,7 @@ public partial class World : MonoBehaviour
         return data;
     }
     
-    private Task<ConcurrentDictionary<ChunkRenderer, MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> dataToRender, bool markModifiedByPlayer = true)
+    private async Task<ConcurrentDictionary<ChunkRenderer, MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> dataToRender, bool markModifiedByPlayer = true)
     {
         var jobs = dataToRender.Distinct().Where(chunk => chunk != null)
             .Select(chunk => new KeyValuePair<ChunkRenderer, ChunkData>(chunk, chunk.ChunkData))
@@ -215,14 +213,10 @@ public partial class World : MonoBehaviour
         if (markModifiedByPlayer)
             foreach (var job in jobs) job.Value.modifiedByPlayer = true;
         var options = ChunkWorkerOptions();
-        return Task.Run(() =>
+        using (workLifetime.BeginWorker())
+        return await Task.Run(() =>
         {
-            var results = new MeshData[jobs.Length];
-            Parallel.For(0, jobs.Length, options, index =>
-            {
-                worldCancellationToken.ThrowIfCancellationRequested();
-                results[index] = jobs[index].Value.GetMeshData();
-            });
+            var results = ChunkMeshPipeline.Build(jobs.Select(job => job.Value).ToArray(), options, worldCancellationToken);
             var dict = new ConcurrentDictionary<ChunkRenderer, MeshData>();
             for (int i = 0; i < jobs.Length; i++) dict.TryAdd(jobs[i].Key, results[i]);
             return dict;
@@ -293,136 +287,6 @@ public partial class World : MonoBehaviour
         SetBlock(chunk, blockPos, blockType, stairFacing);
     }
 
-    public void SetBlocks(IEnumerable<Vector3Int> blockPoss, BlockType blockType)
-    {
-        var chunkPos = WorldDataHelper.GetChunkPosition(this, blockPoss.First());
-        var chunk = WorldDataHelper.GetChunk(this, chunkPos);
-        SetBlocks(chunk, blockPoss, blockType);
-    }
-
-    public void SetBlocks(ChunkRenderer chunk, IEnumerable<Vector3Int> blockPoss, BlockType blockType, byte stairFacing = 0)
-    {
-        if(disabled||chunk==null||chunk.ChunkData==null||blockPoss==null)return;
-        if(WheatCropRules.IsLegacy(blockType)){stairFacing=WheatCropRules.LegacyAge(blockType);blockType=WheatCropRules.Crop;}
-        var neightBourUpdates = new HashSet<ChunkRenderer>();
-        
-        foreach (var pos in blockPoss)
-        {
-            if(pos.y<0||pos.y>=worldHeight)continue;
-            var previous = GetBlock(pos);
-            BlockType previousType = previous != null ? previous.type : BlockType.Nothing;
-            bool removingCrop=previous!=null&&WheatCropRules.IsCrop(previous.type)&&!WheatCropRules.IsCrop(blockType);
-            byte cropAge=removingCrop?SpecialBlockGeometry.State(previous.type,previous.blockShape):(byte)0;
-            bool removingChest=previous!=null&&previous.type==BlockType.Chest&&blockType!=BlockType.Chest;
-            bool removingFurnace=previous!=null&&IsFurnace(previous.type)&&!IsFurnace(blockType);
-            if(!CanReplaceChest(pos,blockType))continue;
-            if(previous.type==BlockType.Nothing)continue;
-            bool pair = SpecialBlockGeometry.IsDoor(blockType) || blockType == BlockType.Bed;
-            if(SpecialBlockGeometry.IsDoor(blockType)&&previousType!=blockType&&(stairFacing&8)==0&&
-                BlockSurvivalRules.CanReplace(previousType,blockType)&&pos.y+1<worldHeight&&BlockSurvivalRules.Replaceable(GetBlock(pos+Vector3Int.up).type))
-            {
-                // Placing the right-hand door must also move the existing
-                // left door's hinge to its outside edge, not into the seam.
-                int direction=(stairFacing&4)!=0?(stairFacing+1)&3:stairFacing&3;
-                var side=direction==0?Vector3Int.forward:direction==1?Vector3Int.left:direction==2?Vector3Int.back:Vector3Int.right;
-                var neighborPos=pos+side;var neighbor=GetBlock(neighborPos);
-                byte neighborState=SpecialBlockGeometry.State(neighbor.type,neighbor.blockShape);
-                int plane=(neighborState&4)==0?(neighborState-1)&3:neighborState&3;
-                if(neighbor.type==blockType&&(neighborState&8)==0&&plane==((direction-1)&3))
-                {
-                    byte hinged=(byte)(((direction-1)&3)|4);
-                    neighbor.blockShape=SpecialBlockGeometry.Shape(blockType,hinged);
-                    var upper=GetBlock(neighborPos+Vector3Int.up);
-                    if(upper.type==blockType)upper.blockShape=SpecialBlockGeometry.Shape(blockType,(byte)(hinged|8));
-                    var neighborChunk=WorldDataHelper.GetChunk(this,WorldDataHelper.GetChunkPosition(this,neighborPos));
-                    if(neighborChunk!=null){neighborChunk.ChunkData.modifiedAfterSave=true;neightBourUpdates.Add(neighborChunk);}
-                    stairFacing=(byte)direction;
-                }
-            }
-            // Validate both halves before writing either. Direct calls and remote
-            // clients must not overwrite a neighbor when placing a door/bed.
-            if (pair && (stairFacing & 8) == 0)
-            {
-                var partnerPos = pos + SpecialBlockGeometry.PartnerOffset(blockType, stairFacing);
-                var partner = GetBlock(partnerPos);
-                bool updating = previous.type == blockType && partner != null && partner.type == blockType;
-                if (partnerPos.y < 0 || partnerPos.y >= worldHeight || partner == null ||
-                    (!updating && (!BlockSurvivalRules.Replaceable(partner.type) || !BlockSurvivalRules.CanReplace(previous.type,blockType)))) continue;
-                WorldDataHelper.SetBlock(this, partnerPos, blockType);
-                var partnerBlock = GetBlock(partnerPos);
-                partnerBlock.blockShape = SpecialBlockGeometry.Shape(blockType, (byte)(stairFacing|8));
-                QueueSurvivalAround(partnerPos);
-                var partnerChunk = WorldDataHelper.GetChunk(this, WorldDataHelper.GetChunkPosition(this,partnerPos));
-                if (partnerChunk != null) { partnerChunk.ChunkData.modifiedAfterSave = true; neightBourUpdates.Add(partnerChunk); }
-            }
-            if ((SpecialBlockGeometry.IsDoor(previous.type) || previous.type == BlockType.Bed) && previous.type != blockType)
-            {
-                byte oldState = SpecialBlockGeometry.State(previous.type,previous.blockShape);
-                var partnerPos = pos + SpecialBlockGeometry.PartnerOffset(previous.type,oldState);
-                var partner = GetBlock(partnerPos);
-                if (partner != null && partner.type == previous.type && (SpecialBlockGeometry.State(partner.type,partner.blockShape)^oldState)==8)
-                {
-                    WorldDataHelper.SetBlock(this,partnerPos,BlockType.Air);
-                    QueueSurvivalAround(partnerPos);
-                    var partnerChunk = WorldDataHelper.GetChunk(this,WorldDataHelper.GetChunkPosition(this,partnerPos));
-                    if (partnerChunk != null) { partnerChunk.ChunkData.modifiedAfterSave = true; neightBourUpdates.Add(partnerChunk); }
-                }
-            }
-            // if (blockType == BlockType.Air)
-            // {
-            //     WorldDataHelper.SetBlock(chunk.ChunkData.worldRef, pos, Blocks.AIR);
-            // }
-            // else
-            // {
-                WorldDataHelper.SetBlock(chunk.ChunkData.worldRef, pos, blockType);
-                var placedBlock = GetBlock(pos);
-                placedBlock.blockShape = SpecialBlockGeometry.Shape(blockType, stairFacing);
-                QueueSurvivalAround(pos);
-                if (BlockSurvivalRules.IsLog(previousType) && !BlockSurvivalRules.IsLog(blockType)) QueueLeavesAroundRemovedLog(pos);
-                QueuePortalValidation(pos);
-                if(removingChest)chests.Removed(pos);
-                if(removingFurnace)RemoveFurnace(pos);
-                if(removingCrop)DropWheat(pos,cropAge);
-                if(IsFurnace(blockType))TrackFurnace(pos);
-                // Track is stateful, unlike purely visual fence/dust joins. Update
-                // its saved selection bounds and neighboring slopes before meshing.
-                for (int rx=-1;rx<=1;rx++) for(int ry=-1;ry<=1;ry++) for(int rz=-1;rz<=1;rz++)
-                {
-                    var railPos=pos+new Vector3Int(rx,ry,rz);
-                    var rail=GetBlock(railPos);
-                    if(rail==null||!SpecialBlockGeometry.IsRail(rail.type))continue;
-                    byte state=SpecialBlockGeometry.RailState(rail.type,SpecialBlockGeometry.State(rail.type,rail.blockShape),railPos,p=>GetBlock(p).type);
-                    rail.blockShape=SpecialBlockGeometry.Shape(rail.type,state);
-                    var railChunk=WorldDataHelper.GetChunk(this,WorldDataHelper.GetChunkPosition(this,railPos));
-                    if(railChunk!=null){railChunk.ChunkData.modifiedAfterSave=true;neightBourUpdates.Add(railChunk);}
-                }
-            // }
-            
-            if (chunk.ChunkData.IsOnEdge(pos))
-            {
-                List<ChunkData> neighbourChunkData = chunk.ChunkData.GetNeighbourChunk(pos);
-                foreach (var neighChunkData in neighbourChunkData)
-                {
-                    if(neighChunkData == null) continue;
-                    
-                    ChunkRenderer neighbourChunk = WorldDataHelper.GetChunk(neighChunkData.worldRef, neighChunkData.worldPos);
-                    if(neighbourChunk != null)
-                    {
-                        neightBourUpdates.Add(neighbourChunk);
-                    }
-                }
-            }
-        }
-        neightBourUpdates.Add(chunk);
-
-        // Mutations request rendering; only the shared scheduler starts jobs.
-        foreach (var affected in neightBourUpdates) AddChunkToUpdate(affected);
-    }
-
-    public void SetBlock(ChunkRenderer chunk, Vector3Int blockPos, BlockType blockType, byte stairFacing = 0)
-    {
-        SetBlocks(chunk, new[] {blockPos}, blockType, stairFacing);
-    }
     
     public Vector3Int GetBlockPos(RaycastHit hit)
     {
@@ -525,7 +389,7 @@ public partial class World : MonoBehaviour
         // Do not clear collections underneath an in-flight worker. Once the
         // cancellation unwinds, removing the static roots is enough for the
         // abandoned graph to be collected.
-        if(!GenerationBusy)ReleaseResidentMemory(false, true);
+        if(!HasPendingWorldWork)ReleaseResidentMemory(false, true);
         else terrainGenerator?.ReleaseMemory();
         taskTokenSource.Dispose();
         UnregisterDimension();

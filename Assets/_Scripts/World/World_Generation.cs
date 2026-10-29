@@ -94,7 +94,7 @@ public partial class World
         await generationGate.WaitAsync(worldCancellationToken);
         try
         {
-            while(chunkUpdateInProgress)await Task.Yield();
+            await WaitForChunkRenderingAsync();
             if(IsWorldCreated && HasReadyArea(position))return;
             PreparingDimensionArea=fullArea;
             await GenerateWorldCore(position);
@@ -320,20 +320,13 @@ public partial class World
         }, true, worldCancellationToken);
     }
     
-    public UniTask<ConcurrentDictionary<Vector3Int, MeshData>> CreateMeshDataAsync(List<ChunkData> dataToRender)
+    public async UniTask<ConcurrentDictionary<Vector3Int, MeshData>> CreateMeshDataAsync(List<ChunkData> dataToRender)
     {
         var options = ChunkWorkerOptions();
-        return UniTask.RunOnThreadPool(() =>
+        using (workLifetime.BeginWorker())
+        return await UniTask.RunOnThreadPool(() =>
         {
-            // Each worker owns one result slot. Publishing into the concurrent
-            // map afterward avoids lock/resize contention in the expensive mesh
-            // phase while preserving the existing return type.
-            var results = new MeshData[dataToRender.Count];
-            Parallel.For(0, dataToRender.Count, options, index =>
-            {
-                worldCancellationToken.ThrowIfCancellationRequested();
-                results[index] = dataToRender[index].GetMeshData();
-            });
+            var results = ChunkMeshPipeline.Build(dataToRender, options, worldCancellationToken);
 
             var dict = new ConcurrentDictionary<Vector3Int, MeshData>();
             for (int i = 0; i < results.Length; i++)
@@ -405,20 +398,28 @@ public partial class World
 
     private async Task<int> BuildAndApplyGeneratedChunks(List<ChunkData> chunks, Vector3Int playerPos)
     {
+        int session = workLifetime.Version;
         var ordered=chunks.OrderBy(data=>Vector3Int.Distance(playerPos,data.worldPos)).ToList();
         int batchSize=Math.Max(1,ChunkWorkerOptions().MaxDegreeOfParallelism);
         for(int offset=0;offset<ordered.Count;offset+=batchSize)
         {
             var batch=ordered.GetRange(offset,Math.Min(batchSize,ordered.Count-offset));
             var meshes=await CreateMeshDataAsync(batch);
-            for(int i=0;i<batch.Count;i++)
+            try
             {
-                var data=batch[i];
-                CreateChunk(worldData,data.worldPos,meshes[data.worldPos]);
-                if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Building terrain",.8f+.15f*(offset+i+1)/Math.Max(1,ordered.Count));
+                if (!IsWorkSessionCurrent(session)) return 0;
+                for(int i=0;i<batch.Count;i++)
+                {
+                    if (!IsWorkSessionCurrent(session)) return 0;
+                    var data=batch[i];
+                    CreateChunk(worldData,data.worldPos,meshes[data.worldPos],session);
+                    if(!IsWorldCreated)WorldLoadingScreen.ReportProgress("Building terrain",.8f+.15f*(offset+i+1)/Math.Max(1,ordered.Count));
+                    await YieldBetweenMeshUploadsAsync(i+1,batch.Count);
+                    worldCancellationToken.ThrowIfCancellationRequested();
+                }
                 if(Application.isPlaying)await Task.Yield();
-                worldCancellationToken.ThrowIfCancellationRequested();
             }
+            finally { ChunkMeshPipeline.Release(meshes.Values); }
         }
 
         if (!IsWorldCreated && Application.isPlaying)
@@ -442,10 +443,25 @@ public partial class World
         return ordered.Count;
     }
 
-    private void CreateChunk(WorldData worldData, Vector3Int pos, MeshData meshData)
+    private void CreateChunk(WorldData worldData, Vector3Int pos, MeshData meshData, int session)
     {
-        var chunkRenderer = worldRenderer.RenderChunk(worldData, pos, meshData);
-        worldData.chunkDict.TryAdd(pos, chunkRenderer);
-        QueueWaterChunk(worldData.chunkDataDict[pos]);
+        if (!IsWorkSessionCurrent(session)) return;
+        bool acquired = !worldData.chunkDict.TryGetValue(pos, out var chunkRenderer) || chunkRenderer == null;
+        if (acquired)
+        {
+            chunkRenderer = worldRenderer.AcquireChunk(worldData, pos);
+            if (chunkRenderer == null) return;
+            worldData.chunkDict[pos] = chunkRenderer;
+        }
+        if (TryApplyChunkMesh(chunkRenderer, meshData, session))
+        {
+            chunkRenderer.gameObject.SetActive(true);
+            QueueWaterChunk(chunkRenderer.ChunkData);
+        }
+        else if (acquired)
+        {
+            worldData.chunkDict.Remove(pos);
+            worldRenderer.RemoveChunk(chunkRenderer);
+        }
     }
 }

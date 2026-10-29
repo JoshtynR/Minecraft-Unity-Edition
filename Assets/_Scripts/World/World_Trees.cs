@@ -14,14 +14,23 @@ public partial class World
     // first mesh; existing neighbors need a refresh for cross-border branches.
     private async Task RefreshTreeMeshes()
     {
+        int session=workLifetime.Version;
         var chunks = new List<ChunkRenderer>();
         foreach (var origin in treeMeshChanges.Keys)
             if (treeMeshChanges.TryRemove(origin, out _) && worldData.chunkDict.TryGetValue(origin, out var chunk))
                 chunks.Add(chunk);
         if (chunks.Count == 0) return;
         var meshes = await UpdateMeshDataAsync(chunks, false);
-        foreach (var chunk in chunks)
-            if (chunk != null && worldData.chunkDict.TryGetValue(chunk.ChunkData.worldPos, out var current) && current == chunk)
-                chunk.UpdateChunk(meshes[chunk]);
+        try
+        {
+            if (!IsWorkSessionCurrent(session)) return;
+            for(int i=0;i<chunks.Count;i++)
+            {
+                if (!IsWorkSessionCurrent(session)) return;
+                TryApplyChunkMesh(chunks[i],meshes[chunks[i]],session);
+                await YieldBetweenMeshUploadsAsync(i+1,chunks.Count);
+            }
+        }
+        finally { ChunkMeshPipeline.Release(meshes.Values); }
     }
 }

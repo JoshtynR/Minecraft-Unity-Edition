@@ -182,13 +182,7 @@ public partial class World : IWaterWorld
         changed.waterLevel = liquid ? (byte)(level&15) : (byte)0;
         chunk.modifiedAfterSave = true;
         if(hardening)EmitFluidEffect(position,0);
-        // Corner heights sample diagonal cells too, including across chunk edges.
-        for (int dx = -1; dx <= 1; dx++)
-            for (int dz = -1; dz <= 1; dz++)
-            {
-                var origin = WorldDataHelper.GetChunkPosition(this, position + new Vector3Int(dx, 0, dz));
-                if (worldData.chunkDict.TryGetValue(origin, out var renderer)) waterDirtyChunks.Add(renderer);
-            }
+        CollectRenderUpdatesAround(position, waterDirtyChunks);
         return true;
     }
 

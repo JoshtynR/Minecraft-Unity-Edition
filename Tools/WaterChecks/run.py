@@ -34,13 +34,13 @@ def main():
         height=height.replace('private static void SetWaterFaceHeight','public static void SetWaterFaceHeight')
         height=height.replace('private static void AddFluidUVs','public static void AddFluidUVs')
         (tmp/'WaterMeshCheck.cs').write_text('using UnityEngine; public static class WaterMeshCheck {\n'+height+'\n}')
-        world=(ROOT/'Assets/_Scripts/World/World.cs').read_text()
-        method=world[world.index('    public void SetBlocks(ChunkRenderer'):world.index('    public Vector3Int GetBlockPos(')]
+        world=(ROOT/'Assets/_Scripts/World/World_BlockChanges.cs').read_text()
+        method=world[world.index('    public void SetBlocks(ChunkRenderer'):world.rfind('}')]
         (tmp/'WorldStairPlacement.cs').write_text('using System.Collections.Generic;using System.Linq;using UnityEngine;public partial class World{'+method+'}')
         helper=(ROOT/'Assets/_Scripts/World/WorldDataHelper.cs').read_text()
         method=helper[helper.index('    public static void SetBlock(World world,'):helper.index('    [CanBeNull]',helper.index('    public static void SetBlock(World world,'))]
         (tmp/'PopulationRecordCleanup.cs').write_text('using UnityEngine;public static partial class WorldDataHelper{'+method+'}')
-        files = ['WheatCropRules.cs','World/WaterSimulation.cs','World/WaterSurface.cs','World/World_Water.cs','World/World_Trees.cs','World/FluidTickScheduler.cs','World/BetaFluidPhysics.cs','World/BetaFireSimulation.cs','World/World_FluidRuntime.cs',
+        files = ['WheatCropRules.cs','World/WaterSimulation.cs','World/WaterSurface.cs','World/WorldWorkLifetime.cs','World/World_WorkLifecycle.cs','World/World_MeshPipeline.cs','World/Rendering/ChunkMeshPipeline.cs','World/World_Water.cs','World/World_RenderInvalidation.cs','World/World_Trees.cs','World/FluidTickScheduler.cs','World/BetaFluidPhysics.cs','World/BetaFireSimulation.cs','World/World_FluidRuntime.cs',
                  'WorldGeneration/Beta/JavaRandom.cs','WorldGeneration/Beta/BetaPopulationRecord.cs','Block/BlockType.cs','Block/StairGeometry.cs','Block/SpecialBlockGeometry.cs','Block/BlockShapes.cs','Block/BlockShape.cs','World/Rendering/MeshData.cs','Block/Block.cs','Block/Blocks/WaterBlock.cs',
                  'World/ChunkSection.cs','World/Saving/BlockSaveData.cs','World/Saving/ChunkSectionSaveData.cs']
         sources = [ROOT / 'Assets/_Scripts' / f for f in files]
@@ -62,7 +62,7 @@ def main():
     falling=(ROOT/'Assets/_Scripts/World/World_FallingBlocks.cs').read_text()
     activation=falling[falling.index('    internal void QueueSnowSupportOnChunkActivation'):falling.index('    public FallingBlockState[] CaptureFallingBlocks')]
     survival=(ROOT/'Assets/_Scripts/World/World_BlockSurvival.cs').read_text()
-    placement=(ROOT/'Assets/_Scripts/World/World.cs').read_text()
+    placement=(ROOT/'Assets/_Scripts/World/World_BlockChanges.cs').read_text()
     assert 'IsFallingBlock' not in activation and 'block.type!=BlockType.SnowLayer' in activation
     assert 'IsFallingBlock(block.type) && TryStartFallingBlock' in survival
     assert 'QueueSurvivalAround(pos);' in placement

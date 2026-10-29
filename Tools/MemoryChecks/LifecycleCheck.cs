@@ -120,7 +120,7 @@ public static class LifecycleCheck
   Check(mesh.lightUVs.Count==12&&mesh.lightUVs[4].x==15,"lighting channel merged");
   Check(mesh.textureUVs.Count==12&&mesh.textureUVs[4].z==7,"face texture layers retained");
   Check(mesh.cornerUVs.Count==12&&mesh.cornerUVs[7].z==0.3f,"smooth corner channel survives transparent merge and upload");
-  Check(mesh.subMeshCount==3&&mesh.indices[2][0]==8&&mesh.indices[2][2]==10,"water indices offset after opaque and cutout geometry exactly once");
+  Check(mesh.subMeshCount==4&&mesh.indices[2][0]==8&&mesh.indices[2][2]==10,"water indices offset after opaque and cutout geometry exactly once; portal slot retained");
   Check(mesh.lightUVs.Count==12&&mesh.cornerUVs[11].w==0.4f,"water retains brightness and corner channels");
   Check(mesh.normals.Count==12&&mesh.bounds.size.x==3,"renderer uploads worker normals and bounds");
   Check(mesh.faceUVs.Count==12&&mesh.faceUVs[2].x==1,"normalized face coordinates merge independently of cropped images");

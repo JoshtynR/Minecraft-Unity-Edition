@@ -45,6 +45,8 @@ with tempfile.TemporaryDirectory() as tmp:
         str(root / 'Assets/_Scripts/BetaCraftingRecipes.cs'),
         str(root / 'Tools/CreativeChecks/CraftingCheck.cs'),
         str(root / 'Assets/_Scripts/DroppedItemRules.cs'),
+        str(root / 'Assets/_Scripts/EntitySpatialIndex.cs'),
+        str(root / 'Tools/Shared/UnityVectors.cs'),
         str(root / 'Assets/_Scripts/World/BetaFluidPhysics.cs'),
         str(root / 'Assets/_Scripts/World/WaterSimulation.cs'),
         str(root / 'Assets/_Scripts/World/FluidTickScheduler.cs'),

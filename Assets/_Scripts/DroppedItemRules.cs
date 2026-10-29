@@ -56,36 +56,18 @@ public static class DroppedItemRules
 public sealed class DroppedItemStore
 {
     private readonly Dictionary<int,DroppedItemState> items=new Dictionary<int,DroppedItemState>();
-    private readonly Dictionary<Vector3Int,HashSet<int>> spatialBuckets=new Dictionary<Vector3Int,HashSet<int>>();
-    private readonly Dictionary<int,Vector3Int> spatialCells=new Dictionary<int,Vector3Int>();
-    public int LastSpatialCandidates {get;private set;}
-    private static Vector3Int SpatialCell(Vector3 p)=>Vector3Int.FloorToInt(p*.125f);
-    private void RemoveSpatial(int id)
+    private readonly EntitySpatialIndex<DroppedItemState> spatialIndex = new EntitySpatialIndex<DroppedItemState>();
+    public int LastSpatialCandidates => spatialIndex.LastCandidates;
+    private void RemoveSpatial(int id) => spatialIndex.Remove(id);
+    public void UpdatePosition(DroppedItemState entity)
     {
-        if(!spatialCells.TryGetValue(id,out var cell))return;
-        if(spatialBuckets.TryGetValue(cell,out var bucket))
-        {bucket.Remove(id);if(bucket.Count==0)spatialBuckets.Remove(cell);}
-        spatialCells.Remove(id);
+        if(entity == null || !ReferenceEquals(Get(entity.id), entity)) return;
+        spatialIndex.Update(entity.id, entity.position);
     }
-    public void UpdatePosition(DroppedItemState item)
+    // Broad-phase only: callers retain their exact collision and pickup tests.
+    public void QueryNearby(Vector3 position, float radius, List<DroppedItemState> output)
     {
-        if(item==null||!ReferenceEquals(Get(item.id),item))return;
-        var cell=SpatialCell(item.position);
-        if(spatialCells.TryGetValue(item.id,out var previous)&&previous.Equals(cell))return;
-        RemoveSpatial(item.id);
-        if(!spatialBuckets.TryGetValue(cell,out var bucket))spatialBuckets[cell]=bucket=new HashSet<int>();
-        bucket.Add(item.id);spatialCells[item.id]=cell;
-    }
-    public void QueryNearby(Vector3 position,float radius,List<DroppedItemState> output)
-    {
-        output.Clear();LastSpatialCandidates=0;
-        if(!DroppedItemRules.Finite(position)||float.IsNaN(radius)||float.IsInfinity(radius)||radius<0)return;
-        var extent=new Vector3(radius,radius,radius);var min=SpatialCell(position-extent);var max=SpatialCell(position+extent);
-        for(int x=min.x;x<=max.x;x++)for(int y=min.y;y<=max.y;y++)for(int z=min.z;z<=max.z;z++)
-        {
-            if(!spatialBuckets.TryGetValue(new Vector3Int(x,y,z),out var bucket))continue;
-            foreach(var id in bucket){LastSpatialCandidates++;if(items.TryGetValue(id,out var item))output.Add(item);}
-        }
+        spatialIndex.Query(position, radius, items, output);
     }
     private int nextId=1;
     public IEnumerable<DroppedItemState> Items=>items.Values;
@@ -118,7 +100,7 @@ public sealed class DroppedItemStore
     }
     public void Restore(DroppedItemState[] saved)
     {
-        items.Clear();spatialBuckets.Clear();spatialCells.Clear();LastSpatialCandidates=0;nextId=1;
+        items.Clear();spatialIndex.Clear();nextId=1;
         if(saved==null)return;
         foreach(var item in saved)
         {

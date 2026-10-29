@@ -228,20 +228,7 @@ public static class Lighting
     {
         if (block == null) return;
 
-        if (block.chunkData != data)
-        {
-            if (block.chunkData?.renderer != null)
-                data.chunkToUpdateAfterLighting.Add(block.chunkData.renderer);
-        }
-        else if (data.IsOnEdge(block.globalWorldPosition))
-        {
-            var chunks = data.GetNeighbourChunk(block.globalWorldPosition);
-            foreach (var chunk in chunks)
-            {
-                if (chunk?.renderer != null)
-                    data.chunkToUpdateAfterLighting.Add(chunk.renderer);
-            }
-        }
+        data.worldRef.CollectRenderUpdatesAround(block.globalWorldPosition, data.chunkToUpdateAfterLighting, data);
     }
 
     public static void RecastSunLightFirstTime(ChunkData chunkData)

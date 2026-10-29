@@ -152,13 +152,14 @@ public partial class World
         await generationGate.WaitAsync(worldCancellationToken);
         try
         {
-            while(chunkUpdateInProgress)await Task.Yield();
+            await WaitForChunkRenderingAsync();
             await RebuildDimensionMeshesCoreAsync();
         }
         finally{generationGate.Release();}
     }
     private async Task RebuildDimensionMeshesCoreAsync()
     {
+        int session=workLifetime.Version;
         var chunks=worldData.chunkDict.Values.Where(c=>c!=null).Select(c=>c.ChunkData).ToList();
         await CastLightFirstTime(chunks);
         // Changes from a built portal may have queued incremental light transport.
@@ -168,10 +169,22 @@ public partial class World
         {
             var batch=chunks.GetRange(offset,Math.Min(batchSize,chunks.Count-offset));
             var meshes=await CreateMeshDataAsync(batch);
-            foreach(var data in batch)
-                if(worldData.chunkDict.TryGetValue(data.worldPos,out var renderer))renderer.UpdateChunk(meshes[data.worldPos]);
-            if(Application.isPlaying)await Task.Yield();
-            worldCancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                if (!IsWorkSessionCurrent(session)) return;
+                for(int i=0;i<batch.Count;i++)
+                {
+                    if (!IsWorkSessionCurrent(session)) return;
+                    var data=batch[i];
+                    ChunkRenderer renderer;
+                    if(worldData.chunkDict.TryGetValue(data.worldPos,out renderer))
+                        TryApplyChunkMesh(renderer,meshes[data.worldPos],session);
+                    await YieldBetweenMeshUploadsAsync(i+1,batch.Count);
+                }
+                if(Application.isPlaying)await Task.Yield();
+                worldCancellationToken.ThrowIfCancellationRequested();
+            }
+            finally { ChunkMeshPipeline.Release(meshes.Values); }
         }
     }
 }

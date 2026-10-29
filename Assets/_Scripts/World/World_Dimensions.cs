@@ -96,7 +96,7 @@ public partial class World
     {
         foreach(var loaded in LoadedDimensions)
         {
-            if(loaded==null||loaded==Instance||loaded.GenerationBusy||loaded.isSaving||
+            if(loaded==null||loaded==Instance||loaded.HasPendingWorldWork||loaded.isSaving||
                loaded.worldData.chunkDataDict==null||loaded.worldData.chunkDataDict.Count==0)continue;
             bool resident=false;
             if(loaded.DropAuthority&&GameManager.Instance!=null)
@@ -115,7 +115,7 @@ public partial class World
     // objects this doubled the peak heap, which Mono then kept reserved.
     public static async Task<bool> ReleaseForDimensionGenerationAsync(World source)
     {
-        if(source==null||source.GenerationBusy||source.isSaving||source.worldData.chunkDataDict==null)return false;
+        if(source==null||source.HasPendingWorldWork||source.isSaving||source.worldData.chunkDataDict==null)return false;
         if(GameManager.Instance!=null)
             foreach(var player in GameManager.Instance.players)
                 if(player!=null&&player.dimension==source.dimension&&!player.DimensionTransferInProgress)
@@ -214,7 +214,7 @@ public partial class World
         bool wasDisabled=disabled;disabled=true;
         try
         {
-            while(chunkUpdateInProgress)await Task.Yield();
+            await WaitForChunkRenderingAsync();
             ResetChunkUpdates();
             foreach(var pair in incoming)
             {
