@@ -72,6 +72,19 @@ public partial class WorldServer : NetworkBehaviour
         if((player.transform.position-((Vector3)message.position+Vector3.one*.5f)).sqrMagnitude>64)return;
         if(!world.CanReplaceChest(message.position,message.blockType))return;
         byte state=BlockSurvivalRules.IsLeaves(message.blockType)?(byte)4:message.stairFacing;
+        var existing=world.GetBlock(message.position);
+        if(existing!=null&&existing.type==message.blockType)
+        {
+            // Interaction is not placement: occupied cells must be accepted,
+            // but only for the exact next state allowed by the block itself.
+            byte current=SpecialBlockGeometry.State(existing.type,existing.blockShape),next;
+            if(!SpecialBlockGeometry.TryUse(existing.type,current,out next)||state!=next)return;
+            if(SpecialBlockGeometry.IsDoor(existing.type)&&(current&8)!=0)return;
+            world.SetBlock(message.position,message.blockType,next);
+            BroadcastBlock(world,message.position,message.blockType,next);
+            GameAudio.Broadcast(BlockSoundRules.Use(message.blockType,next),(Vector3)message.position+Vector3.one*.5f,.7f,1,world);
+            return;
+        }
         if(!world.CanPlaceSurvivalBlock(message.position,message.blockType,state))return;
         world.SetBlock(message.position,message.blockType,state);
         BroadcastBlock(world,message.position,message.blockType,state);

@@ -116,9 +116,11 @@ public partial class World
     private void QueueSurvivalAround(Vector3Int p) {}
     private void QueueLeavesAroundRemovedLog(Vector3Int p) {}
     private void QueueSnowSupportOnChunkActivation(Block block) {}
-    public bool CanPlaceSurvivalBlock(Vector3Int p,BlockType t,byte state)=>true;
+    public bool rejectOccupiedPlacement;
+    public bool CanPlaceSurvivalBlock(Vector3Int p,BlockType t,byte state)=>!rejectOccupiedPlacement||GetBlock(p).type==BlockType.Air;
     public void DropWheat(Vector3Int p,int age) {}
     private void TickFarming(WaterPosition p,Block block) {}
+    private void TickGrass(WaterPosition p) {}
     private void ValidateFarmNeighbors(Vector3Int p) {}
     public void EmitFluidEffect(Vector3Int p,byte kind) {}
     private void DisposeFluidEffects() {}
@@ -362,11 +364,13 @@ public static partial class IntegrationCheck
             if(Attribute.IsDefined(method,typeof(Mirror.ClientRpcAttribute)))
                 foreach(var parameter in method.GetParameters())
                     WaterCheck.Assert(!parameter.IsOptional,"Mirror RPC parameters must be explicit");
+        w.SetBlock(V(0,2,0),BlockType.Air);
         int edits=w.playerEdits;
         server.SetBlockMessageHandler(new Mirror.NetworkConnectionToClient(),new WorldServer.SetBlockMessage(V(0,2,0),BlockType.Water));
         WaterCheck.Assert(w.playerEdits==edits+1,"host player edit applied twice or server omitted edit");
         for(byte facing=0;facing<4;facing++)
         {
+            w.SetBlock(V(0,2,0),BlockType.Air);
             server.SetBlockMessageHandler(new Mirror.NetworkConnectionToClient(),new WorldServer.SetBlockMessage(V(0,2,0),BlockType.CobblestoneStairs,facing));
             WaterCheck.Assert(StairGeometry.Facing(w.GetBlock(V(0,2,0)).blockShape)==facing,"server receives placed stair direction");
             Mirror.NetworkServer.active=false;
@@ -377,12 +381,26 @@ public static partial class IntegrationCheck
         foreach(var type in new[]{BlockType.Torch,BlockType.StandingSign,BlockType.Trapdoor,BlockType.Lever})
         for(byte state=0;state<16;state++)
         {
+            w.SetBlock(V(0,2,0),BlockType.Air);
             server.SetBlockMessageHandler(new Mirror.NetworkConnectionToClient(),new WorldServer.SetBlockMessage(V(0,2,0),type,state));
             WaterCheck.Assert(SpecialBlockGeometry.State(type,w.GetBlock(V(0,2,0)).blockShape)==state,"server receives all four state bits");
             Mirror.NetworkServer.active=false;server.RpcSetBlock(V(1,2,0),type,state);
             WaterCheck.Assert(SpecialBlockGeometry.State(type,w.GetBlock(V(1,2,0)).blockShape)==state,"RPC replicates all four state bits");
             Mirror.NetworkServer.active=true;
         }
+        w.rejectOccupiedPlacement=true;
+        foreach(var type in new[]{BlockType.WoodenDoor,BlockType.Trapdoor})
+        {
+            w.SetBlock(V(0,1,0),BlockType.Air);w.SetBlock(V(0,2,0),BlockType.Air);w.SetBlock(V(0,3,0),BlockType.Air);
+            w.SetBlock(V(0,1,0),type,1);
+            server.SetBlockMessageHandler(new Mirror.NetworkConnectionToClient(),new WorldServer.SetBlockMessage(V(0,1,0),type,5));
+            WaterCheck.Assert(SpecialBlockGeometry.State(type,w.GetBlock(V(0,1,0)).blockShape)==5,"host interaction opens an occupied door/trapdoor");
+            server.SetBlockMessageHandler(new Mirror.NetworkConnectionToClient(),new WorldServer.SetBlockMessage(V(0,1,0),type,2));
+            WaterCheck.Assert(SpecialBlockGeometry.State(type,w.GetBlock(V(0,1,0)).blockShape)==5,"host rejects interaction that changes hinge orientation");
+            server.SetBlockMessageHandler(new Mirror.NetworkConnectionToClient(),new WorldServer.SetBlockMessage(V(0,1,0),type,1));
+            WaterCheck.Assert(SpecialBlockGeometry.State(type,w.GetBlock(V(0,1,0)).blockShape)==1,"host interaction closes an occupied door/trapdoor");
+        }
+        w.rejectOccupiedPlacement=false;
         var pairs=new World();for(int x=-2;x<=2;x+=2)for(int z=-2;z<=2;z+=2)AddChunk(pairs,V(x,0,z));
         foreach(var type in new[]{BlockType.WoodenDoor,BlockType.IronDoor,BlockType.Bed})
         for(byte state=0;state<4;state++)
