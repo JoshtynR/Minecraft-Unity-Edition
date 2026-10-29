@@ -97,6 +97,9 @@ static class StartupCheck
   var dirt=Field<UnityEngine.UI.RawImage>(original,"dirt");var fill=Field<RectTransform>(original,"progressFill");
   Check(background.color.a==1&&background.material==null&&dirt.color.a==1,"opaque default-material dirt backdrop cannot reveal the world");
   Check(dirt.texture==((PlayerHudAssets)Resources.hud).loadingBackground&&Math.Abs(dirt.uvRect.width-15)<.001,"dirt uses 32px tiles at native automatic GUI scale");
+  Check(dirt.color.r==1&&dirt.color.g==1&&dirt.color.b==1,"loading dirt has no color tint");
+  var shade=background.transform.children.Single(c=>c.gameObject.name=="BlackOverlay").GetComponent<UnityEngine.UI.Image>();
+  Check(shade.color.r==0&&shade.color.g==0&&shade.color.b==0&&Math.Abs(shade.color.a-237/255f)<.0001f&&!shade.raycastTarget,"background uses a noninteractive black alpha-237 overlay");
   WorldLoadingScreen.ReportProgress("Building terrain",.5f);Check(fill.sizeDelta.x==50,"progress reflects reported generation work");
   WorldLoadingScreen.ReportProgress("Building terrain",.2f);Check(fill.sizeDelta.x==50,"late stage updates cannot move progress backwards");
   WorldLoadingScreen.ReportProgress("Done",2);Check(fill.sizeDelta.x==100,"progress is clamped to the native 100px bar");WorldLoadingScreen.ResetProgress();

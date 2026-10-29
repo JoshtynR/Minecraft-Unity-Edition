@@ -102,7 +102,7 @@ namespace UnityEngine
  {
   public class GraphicRaycaster:Behaviour{}
   public class CanvasScaler:Behaviour{public ScaleMode uiScaleMode;public float scaleFactor;public enum ScaleMode{ConstantPixelSize}}
-  public class Image:Behaviour{public Sprite sprite;public Material material;public Color color;public int type;}
+  public class Image:Behaviour{public Sprite sprite;public Material material;public Color color;public int type;public bool raycastTarget;}
   public class RawImage:Behaviour{public Texture texture;public Color color;public Rect uvRect;public bool raycastTarget;}
   public class Selectable:Behaviour{public enum Transition{None}public Transition transition;}
   public class Button:Selectable{public Click onClick=new Click();public class Click{Action action;public void AddListener(Action value){action+=value;}public void Invoke(){action?.Invoke();}}}
