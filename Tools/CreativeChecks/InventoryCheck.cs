@@ -289,9 +289,11 @@ public partial class PlayerInventory
   Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewData.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
   CheckInventoryArtwork();
   for(int i=1;i<inv.creativeBlocks.Count;i++)
-   Check(CreativeItemOrder.Compare(inv.creativeBlocks[i-1],inv.creativeBlocks[i])<0,"catalog uses deterministic category/family/name order");
-  Check(inv.creativeBlocks.Distinct().Count()==inv.creativeBlocks.Count&&inv.creativeBlocks.Count==ItemCatalog.All.Count(item=>!WheatCropRules.IsLegacy((BlockType)(int)item.id)),"category ordering keeps every catalog entry exactly once");
-  Check(CreativeItemOrder.Category(ItemType.DiamondPickaxe)==CreativeItemCategory.Tools&&CreativeItemOrder.Category(ItemType.IronSword)==CreativeItemCategory.Combat&&CreativeItemOrder.Category(ItemType.Rose)==CreativeItemCategory.Plants&&CreativeItemOrder.Category(ItemType.Rail)==CreativeItemCategory.Transport&&CreativeItemOrder.Category(ItemType.RedstoneDust)==CreativeItemCategory.Redstone,"representative items belong to useful categories");
+   Check(CreativeItemOrder.Compare(inv.creativeBlocks[i-1],inv.creativeBlocks[i])<0,"catalog uses vanilla ID/metadata order");
+  Check(inv.creativeBlocks.Distinct().Count()==inv.creativeBlocks.Count&&inv.creativeBlocks.Count==ItemCatalog.All.Count(item=>CreativeItemOrder.Included(item.id)),"TMI filter retains each included item exactly once");
+  Check(inv.creativeBlocks.Take(5).SequenceEqual(new[]{ItemType.Stone,ItemType.Grass,ItemType.Dirt,ItemType.Cobblestone,ItemType.WoodenPlanks}),"TMI starts with original vanilla block IDs, not local save IDs");
+  Check(CreativeItemOrder.Compare(ItemType.Coal,ItemType.Charcoal)<0&&CreativeItemOrder.Compare(ItemType.Charcoal,ItemType.Diamond)<0&&CreativeItemOrder.Compare(ItemType.IronShovel,ItemType.IronPickaxe)<0,"item and metadata variants follow vanilla order");
+  Check(inv.creativeBlocks.Contains(ItemType.WoodenDoor)&&inv.creativeBlocks.Contains(ItemType.StandingSign)&&inv.creativeBlocks.Contains(ItemType.Water)&&!inv.creativeBlocks.Contains(ItemType.WallSign)&&!inv.creativeBlocks.Contains(ItemType.RedstoneWire)&&!inv.creativeBlocks.Contains(ItemType.WheatCrop0),"TMI hides technical duplicates but keeps usable door/sign/fluid entries");
   inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&!inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival inventory opens with TooManyItems disabled");
   WorldLoadingScreen.IsLoading=true;Input.down=KeyCode.E;inv.Update();Input.down=null;WorldLoadingScreen.IsLoading=false;
   Check(inv.isOpen,"loading screen blocks inventory keyboard input");
@@ -303,7 +305,7 @@ public partial class PlayerInventory
   Check(!inv.creativePanel.gameObject.activeSelf&&inv.inventoryRect.anchoredPosition.x==0,"second F1 hides catalogue and recenters without resize");
   inv.CloseInventory();inv.OpenInventory();Check(!inv.creativePanel.gameObject.activeSelf,"reopening inventory preserves disabled catalogue");
   Input.down=KeyCode.F1;inv.Update();Input.down=null;
-  Check(inv.creativeBlocks.Count==244&&inv.creativePageSize<inv.creativeBlocks.Count&&inv.nextPage.interactable,"complete item catalogue pages on a normal 1080p GUI screen");
+  Check(inv.creativeBlocks.Count==ItemCatalog.All.Count(item=>CreativeItemOrder.Included(item.id))&&inv.creativePageSize<inv.creativeBlocks.Count&&inv.nextPage.interactable,"complete TMI catalogue pages on a normal 1080p GUI screen");
   Check(inv.inventoryRect.anchoredPosition.x+88<=inv.creativePanel.anchoredPosition.x-inv.creativePanel.sizeDelta.x/2-8,"sidebar does not overlap survival panel");
   for(int i=0;i<131;i++)
   {
