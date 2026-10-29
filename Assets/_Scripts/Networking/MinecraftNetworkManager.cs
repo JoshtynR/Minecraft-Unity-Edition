@@ -17,6 +17,17 @@ public class MinecraftNetworkManager : NetworkManager
     private Coroutine worldRequestRoutine;
     private bool worldRequested;
     private static bool startingHost;
+    public override void Awake()
+    {
+        // Scene-local copies must not initialize transports or replace the
+        // persistent session owner when returning from another scene.
+        if(singleton!=null&&singleton!=this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        base.Awake();
+    }
 
     // All local host entry points go through this before Mirror starts listening.
     public static void StartGameHost(bool localOnly = true)

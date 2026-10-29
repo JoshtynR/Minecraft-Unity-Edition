@@ -15,7 +15,7 @@ with tempfile.TemporaryDirectory() as temporary:
     subprocess.run([args.mono,str(executable)],check=True)
 
 # Startup, spawn and player setup must all use the same captured identity.
-for name in ["Assets/_Scripts/Entity's/Player/Player.cs",'Assets/_Scripts/World/World_Generation.cs']:
+for name in ["Assets/_Scripts/Entity's/Player/Player_Startup.cs",'Assets/_Scripts/World/World_Generation.cs']:
     source=(root/name).read_text()
     assert 'SteamClient.SteamId' not in source and 'SteamClient.Name' not in source,name
     assert 'PlayerIdentity.Id' in source,name

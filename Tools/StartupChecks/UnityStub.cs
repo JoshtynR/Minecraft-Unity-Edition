@@ -137,6 +137,7 @@ namespace Mirror
  public class Transport:UnityEngine.Behaviour{public static Transport activeTransport;}
  public class NetworkManager:UnityEngine.MonoBehaviour
  {
+  public virtual void Awake(){}
   public static NetworkManager singleton;public string offlineScene="MainMenu";public bool stopped;public int disconnects;
   public Transport transport;public string networkAddress;public void StartHost(){}
   public virtual void OnStopClient(){}

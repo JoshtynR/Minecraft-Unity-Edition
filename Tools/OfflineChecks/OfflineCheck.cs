@@ -15,6 +15,7 @@ namespace UnityEngine
     }
     public class MonoBehaviour
     {
+        public static void Destroy(GameObject value){}
         public GameObject gameObject=new GameObject();
         public T GetComponent<T>() where T:class=>gameObject.GetComponent<T>();
         public static GameObject Instantiate(GameObject prefab)=>new GameObject();
@@ -77,6 +78,7 @@ namespace Mirror
     }
     public class NetworkManager:MonoBehaviour
     {
+        public virtual void Awake(){}
         public static NetworkManager singleton;
         public Transport transport;public string networkAddress="localhost",offlineScene="MainMenu";public int starts,bindAttempts;public bool portOccupied;public Action duringStart;
         public void StartHost(){starts++;duringStart?.Invoke();if(!NetworkServer.dontListen){bindAttempts++;if(portOccupied)throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.AddressAlreadyInUse);}NetworkServer.active=NetworkClient.active=true;}
