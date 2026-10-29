@@ -168,7 +168,19 @@ public static class SpecialBlockMesh
             },tint,mesh);return;
         }
         var bounds=SpecialBlockGeometry.Selection(t,s);
-        if(SpecialBlockGeometry.IsDoor(t))Cube(bounds,pos,d=>Texture(parts,(s&8)!=0?BlockTexturePart.DoorUpper:BlockTexturePart.DoorLower,layer((s&8)!=0?Direction.up:Direction.backwards)),tint,mesh,true);
+        if(SpecialBlockGeometry.IsDoor(t))
+        {
+            int rotation=(s&4)==0?(s-1)&3:s&3;
+            foreach(var d in Faces)
+            {
+                bool broad=(rotation&1)==0?(d==Direction.backwards||d==Direction.forwards):(d==Direction.left||d==Direction.right);
+                bounds.SetFaceVertices(d,pos,mesh);mesh.AddQuadTriangles();
+                mesh.AddFaceUVs(Texture(parts,(s&8)!=0?BlockTexturePart.DoorUpper:BlockTexturePart.DoorLower,layer((s&8)!=0?Direction.up:Direction.backwards)),broad?new Vector4(1,1,0,0):bounds.FaceUVTransform(d));
+                int side=d==Direction.backwards?2:d==Direction.forwards?3:d==Direction.left?4:d==Direction.right?5:0;
+                if(broad&&((rotation/2+((side&1)^rotation)+((s&4)/4))&1)!=0)MirrorLastFaceU(mesh);
+                mesh.AddQuadColor(tint);
+            }
+        }
         else Cube(bounds,pos,d=>t==BlockType.Cake&&(s&7)>0&&d==Direction.left?Texture(parts,BlockTexturePart.CakeInside,layer(d)):layer(d),tint,mesh,t==BlockType.Trapdoor);
     }
     private static int Texture(Func<BlockTexturePart,int> parts,BlockTexturePart role,int fallback)

@@ -318,6 +318,27 @@ public partial class World : MonoBehaviour
             if(!CanReplaceChest(pos,blockType))continue;
             if(previous.type==BlockType.Nothing)continue;
             bool pair = SpecialBlockGeometry.IsDoor(blockType) || blockType == BlockType.Bed;
+            if(SpecialBlockGeometry.IsDoor(blockType)&&previousType!=blockType&&(stairFacing&8)==0&&
+                BlockSurvivalRules.CanReplace(previousType,blockType)&&pos.y+1<worldHeight&&GetBlock(pos+Vector3Int.up).type==BlockType.Air)
+            {
+                // Placing the right-hand door must also move the existing
+                // left door's hinge to its outside edge, not into the seam.
+                int direction=(stairFacing&4)!=0?(stairFacing+1)&3:stairFacing&3;
+                var side=direction==0?Vector3Int.forward:direction==1?Vector3Int.left:direction==2?Vector3Int.back:Vector3Int.right;
+                var neighborPos=pos+side;var neighbor=GetBlock(neighborPos);
+                byte neighborState=SpecialBlockGeometry.State(neighbor.type,neighbor.blockShape);
+                int plane=(neighborState&4)==0?(neighborState-1)&3:neighborState&3;
+                if(neighbor.type==blockType&&(neighborState&8)==0&&plane==((direction-1)&3))
+                {
+                    byte hinged=(byte)(((direction-1)&3)|4);
+                    neighbor.blockShape=SpecialBlockGeometry.Shape(blockType,hinged);
+                    var upper=GetBlock(neighborPos+Vector3Int.up);
+                    if(upper.type==blockType)upper.blockShape=SpecialBlockGeometry.Shape(blockType,(byte)(hinged|8));
+                    var neighborChunk=WorldDataHelper.GetChunk(this,WorldDataHelper.GetChunkPosition(this,neighborPos));
+                    if(neighborChunk!=null){neighborChunk.ChunkData.modifiedAfterSave=true;neightBourUpdates.Add(neighborChunk);}
+                    stairFacing=(byte)direction;
+                }
+            }
             // Validate both halves before writing either. Direct calls and remote
             // clients must not overwrite a neighbor when placing a door/bed.
             if (pair && (stairFacing & 8) == 0)
