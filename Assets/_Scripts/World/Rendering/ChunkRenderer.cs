@@ -64,14 +64,7 @@ public class ChunkRenderer : MonoBehaviour
             indexFormat=UnityEngine.Rendering.IndexFormat.UInt32,subMeshCount=4};
         try
         {
-            uploaded.SetVertices(meshData.vertices);
-            uploaded.SetUVs(0, meshData.uv);
-            uploaded.SetUVs(1, meshData.lightingUVs);
-            uploaded.SetUVs(2, meshData.sides);
-            uploaded.SetUVs(3, meshData.smoothLightCorners);
-            uploaded.SetUVs(4, meshData.faceCoordinates);
-            uploaded.SetColors(meshData.colors);
-            uploaded.SetNormals(meshData.normals);
+            PackedChunkVertex.Upload(uploaded,meshData);
             uploaded.SetTriangles(meshData.triangles, 0, false);
             if (meshData.transparentMesh != null)
                 uploaded.SetTriangles(meshData.transparentMesh.triangles, 1, false);

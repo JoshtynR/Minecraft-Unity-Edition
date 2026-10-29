@@ -49,7 +49,7 @@ namespace UnityEngine
   public List<Vector3> vertices;public void SetVertices(List<Vector3> v){vertices=v;}public void SetUVs<T>(int channel,List<T> uv){}public void SetUVs(int channel,Vector2[] uv){}public void SetTriangles(List<int> t,int sub,bool calculateBounds=true){}public void SetColors(List<Color> c){}public void RecalculateNormals(){}public void RecalculateBounds(){}public void UploadMeshData(bool discard){}
  }
  public class MeshFilter:Component {public Mesh sharedMesh;}
- public class MeshRenderer:Component {public UnityEngine.Rendering.ShadowCastingMode shadowCastingMode;public Material sharedMaterial;public void SetPropertyBlock(MaterialPropertyBlock properties){}}
+ public class MeshRenderer:Component {public Material[] sharedMaterials;public UnityEngine.Rendering.ShadowCastingMode shadowCastingMode;public Material sharedMaterial;public void SetPropertyBlock(MaterialPropertyBlock properties){}}
  public class MaterialPropertyBlock {public void SetFloat(string key,float value){}public void SetVector(string key,Vector4 value){}}
  public static class Application {public static bool isPlaying=true;}
  public static class Random {public static int Range(int a,int b)=>a;public static float Range(float a,float b)=>(a+b)/2;}
@@ -369,3 +369,5 @@ public partial class PlayerInventory
   Console.WriteLine(checks+" inventory arithmetic/layout/crafting/migration/lifecycle checks passed (Unity UI/transport mocked).");
  }
 }
+
+public static class PackedChunkVertex {public static void Upload(UnityEngine.Mesh mesh,MeshData data){mesh.SetVertices(data.vertices);mesh.SetUVs(0,data.uv);mesh.SetUVs(1,data.lightingUVs);mesh.SetUVs(2,data.sides);mesh.SetUVs(3,data.smoothLightCorners);mesh.SetUVs(4,data.faceCoordinates);mesh.SetColors(data.colors);mesh.SetNormals(data.normals);}}
