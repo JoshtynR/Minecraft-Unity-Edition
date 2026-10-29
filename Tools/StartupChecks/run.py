@@ -16,9 +16,17 @@ with tempfile.TemporaryDirectory() as tmp:
              'Tools/StartupChecks/UnityStub.cs', 'Tools/StartupChecks/StartupCheck.cs']
     subprocess.run([args.mcs, '-langversion:latest', '-out:' + str(binary), *[str(root / f) for f in files]], check=True)
     subprocess.run([args.mono, str(binary)], check=True)
+    identity_binary = Path(tmp) / 'identity.exe'
+    subprocess.run([args.mcs, '-langversion:latest', '-out:' + str(identity_binary),
+                    str(root / "Assets/_Scripts/Entity's/Player/Player_Startup.cs"),
+                    str(root / 'Tools/StartupChecks/PlayerIdentityCheck.cs')], check=True)
+    subprocess.run([args.mono, str(identity_binary)], check=True)
 
 # Verify the production entry points remain connected to the persistent screen.
 player = (root / "Assets/_Scripts/Entity's/Player/Player.cs").read_text()
+startup = player[player.index('    public override void Start()'):player.index('    public void SetMeshLight(')]
+assert 'StartCoroutine(PublishPlayerIdentityWhenReady());' in startup
+assert 'CmdSetPlayerServerData(' not in startup
 assert 'public bool IsReadyForPlay => clientInitialized && !dimensionTransfer && !loadingSavedPlayer && (!expectsSavedPlayerData || savedPlayerApplied);' in player
 assert player.index('clientInitialized = true;') > player.index('_normalFOV = _camComponent.fieldOfView;')
 load = player[player.index('    public void LoadPlayer('):player.index('    private float lastForwardTapTime')]
