@@ -288,6 +288,10 @@ public partial class PlayerInventory
   Check(inv.slots.Length==36&&inv.inventorySlotsRect.childCount==36,"survival capacity is 27 backpack plus nine hotbar");
   Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewData.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
   CheckInventoryArtwork();
+  for(int i=1;i<inv.creativeBlocks.Count;i++)
+   Check(CreativeItemOrder.Compare(inv.creativeBlocks[i-1],inv.creativeBlocks[i])<0,"catalog uses deterministic category/family/name order");
+  Check(inv.creativeBlocks.Distinct().Count()==inv.creativeBlocks.Count&&inv.creativeBlocks.Count==ItemCatalog.All.Count(item=>!WheatCropRules.IsLegacy((BlockType)(int)item.id)),"category ordering keeps every catalog entry exactly once");
+  Check(CreativeItemOrder.Category(ItemType.DiamondPickaxe)==CreativeItemCategory.Tools&&CreativeItemOrder.Category(ItemType.IronSword)==CreativeItemCategory.Combat&&CreativeItemOrder.Category(ItemType.Rose)==CreativeItemCategory.Plants&&CreativeItemOrder.Category(ItemType.Rail)==CreativeItemCategory.Transport&&CreativeItemOrder.Category(ItemType.RedstoneDust)==CreativeItemCategory.Redstone,"representative items belong to useful categories");
   inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&!inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival inventory opens with TooManyItems disabled");
   WorldLoadingScreen.IsLoading=true;Input.down=KeyCode.E;inv.Update();Input.down=null;WorldLoadingScreen.IsLoading=false;
   Check(inv.isOpen,"loading screen blocks inventory keyboard input");
@@ -359,7 +363,13 @@ public partial class PlayerInventory
   var snapshot=new WorldServer.SavePlayerMessage(new Vector3(),new Quaternion(),new Quaternion(),inv.SavedInventory(),1,inv.SavedCrafting(),inv.SavedCursor(),inv.SavedRecovery(),inv.SavedEquipment());
   inv.slots[0].count=1;Check(snapshot.inventory[0].count==64,"save snapshots do not alias live stacks");
   inv.LoadInventory(snapshot.inventory,snapshot.crafting,snapshot.cursor,snapshot.recovery,snapshot.equipment);Check(Total(inv,ItemType.Stone)==36*64&&Total(inv,ItemType.Sand)==1,"saved inventory and cursor survive without restoring legacy overflow");
-  inv.OpenInventory();inv.canvasRect.sizeDelta=new Vector2(320,200);inv.UpdateInventoryLayout();
+  inv.OpenInventory();
+  foreach(var screen in new[]{new Vector2(1920,1080),new Vector2(2560,1080),new Vector2(800,1200),new Vector2(320,200)})
+  {
+   inv.canvasRect.sizeDelta=screen;inv.UpdateInventoryLayout();
+   var dim=inv.creativeRoot.GetChild(0).GetComponent<RectTransform>();
+   Check(Math.Abs(dim.sizeDelta.x*inv.creativeRoot.localScale.x-screen.x)<.01f&&Math.Abs(dim.sizeDelta.y*inv.creativeRoot.localScale.y-screen.y)<.01f,"inventory dimmer covers full canvas at every aspect ratio and UI scale");
+  }
   Check(inv.creativePageSize<131&&inv.nextPage.interactable,"small windows page catalogue while both panes remain visible");
   var seen=new HashSet<ItemType>();int pages=(inv.creativeBlocks.Count+inv.creativePageSize-1)/inv.creativePageSize;
   for(int p=0;p<pages;p++){for(int i=0;i<inv.creativePageSize;i++){int n=p*inv.creativePageSize+i;if(n<inv.creativeBlocks.Count)seen.Add(inv.creativeBlocks[n]);}inv.ChangeCreativePage(1);}

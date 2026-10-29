@@ -92,6 +92,7 @@ with tempfile.TemporaryDirectory() as tmp:
         str(root / "Assets/_Scripts/Entity's/Player/PlayerHudAssets.cs"),
         str(root / 'Assets/_Scripts/Block/BlockType.cs'),
         str(root / 'Assets/_Scripts/ItemType.cs'),
+        str(root / 'Assets/_Scripts/CreativeItemOrder.cs'),
         str(root / 'Assets/_Scripts/BetaItemCatalog.cs'),
         str(root / 'Tools/CreativeChecks/BetaItemCheck.cs'),
         str(root / 'Assets/_Scripts/ItemDataSO.cs'),

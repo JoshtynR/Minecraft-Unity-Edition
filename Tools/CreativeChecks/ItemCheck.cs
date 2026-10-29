@@ -7,8 +7,11 @@ public partial class PlayerInventory
  static void CheckItemUI(PlayerInventory inv)
  {
   inv.ToggleTooManyItems();
-  int index=inv.creativeBlocks.IndexOf(ItemType.Stick);
-  Check(index>=0&&inv.creativeCells[index].Find("ItemIcon")!=null,"standalone items have readable placeholders in the catalogue");
+  int absoluteIndex=inv.creativeBlocks.IndexOf(ItemType.Stick);
+  Check(absoluteIndex>=0,"standalone item remains in catalog");
+  inv.ChangeCreativePage(absoluteIndex/inv.creativePageSize-inv.creativePage);
+  int index=absoluteIndex%inv.creativePageSize;
+  Check(inv.creativeCells[index].Find("ItemIcon")!=null,"standalone items have readable placeholders in the catalogue");
   var data=new ItemDataSO();var texture=new Texture2D();
   data.items.Add(new ItemDefinition{id=ItemType.Stick,displayName="Custom Stick",icon=texture,maxStack=8});
   ItemCatalog.Reload(data);inv.RefreshCreativePage();
@@ -21,7 +24,7 @@ public partial class PlayerInventory
   inv.SetSlotItemType(0,ItemType.Stone);
   Check(inv.inventorySlotsRect.GetChild(0).Find("ItemIcon")==null&&inv.inventorySlotsRect.GetChild(0).Find("InventoryIcon")!=null,"replacing a sprite with a block cleans up old icon");
   Check(!texture.destroyed,"shared source texture is not destroyed with inventory icons");
-  ItemCatalog.Reload(null);inv.LoadInventory(null);inv.RefreshCreativePage();
+  ItemCatalog.Reload(null);inv.LoadInventory(null);inv.ChangeCreativePage(-inv.creativePage);inv.RefreshCreativePage();
   inv.ToggleTooManyItems();
  }
  static void CheckItems()
