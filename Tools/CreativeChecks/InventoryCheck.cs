@@ -288,6 +288,10 @@ public partial class PlayerInventory
   Check(inv.slots.Length==36&&inv.inventorySlotsRect.childCount==36,"survival capacity is 27 backpack plus nine hotbar");
   Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewData.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
   CheckInventoryArtwork();
+  for(int i=1;i<inv.creativeBlocks.Count;i++)
+   Check(CreativeItemOrder.Compare(inv.creativeBlocks[i-1],inv.creativeBlocks[i])<0,"catalog uses deterministic category/family/name order");
+  Check(inv.creativeBlocks.Distinct().Count()==inv.creativeBlocks.Count&&inv.creativeBlocks.Count==ItemCatalog.All.Count(item=>!WheatCropRules.IsLegacy((BlockType)(int)item.id)),"category ordering keeps every catalog entry exactly once");
+  Check(CreativeItemOrder.Category(ItemType.DiamondPickaxe)==CreativeItemCategory.Tools&&CreativeItemOrder.Category(ItemType.IronSword)==CreativeItemCategory.Combat&&CreativeItemOrder.Category(ItemType.Rose)==CreativeItemCategory.Plants&&CreativeItemOrder.Category(ItemType.Rail)==CreativeItemCategory.Transport&&CreativeItemOrder.Category(ItemType.RedstoneDust)==CreativeItemCategory.Redstone,"representative items belong to useful categories");
   inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&!inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival inventory opens with TooManyItems disabled");
   WorldLoadingScreen.IsLoading=true;Input.down=KeyCode.E;inv.Update();Input.down=null;WorldLoadingScreen.IsLoading=false;
   Check(inv.isOpen,"loading screen blocks inventory keyboard input");

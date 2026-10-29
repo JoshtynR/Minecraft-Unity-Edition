@@ -30,7 +30,7 @@ public partial class PlayerInventory
     {
         creativeBlocks.Clear();
         foreach(var item in ItemCatalog.All)if(!WheatCropRules.IsLegacy((BlockType)(int)item.id))creativeBlocks.Add(item.id);
-        creativeBlocks.Sort((a,b)=>((int)a).CompareTo((int)b));
+        creativeBlocks.Sort(CreativeItemOrder.Compare);
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         creativeFont=assets!=null&&assets.levelFont!=null?assets.levelFont:SlotTextPrefab.GetComponent<TextMeshProUGUI>().font;
         BuildInventoryTextMaterials();
