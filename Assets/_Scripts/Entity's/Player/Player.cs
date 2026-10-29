@@ -310,15 +310,18 @@ public partial class Player : BaseEntity
                 // furnaces face wherever the player last walked instead.
                 var look = cam != null ? cam.forward : objects.body.forward;
                 byte facing = SpecialBlockGeometry.Placement(type, look, normal);
+                if(type==BlockType.Trapdoor&&(normal.y<0||(normal.y==0&&targetHitPoint.y-targetedBlock.globalWorldPosition.y>.5f)))
+                    facing|=8;
                 // Beta metadata bit 4 marks player-placed leaves as permanent.
                 if (BlockSurvivalRules.IsLeaves(type)) facing = 4;
-                if ((type == BlockType.Ladder || type == BlockType.WallSign || type == BlockType.Trapdoor || type == BlockType.StoneButton) && normal.y != 0) return false;
+                if ((type == BlockType.Ladder || type == BlockType.WallSign || type == BlockType.StoneButton) && normal.y != 0) return false;
                 // ItemDoor only accepts the top face, then chooses its hinge
                 // from adjacent doors and the two-block-high solid walls.
                 if (SpecialBlockGeometry.IsDoor(type))
                 {
                     if (normal.x != 0 || normal.y != 1 || normal.z != 0) return false;
-                    facing = SpecialBlockGeometry.DoorPlacement(type,facing,blockPos,p=>world.GetBlock(p).type);
+                    facing = SpecialBlockGeometry.DoorPlacement(type,facing,blockPos,p=>world.GetBlock(p).type,
+                        p=>{var door=world.GetBlock(p);return SpecialBlockGeometry.State(door.type,door.blockShape);});
                 }
                 if (SpecialBlockGeometry.IsTorch(type) && normal.y < 0) return false;
                 if (!SpecialBlockGeometry.CanAttach(type,facing,blockPos,p => world.GetBlock(p).type)) return false;

@@ -97,7 +97,7 @@ public static class SpecialBlockGeometry
         }
         else if(t==BlockType.Trapdoor)
         {
-            b=(s&4)==0?Box(0,0,0,16,3,16):(s&3)==0?Box(0,0,13,16,16,16):(s&3)==1?Box(0,0,0,16,16,3):(s&3)==2?Box(13,0,0,16,16,16):Box(0,0,0,3,16,16);
+            b=(s&4)==0?((s&8)!=0?Box(0,13,0,16,16,16):Box(0,0,0,16,3,16)):(s&3)==0?Box(0,0,13,16,16,16):(s&3)==1?Box(0,0,0,16,16,3):(s&3)==2?Box(13,0,0,16,16,16):Box(0,0,0,3,16,16);
         }
         else if(t==BlockType.StoneButton || t==BlockType.Lever)
         {
@@ -133,7 +133,7 @@ public static class SpecialBlockGeometry
     // ItemDoor.placeDoorBlock from Beta 1.7.3. A neighboring door or the
     // heavier solid side reverses the hinge and sets metadata bit 4, which is
     // what makes a pair of doors open away from their shared centre seam.
-    public static byte DoorPlacement(BlockType type,byte state,Vector3Int pos,Func<Vector3Int,BlockType> get)
+    public static byte DoorPlacement(BlockType type,byte state,Vector3Int pos,Func<Vector3Int,BlockType> get,Func<Vector3Int,byte> getState=null)
     {
         state=(byte)(state&3);
         if(!IsDoor(type)||get==null)return state;
@@ -143,6 +143,17 @@ public static class SpecialBlockGeometry
         int rightSolids=(NormalCube(get(right))?1:0)+(NormalCube(get(right+Vector3Int.up))?1:0);
         bool leftDoor=get(left)==type||get(left+Vector3Int.up)==type;
         bool rightDoor=get(right)==type||get(right+Vector3Int.up)==type;
+        if(getState!=null&&(leftDoor||rightDoor))
+        {
+            var neighbor=leftDoor?left:right;
+            if(get(neighbor)!=type)neighbor+=Vector3Int.up;
+            byte other=getState(neighbor);
+            // Bit 4 also encodes the opposite hinge in the old door format.
+            // Match the neighbor's current plane, with the opposite hinge,
+            // regardless of which of the two doors was placed first.
+            int plane=(other&4)==0?(other-1)&3:other&3;
+            return (byte)((other&4)==0?(plane|4):((plane+1)&3));
+        }
         if((leftDoor&&!rightDoor)||rightSolids>leftSolids)state=(byte)(((state-1)&3)|4);
         return state;
     }
@@ -164,7 +175,10 @@ public static class SpecialBlockGeometry
         if(t==BlockType.Ladder||t==BlockType.WallSign)
             support=state==2?new Vector3Int(0,0,1):state==3?new Vector3Int(0,0,-1):state==4?new Vector3Int(1,0,0):new Vector3Int(-1,0,0);
         else if(t==BlockType.Trapdoor)
+        {
             support=(state&3)==0?new Vector3Int(0,0,1):(state&3)==1?new Vector3Int(0,0,-1):(state&3)==2?new Vector3Int(1,0,0):new Vector3Int(-1,0,0);
+            return NormalCube(get(pos+support))||NormalCube(get(pos+((state&8)!=0?Vector3Int.up:Vector3Int.down)));
+        }
         else if(!IsRail(t)&&t!=BlockType.RedstoneWire&&t!=BlockType.RedstoneRepeater&&t!=BlockType.PoweredRepeater&&t!=BlockType.StandingSign&&!IsDoor(t)&&t!=BlockType.Bed)return true;
         return NormalCube(get(pos+support));
     }
