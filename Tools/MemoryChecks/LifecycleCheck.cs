@@ -7,7 +7,7 @@ namespace UnityEngine
 {
  public class Object { public bool destroyed;public string name; public static void Destroy(Object o){if(o!=null)o.destroyed=true;} }
  public class MonoBehaviour:Object {public GameObject gameObject=new GameObject();public Transform transform=>gameObject.transform; public MeshFilter filter=new MeshFilter(); public T GetComponent<T>() where T:new(){if(typeof(T)==typeof(MeshFilter))return (T)(object)filter;return new T();} }
- public class GameObject:Object {public int layer;public Transform transform=new Transform();public GameObject(string name=""){}public void SetActive(bool active){}public T AddComponent<T>() where T:new()=>new T();}
+ public class GameObject:Object {public T GetComponent<T>() where T:new()=>new T();public int layer;public Transform transform=new Transform();public GameObject(string name=""){}public void SetActive(bool active){}public T AddComponent<T>() where T:new()=>new T();}
  public class Transform {public Vector3 localPosition;public void SetParent(Transform parent,bool stays){}}
  public class RequireComponent:Attribute { public RequireComponent(Type a,Type b){} }
  public class HideInInspector:Attribute { }
@@ -26,7 +26,7 @@ namespace UnityEngine
   public Mesh mesh { get { if(!owned){sharedMesh=new Mesh();owned=true;}return sharedMesh;} }
   private bool owned;
  }
- public class MeshRenderer { }
+ public class MeshRenderer {public object[] sharedMaterials; }
  public static class Debug { public static void Log(object value){} public static void LogException(Exception e){throw e;} }
  public class Mesh:Object
  {

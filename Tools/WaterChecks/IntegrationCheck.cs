@@ -83,7 +83,7 @@ public static partial class WorldDataHelper
     public static Vector3Int GetChunkPosition(World w,Vector3Int p) { return new Vector3Int((int)Math.Floor((double)p.x/w.chunkSize)*w.chunkSize,0,(int)Math.Floor((double)p.z/w.chunkSize)*w.chunkSize); }
 }
 public class ChunkData
-{
+{public void MarkRenderSectionsDirty(int y){}public void MarkAllRenderSectionsDirty(){}
     public MeshData GetMeshData()=>new MeshData(true){sourceChunk=this};
     public int chunkSize,chunkHeight=2;
     public World worldRef;

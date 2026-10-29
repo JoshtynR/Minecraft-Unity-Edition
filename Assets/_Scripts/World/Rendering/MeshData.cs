@@ -16,6 +16,7 @@ public class MeshData
 
     public int subMeshCount;
     public ChunkData sourceChunk;
+    public MeshData[] renderSections;
 
     public MeshData waterMesh;         // alpha-blended water only
     public MeshData transparentMesh;   // secondary container for transparent faces (if you use it)
@@ -202,6 +203,8 @@ public class MeshData
     // a second complete copy alive until a later full GC.
     public void ReleaseAfterUpload()
     {
+        if(renderSections!=null)
+            foreach(var section in renderSections)section?.ReleaseAfterUpload();
         ReleaseLists(this);
         if(transparentMesh!=null)ReleaseLists(transparentMesh);
         if(waterMesh!=null)ReleaseLists(waterMesh);

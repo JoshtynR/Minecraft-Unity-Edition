@@ -227,6 +227,7 @@ public static class Lighting
     public static void CheckForEdgeUpdate(Block block, ChunkData data)
     {
         if (block == null) return;
+        block.chunkData.MarkRenderSectionsDirty(block.globalWorldPosition.y);
 
         // Interior cells owned by this build cannot invalidate another column.
         // Keep the shared halo path for edges, including diagonal AO neighbors.

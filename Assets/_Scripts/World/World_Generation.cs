@@ -322,6 +322,7 @@ public partial class World
     
     public async UniTask<ConcurrentDictionary<Vector3Int, MeshData>> CreateMeshDataAsync(List<ChunkData> dataToRender)
     {
+        foreach(var data in dataToRender)data.MarkAllRenderSectionsDirty();
         var options = ChunkWorkerOptions();
         using (workLifetime.BeginWorker())
         return await UniTask.RunOnThreadPool(() =>

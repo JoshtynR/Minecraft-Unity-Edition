@@ -4,7 +4,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
 
-public class ChunkData
+public partial class ChunkData
 {
     public int chunkSize = 16;
     public int chunkHeight = 16;
@@ -201,7 +201,7 @@ public class ChunkData
                 for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++)
                     worldRef.worldData.chunkDataDict.TryGetValue(worldPos+new Vector3Int(dx*chunkSize,0,dz*chunkSize),out meshReadNeighbors[(dx+1)*3+dz+1]);
                 meshReadOwner=this;
-                return BuildMeshData();
+                return BuildSectionMeshData();
             }
             finally
             {

@@ -10,6 +10,7 @@ public class ChunkRenderer : MonoBehaviour
 {
     private MeshFilter meshFilter;
     private Mesh mesh;
+    private readonly Dictionary<int,ChunkRenderer> sectionRenderers=new Dictionary<int,ChunkRenderer>();
     private readonly Dictionary<Vector3Int,ModernChestVisual> chestVisuals=new Dictionary<Vector3Int,ModernChestVisual>();
     public bool showGizmo = false;
 
@@ -23,6 +24,7 @@ public class ChunkRenderer : MonoBehaviour
 
     public void Initialize(ChunkData data)
     {
+        if(!ReferenceEquals(ChunkData,data))ReleaseSectionRenderers();
         meshFilter = GetComponent<MeshFilter>();
         this.ChunkData = data;
     }
@@ -31,6 +33,32 @@ public class ChunkRenderer : MonoBehaviour
     {
         if (meshData.sourceChunk != null && !ReferenceEquals(meshData.sourceChunk, ChunkData))
         {meshData.ReleaseAfterUpload();return;}
+        if(meshData.renderSections!=null)
+        {
+            if(mesh!=null)
+            {
+                if(meshFilter==null)meshFilter=GetComponent<MeshFilter>();
+                meshFilter.sharedMesh=null;Destroy(mesh);mesh=null;
+            }
+            try
+            {
+                for(int index=0;index<meshData.renderSections.Length;index++)
+                {
+                    var section=meshData.renderSections[index];if(section==null)continue;
+                    if(!sectionRenderers.TryGetValue(index,out var renderer))
+                    {
+                        var child=new GameObject("RenderSection "+index);child.layer=gameObject.layer;
+                        child.transform.SetParent(transform,false);
+                        renderer=child.AddComponent<ChunkRenderer>();
+                        child.GetComponent<MeshRenderer>().sharedMaterials=GetComponent<MeshRenderer>().sharedMaterials;
+                        renderer.Initialize(ChunkData);sectionRenderers.Add(index,renderer);
+                    }
+                    renderer.RenderMesh(section);
+                }
+            }
+            finally {meshData.ReleaseAfterUpload();}
+            return;
+        }
         meshData.PrepareForRendering();
         var uploaded=new Mesh{name="Chunk "+(ChunkData==null?Vector3Int.zero:ChunkData.worldPos),
             indexFormat=UnityEngine.Rendering.IndexFormat.UInt32,subMeshCount=4};
@@ -96,6 +124,7 @@ public class ChunkRenderer : MonoBehaviour
 
     public void ReleaseForPool()
     {
+        ReleaseSectionRenderers();
         if(chestVisuals.Count>0)RefreshChestVisuals(null);
         ChunkData=null;
         if(meshFilter==null)meshFilter=GetComponent<MeshFilter>();
@@ -106,9 +135,17 @@ public class ChunkRenderer : MonoBehaviour
 
     private void OnDestroy()
     {
+        ReleaseSectionRenderers();
         ChunkData=null;
         if (mesh != null) Destroy(mesh);
         mesh = null;
+    }
+
+    private void ReleaseSectionRenderers()
+    {
+        foreach(var renderer in sectionRenderers.Values)
+            if(renderer!=null){renderer.ReleaseForPool();renderer.gameObject.SetActive(false);Destroy(renderer.gameObject);}
+        sectionRenderers.Clear();
     }
 
     public void UpdateChunk(MeshData meshData)
