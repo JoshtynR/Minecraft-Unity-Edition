@@ -29,6 +29,7 @@ public partial class World
 }
 public partial class Player
 {
+    public bool isLocalPlayer;
     public bool PlaceForCheck()=>RequestBlockPlacement(new Vector3Int(),BlockType.Stone,0);
     public void PlacementReplyForCheck(int request,bool accepted)=>TargetPlacementResult(null,request,accepted);
     public void DropAction(bool dropping,int id){RequestDropAction(dropping,id);}
@@ -171,6 +172,16 @@ public partial class PlayerInventory
         for(int i=0;i<4;i++)world.StepDrops(.05f);
         Check(world.DropVisualCount==0,"collection flight cleans itself up after three game ticks");
         world.ClearDrops();Check(!icon.destroyed,"drop teardown preserves shared inventory source images");ItemCatalog.Reload(null);
+        Mirror.NetworkServer.active=true;Mirror.NetworkClient.active=true;Mirror.NetworkClient.ready=false;
+        player.networkStarted=true;player.isLocalPlayer=true;
+        inv.SetCursor(new InventoryStack(ItemType.Stone,2));player.RequestInventoryCursorDrop(false);
+        Check(inv.CursorSnapshot().Empty&&!inv.DropRequestPending,"host-local cursor drop completes synchronously while NotReady");
+        var localDrop=world.droppedItems.Items.OrderBy(d=>d.id).Last();
+        localDrop.pickupDelay=0;localDrop.position=player.transform.position;
+        player.DropAction(false,localDrop.id);
+        Check(world.droppedItems.Get(localDrop.id)==null&&!inv.DropRequestPending,"host-local pickup completes without a Command or TargetRpc while NotReady");
+        Mirror.NetworkServer.active=false;Mirror.NetworkClient.active=false;Mirror.NetworkClient.ready=true;
+        player.networkStarted=false;player.isLocalPlayer=false;
         inv.OnDestroy();World.Instance=new World();
     }
 }
