@@ -11,7 +11,7 @@ public partial class PlayerInventory
     private readonly List<RectTransform> creativeCells = new List<RectTransform>();
     private readonly RectTransform[] craftingRects = new RectTransform[4];
     private readonly RectTransform[] equipmentRects = new RectTransform[4],equipmentGhosts = new RectTransform[4];
-    private RectTransform creativeRoot, creativePanel, inventoryBackdrop, craftResultRect, tooltipRect;
+    private RectTransform inventoryScreenRoot, creativeRoot, creativePanel, inventoryBackdrop, craftResultRect, tooltipRect;
     private TextMeshProUGUI creativePageText, creativeTitleText, creativeNameText;
     private TMP_FontAsset creativeFont;
     private Material inventoryTextMaterial,inventoryLabelMaterial,containerLabelMaterial;
@@ -34,12 +34,17 @@ public partial class PlayerInventory
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         creativeFont=assets!=null&&assets.levelFont!=null?assets.levelFont:SlotTextPrefab.GetComponent<TextMeshProUGUI>().font;
         BuildInventoryTextMaterials();
-        creativeRoot=CreativeRect("InventoryMenu",parent,0,0,640,360);
-        creativeRoot.localPosition=new Vector3(0,0,-35);
-        var backdrop=CreativeRect("DimBackground",creativeRoot,0,0,640,360);
-        backdrop.localPosition=new Vector3(0,0,10);
+        // Full-screen coverage belongs to the canvas plane, not the scaled,
+        // depth-offset menu. Keep it before the menu in UI draw order.
+        inventoryScreenRoot=CreativeRect("InventoryScreen",canvasRect,0,0,0,0);
+        inventoryScreenRoot.gameObject.layer=parent.gameObject.layer;
+        inventoryScreenRoot.anchorMin=new Vector2(0,0);inventoryScreenRoot.anchorMax=new Vector2(1,1);
+        var backdrop=CreativeRect("DimBackground",inventoryScreenRoot,0,0,0,0);
+        backdrop.anchorMin=new Vector2(0,0);backdrop.anchorMax=new Vector2(1,1);
         var dim=backdrop.gameObject.AddComponent<Image>();dim.color=new Color(0,0,0,.48f);
         var outside=backdrop.gameObject.AddComponent<InventoryOutsideClick>();outside.playerInventory=this;
+        creativeRoot=CreativeRect("InventoryMenu",inventoryScreenRoot,0,0,640,360);
+        creativeRoot.localPosition=new Vector3(0,0,-35);
         inventoryBackdrop=CreativeRect("InventoryBackdrop",creativeRoot,0,-2,182,172);
         var inventoryShade=inventoryBackdrop.gameObject.AddComponent<Image>();inventoryShade.color=new Color(0,0,0,.58f);inventoryShade.raycastTarget=false;
         inventoryRect=CreativeRect("SurvivalInventory",creativeRoot,0,0,176,166);
@@ -109,9 +114,6 @@ public partial class PlayerInventory
             var layout=TmiLayout.Calculate(width,height);
             creativeRoot.sizeDelta=new Vector2(layout.width,layout.height);
             creativeRoot.localScale=Vector3.one*layout.scale;
-            // The menu layout has a capped logical size. The dimmer must cover
-            // the entire canvas, compensating for the menu's own UI scale.
-            creativeRoot.GetChild(0).GetComponent<RectTransform>().sizeDelta=new Vector2(width/layout.scale,height/layout.scale);
             inventoryRect.anchoredPosition=new Vector2(sidebarVisible?layout.inventoryX:0,0);
             inventoryBackdrop.anchoredPosition=new Vector2(inventoryRect.anchoredPosition.x,inventoryRect.anchoredPosition.y-2);
             creativePanel.anchoredPosition=new Vector2(layout.sidebarX,0);
