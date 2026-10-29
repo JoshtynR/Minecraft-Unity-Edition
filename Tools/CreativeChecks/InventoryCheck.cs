@@ -287,6 +287,7 @@ public partial class PlayerInventory
   Check(headless.AddItem(ItemType.Stone,1)&&headless.slots[0].count==64,"exact-capacity add succeeds");
   Check(inv.slots.Length==36&&inv.inventorySlotsRect.childCount==36,"survival capacity is 27 backpack plus nine hotbar");
   Check(!inv.creativeRoot.gameObject.activeSelf&&inv.inventoryPreviewData.vertices.Count==144,"menu initially closed, paper doll is six skinned cuboids");
+  Check(!inv.inventoryScreenRoot.gameObject.activeSelf,"full-screen dimmer starts hidden with inventory");
   CheckInventoryArtwork();
   for(int i=1;i<inv.creativeBlocks.Count;i++)
    Check(CreativeItemOrder.Compare(inv.creativeBlocks[i-1],inv.creativeBlocks[i])<0,"catalog uses vanilla ID/metadata order");
@@ -294,7 +295,7 @@ public partial class PlayerInventory
   Check(inv.creativeBlocks.Take(5).SequenceEqual(new[]{ItemType.Stone,ItemType.Grass,ItemType.Dirt,ItemType.Cobblestone,ItemType.WoodenPlanks}),"TMI starts with original vanilla block IDs, not local save IDs");
   Check(CreativeItemOrder.Compare(ItemType.Coal,ItemType.Charcoal)<0&&CreativeItemOrder.Compare(ItemType.Charcoal,ItemType.Diamond)<0&&CreativeItemOrder.Compare(ItemType.IronShovel,ItemType.IronPickaxe)<0,"item and metadata variants follow vanilla order");
   Check(inv.creativeBlocks.Contains(ItemType.WoodenDoor)&&inv.creativeBlocks.Contains(ItemType.StandingSign)&&inv.creativeBlocks.Contains(ItemType.Water)&&!inv.creativeBlocks.Contains(ItemType.WallSign)&&!inv.creativeBlocks.Contains(ItemType.RedstoneWire)&&!inv.creativeBlocks.Contains(ItemType.WheatCrop0),"TMI hides technical duplicates but keeps usable door/sign/fluid entries");
-  inv.OpenInventory();Check(inv.inventoryRect.gameObject.activeSelf&&!inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival inventory opens with TooManyItems disabled");
+  inv.OpenInventory();Check(inv.inventoryScreenRoot.gameObject.activeSelf&&inv.inventoryRect.gameObject.activeSelf&&!inv.creativePanel.gameObject.activeSelf&&Cursor.visible,"survival inventory and screen dimmer open with TooManyItems disabled");
   WorldLoadingScreen.IsLoading=true;Input.down=KeyCode.E;inv.Update();Input.down=null;WorldLoadingScreen.IsLoading=false;
   Check(inv.isOpen,"loading screen blocks inventory keyboard input");
   Check(inv.inventoryRect.anchoredPosition.x==0,"normal survival inventory is centered without sidebar space");
@@ -369,8 +370,10 @@ public partial class PlayerInventory
   foreach(var screen in new[]{new Vector2(1920,1080),new Vector2(2560,1080),new Vector2(800,1200),new Vector2(320,200)})
   {
    inv.canvasRect.sizeDelta=screen;inv.UpdateInventoryLayout();
-   var dim=inv.creativeRoot.GetChild(0).GetComponent<RectTransform>();
-   Check(Math.Abs(dim.sizeDelta.x*inv.creativeRoot.localScale.x-screen.x)<.01f&&Math.Abs(dim.sizeDelta.y*inv.creativeRoot.localScale.y-screen.y)<.01f,"inventory dimmer covers full canvas at every aspect ratio and UI scale");
+   var dim=inv.inventoryScreenRoot.Find("DimBackground").GetComponent<RectTransform>();
+   Check(inv.inventoryScreenRoot.parent==inv.canvasRect&&inv.creativeRoot.parent==inv.inventoryScreenRoot&&dim.parent!=inv.creativeRoot,"screen background does not inherit scaled inventory layout");
+   foreach(var rect in new[]{inv.inventoryScreenRoot,dim})
+    Check(rect.anchorMin.x==0&&rect.anchorMin.y==0&&rect.anchorMax.x==1&&rect.anchorMax.y==1&&rect.sizeDelta.x==0&&rect.sizeDelta.y==0&&rect.localScale.x==1&&rect.localScale.y==1&&rect.localPosition.z==0,"screen layer and dimmer stretch at the canvas plane independently of menu scale");
   }
   Check(inv.creativePageSize<131&&inv.nextPage.interactable,"small windows page catalogue while both panes remain visible");
   var seen=new HashSet<ItemType>();int pages=(inv.creativeBlocks.Count+inv.creativePageSize-1)/inv.creativePageSize;

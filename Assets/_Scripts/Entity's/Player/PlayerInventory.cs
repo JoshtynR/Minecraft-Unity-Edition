@@ -30,7 +30,7 @@ public partial class PlayerInventory : MonoBehaviour
         ReleaseChest();
         ReleaseFurnace();
         DisposeInventoryPreview();
-        if (creativeRoot != null) Destroy(creativeRoot.gameObject);
+        if (inventoryScreenRoot != null) Destroy(inventoryScreenRoot.gameObject);
         if(inventoryTextMaterial!=null)Destroy(inventoryTextMaterial);
         if(inventoryLabelMaterial!=null)Destroy(inventoryLabelMaterial);
         if(containerLabelMaterial!=null)Destroy(containerLabelMaterial);
@@ -67,6 +67,7 @@ public partial class PlayerInventory : MonoBehaviour
         for(int i=0;i<4;i++){RefreshSlotDurability(36+i);RefreshSlotDurability(41+i);}
         craftedOutput.type=ItemType.Nothing;RefreshCraftingOutput();
         creativeRoot.gameObject.SetActive(false);
+        inventoryScreenRoot.gameObject.SetActive(false);
     }
 
     private void Update()
@@ -101,6 +102,7 @@ public partial class PlayerInventory : MonoBehaviour
         if(DropRequestPending)return;
         isOpen = true;
         creativeRoot.gameObject.SetActive(true);
+        inventoryScreenRoot.gameObject.SetActive(true);
         HideSlotHover();
         UpdateInventoryLayout();
         RefreshCraftingOutput();
@@ -119,6 +121,7 @@ public partial class PlayerInventory : MonoBehaviour
         HideSlotHover();
         isOpen = false;
         creativeRoot.gameObject.SetActive(false);
+        inventoryScreenRoot.gameObject.SetActive(false);
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
