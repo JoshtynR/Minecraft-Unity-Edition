@@ -43,13 +43,15 @@ public partial class World
             if (chunksToUpdate.Count == 0) return;
         }
         var chunks = new List<ChunkRenderer>();
+        PrepareRebuildPriority();
         lock (chunkUpdateThreadLock)
         {
             int count = Math.Min(chunksToUpdate.Count, Math.Max(1, (int)chunksPerFrame));
             for (int i = 0; i < count; i++)
             {
-                var chunk = chunksToUpdate[0];
-                chunksToUpdate.RemoveAt(0);
+                int selected = SelectNextRebuild();
+                var chunk = chunksToUpdate[selected];
+                chunksToUpdate.RemoveAt(selected);
                 queuedChunks.Remove(chunk);
                 if (IsLiveChunk(chunk))
                     chunks.Add(chunk);
