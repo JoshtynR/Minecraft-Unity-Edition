@@ -12,7 +12,7 @@ with tempfile.TemporaryDirectory() as folder:
     subprocess.run([a.mono,str(binary)],check=True)
 hostiles=(root/'Assets/_Scripts/World/World_HostileMobs.cs').read_text()
 spawning=(root/'Assets/_Scripts/World/World_MobSpawning.cs').read_text()
-assert 'mobRandom.NextInt(32),mobRandom.NextInt(8)' in spawning
+assert 'GetSkyLight()>mobRandom.NextInt(32)' in spawning and 'skyLightReduction,mobRandom.NextInt(8)' in spawning
 assert 'for(int group=0;group<3' in spawning and 'attempt<4' in spawning
 assert 'for(int x=-8;x<=8;x++)' in spawning and 'CategoryCap' in spawning
 assert 'mobRandom.NextInt(hostile?50:40)' in spawning and 'speciesRoll>=40' in spawning

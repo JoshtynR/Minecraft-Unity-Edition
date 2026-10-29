@@ -16,6 +16,7 @@ class Check {
   Assert(!HostileSpawnRules.Allows(12,0,15,7),"torches remain spawn-proof at night");
   Assert(!HostileSpawnRules.SurfaceEligible(7)&&HostileSpawnRules.SurfaceEligible(8),"surface attempts begin exactly when reduced skylight reaches the hostile range");
   Assert(HostileSpawnRules.CategoryCap(70,289)==79&&HostileSpawnRules.CategoryCap(15,289)==16,"category caps scale by unique eligible chunks like SpawnerAnimals");
+  Assert(HostileSpawnRules.PassiveAllows(0,15)&&HostileSpawnRules.PassiveAllows(9,0)&&!HostileSpawnRules.PassiveAllows(8,8),"animals use full saved light with the strict greater-than-eight threshold");
   foreach(MobType type in Enum.GetValues(typeof(MobType)))Assert(MobDefinitions.Get(type).Type==type&&MobBrains.Get(type)!=null,"every registered species has a definition and brain");
   Assert(MobDefinitions.SelectSpawn(false,0)==MobType.Sheep&&MobDefinitions.SelectSpawn(false,12)==MobType.Pig&&MobDefinitions.SelectSpawn(false,22)==MobType.Chicken&&MobDefinitions.SelectSpawn(false,32)==MobType.Cow,"passive spawn selection follows classic list order and weights");
   Assert(MobDefinitions.SelectSpawn(true,0)==MobType.Spider&&MobDefinitions.SelectSpawn(true,10)==MobType.Zombie&&MobDefinitions.SelectSpawn(true,20)==MobType.Skeleton&&MobDefinitions.SelectSpawn(true,30)==MobType.Creeper,"hostile selection follows the Beta biome list order");
@@ -55,6 +56,13 @@ class Check {
   world=new World{blocked=true};Target(world,6);world.Step(Mob(world,MobType.Skeleton));Assert(world.ArrowCount==0,"skeleton does not shoot through cover");
   var invulnerable=new Player();invulnerable.health=20;Assert(invulnerable.ApplyMobDamage(2,Vector3.up)&&!invulnerable.ApplyMobDamage(2,Vector3.up)&&invulnerable.health==18,"player hurt window protects from simultaneous mob damage");
 #if FULL_MOB_SYSTEM
+  var spawnRulesWorld=new World();spawnRulesWorld.skyLightReduction=11;
+  Assert(spawnRulesWorld.SpecificSpawnForCheck(MobType.Cow,new Vector3(.5f,64,.5f)),"production passive spawning still accepts grass under open sky at night");
+  spawnRulesWorld.cells[new Vector3Int(0,64,0)]=new Block{type=BlockType.Air,sky=8};
+  Assert(!spawnRulesWorld.SpecificSpawnForCheck(MobType.Cow,new Vector3(.5f,64,.5f)),"production passive spawning rejects full light eight");
+  spawnRulesWorld=new World();Mob(spawnRulesWorld,MobType.Cow);
+  Assert(!spawnRulesWorld.SpawnClearForCheck(MobType.Chicken,new Vector3(.1f,64,.1f)),"spawn broad phase still rejects intersecting animals");
+  Assert(spawnRulesWorld.SpawnClearForCheck(MobType.Cow,new Vector3(8,64,0)),"spawn broad phase ignores distant nonintersecting saved mobs");
   world=new World();Target(world,0);Assert(world.SpawnHostilesForCheck()>0,"night spawning samples the full-height chunk column and finds surface air");
   foreach(var hostile in world.mobs.Entities)Assert(hostile.position.y==64,"bounded nighttime spawning reserves attempts for the exposed surface");
   world=new World{water=true};Assert(!world.SpawnMobNear(Vector3.zero,MobType.Zombie),"natural mob spawning rejects bodies intersecting water");

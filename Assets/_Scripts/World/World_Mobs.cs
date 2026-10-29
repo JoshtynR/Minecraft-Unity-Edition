@@ -145,11 +145,22 @@ public partial class World
         }
         return distance;
     }
+    [System.NonSerialized] private MobState runtimeSpawnProbe;
     private bool MobSpawnClear(Vector3 position,MobType species)
     {
-        var candidate=new MobState{species=species,position=position};
+        // Main-thread-only scratch state; never enters the store or network.
+        var candidate=runtimeSpawnProbe??(runtimeSpawnProbe=new MobState());
+        candidate.species=species;candidate.position=position;
         if(!MobSpawnable(candidate,position))return false;
-        foreach(var other in mobs.Entities)if(MobRules.Bounds(other).Intersects(MobRules.Bounds(candidate)))return false;
+        var bounds=MobRules.Bounds(candidate);
+        foreach(var other in mobs.Entities)
+        {
+            // All registered species are smaller than two blocks on each
+            // axis. Reject distant saved mobs before species/bounds work.
+            var delta=other.position-position;
+            if(Mathf.Abs(delta.x)>2||Mathf.Abs(delta.z)>2||Mathf.Abs(delta.y)>2)continue;
+            if(MobRules.Bounds(other).Intersects(bounds))return false;
+        }
         return true;
     }
     private bool FindMobGround(int x,int z,bool grass,MobType species,out Vector3 feet)
@@ -164,7 +175,7 @@ public partial class World
             feet = new Vector3(x+.5f,y+1,z+.5f);
             if (!MobSpawnClear(feet,species)) return false;
             var light = GetBlock(Vector3Int.FloorToInt(feet));
-            return !grass || Mathf.Max(light.GetBlockLight(),light.GetSkyLight()-skyLightReduction) > 8;
+            return !grass || HostileSpawnRules.PassiveAllows(light.GetBlockLight(),light.GetSkyLight());
         }
         return false;
     }
