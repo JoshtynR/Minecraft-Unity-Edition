@@ -81,6 +81,14 @@ public partial class PlayerInventory
         world.SpawnItemDrop(new InventoryStack(ItemType.Stone,1),(Vector3)cactusCell+new Vector3(.5f,.1f,.5f),Vector3.zero,0);world.StepDrops(.05f);
         Check(world.droppedItems.Count==0,"cactus contact destroys a thrown item immediately");world.blocks.Remove(cactusCell);
         var player=inv.GetComponent<Player>();player.transform.position=Vector3.zero;
+        player.networkStarted=true;Mirror.NetworkClient.active=true;Mirror.NetworkClient.ready=false;
+        player.DropAction(true,0);
+        Check(!inv.DropRequestPending&&world.droppedItems.Count==0,"NotReady drop requests do not send commands or lock inventory");
+        inv.SetCursor(new InventoryStack(ItemType.Stone,2));player.RequestInventoryCursorDrop(false);
+        Check(!inv.DropRequestPending&&inv.pickedUpSlot.count==2,"NotReady cursor drops preserve the held stack without locking inventory");
+        inv.SetCursor(new InventoryStack());player.networkStarted=false;Mirror.NetworkClient.active=false;Mirror.NetworkClient.ready=true;
+        WorldLoadingScreen.IsLoading=true;player.DropAction(true,0);
+        Check(!inv.DropRequestPending,"loading screen blocks transfers even before network startup");WorldLoadingScreen.IsLoading=false;
         inv.AddItem(ItemType.DiamondPickaxe,1,damage:67);player.DropAction(true,0);
         Check(inv.slots[0].count==0&&!inv.DropRequestPending&&world.droppedItems.Count==1,"Q atomically moves one selected item into the world");
         item=world.droppedItems.Items.Single();Check(item.pickupDelay==40&&item.stack.damage==67,"thrown items preserve durability and forty-tick delay");

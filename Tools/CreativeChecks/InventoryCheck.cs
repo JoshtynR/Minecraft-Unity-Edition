@@ -185,10 +185,10 @@ public partial class Player:MonoBehaviour
 }
 public class GameManager {public static GameManager Instance;public Player localPlayer;}
 public static class PlayerSurvivalHUD {public static int attaches;public static void EnsureOn(Transform parent){attaches++;}}
-public class Block {public int sky=15,light;public Vector3Int globalWorldPosition;public BlockType type;public object blockShape;public Block(BlockType type,Vector3Int p,object section){this.type=type;globalWorldPosition=p;}public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
+public class Block {public BlockDefinition BlockData=new BlockDefinition();public int sky=15,light;public Vector3Int globalWorldPosition;public BlockType type;public object blockShape;public Block(BlockType type,Vector3Int p,object section){this.type=type;globalWorldPosition=p;}public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
 public static class BlockMapping {public static Block MapTypeToBlock(BlockType t,Block b)=>b;}
 public class TextureData {public Texture2D top,bottom,side,front,back,left,right;}
-public class BlockDefinition {public Color albedoTint;public TextureData textureData=new TextureData();}
+public class BlockDefinition {public byte opacity;public Color albedoTint;public TextureData textureData=new TextureData();}
 public static class BlockDataManager {public static BlockDefinition[] blockTypeDataDictionary=new BlockDefinition[133];}
 public static class BlockShapesExtensions {public static bool IsPlant(BlockType t)=>false;}
 public static class SpecialBlockGeometry {public static object Shape(BlockType t,byte s)=>s;public static bool FlatShading(BlockType t)=>false;public static bool NormalCube(BlockType type)=>type==BlockType.Stone;public static byte State(BlockType type,object shape)=>shape is byte?(byte)shape:WheatCropRules.IsCrop(type)?WheatCropRules.LegacyAge(type):type==BlockType.MoistFarmland?(byte)7:(byte)2;}

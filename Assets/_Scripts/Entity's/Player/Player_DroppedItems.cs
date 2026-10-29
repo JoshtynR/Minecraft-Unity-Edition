@@ -12,12 +12,15 @@ public partial class Player
     private InventoryStack lastServerCursorReply;
     private bool lastServerCursorAccepted;
 
+    private bool CanRequestItemTransfer => !dimensionTransfer&&!WorldLoadingScreen.IsLoading&&
+        (!networkStarted||(NetworkClient.active&&NetworkClient.ready));
+
     private void UpdateItemDrops()
     {
         if(inventory==null)return;
         if(inventory.DropRequestPending&&awaitingNetworkDrop&&!NetworkClient.active)
         {inventory.DropRequestPending=false;awaitingNetworkDrop=false;return;}
-        if(world==null||!world.IsWorldCreated||health<=0||inventory.isOpen||escapeMenuOpen||inventory.DropRequestPending)return;
+        if(!CanRequestItemTransfer||world==null||!world.IsWorldCreated||health<=0||inventory.isOpen||escapeMenuOpen||inventory.DropRequestPending)return;
         if(Input.GetKeyDown(KeyCode.Q))
         {RequestDropAction(true,inventory.selectedSlotIndex);return;}
         if(Time.unscaledTime<nextDropPickup)return;
@@ -32,6 +35,9 @@ public partial class Player
     }
     private void RequestDropAction(bool dropping,int id)
     {
+        // Do not lock the inventory for a command Mirror cannot send. Pickups
+        // are retried by the normal scan after readiness has been restored.
+        if(inventory==null||inventory.DropRequestPending||!CanRequestItemTransfer)return;
         inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted;
         int request=++dropRequestId;
         var snapshot=inventory.DropInventorySnapshot();
@@ -86,7 +92,7 @@ public partial class Player
 
     public void RequestInventoryCursorDrop(bool single)
     {
-        if(inventory==null||inventory.DropRequestPending||inventory.CursorSnapshot().Empty)return;
+        if(inventory==null||inventory.DropRequestPending||!CanRequestItemTransfer||inventory.CursorSnapshot().Empty)return;
         inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted;
         int request=++cursorDropRequestId;
         var snapshot=inventory.DropInventorySnapshot();var cursor=inventory.CursorSnapshot();
