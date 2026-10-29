@@ -58,6 +58,20 @@ public static partial class ShapeCheck
   var closedTrap=SpecialBlockGeometry.Selection(BlockType.Trapdoor,2);var openTrap=SpecialBlockGeometry.Selection(BlockType.Trapdoor,6);
   Check(closedTrap.yMax==3&&openTrap.xMin==13&&openTrap.yMax==16,"trapdoor switches from a three-pixel floor plate to its attached wall");
   Check(SpecialBlockGeometry.TryUse(BlockType.Trapdoor,2,out next)&&next==6,"trapdoor interaction toggles its open metadata bit");
+  Check(SpecialBlockGeometry.Selection(BlockType.Trapdoor,10).yMin==13,"upper trapdoor closes flush with the cell ceiling");
+  Check(SpecialBlockGeometry.TryUse(BlockType.Trapdoor,10,out next)&&next==14&&SpecialBlockGeometry.Selection(BlockType.Trapdoor,next).yMin==0,"upper trapdoor opens downward and preserves its mounting bit");
+  for(byte orientation=0;orientation<4;orientation++)
+  {
+   byte initial=orientation;
+   var offset=orientation==0?Vector3Int.forward:orientation==1?Vector3Int.left:orientation==2?Vector3Int.back:Vector3Int.right;
+   foreach(int sign in new[]{-1,1})
+   {
+    var neighbor=doorOrigin+new Vector3Int(offset.x*sign,0,offset.z*sign);
+    Func<Vector3Int,BlockType> adjacent=p=>p.Equals(neighbor)?BlockType.WoodenDoor:BlockType.Air;
+    byte paired=SpecialBlockGeometry.DoorPlacement(BlockType.WoodenDoor,initial,doorOrigin,adjacent,p=>initial);
+    Check((paired&4)!=0&&(paired&3)==((initial-1)&3),"double door selects opposite hinge on either side in all directions");
+   }
+  }
   Check(GrassSpreadRules.ShouldDecay(3,15)&&!GrassSpreadRules.ShouldDecay(4,15)&&!GrassSpreadRules.ShouldDecay(3,1),"grass decay requires both darkness and an opaque cover");
   Check(GrassSpreadRules.CanSpreadFrom(9)&&!GrassSpreadRules.CanSpreadFrom(8),"grass spread uses the Beta source-light threshold");
   Check(GrassSpreadRules.CanBecomeGrass(BlockType.Dirt,4,1)&&GrassSpreadRules.CanBecomeGrass(BlockType.Dirt,15,0),"dirt under leaves or air can become grass");

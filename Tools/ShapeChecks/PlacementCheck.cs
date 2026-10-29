@@ -27,6 +27,7 @@ public partial class Player
  public class Objects {public Transform body=new Transform();}
  public Objects objects=new Objects();public Transform transform=new Transform(),cam=new Transform();public World world=new World();public Inventory inventory=new Inventory();public bool networkStarted,isCrouching;public float reach=5,entityWidth=.3f,entityHeight=1.8f;public Vector3Int aimed,placement;
  private object TargetedMob()=>null;
+ public Vector3 targetHitPoint;
  private bool TryUseNetherBed(Block block)=>false;
  private bool TryUseBed(Block block)=>false;
  private bool TryUseFarming(Block block,Vector3Int adjacent)=>false;
@@ -84,7 +85,8 @@ public static class PlacementCheck
   var hatch=new Player{aimed=new Vector3Int(5,2,5),placement=new Vector3Int(4,2,5)};hatch.transform.position=new Vector3(20,20,20);
   hatch.world.SetBlock(hatch.aimed,BlockType.Stone);hatch.inventory.slots[0].type=ItemType.Trapdoor;
   Check(hatch.PlaceBlock()&&SpecialBlockGeometry.State(BlockType.Trapdoor,hatch.world.GetBlock(hatch.placement).blockShape)==2,"trapdoor records and validates its supporting wall");
-  hatch.placement=new Vector3Int(5,3,5);Check(!hatch.PlaceBlock()&&hatch.inventory.slots[0].count==63,"trapdoor rejects top and bottom faces");
+  hatch.placement=new Vector3Int(5,3,5);Check(hatch.PlaceBlock()&&hatch.inventory.slots[0].count==62,"trapdoor accepts a supported top face");
+  hatch.placement=new Vector3Int(5,1,5);Check(hatch.PlaceBlock()&&(SpecialBlockGeometry.State(BlockType.Trapdoor,hatch.world.GetBlock(hatch.placement).blockShape)&8)!=0,"trapdoor underside placement creates an upper-mounted hatch");
   var material=new Player();material.inventory.slots[0].type=ItemType.Coal;
   Check(!material.PlaceBlock()&&material.inventory.slots[0].count==64,"standalone item cannot be interpreted as a world block");
   material.inventory.slots[0].type=ItemType.Stone;material.inventory.slots[0].count=0;
