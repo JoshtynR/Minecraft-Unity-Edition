@@ -29,6 +29,7 @@ static class StartupCheck
  static void End(MusicManager music){music.StopAll();UnityEngine.Object.Destroy(music.gameObject);Check(MusicManager.Instance==null,"destroyed singleton is released");}
  static void MusicChecks()
  {
+  PlayerPrefs.SetFloat("musicVolume",25);var savedMusic=Music();Check(Math.Abs(savedMusic.volume-.25f)<.001&&Math.Abs(Active(savedMusic).volume-.25f)<.001,"saved music slider applies before playback starts");End(savedMusic);PlayerPrefs.SetFloat("musicVolume",100);
   var music=Music();Check(music.CurrentIndex==0&&music.IsPlaying,"ordered playlist starts at first clip");
   // This reproduces the old failure: outgoing track ends before Update, while fades are enabled.
   Active(music).Stop();Tick(music,1);
