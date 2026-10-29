@@ -31,6 +31,17 @@ public static partial class LightingCheck
             block.BlockData.lightEmission=15;
             var glow=new MeshData(false);BlockHelper.GetFaceDataIn(direction,p,glow,block,block.BlockData,chunk);
             for(int i=0;i<4;i++)Check(glow.blockLight[i]==15&&glow.sides[i].x==1,"emitting faces remain bright without corner AO");
+            block.BlockData.lightEmission=0;
+            block.type=BlockType.Water;
+            var fluid=new MeshData(false);
+            fluid.vertices.AddRange(mesh.vertices);
+            BlockHelper.GetFaceLightingAndAO(direction,p,fluid,chunk);
+            var front=chunk.GetBlock(direction==Direction.up?p:p+normal);
+            for(int i=0;i<4;i++)
+            {
+                Check(fluid.skyLight[i]==front.sky&&fluid.blockLight[i]==front.light,"liquids retain flat face light beside occluders");
+                Check(fluid.sides[i].x==1,"liquid lighting never includes corner AO");
+            }
         }
     }
 }
