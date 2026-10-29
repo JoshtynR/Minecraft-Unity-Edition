@@ -11,9 +11,9 @@ public partial class Player
     {
         if(inventory.DropRequestPending)return;
         int request=++dropRequestId;
-        inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted;
+        inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted&&!isServer;
         var snapshot=inventory.DropInventorySnapshot();
-        if(networkStarted)CmdWearItemOnHit(request,target,inventory.selectedSlotIndex,snapshot,knownItemWearRevision);
+        if(networkStarted&&!isServer)CmdWearItemOnHit(request,target,inventory.selectedSlotIndex,snapshot,knownItemWearRevision);
         else ProcessItemHitWear(request,target,inventory.selectedSlotIndex,snapshot,false,knownItemWearRevision);
     }
     [Command] private void CmdWearItemOnHit(int request,Player target,int slot,InventoryStack[] snapshot,int revision)
@@ -35,7 +35,7 @@ public partial class Player
                 int damage=MobRules.AttackDamage(snapshot[slot].type);
                 target.health=Mathf.Max(0,target.health-damage);
                 var push=target.transform.position-transform.position+Vector3.up;
-                if(network)target.RpcAddForce(target.connectionToClient,push,6);
+                if(networkStarted&&!(target.isServer&&target.isLocalPlayer))target.RpcAddForce(target.connectionToClient,push,6);
                 else target.AddForce(push,6);
                 GameAudio.Broadcast("damage/hit",target.transform.position,1,1,world);
                 // A validated hit ends the mining session before changing its tool.

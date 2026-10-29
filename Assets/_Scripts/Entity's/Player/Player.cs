@@ -201,6 +201,9 @@ public partial class Player : BaseEntity
 
     [ClientRpc]
     public void RpcUpdatePlayerNamePlateHidden(bool hidden)
+    {ApplyPlayerNamePlateHidden(hidden);}
+
+    private void ApplyPlayerNamePlateHidden(bool hidden)
     {
         if (hidden)
         {
@@ -286,7 +289,11 @@ public partial class Player : BaseEntity
         {
             pos+=Vector3Int.down;next=(byte)(next&7);
         }
-        if(networkStarted)NetworkClient.Send(new WorldServer.SetBlockMessage(pos,block.type,next));
+        if(networkStarted&&isServer&&isLocalPlayer)
+        {
+            if(WorldServer.instance!=null)WorldServer.instance.TryApplyBlockMessage(this,new WorldServer.SetBlockMessage(pos,block.type,next));
+        }
+        else if(networkStarted)NetworkClient.Send(new WorldServer.SetBlockMessage(pos,block.type,next));
         else {world.SetBlock(pos,block.type,next);GameAudio.Play(BlockSoundRules.Use(block.type,next),(Vector3)pos+Vector3.one*.5f,.7f);}
         return true;
     }
@@ -716,13 +723,15 @@ public partial class Player : BaseEntity
             {
                 isSprinting = false;
             }
-            if(NetworkClient.active&&NetworkClient.ready)CmdSetPlayerNamePlateHide(true);
+            if(isServer&&isLocalPlayer){ApplyPlayerNamePlateHidden(true);RpcUpdatePlayerNamePlateHidden(true);}
+            else if(NetworkClient.active&&NetworkClient.ready)CmdSetPlayerNamePlateHide(true);
         }
 
         if (Input.GetButtonUp("Crouch"))
         {
             isCrouching = false;
-            if(NetworkClient.active&&NetworkClient.ready)CmdSetPlayerNamePlateHide(false);
+            if(isServer&&isLocalPlayer){ApplyPlayerNamePlateHidden(false);RpcUpdatePlayerNamePlateHidden(false);}
+            else if(NetworkClient.active&&NetworkClient.ready)CmdSetPlayerNamePlateHide(false);
         }
 
         if (Input.GetKeyDown(KeyCode.B))

@@ -3,6 +3,7 @@ using System.Collections;
 
 namespace Mirror
 {
+    public static class NetworkServer {public static bool active;}
     public static class NetworkClient
     {
         public static bool active,ready,isConnected,isLoadingScene;
@@ -16,6 +17,7 @@ public static class PlayerIdentity
 }
 public partial class Player
 {
+    public string PlayerName;public ulong SteamId;
     public bool isLocalPlayer=true;
     public uint netId=1;
     public int sent;
@@ -58,6 +60,9 @@ public partial class Player
         Check(!routine.MoveNext()&&player.sent==0,"disconnect cancels pending publication");
         Connect();player=new Player();routine=player.PublishPlayerIdentityWhenReady();routine.MoveNext();player.isLocalPlayer=false;
         Check(!routine.MoveNext()&&player.sent==0,"loss of local ownership cancels publication");
-        Console.WriteLine("11 player-identity startup/readiness checks passed (Mirror mocked).");
+        Connect();Mirror.NetworkServer.active=true;player=new Player();routine=player.PublishPlayerIdentityWhenReady();
+        Check(!routine.MoveNext()&&player.sent==0&&player.PlayerName==PlayerIdentity.DisplayName&&player.SteamId==PlayerIdentity.Id,"host identity is applied directly while NotReady");
+        Mirror.NetworkServer.active=false;
+        Console.WriteLine("12 player-identity startup/readiness checks passed (Mirror mocked).");
     }
 }

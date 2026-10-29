@@ -10,7 +10,7 @@ public partial class Player
         int request = ++dropRequestId;
         inventory.DropRequestPending = true; awaitingNetworkDrop = networkStarted;
         var snapshot = inventory.DropInventorySnapshot();
-        if (networkStarted) CmdUseFarmItem(request, block.globalWorldPosition, adjacent, inventory.selectedSlotIndex, snapshot, knownItemWearRevision);
+        if (networkStarted && !isServer) CmdUseFarmItem(request, block.globalWorldPosition, adjacent, inventory.selectedSlotIndex, snapshot, knownItemWearRevision);
         else ProcessFarmItem(request, block.globalWorldPosition, adjacent, inventory.selectedSlotIndex, snapshot, false, knownItemWearRevision);
         return true;
     }

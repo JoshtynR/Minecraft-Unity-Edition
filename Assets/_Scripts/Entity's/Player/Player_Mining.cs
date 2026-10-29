@@ -179,7 +179,8 @@ public partial class Player
             {
                 inventory.ApplyItemWear(serverMineSlot,serverMineItem,wear);
                 if(wear>0&&ItemDurability.Maximum(serverMineItem.type)>0)serverItemWearRevision++;
-                TargetMiningCompleted(connectionToClient,serverMineSlot,serverMineItem,wear,serverItemWearRevision);
+                if(isServer&&isLocalPlayer)ReceiveMiningCompleted(serverMineSlot,serverMineItem,wear,serverItemWearRevision);
+                else TargetMiningCompleted(connectionToClient,serverMineSlot,serverMineItem,wear,serverItemWearRevision);
             }
             else ReceiveMiningCompleted(serverMineSlot,serverMineItem,wear,knownItemWearRevision+1);
         }
