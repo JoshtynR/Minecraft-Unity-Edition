@@ -33,3 +33,8 @@ with tempfile.TemporaryDirectory() as temp:
                     str(root/'Tools/Shared/UnityVectors.cs'),
                     str(root/'Tools/ChunkRenderingChecks/SectionCheck.cs')],check=True)
     subprocess.run([args.mono,str(temp/'sections.exe')],check=True)
+    subprocess.run([args.mcs,'-langversion:latest','-out:'+str(temp/'packed.exe'),
+                    str(root/'Assets/_Scripts/World/Rendering/PackedChunkVertex.cs'),
+                    str(root/'Tools/Shared/UnityVectors.cs'),
+                    str(root/'Tools/ChunkRenderingChecks/PackedCheck.cs')],check=True)
+    subprocess.run([args.mono,str(temp/'packed.exe')],check=True)

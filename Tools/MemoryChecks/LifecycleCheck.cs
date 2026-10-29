@@ -173,3 +173,5 @@ public static class LifecycleCheck
 }
 
 public enum WorldDimension { Nether=-1,Overworld=0 }
+
+public static class PackedChunkVertex {public static void Upload(UnityEngine.Mesh mesh,MeshData data){mesh.SetVertices(data.vertices);mesh.SetUVs(0,data.uv);mesh.SetUVs(1,data.lightingUVs);mesh.SetUVs(2,data.sides);mesh.SetUVs(3,data.smoothLightCorners);mesh.SetUVs(4,data.faceCoordinates);mesh.SetColors(data.colors);mesh.SetNormals(data.normals);}}
