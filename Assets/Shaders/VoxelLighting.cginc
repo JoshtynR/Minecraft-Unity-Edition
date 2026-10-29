@@ -50,8 +50,7 @@
                 // amount so directional face shading and special-model shading
                 // remain independent material controls.
                 float ao=1;
-                if(v.sides.z>4.5)ao=v.sides.x;
-                else if(v.sides.z>3.5&&_AOOn>.5)
+                if(v.sides.z>3.5&&v.sides.z<4.5&&_AOOn>.5)
                     ao=saturate(lerp(1,v.sides.x,max(0,_AOIntensity)));
                 o.skyBlock=levels;o.ao=ao;
                 float3 normal = UnityObjectToWorldNormal(v.normal);
@@ -59,6 +58,10 @@
                 float shade = an.y >= an.x && an.y >= an.z ? (normal.y >= 0 ? _ShadeUp : _ShadeDown)
                     : (an.z >= an.x ? _ShadeSideNS : _ShadeSideEW);
                 o.faceShade = _FaceShadeOn > 0.5 && (v.sides.z < 2.5||v.sides.z>3.5&&v.sides.z<4.5) ? shade : 1;
+                // Special models carry their authored directional shade in x.
+                // It is face shading, not AO: respect the same toggle and keep
+                // it even when inventory icons disable world-light sampling.
+                if(v.sides.z>4.5)o.faceShade=_FaceShadeOn>.5?v.sides.x:1;
                 return o;
             }
             float4 frag(v2f i) : SV_Target

@@ -269,10 +269,12 @@ public static class BlockHelper
         int emission=block.BlockData.lightEmission;
         var flat=SampleLightLevels(chunk,front,emission);
         bool ao=!liquid&&emission==0;
-        var c00=SampleLightCorner(chunk,front,axisA,axisB,-1,-1,emission,flat);
-        var c01=SampleLightCorner(chunk,front,axisA,axisB,-1,1,emission,flat);
-        var c11=SampleLightCorner(chunk,front,axisA,axisB,1,1,emission,flat);
-        var c10=SampleLightCorner(chunk,front,axisA,axisB,1,-1,emission,flat);
+        // Liquids and emitting faces use flat light, not corner AO. Avoid
+        // resolving twelve unused neighboring samples for every such face.
+        var c00=ao?SampleLightCorner(chunk,front,axisA,axisB,-1,-1,emission,flat):flat;
+        var c01=ao?SampleLightCorner(chunk,front,axisA,axisB,-1,1,emission,flat):flat;
+        var c11=ao?SampleLightCorner(chunk,front,axisA,axisB,1,1,emission,flat):flat;
+        var c10=ao?SampleLightCorner(chunk,front,axisA,axisB,1,-1,emission,flat):flat;
         int first=meshData.vertices.Count-4;
         for(int i=0;i<4;i++)
         {
