@@ -168,6 +168,7 @@ public static class BlockHelper
                 face.SetFaceVertices(dir, pos, meshData);
                 if (chunk != null) GetFaceLightingAndAO(dir, pos, meshData, chunk, face);
                 meshData.AddQuadTriangles();
+                meshData.SetLastQuadNormals();
                 meshData.AddFaceUVs(blockTypeData.textureData.FaceIndex(block.type, dir), face.FaceUVTransform(dir));
                 meshData.AddQuadColor(blockTypeData.albedoTint);
             }
@@ -179,6 +180,7 @@ public static class BlockHelper
         if (chunk != null)
             GetFaceLightingAndAO(dir, pos, meshData, chunk);
         meshData.AddQuadTriangles();
+        meshData.SetLastQuadNormals();
         var shape = block.blockShape.GetShape();
         if ((block.type == BlockType.Water || block.type == BlockType.Lava) && chunk != null)
             AddFluidUVs(dir, pos, meshData, chunk, blockTypeData.textureData);
@@ -199,7 +201,7 @@ public static class BlockHelper
                 meshData.AddVertex(new Vector3(v.x+n.x*.0001f,v.y+n.y*.0001f,v.z+n.z*.0001f));
             }
             if(chunk!=null)GetFaceLightingAndAO(dir,pos,meshData,chunk);
-            meshData.AddQuadTriangles();meshData.AddFaceUVs(overlay);
+            meshData.AddQuadTriangles();meshData.SetLastQuadNormals();meshData.AddFaceUVs(overlay);
             meshData.AddQuadColor(BiomeBlockColors.ForFace(block.type, dir, chunk, pos, blockTypeData.albedoTint, true));
         }
 

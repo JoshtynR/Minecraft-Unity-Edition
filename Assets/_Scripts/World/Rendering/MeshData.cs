@@ -34,6 +34,34 @@ public class MeshData
     private bool prepared;
     public readonly List<Vector2> lightingUVs = new List<Vector2>();
     public readonly List<Vector3> normals = new List<Vector3>();
+    private readonly List<bool> directNormals = new List<bool>();
+
+    // Called only after a face's final vertex positions have been established.
+    public void SetLastQuadNormals()
+    {
+        while(normals.Count<vertices.Count)normals.Add(new Vector3());
+        while(directNormals.Count<vertices.Count)directNormals.Add(false);
+        int first=vertices.Count-4;
+        var a=TriangleNormal(first,first+1,first+2);
+        var b=TriangleNormal(first,first+2,first+3);
+        var shared=Normalize(new Vector3(a.x+b.x,a.y+b.y,a.z+b.z));
+        normals[first]=shared;normals[first+1]=Normalize(a);
+        normals[first+2]=shared;normals[first+3]=Normalize(b);
+        for(int i=first;i<first+4;i++)directNormals[i]=true;
+    }
+
+    private static Vector3 Normalize(Vector3 n)
+    {
+        double length=System.Math.Sqrt((double)n.x*n.x+(double)n.y*n.y+(double)n.z*n.z);
+        return length>0?new Vector3((float)(n.x/length),(float)(n.y/length),(float)(n.z/length)):n;
+    }
+
+    private Vector3 TriangleNormal(int a,int b,int c)
+    {
+        var p=vertices[a];var q=vertices[b];var r=vertices[c];
+        float ux=q.x-p.x,uy=q.y-p.y,uz=q.z-p.z,vx=r.x-p.x,vy=r.y-p.y,vz=r.z-p.z;
+        return new Vector3(uy*vz-uz*vy,uz*vx-ux*vz,ux*vy-uy*vx);
+    }
     public Vector3 boundsCenter, boundsSize;
 
     // Upload preparation is idempotent: a repeated upload must not duplicate
@@ -54,12 +82,12 @@ public class MeshData
     private void PrepareNormalsAndBounds()
     {
         if (vertices.Count == 0) return;
-        normals.Capacity = vertices.Count;
+        while(normals.Count<vertices.Count)normals.Add(new Vector3());
+        while(directNormals.Count<vertices.Count)directNormals.Add(false);
         var min = vertices[0];
         var max = min;
         foreach (var v in vertices)
         {
-            normals.Add(new Vector3());
             min = new Vector3(System.Math.Min(min.x, v.x), System.Math.Min(min.y, v.y), System.Math.Min(min.z, v.z));
             max = new Vector3(System.Math.Max(max.x, v.x), System.Math.Max(max.y, v.y), System.Math.Max(max.z, v.z));
         }
@@ -69,6 +97,7 @@ public class MeshData
         if (portalMesh != null) AccumulateNormals(portalMesh.triangles);
         for (int i = 0; i < normals.Count; i++)
         {
+            if(directNormals[i])continue;
             var n = normals[i];
             double length = System.Math.Sqrt((double)n.x*n.x + (double)n.y*n.y + (double)n.z*n.z);
             if (length > 0) normals[i] = new Vector3((float)(n.x/length), (float)(n.y/length), (float)(n.z/length));
@@ -82,6 +111,7 @@ public class MeshData
         for (int i = 0; i < indices.Count; i += 3)
         {
             int a=indices[i], b=indices[i+1], c=indices[i+2];
+            if(directNormals[a]&&directNormals[b]&&directNormals[c])continue;
             var p=vertices[a]; var q=vertices[b]; var r=vertices[c];
             float ux=q.x-p.x, uy=q.y-p.y, uz=q.z-p.z;
             float vx=r.x-p.x, vy=r.y-p.y, vz=r.z-p.z;
@@ -92,6 +122,7 @@ public class MeshData
 
     private void AddNormal(int index, Vector3 face)
     {
+        if(directNormals[index])return;
         var current = normals[index];
         normals[index] = new Vector3(current.x+face.x, current.y+face.y, current.z+face.z);
     }
@@ -100,6 +131,11 @@ public class MeshData
     {
         if (part == null) return;
         int offset = vertices.Count;
+        while(normals.Count<offset)normals.Add(new Vector3());
+        while(directNormals.Count<offset)directNormals.Add(false);
+        while(part.normals.Count<part.vertices.Count)part.normals.Add(new Vector3());
+        while(part.directNormals.Count<part.vertices.Count)part.directNormals.Add(false);
+        normals.AddRange(part.normals);directNormals.AddRange(part.directNormals);
         for (int i = 0; i < part.triangles.Count; i++) part.triangles[i] += offset;
         vertices.AddRange(part.vertices);
         uv.AddRange(part.uv);
@@ -178,6 +214,7 @@ public class MeshData
         Release(data.vertices);Release(data.triangles);Release(data.faceCoordinates);Release(data.uv);Release(data.colors);
         Release(data.skyLight);Release(data.blockLight);Release(data.smoothLightCorners);Release(data.sides);
         Release(data.lightingUVs);Release(data.normals);
+        Release(data.directNormals);
     }
 
     private static void Release<T>(List<T> list)

@@ -88,6 +88,17 @@ public static class LifecycleCheck
  static void Invoke(object o,string method){o.GetType().GetMethod(method,BindingFlags.NonPublic|BindingFlags.Instance).Invoke(o,null);}
  public static void Main()
  {
+  foreach(bool sloped in new[]{false,true})
+  {
+   var legacy=new MeshData(true);var direct=new MeshData(true);
+   foreach(var candidate in new[]{legacy,direct})
+   {
+    candidate.vertices.AddRange(new[]{new Vector3(0,0,0),new Vector3(0,1,0),new Vector3(1,1,sloped?.3f:0),new Vector3(1,0,0)});
+    candidate.AddQuadTriangles();
+   }
+   direct.SetLastQuadNormals();legacy.PrepareForRendering();direct.PrepareForRendering();
+   for(int i=0;i<4;i++)Check(Math.Abs(legacy.normals[i].x-direct.normals[i].x)<.00001f&&Math.Abs(legacy.normals[i].y-direct.normals[i].y)<.00001f&&Math.Abs(legacy.normals[i].z-direct.normals[i].z)<.00001f,"direct flat/sloped face normals preserve area-weighted shading");
+  }
   var optionsWorld=new World();
   Check(optionsWorld.OptionsForTest().MaxDegreeOfParallelism<=2,"default workers leave CPU headroom");
   optionsWorld.chunkWorkerThreads=0;Check(optionsWorld.OptionsForTest().MaxDegreeOfParallelism==1,"invalid worker limit clamps to one");
