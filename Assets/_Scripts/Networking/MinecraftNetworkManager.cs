@@ -144,6 +144,14 @@ public class MinecraftNetworkManager : NetworkManager
             bool serverReady=!NetworkServer.active||WorldServer.instance!=null;
             if(NetworkClient.isConnected&&sceneReady&&serverReady)
             {
+                // Our custom terrain/player handshake can run independently
+                // of Mirror's automatic player creation. Finish Ready here,
+                // after scene handlers exist, before requesting any player.
+                if(!NetworkClient.ready)
+                {
+                    if(NetworkClient.connection==null){yield return null;continue;}
+                    if(!NetworkClient.Ready()){yield return null;continue;}
+                }
                 worldRequested=true;
                 WorldLoadingScreen.ReportProgress("Building terrain",.01f);
                 Debug.Log("[WorldStartup] World initialized; requesting terrain from server.");

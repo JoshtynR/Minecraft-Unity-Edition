@@ -509,13 +509,6 @@ public partial class Player : BaseEntity
 
         
         if (!Application.isPlaying || !isLocalPlayer && networkStarted) return;
-        // A local host can be NotReady during scene/dimension transitions too.
-        // Do not issue gameplay Commands until Mirror accepts them again.
-        if (networkStarted && !NetworkClient.ready)
-        {
-            horizontal=vertical=0;isSprinting=false;CancelMining();
-            return;
-        }
         GetPlayerInput();
         UpdateEating();
         if(IsEating){horizontal*=.2f;vertical*=.2f;isSprinting=false;}
@@ -723,13 +716,13 @@ public partial class Player : BaseEntity
             {
                 isSprinting = false;
             }
-            CmdSetPlayerNamePlateHide(true);
+            if(NetworkClient.active&&NetworkClient.ready)CmdSetPlayerNamePlateHide(true);
         }
 
         if (Input.GetButtonUp("Crouch"))
         {
             isCrouching = false;
-            CmdSetPlayerNamePlateHide(false);
+            if(NetworkClient.active&&NetworkClient.ready)CmdSetPlayerNamePlateHide(false);
         }
 
         if (Input.GetKeyDown(KeyCode.B))

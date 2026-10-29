@@ -41,6 +41,11 @@ assert 'WorldSpawnRules.Resolve(world)' in spawn
 assert player.count('if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer))') == 2
 assert 'if (WorldLoadingScreen.IsLoading) return;' in (root / "Assets/_Scripts/Entity's/Player/PlayerInventory.cs").read_text()
 network = (root / 'Assets/_Scripts/Networking/MinecraftNetworkManager.cs').read_text()
+handshake=network[network.index('    private IEnumerator RequestWorldWhenReady()'):network.index('    public override void OnStartServer()')]
+assert handshake.index('NetworkClient.Ready()') < handshake.index('worldRequested=true;')
+assert 'if(NetworkClient.connection==null)' in handshake
+update=player[player.index('        if (!Application.isPlaying || !isLocalPlayer && networkStarted) return;'):player.index('        GetPlayerInput();')]
+assert 'NetworkClient.ready' not in update, 'Network readiness must not freeze local movement'
 assert network.count('WorldLoadingScreen.Begin();') == 3
 assert 'WorldLoadingScreen.Cancel();' in network
 assert 'WorldLoadingScreen.Begin();' in (root / 'Assets/_Scripts/World/World.cs').read_text()
