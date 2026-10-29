@@ -76,7 +76,7 @@ public partial class WorldServer : NetworkBehaviour
             if(message.requestId>0)player.CompletePlacementRequest(conn,message.requestId,accepted);
         }
     }
-    private bool TryApplyBlockMessage(Player player,SetBlockMessage message)
+    public bool TryApplyBlockMessage(Player player,SetBlockMessage message)
     {
         if(player.DimensionTransferInProgress||message.dimension!=player.dimension)return false;
         var world=player.CurrentWorld;

@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 namespace Mirror {public static partial class NetworkClient {public static WorldServer.SetBlockMessage placement;public static void Send(WorldServer.SetBlockMessage value){placement=value;}}}
-public partial class WorldServer {public struct SetBlockMessage {public int requestId;public SetBlockMessage(Vector3Int p,BlockType t,byte state,int request){requestId=request;}}}
+public partial class WorldServer {public bool localPlacementAccepted=true;public bool TryApplyBlockMessage(Player player,SetBlockMessage message)=>localPlacementAccepted;public struct SetBlockMessage {public int requestId;public SetBlockMessage(Vector3Int p,BlockType t,byte state,int request){requestId=request;}}}
 
 // Fluid/collision dependencies have their own production parity suites. Here the
 // ground probe supplies collision results to exercise the real drop update loop.
@@ -70,6 +70,12 @@ public partial class PlayerInventory
         Check(placer.TryReplayPlacement(placementId-1,out replayAccepted)&&!replayAccepted,"server rejects older placement request IDs without applying them");
         Mirror.NetworkClient.ready=false;Check(!placer.PlaceForCheck()&&!placementMenu.DropRequestPending,"NotReady placements never lock or consume inventory");
         Mirror.NetworkClient.ready=true;Mirror.NetworkClient.active=false;placer.networkStarted=false;
+        Mirror.NetworkServer.active=true;Mirror.NetworkClient.ready=false;placer.isLocalPlayer=true;
+        WorldServer.instance=new WorldServer();placementMenu.selectedSlotIndex=0;
+        Check(placer.PlaceForCheck()&&placementMenu.slots[0].count==1&&!placementMenu.DropRequestPending,"host-local placement consumes synchronously while NotReady");
+        WorldServer.instance.localPlacementAccepted=false;
+        Check(!placer.PlaceForCheck()&&placementMenu.slots[0].count==1&&!placementMenu.DropRequestPending,"host-local rejection preserves inventory without a pending reply");
+        WorldServer.instance=null;Mirror.NetworkServer.active=false;Mirror.NetworkClient.ready=true;placer.isLocalPlayer=false;
         Console.WriteLine("PASS: placement acceptance/rejection, original-slot accounting, duplicate replies and readiness guards.");
         var loot=new GameObject("MiningLoot").AddComponent<World>();
         Check(loot.MiningItemDrop(BlockType.Stone,ItemType.DiamondPickaxe).type==ItemType.Cobblestone,"production world resolves tool harvest drops");
