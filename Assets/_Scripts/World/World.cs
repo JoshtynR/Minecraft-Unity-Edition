@@ -319,7 +319,7 @@ public partial class World : MonoBehaviour
             if(previous.type==BlockType.Nothing)continue;
             bool pair = SpecialBlockGeometry.IsDoor(blockType) || blockType == BlockType.Bed;
             if(SpecialBlockGeometry.IsDoor(blockType)&&previousType!=blockType&&(stairFacing&8)==0&&
-                BlockSurvivalRules.CanReplace(previousType,blockType)&&pos.y+1<worldHeight&&GetBlock(pos+Vector3Int.up).type==BlockType.Air)
+                BlockSurvivalRules.CanReplace(previousType,blockType)&&pos.y+1<worldHeight&&BlockSurvivalRules.Replaceable(GetBlock(pos+Vector3Int.up).type))
             {
                 // Placing the right-hand door must also move the existing
                 // left door's hinge to its outside edge, not into the seam.
@@ -347,7 +347,7 @@ public partial class World : MonoBehaviour
                 var partner = GetBlock(partnerPos);
                 bool updating = previous.type == blockType && partner != null && partner.type == blockType;
                 if (partnerPos.y < 0 || partnerPos.y >= worldHeight || partner == null ||
-                    (!updating && (partner.type != BlockType.Air || !BlockSurvivalRules.CanReplace(previous.type,blockType)))) continue;
+                    (!updating && (!BlockSurvivalRules.Replaceable(partner.type) || !BlockSurvivalRules.CanReplace(previous.type,blockType)))) continue;
                 WorldDataHelper.SetBlock(this, partnerPos, blockType);
                 var partnerBlock = GetBlock(partnerPos);
                 partnerBlock.blockShape = SpecialBlockGeometry.Shape(blockType, (byte)(stairFacing|8));

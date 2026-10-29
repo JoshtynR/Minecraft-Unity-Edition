@@ -47,7 +47,7 @@ public static class BlockSurvivalRules
         if (SpecialBlockGeometry.IsDoor(type) || type == BlockType.Bed)
         {
             var partner = position + SpecialBlockGeometry.PartnerOffset(type, state);
-            if (get(partner) != BlockType.Air) return false;
+            if (!Replaceable(get(partner))) return false;
             if (!SupportedBelow(position, get)) return false;
             if (type == BlockType.Bed && !SupportedBelow(partner, get)) return false;
             return true;
@@ -58,11 +58,25 @@ public static class BlockSurvivalRules
 
     public static bool CanReplace(BlockType existing, BlockType placed)
     {
-        if (existing == BlockType.Air || existing == BlockType.Fire || existing == BlockType.SnowLayer) return true;
+        if (Replaceable(existing)) return true;
         return (existing == BlockType.WoodenSlab && placed == BlockType.DoubleWoodenSlab) ||
             (existing == BlockType.StoneSlab && placed == BlockType.DoubleStoneSlab) ||
             (existing == BlockType.SandstoneSlab && placed == BlockType.DoubleSandstoneSlab) ||
             (existing == BlockType.CobblestoneSlab && placed == BlockType.DoubleCobblestoneSlab);
+    }
+
+    public static bool Replaceable(BlockType type)
+    {
+        switch(type)
+        {
+            case BlockType.Air: case BlockType.Fire: case BlockType.Water: case BlockType.Lava:
+            case BlockType.SnowLayer: case BlockType.TallGrass: case BlockType.DryTallGrass:
+            case BlockType.Fern: case BlockType.DeadBush: case BlockType.Dandelion: case BlockType.Rose:
+            case BlockType.BrownMushroom: case BlockType.RedMushroom:
+            case BlockType.OakSapling: case BlockType.SpruceSapling: case BlockType.BirchSapling:
+                return true;
+            default:return false;
+        }
     }
 
     public static bool CanSurvive(BlockType type, byte state, Vector3Int position,

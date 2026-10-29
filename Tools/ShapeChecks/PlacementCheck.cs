@@ -88,6 +88,23 @@ public static class PlacementCheck
   hatch.placement=new Vector3Int(5,3,5);Check(hatch.PlaceBlock()&&hatch.inventory.slots[0].count==62,"trapdoor accepts a supported top face");
   hatch.placement=new Vector3Int(5,1,5);Check(hatch.PlaceBlock()&&(SpecialBlockGeometry.State(BlockType.Trapdoor,hatch.world.GetBlock(hatch.placement).blockShape)&8)!=0,"trapdoor underside placement creates an upper-mounted hatch");
   var material=new Player();material.inventory.slots[0].type=ItemType.Coal;
+  foreach(var replaced in new[]{BlockType.Water,BlockType.Lava,BlockType.SnowLayer,BlockType.TallGrass,BlockType.Dandelion,BlockType.OakSapling})
+  {
+   var builder=new Player{aimed=new Vector3Int(0,1,0),placement=new Vector3Int(0,2,0)};
+   builder.transform.position=new Vector3(10,10,10);builder.inventory.slots[0].type=ItemType.Stone;
+   if(replaced==BlockType.Water||replaced==BlockType.Lava)
+   {
+    builder.world.SetBlock(builder.aimed,BlockType.Stone);builder.world.SetBlock(builder.placement,replaced);
+    Check(builder.PlaceBlock()&&builder.world.GetBlock(builder.placement).type==BlockType.Stone,"production placement displaces fluid in the adjacent cell");
+   }
+   else
+   {
+    builder.world.SetBlock(builder.aimed,replaced);
+    Check(builder.PlaceBlock()&&builder.world.GetBlock(builder.aimed).type==BlockType.Stone&&builder.world.GetBlock(builder.placement).type==BlockType.Air,"production placement replaces vegetation/snow in its own cell");
+   }
+   Check(builder.inventory.slots[0].count==63,"successful replacement consumes exactly one held block");
+  }
+  Check(!BlockSurvivalRules.Replaceable(BlockType.Stone)&&!BlockSurvivalRules.Replaceable(BlockType.Nothing)&&!BlockSurvivalRules.Replaceable(BlockType.WheatCrop0),"solid blocks, unloaded terrain and crops are not silently overwritten");
   Check(!material.PlaceBlock()&&material.inventory.slots[0].count==64,"standalone item cannot be interpreted as a world block");
   material.inventory.slots[0].type=ItemType.Stone;material.inventory.slots[0].count=0;
   Check(!material.PlaceBlock(),"empty stack cannot place a block");
