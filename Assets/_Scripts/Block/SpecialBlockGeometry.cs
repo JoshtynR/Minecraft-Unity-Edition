@@ -148,11 +148,9 @@ public static class SpecialBlockGeometry
             var neighbor=leftDoor?left:right;
             if(get(neighbor)!=type)neighbor+=Vector3Int.up;
             byte other=getState(neighbor);
-            // Bit 4 also encodes the opposite hinge in the old door format.
-            // Match the neighbor's current plane, with the opposite hinge,
-            // regardless of which of the two doors was placed first.
             int plane=(other&4)==0?(other-1)&3:other&3;
-            return (byte)((other&4)==0?(plane|4):((plane+1)&3));
+            if(plane==((state-1)&3))
+                return leftDoor?(byte)(((state-1)&3)|4):state;
         }
         if((leftDoor&&!rightDoor)||rightSolids>leftSolids)state=(byte)(((state-1)&3)|4);
         return state;

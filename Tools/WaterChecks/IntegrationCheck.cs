@@ -402,6 +402,16 @@ public static partial class IntegrationCheck
         }
         w.rejectOccupiedPlacement=false;
         var pairs=new World();for(int x=-2;x<=2;x+=2)for(int z=-2;z<=2;z+=2)AddChunk(pairs,V(x,0,z));
+        for(int order=0;order<2;order++)
+        {
+            var left=V(0,1,0);var right=V(1,1,0);
+            pairs.SetBlock(left,BlockType.Air);pairs.SetBlock(right,BlockType.Air);
+            pairs.SetBlock(order==0?left:right,BlockType.WoodenDoor,1);
+            pairs.SetBlock(order==0?right:left,BlockType.WoodenDoor,order==0?(byte)1:(byte)4);
+            WaterCheck.Assert(SpecialBlockGeometry.State(BlockType.WoodenDoor,pairs.GetBlock(left).blockShape)==4&&SpecialBlockGeometry.State(BlockType.WoodenDoor,pairs.GetBlock(right).blockShape)==1,"actual world placement rehinges double doors outward in either order");
+            WaterCheck.Assert(SpecialBlockGeometry.State(BlockType.WoodenDoor,pairs.GetBlock(left+Vector3Int.up).blockShape)==12&&SpecialBlockGeometry.State(BlockType.WoodenDoor,pairs.GetBlock(right+Vector3Int.up).blockShape)==9,"double door rehinging updates the existing upper half too");
+            pairs.SetBlock(left,BlockType.Air);pairs.SetBlock(right,BlockType.Air);
+        }
         foreach(var type in new[]{BlockType.WoodenDoor,BlockType.IronDoor,BlockType.Bed})
         for(byte state=0;state<4;state++)
         {
