@@ -11,6 +11,7 @@ public class SettingsManager : MonoBehaviour
     public int renderDistance;
     public int guiScale;
     public int fov;
+    public float musicVolume=100f;
     
     public readonly Dictionary<string,float> settings = new Dictionary<string, float>();
     
@@ -51,6 +52,7 @@ public class SettingsManager : MonoBehaviour
         PlayerPrefs.SetInt("renderDistance", renderDistance);
         PlayerPrefs.SetInt("guiScale", guiScale);
         PlayerPrefs.SetInt("fov", fov);
+        PlayerPrefs.SetFloat("musicVolume",musicVolume);
         
         PlayerPrefs.Save();
         
@@ -63,6 +65,7 @@ public class SettingsManager : MonoBehaviour
         renderDistance = PlayerPrefs.GetInt("renderDistance", 4);
         guiScale = PlayerPrefs.GetInt("guiScale", 2);
         fov = PlayerPrefs.GetInt("fov", 90);
+        musicVolume=Mathf.Clamp(PlayerPrefs.GetFloat("musicVolume",100f),0,100);
         
         SetDictionary();
     }
@@ -73,12 +76,17 @@ public class SettingsManager : MonoBehaviour
         settings["renderDistance"] = renderDistance;
         settings["guiScale"] = guiScale;
         settings["fov"] = fov;
+        settings["musicVolume"]=musicVolume;
     }
     
     public void SetValue(string name, float value)
     {
         switch (name)
         {
+            case "musicVolume":
+                musicVolume=Mathf.Clamp(value,0,100);
+                if(MusicManager.Instance!=null)MusicManager.Instance.SetVolume(musicVolume/100f);
+                break;
             case "brightness":
                 brightness = value;
                 break;
@@ -97,6 +105,7 @@ public class SettingsManager : MonoBehaviour
     public void ApplySettings()
     {
         SaveSettings();
+        if(MusicManager.Instance!=null)MusicManager.Instance.SetVolume(musicVolume/100f);
         if (World.Instance != null) World.Instance.gamma = brightness/10f;
         if (World.Instance != null) World.Instance.renderDistance = renderDistance;
         foreach (var canvas in FindObjectsOfType<CanvasScaler>())

@@ -47,7 +47,7 @@ public class MusicManager : MonoBehaviour
     }
     void Start()
     {
-        SetVolume(volume); EnsureOrder();
+        SetVolume(PlayerPrefs.GetFloat("musicVolume",100f)/100f); EnsureOrder();
         if (playOnStart && _order.Count > 0) PlayIndex(_order[0], true);
     }
     void Update()

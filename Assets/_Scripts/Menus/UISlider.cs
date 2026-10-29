@@ -28,6 +28,13 @@ public class UISlider : MonoBehaviour
         sliders.Remove(name);
     }
 
+    private void OnEnable()
+    {
+        // Options panels can start inactive and awaken after settings load.
+        if(SettingsManager.instance!=null&&SettingsManager.instance.settings.TryGetValue(name,out var value))
+            SetValue(value);
+    }
+
     public void SetValue(float value)
     {
         slider.value = value;

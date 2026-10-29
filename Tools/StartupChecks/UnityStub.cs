@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 namespace UnityEngine
 {
+ public static class PlayerPrefs {static Dictionary<string,float> values=new Dictionary<string,float>();public static float GetFloat(string key,float fallback)=>values.ContainsKey(key)?values[key]:fallback;public static void SetFloat(string key,float value){values[key]=value;}}
  public static class Debug {public static void Log(object value){}public static void LogWarning(object value){}public static void LogError(object value){}}
  public class Object
  {
