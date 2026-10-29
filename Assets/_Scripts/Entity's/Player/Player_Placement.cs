@@ -10,7 +10,17 @@ public partial class Player
 
     private bool RequestBlockPlacement(Vector3Int position,BlockType type,byte state)
     {
-        if(!NetworkClient.active||!NetworkClient.ready||dimensionTransfer||WorldLoadingScreen.IsLoading||inventory.DropRequestPending)return false;
+        if(inventory==null||dimensionTransfer||WorldLoadingScreen.IsLoading||inventory.DropRequestPending)return false;
+        if(NetworkServer.active&&isLocalPlayer)
+        {
+            var server=WorldServer.instance;if(server==null)return false;
+            int slot=inventory.selectedSlotIndex;
+            var snapshot=inventory.DropInventorySnapshot();
+            bool accepted=server.TryApplyBlockMessage(this,new WorldServer.SetBlockMessage(position,type,state,0));
+            if(accepted)inventory.ApplyPlacementConsumption(slot,snapshot[slot]);
+            return accepted;
+        }
+        if(!NetworkClient.active||!NetworkClient.ready)return false;
         pendingPlacementSlot=inventory.selectedSlotIndex;
         pendingPlacementInventory=inventory.DropInventorySnapshot();
         pendingPlacementId=++placementRequestId;
