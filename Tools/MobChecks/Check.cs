@@ -35,6 +35,13 @@ class Check {
   Func<Vector3,bool> walkable=p=>p.y==64&&p.x>=0&&p.x<6&&p.z>=-3&&p.z<4&&!(Math.Floor(p.x)==1&&Math.Abs(Math.Floor(p.z))<=1);
   for(int tick=1;tick<=15;tick++){var next=navigator.Steer(navigating,new Vector3(4.5f,64,.5f),tick,walkable,p=>true);Assert(walkable(next),"navigation never enters blocked wall cells");if(Math.Abs(next.z)>.5f)detour=true;navigating.position=next;}
   Assert(detour&&navigating.position.x>=4,"bounded pathfinding routes around a wall");
+  var memoNavigator=new MobNavigation();var memoMob=new MobState{id=11,species=MobType.Zombie,position=new Vector3(.5f,64,.5f)};
+  var visitedCells=new System.Collections.Generic.HashSet<Vector3Int>();int repeatedQueries=0;
+  Func<Vector3,bool> memoWalk=p=>{if(!visitedCells.Add(Vector3Int.FloorToInt(p)))repeatedQueries++;return p.y==64;};
+  memoNavigator.Steer(memoMob,new Vector3(8.5f,64,8.5f),1,memoWalk,p=>true);
+  Assert(repeatedQueries==0&&visitedCells.Count>0,"one path search samples each walkability cell at most once");
+  visitedCells.Clear();memoNavigator.Steer(memoMob,new Vector3(8.5f,64,8.5f),22,memoWalk,p=>true);
+  Assert(visitedCells.Count>0,"next path search rechecks terrain rather than retaining stale collision results");
   var unavailable=new MobNavigation();int probes=0;unavailable.Steer(navigating,new Vector3(10,64,0),1,p=>{probes++;return true;},p=>true,false);Assert(probes==0,"search budget can defer work without querying terrain");
   var world=new World();var player=Target(world,1);var zombie=Mob(world,MobType.Zombie);
   var runtime=world.MobEntities.Runtime(world,zombie);Assert(ReferenceEquals(runtime,world.MobEntities.Runtime(world,zombie)),"live entity reuses its navigation runtime");
@@ -64,6 +71,13 @@ class Check {
   world=new World{blocked=true};Target(world,6);world.Step(Mob(world,MobType.Skeleton));Assert(world.ArrowCount==0,"skeleton does not shoot through cover");
   var invulnerable=new Player();invulnerable.health=20;Assert(invulnerable.ApplyMobDamage(2,Vector3.up)&&!invulnerable.ApplyMobDamage(2,Vector3.up)&&invulnerable.health==18,"player hurt window protects from simultaneous mob damage");
 #if FULL_MOB_SYSTEM
+  var streamingWorld=new World();var streamingPlayer=Target(streamingWorld,0);GameManager.Instance=new GameManager{localPlayer=streamingPlayer};
+  var streamingMob=Mob(streamingWorld,MobType.Cow);streamingMob.hurtCooldown=8;streamingWorld.GenerationBusy=true;
+  streamingWorld.FrameForCheck(.05f);
+  Assert(streamingMob.hurtCooldown==7,"loaded mobs keep ticking while unrelated chunks generate or mesh");
+  streamingWorld.PopulationBusyForCheck(true);streamingWorld.FrameForCheck(.05f);
+  Assert(streamingMob.hurtCooldown==7,"mob simulation pauses while population workers mutate cross-chunk terrain");
+  GameManager.Instance=null;
   var smoothWorld=new World();var smoothMob=Mob(smoothWorld,MobType.Cow);smoothWorld.FrameForCheck(.01f);
   var snapshot=smoothMob.Copy();snapshot.position.x=1;smoothWorld.mobs.Apply(snapshot);
   smoothWorld.GenerationBusy=true;smoothWorld.FrameForCheck(.01f);

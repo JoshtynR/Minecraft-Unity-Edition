@@ -169,6 +169,7 @@ public static class BlockSurvivalRules
     public static bool IsLeaves(BlockType t)=>t==BlockType.Leaves||t==BlockType.SpruceLeaves||t==BlockType.BirchLeaves;
     public static bool IsLog(BlockType t)=>t==BlockType.Log||t==BlockType.SpruceLog||t==BlockType.BirchLog;
     public static bool CanReplace(BlockType existing,BlockType placed)=>existing==BlockType.Air||existing==BlockType.Fire;
+    public static bool Replaceable(BlockType type)=>type==BlockType.Air||type==BlockType.Fire||type==BlockType.Water||type==BlockType.Lava||type==BlockType.SnowLayer;
 }
 public partial class WorldServer
 {

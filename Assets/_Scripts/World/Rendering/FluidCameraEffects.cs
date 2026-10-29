@@ -19,6 +19,7 @@ public sealed class FluidCameraEffects : MonoBehaviour
     private float deathShownAt=-1;
     private float sleepShownAt=-1;
     private bool confirmTitle;
+    private bool deathActionPending;
     private float deathGuiScale=1;
     private Material portalEffect;
     private Texture portalTexture;
@@ -103,6 +104,9 @@ public sealed class FluidCameraEffects : MonoBehaviour
     }
     private void OnGUI()
     {
+        // IMGUI otherwise draws over the loading Canvas while health remains
+        // zero during terrain preparation and the network acknowledgement.
+        if(WorldLoadingScreen.IsLoading||deathActionPending||(player!=null&&player.RespawnPending))return;
         if(player!=null&&player.health<=0)
         {
             DrawDeathScreen();return;
@@ -186,7 +190,8 @@ public sealed class FluidCameraEffects : MonoBehaviour
             if(confirmTitle)
             {
                 DrawDeathText(new Rect(0,height/6+50,width,20),"Are you sure you want to quit?",deathTextStyle,Color.white);
-                if(DeathButton(new Rect(width/2-155,height/6+96,150,20),"Title screen",ready))EscapeMenuManager.ExitToTitle();
+                if(DeathButton(new Rect(width/2-155,height/6+96,150,20),"Title screen",ready))
+                {deathActionPending=true;EscapeMenuManager.ExitToTitle();}
                 if(DeathButton(new Rect(width/2+5,height/6+96,150,20),"Respawn",ready))player.RequestFluidRespawn();
                 return;
             }

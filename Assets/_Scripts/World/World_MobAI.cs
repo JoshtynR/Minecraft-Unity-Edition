@@ -67,7 +67,7 @@ public partial class World
             float best=float.MinValue;Vector3 choice=mob.position;
             for(int i=0;i<10;i++)
             {
-                var candidate=Vector3Int.FloorToInt(mob.position)+new Vector3Int(mobRandom.NextInt(21)-10,mobRandom.NextInt(7)-3,mobRandom.NextInt(21)-10);
+                var candidate=Vector3Int.FloorToInt(mob.position)+new Vector3Int(mobRandom.NextInt(13)-6,mobRandom.NextInt(7)-3,mobRandom.NextInt(13)-6);
                 var feet=(Vector3)candidate+new Vector3(.5f,0,.5f);
                 if(!MobPathable(mob,feet))continue;
                 var sample=GetBlock(candidate);float light=sample==null?0:Mathf.Max(sample.GetBlockLight(),sample.GetSkyLight()-skyLightReduction);

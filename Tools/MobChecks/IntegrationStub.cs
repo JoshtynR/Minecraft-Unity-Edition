@@ -14,6 +14,8 @@ public static class ChestTransactions {public static bool Valid(InventoryStack[]
 public static class ItemVisualMesh {public static Mesh Build(BlockType type)=>new Mesh{name="Fire geometry double"};}
 public partial class World {
  public static World Instance;public int chunkSize=16;public long betaWorldSeed=173;public bool IsWorldCreated=true,DropAuthority=true,isSaving,disabled,GenerationBusy;
+ private int betaPopulationJobs;
+ public void PopulationBusyForCheck(bool busy){betaPopulationJobs=busy?1:0;}
  public World(){Instance=this;for(int x=-4;x<=4;x++)for(int z=-4;z<=4;z++)for(int y=0;y<8;y++)worldData.chunkDict[new Vector3Int(x*16,y*16,z*16)]=1;spawnPassiveMobs=spawnHostileMobs=false;EnsureMobsRestored();}
  public static World FindDimension(WorldDimension dimension)=>Instance;
  public void PhysicsStep(MobState mob){mobTick++;mobNavigationBudget=2;activeMobs.Clear();activeMobs.AddRange(mobs.Entities);TickMob(mob);}

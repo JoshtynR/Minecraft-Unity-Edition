@@ -307,6 +307,11 @@ public partial class Player : BaseEntity
                 // Targeting returns the adjacent cell for the exact intersected face.
                 Vector3Int normal = new Vector3Int(blockPos.x-targetedBlock.globalWorldPosition.x,
                     blockPos.y-targetedBlock.globalWorldPosition.y,blockPos.z-targetedBlock.globalWorldPosition.z);
+                // Replace the hit plant/snow itself rather than its neighboring
+                // cell. Fluids are ray-transparent, so the usual adjacent cell
+                // still handles building against submerged terrain.
+                if(BlockSurvivalRules.Replaceable(targetedBlock.type))
+                {blockPos=targetedBlock.globalWorldPosition;normal=Vector3Int.up;}
                 // Placement orientation follows the player's view yaw. The body
                 // turns toward movement, so using it made stairs, chests and
                 // furnaces face wherever the player last walked instead.
@@ -331,7 +336,7 @@ public partial class Player : BaseEntity
                 {
                     var partnerPos = blockPos + SpecialBlockGeometry.PartnerOffset(type, facing);
                     var partner = world.GetBlock(partnerPos);
-                    if (partner == null || partner.type != BlockType.Air || IsPlayerStandingIn(partnerPos, type, (byte)(facing|8)) ||
+                    if (partner == null || !BlockSurvivalRules.Replaceable(partner.type) || IsPlayerStandingIn(partnerPos, type, (byte)(facing|8)) ||
                         (type == BlockType.Bed && !SpecialBlockGeometry.NormalCube(world.GetBlock(partnerPos+Vector3Int.down).type))) return false;
                 }
                 var belowPos = blockPos + Vector3Int.down;

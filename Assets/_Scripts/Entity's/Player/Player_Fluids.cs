@@ -11,6 +11,8 @@ public partial class Player
     private bool fluidViewContactKnown,fluidViewWater;
     private float fluidBubbleTime;
     private bool deathCursorReleased;
+    private bool respawnRequested;
+    public bool RespawnPending=>respawnRequested||dimensionTransfer;
     private CursorLockMode previousDeathCursor;
     private bool previousDeathCursorVisible;
     private void AdvanceFluidHazards(float dt)
@@ -55,30 +57,26 @@ public partial class Player
     {if(!deathCursorReleased)return;Cursor.lockState=previousDeathCursor;Cursor.visible=previousDeathCursorVisible;deathCursorReleased=false;}
     public void RequestFluidRespawn()
     {
-        if(health>0)return;
+        if(health>0||RespawnPending)return;
+        if(networkStarted&&!NetworkClient.ready)return;
+        respawnRequested=true;
+        WorldLoadingScreen.Begin();
         if(networkStarted&&!isServer){CmdFluidRespawn();return;}
         RespawnAfterFluidDeath();
     }
-    [Command] private void CmdFluidRespawn(){if(health<=0)RespawnAfterFluidDeath();}
+    [Command] private void CmdFluidRespawn(){if(health<=0&&!dimensionTransfer)RespawnAfterFluidDeath();}
     private void RespawnAfterFluidDeath()
     {
-        if(dimension==WorldDimension.Nether){BeginDimensionTravel(WorldDimension.Overworld,new Vector3(.5f,80,.5f),false);return;}
-        if(world==null)return;
-        // Beta has no Nether respawn anchor: every death returns to the
-        // overworld spawn, rather than the last safe fluid position.
-        Vector3 destination;
-        if(!hasBedSpawn||!WorldSpawnRules.TryResolveBed(world,bedSpawn,out destination))
-        {
-            if(hasBedSpawn){hasBedSpawn=false;ShowSleepMessage("Your home bed was missing or obstructed");}
-            destination=WorldSpawnRules.Resolve(world);
-        }
-        ApplyFluidRespawn(destination);
-        if(networkStarted)TargetFluidRespawn(connectionToClient,destination);
+        // Use the same terrain/snapshot readiness handshake for same-dimension
+        // deaths as Nether returns. It loads the bed/origin before resolving
+        // a safe spawn, then waits for destination meshes before completing.
+        BeginDimensionTravel(WorldDimension.Overworld,new Vector3(.5f,80,.5f),false);
     }
     [TargetRpc] private void TargetFluidRespawn(NetworkConnection target,Vector3 destination){ApplyFluidRespawn(destination);}
     private void ApplyFluidRespawn(Vector3 destination)
     {
         falling.Reset();
+        respawnRequested=false;
         ResetWalkMotion();
         transform.position=destination;health=hunger=20;saturation=5;exhaustion=0;
         fluidHazards.Reset();fluidHazardTime=0;airSupply=300;burning=false;
