@@ -285,24 +285,23 @@ public partial class PlayerInventory
         for(int i=0;i<36;i++)
         {
             var stack=saved!=null&&i<saved.Length?Stack(saved[i]):new InventoryStack();
-            QueueRecovery(stack.type,Math.Max(0,stack.count-InventoryRules.Limit(stack.type)),stack.damage);stack.count=Math.Min(InventoryRules.Limit(stack.type),stack.count);WriteStack(i,stack);
+            stack.count=Math.Min(InventoryRules.Limit(stack.type),stack.count);WriteStack(i,stack);
         }
-        if(saved!=null)for(int i=36;i<saved.Length;i++)if(saved[i]!=null)QueueRecovery(saved[i].type,saved[i].count,saved[i].damage);
-        if(recovery!=null)foreach(var stack in recovery)if(stack!=null)QueueRecovery(stack.type,stack.count,stack.damage);
+        // Legacy recovery payloads and slots outside the real 36-slot inventory
+        // are intentionally ignored. Never inject them into a loaded hotbar.
         for(int i=0;i<4;i++)
         {
             var stack=crafting!=null&&i<crafting.Length?Stack(crafting[i]):new InventoryStack();
-            QueueRecovery(stack.type,Math.Max(0,stack.count-InventoryRules.Limit(stack.type)),stack.damage);stack.count=Math.Min(InventoryRules.Limit(stack.type),stack.count);WriteStack(36+i,stack);
+            stack.count=Math.Min(InventoryRules.Limit(stack.type),stack.count);WriteStack(36+i,stack);
         }
-        var carried=Stack(cursor);QueueRecovery(carried.type,Math.Max(0,carried.count-InventoryRules.Limit(carried.type)),carried.damage);carried.count=Math.Min(InventoryRules.Limit(carried.type),carried.count);SetCursor(carried);
+        var carried=Stack(cursor);carried.count=Math.Min(InventoryRules.Limit(carried.type),carried.count);SetCursor(carried);
         for(int i=0;i<4;i++)
         {
             var stack=equipment!=null&&i<equipment.Length?Stack(equipment[i]):new InventoryStack();
             bool valid=InventoryRules.EquipmentAccepts(i,stack.type);
-            QueueRecovery(stack.type,valid?Math.Max(0,stack.count-1):stack.count,stack.damage);
             WriteStack(41+i,valid?new InventoryStack(stack.type,Math.Min(1,stack.count),stack.damage):new InventoryStack());
         }
-        RecoverSavedItems();RefreshCraftingOutput();
+        RefreshCraftingOutput();
     }
     private void RecoverSavedItems()
     {
