@@ -10,7 +10,7 @@ namespace UnityEngine
     public class MonoBehaviour {}
     public class GameObject {public bool active; public void SetActive(bool value){active=value;}}
     public static class Application {public static bool isPlaying;}
-    public static class Debug {public static void LogException(Exception error){throw error;}}
+    public static class Debug {public static void Log(object value){}public static void LogException(Exception error){throw error;}}
 }
 public class Block {}
 public class ChunkData
@@ -65,6 +65,7 @@ public static class WorldDataHelper
 public partial class World
 {
     public bool disabled,IsWorldCreated=true,GenerationBusy;
+    public bool logGenerationTimings;
     public byte chunksPerFrame=1;
     public int chunkSize=16;
     private CancellationToken worldCancellationToken;

@@ -228,6 +228,10 @@ public static class Lighting
     {
         if (block == null) return;
 
+        // Interior cells owned by this build cannot invalidate another column.
+        // Keep the shared halo path for edges, including diagonal AO neighbors.
+        if (ReferenceEquals(block.chunkData, data) && !data.IsOnEdge(block.globalWorldPosition)) return;
+
         data.worldRef.CollectRenderUpdatesAround(block.globalWorldPosition, data.chunkToUpdateAfterLighting, data);
     }
 

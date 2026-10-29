@@ -27,7 +27,7 @@ namespace UnityEngine
   private bool owned;
  }
  public class MeshRenderer { }
- public static class Debug { public static void LogException(Exception e){throw e;} }
+ public static class Debug { public static void Log(object value){} public static void LogException(Exception e){throw e;} }
  public class Mesh:Object
  {
   public int vertexCount=4;public static int created;public int uploads;public int subMeshCount;public Rendering.IndexFormat indexFormat;public bool cpuReleased;
@@ -48,7 +48,7 @@ public class Block {public BlockType type;public int blockShape; public void OnB
 public partial class World
 {
  private void AdvanceAtmosphereClock(float dt){}public double CurrentWorldTicks=>1000;
- public bool GenerationBusy;
+ public bool GenerationBusy,logGenerationTimings;
  public WorldDimension dimension;private void UpdatePortals(){}private void StreamDimensionPlayers(){}
  public static World Instance;public bool disabled,IsWorldCreated=true,isSaving;public byte chunksPerFrame=1;
  public Color nightColor,dayColor;public float skyLightMultiplier;
