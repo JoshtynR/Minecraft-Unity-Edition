@@ -36,7 +36,7 @@ public partial class Player
     private bool TryUseBed(Block block)
     {
         if(block==null||block.type!=BlockType.Bed||dimension!=WorldDimension.Overworld)return false;
-        if(networkStarted)CmdUseBed(block.globalWorldPosition);
+        if(networkStarted&&!isServer)CmdUseBed(block.globalWorldPosition);
         else UseBed(block.globalWorldPosition);
         return true;
     }
@@ -76,7 +76,7 @@ public partial class Player
         SetBedOccupied(world,head,true);SetBedOccupied(world,foot,true);
         var liePosition=(Vector3)head+new Vector3(.5f,9f/16f,.5f);
         MoveForSleep(liePosition);
-        if(networkStarted)TargetEnterBed(connectionToClient,liePosition);
+        if(networkStarted&&!(isServer&&isLocalPlayer))TargetEnterBed(connectionToClient,liePosition);
         else {EnterSleepClient(liePosition);StartCoroutine(CompleteOfflineSleep(attempt));}
         if(NetworkServer.active&&WorldServer.instance!=null)WorldServer.instance.EvaluateSleep();
     }
@@ -131,7 +131,7 @@ public partial class Player
             ClearOccupiedBed(realm,sleepingBed,sleepingFoot);
         }
         sleeping=false;sleepAttempt++;MoveForSleep(destination);
-        if(networkStarted)TargetLeaveBed(connectionToClient,destination,morning);
+        if(networkStarted&&!(isServer&&isLocalPlayer))TargetLeaveBed(connectionToClient,destination,morning);
         else {RestoreSleepCursor();if(morning)ShowSleepMessage("Respawn point set");}
     }
 
@@ -167,7 +167,7 @@ public partial class Player
 
     private void SendSleepMessage(string message)
     {
-        if(networkStarted&&connectionToClient!=null)TargetSleepMessage(connectionToClient,message);
+        if(networkStarted&&!(isServer&&isLocalPlayer)&&connectionToClient!=null)TargetSleepMessage(connectionToClient,message);
         else ShowSleepMessage(message);
     }
     [TargetRpc] private void TargetSleepMessage(NetworkConnection target,string message){ShowSleepMessage(message);}

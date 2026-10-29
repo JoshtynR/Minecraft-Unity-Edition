@@ -58,7 +58,7 @@ public partial class Player
     public void RequestFluidRespawn()
     {
         if(health>0||RespawnPending)return;
-        if(networkStarted&&!NetworkClient.ready)return;
+        if(networkStarted&&!isServer&&!NetworkClient.ready)return;
         respawnRequested=true;
         WorldLoadingScreen.Begin();
         if(networkStarted&&!isServer){CmdFluidRespawn();return;}

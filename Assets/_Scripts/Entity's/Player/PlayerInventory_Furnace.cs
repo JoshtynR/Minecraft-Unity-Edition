@@ -17,13 +17,13 @@ public partial class PlayerInventory
     public void RequestFurnace(Vector3Int position)
     {
         if (DropRequestPending || isOpen || furnacePending || furnaceOpen || chestPending || chestOpen || creativeRoot == null) return;
-        ReadStorage(); furnacePosition = position; furnaceNetworkSession = NetworkClient.active; OpenInventory();
+        ReadStorage(); furnacePosition = position; furnaceNetworkSession = (NetworkClient.active&&!NetworkServer.active); OpenInventory();
         SendFurnace(new FurnaceRequest { action = 0, position = position, inventory = (InventoryStack[])storageBuffer.Clone(), cursor = Stack(pickedUpSlot), itemWearRevision = player != null ? player.ItemWearRevision : 0 });
     }
     private void SendFurnace(FurnaceRequest request)
     {
         furnacePending = true;
-        if (NetworkClient.active) { NetworkClient.Send(request); return; }
+        if ((NetworkClient.active&&!NetworkServer.active)) { NetworkClient.Send(request); return; }
         var world = player.CurrentWorld;
         if (world == null) { ReceiveFurnaceReply(new FurnaceReply { error = "World closed." }); return; }
         if (world.isSaving && request.action != 2) { ReceiveFurnaceReply(new FurnaceReply { error = "World is saving; try again in a moment." }); return; }
@@ -138,9 +138,9 @@ public partial class PlayerInventory
     private void UpdateFurnacePanel()
     {
         if (!furnaceOpen) return;
-        if (player.CurrentWorld == null || (furnaceNetworkSession && !NetworkClient.active)) { furnacePending = false; furnaceCloseRequested = false; EndFurnacePanel(); CloseInventory(); return; }
+        if (player.CurrentWorld == null || (furnaceNetworkSession && !(NetworkClient.active&&!NetworkServer.active))) { furnacePending = false; furnaceCloseRequested = false; EndFurnacePanel(); CloseInventory(); return; }
         furnacePanel.anchoredPosition = new Vector2(inventoryRect.anchoredPosition.x, 0);
-        if (!NetworkClient.active && (player.health <= 0 || !player.CurrentWorld.FurnaceAccessible(transform.position + Vector3.up * 1.6f, furnacePosition)))
+        if (!(NetworkClient.active&&!NetworkServer.active) && (player.health <= 0 || !player.CurrentWorld.FurnaceAccessible(transform.position + Vector3.up * 1.6f, furnacePosition)))
         { ReceiveFurnaceReply(player.CurrentWorld.furnaces.Close(-1)); return; }
         if (!furnacePending && Time.unscaledTime >= nextFurnaceRefresh)
             SendFurnace(new FurnaceRequest { action = 3, position = furnacePosition });
@@ -148,7 +148,7 @@ public partial class PlayerInventory
     private void ReleaseFurnace()
     {
         if (!furnaceOpen && !furnacePending) return;
-        if (NetworkClient.active) NetworkClient.Send(new FurnaceRequest { action = 2, position = furnacePosition });
+        if ((NetworkClient.active&&!NetworkServer.active)) NetworkClient.Send(new FurnaceRequest { action = 2, position = furnacePosition });
         else if (player.CurrentWorld != null) player.CurrentWorld.furnaces.Close(-1);
     }
 }

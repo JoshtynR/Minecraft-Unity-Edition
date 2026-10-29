@@ -237,7 +237,7 @@ public partial class Player
     {
         if((networkStarted&&!isServer)||health<=0||dimensionTransfer||damage<=0||NetworkTime.time<hurtUntil||(!networkStarted||isLocalPlayer?isFlying:serverFlying))return false;
         hurtUntil=NetworkTime.time+.5;health=Mathf.Max(0,health-damage);exhaustion=Mathf.Min(40,exhaustion+.3f);
-        away.y=.4f;if(networkStarted)RpcAddForce(connectionToClient,away,6);else AddForce(away,6);
+        away.y=.4f;if(networkStarted&&!(isServer&&isLocalPlayer))RpcAddForce(connectionToClient,away,6);else AddForce(away,6);
         GameAudio.Broadcast("damage/hit",transform.position,1,1,CurrentWorld);return true;
     }
 }

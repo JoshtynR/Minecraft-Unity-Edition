@@ -6,7 +6,7 @@ public partial class Player
     private bool TryUseNetherBed(Block block)
     {
         if(dimension!=WorldDimension.Nether||block.type!=BlockType.Bed)return false;
-        if(networkStarted)CmdUseNetherBed(block.globalWorldPosition);
+        if(networkStarted&&!isServer)CmdUseNetherBed(block.globalWorldPosition);
         else ExplodeNetherBed(block.globalWorldPosition);
         return true;
     }

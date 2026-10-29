@@ -93,7 +93,7 @@ public partial class Player
         eating=true;foodWaiting=false;eatingSlot=inventory.selectedSlotIndex;eatingType=held.type;
         eatingStarted=nextChew=Time.time;inventory.DropRequestPending=true;
         var snapshot=inventory.DropInventorySnapshot();
-        if(networkStarted)CmdBeginEating(eatingSlot,snapshot,knownItemWearRevision);
+        if(networkStarted&&!isServer)CmdBeginEating(eatingSlot,snapshot,knownItemWearRevision);
         else BeginEating(eatingSlot,snapshot,knownItemWearRevision,false);
         return true;
     }
@@ -126,7 +126,7 @@ public partial class Player
     private void FinishEatingRequest(bool finish)
     {
         eating=false;foodWaiting=true;
-        if(networkStarted)CmdFinishEating(finish);else FinishEating(finish,false);
+        if(networkStarted&&!isServer)CmdFinishEating(finish);else FinishEating(finish,false);
     }
     [Command] private void CmdFinishEating(bool finish){FinishEating(finish,true);}
     private void FinishEating(bool finish,bool network)

@@ -12,14 +12,14 @@ public partial class Player
     private bool TryUseMob(bool milk)
     {
         var mob=TargetedMob();if(mob==null)return false;
-        if(networkStarted&&!NetworkClient.ready)return true;
+        if(networkStarted&&!isServer&&!NetworkClient.ready)return true;
         // A mob blocks mining/placement behind it, even when the held item has no interaction.
         if(milk && inventory.HeldItem().type!=ItemType.Bucket && inventory.HeldItem().type!=MobRules.BreedingFood(mob) && inventory.HeldItem().type!=ItemType.Shears && MobRules.DyeColor(inventory.HeldItem().type)<0)return true;
         if(inventory.DropRequestPending || Time.unscaledTime<nextLocalMobAction)return true;
         nextLocalMobAction=Time.unscaledTime+.25f;CancelMining();
-        int request=++dropRequestId;inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted;
+        int request=++dropRequestId;inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted&&!isServer;
         var snapshot=inventory.DropInventorySnapshot();
-        if(networkStarted)CmdMobAction(request,mob.id,milk,inventory.selectedSlotIndex,snapshot,knownItemWearRevision);
+        if(networkStarted&&!isServer)CmdMobAction(request,mob.id,milk,inventory.selectedSlotIndex,snapshot,knownItemWearRevision);
         else ProcessMobAction(request,mob.id,milk,inventory.selectedSlotIndex,snapshot,false,knownItemWearRevision);
         return true;
     }

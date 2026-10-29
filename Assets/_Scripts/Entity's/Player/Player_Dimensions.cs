@@ -89,6 +89,14 @@ public partial class Player
             dimensionTransfer=true;PauseDimensionTransforms();
             transferDestination=transform.position;
             int sequence=++transferSequence;
+            if(isServer&&isLocalPlayer)
+            {
+                while(this!=null&&loadingSavedPlayer)await Task.Yield();
+                if(this==null)return;
+                World.ActivateDimension(CurrentWorld);FinishDimensionTravel(transferDestination);
+                CurrentWorld.SavePlayer(SavePlayer());
+                initialDimensionJoin=false;return;
+            }
             TargetPrepareDimension(connectionToClient,sequence,dimension,transferDestination,CurrentWorld.betaWorldSeed);
         }
         catch(Exception error){Debug.LogException(error);}
@@ -107,7 +115,7 @@ public partial class Player
         {
             if(connectionToClient!=null&&WorldServer.instance!=null)
             {WorldServer.instance.CloseContainersForDimensionTravel(connectionToClient);}
-            if(networkStarted&&connectionToClient!=null)
+            if(networkStarted&&!(isServer&&isLocalPlayer)&&connectionToClient!=null)
             {
                 dimensionCheckpoint=new TaskCompletionSource<WorldServer.SavePlayerMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
                 TargetDimensionLoading(connectionToClient,sequence);
@@ -116,6 +124,7 @@ public partial class Player
                 if(this==null)return;
                 inventory.LoadInventory(state.inventory,state.crafting,state.cursor,state.recovery,state.equipment);
             }
+            if(isServer&&isLocalPlayer&&inventory!=null&&inventory.isOpen)inventory.CloseInventory();
             while(source!=null&&source.isSaving)await Task.Yield();
             if(source!=null)
             {
@@ -148,9 +157,10 @@ public partial class Player
             // Set the server position before snapshots or future stream requests.
             transform.position=transferDestination;
             if(NetworkServer.active){var sync=GetComponent<NetworkTransform>();if(sync!=null)sync.RpcTeleport(transferDestination);}
-            if(!networkStarted)
+            if(!networkStarted||(isServer&&isLocalPlayer))
             {
                 World.ActivateDimension(destination);FinishDimensionTravel(transferDestination);
+                destination.SavePlayer(SavePlayer());
                 await destination.SaveDimensionAsync();return;
             }
             TargetPrepareDimension(connectionToClient,sequence,target,transferDestination,destination.betaWorldSeed);
@@ -164,7 +174,7 @@ public partial class Player
             dimension=previous;world=source;transform.position=previousPosition;dimensionTransfer=false;ResumeDimensionTransforms();portalCooldown=15;
             portalTravelInProgress=false;
             if(!networkStarted||isLocalPlayer){World.ActivateDimension(source);WorldLoadingScreen.Cancel();}
-            if(connectionToClient!=null)TargetCancelDimension(connectionToClient,previous,previousPosition);
+            if(connectionToClient!=null&&!(isServer&&isLocalPlayer))TargetCancelDimension(connectionToClient,previous,previousPosition);
         }
     }
     private static async Task<T> AwaitTransferCheckpoint<T>(Task<T> pending,int milliseconds)

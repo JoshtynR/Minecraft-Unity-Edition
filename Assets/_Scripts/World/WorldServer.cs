@@ -207,7 +207,8 @@ public partial class WorldServer : NetworkBehaviour
             player.GetComponent<Player>().SteamId = message.steamId;
             player.GetComponent<Player>().PrepareDimensionJoin();
             NetworkServer.AddPlayerForConnection(conn, player);
-            player.GetComponent<Player>().RpcLoadPlayer(conn, playerData);
+            if(conn is LocalConnectionToClient)player.GetComponent<Player>().LoadPlayer(playerData);
+            else player.GetComponent<Player>().RpcLoadPlayer(conn, playerData);
             player.GetComponent<Player>().SynchronizeDimensionOnJoin();
             conn.identity.AssignClientAuthority(conn);
         }

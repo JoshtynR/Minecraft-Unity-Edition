@@ -61,7 +61,7 @@ public static class DimensionCheck {
   Call(hosted,"BeginDimensionTravel",WorldDimension.Nether,new Vector3(2,75,2),false);
   Wait(()=>!hosted.DimensionTransferInProgress);
   Check(netSource.playerSaves>0&&netDestination.playerSaves>0,"Travel checkpoints source inventory before saving destination");
-  Check(hosted.inventory.loads>=2,"Inventory reconciled at checkpoint and arrival");
+  Check(hosted.inventory.loads==0,"Host shares authoritative inventory without checkpoint/arrival RPC reloads");
   // Initial host joins reuse already prepared server terrain. They must not
   // checkpoint/save a source realm or serialize snapshots discarded by a host.
   var joiningRealm=Realm(WorldDimension.Overworld);World.Instance=joiningRealm;
@@ -74,7 +74,7 @@ public static class DimensionCheck {
   Check(joiningRealm.saves==0&&joiningRealm.worldSaveCalls==0,"Initial join performs no full departure/arrival world saves");
   Check(joiningRealm.generationCalls==0,"Initial host join does not regenerate prepared terrain");
   Check(ChunkSaveData.serializations==snapshots&&readyChunk.modifiedAfterSave,"Host skips discarded snapshots and retains unsaved dirty terrain");
-  Check(joiningRealm.playerSaves==1&&joining.inventory.loads==1,"Initial join persists the reconciled player once");
+  Check(joiningRealm.playerSaves==1&&joining.inventory.loads==0,"Initial host join saves shared inventory once without an RPC reload");
   Check(!joiningRealm.HasReadyArea(Vector3Int.zero),"Readiness rejects absent renderers");
   var readyRenderer=new GameObject("Ready chunk").AddComponent<ChunkRenderer>();readyRenderer.Initialize(readyChunk);
   joiningRealm.worldData.chunkDict[Vector3Int.zero]=readyRenderer;

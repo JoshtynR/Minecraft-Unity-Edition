@@ -17,13 +17,13 @@ public partial class PlayerInventory
     {
         if(DropRequestPending||chestPending||chestOpen||furnacePending||furnaceOpen||isOpen)return;
         ReadStorage();chestPosition=position;
-        chestNetworkSession=NetworkClient.active;OpenInventory();
+        chestNetworkSession=(NetworkClient.active&&!NetworkServer.active);OpenInventory();
         SendChest(new ChestRequest{action=0,position=position,inventory=(InventoryStack[])storageBuffer.Clone(),cursor=Stack(pickedUpSlot),itemWearRevision=player!=null?player.ItemWearRevision:0});
     }
     private void SendChest(ChestRequest request)
     {
         chestPending=true;
-        if(NetworkClient.active)NetworkClient.Send(request);
+        if((NetworkClient.active&&!NetworkServer.active))NetworkClient.Send(request);
         else
         {
             var world=player.CurrentWorld;
@@ -131,16 +131,16 @@ public partial class PlayerInventory
     private void UpdateChestPanel()
     {
         if(!chestOpen)return;
-        if(chestNetworkSession&&!NetworkClient.active)
+        if(chestNetworkSession&&!(NetworkClient.active&&!NetworkServer.active))
         {chestPending=false;EndChestPanel();CloseInventory();return;}
         chestPanel.anchoredPosition=new Vector2(inventoryRect.anchoredPosition.x,0);
-        if(!NetworkClient.active&&!player.CurrentWorld.ChestAccessible(transform.position+Vector3.up*1.6f,chestPosition,player.reach))
+        if(!(NetworkClient.active&&!NetworkServer.active)&&!player.CurrentWorld.ChestAccessible(transform.position+Vector3.up*1.6f,chestPosition,player.reach))
             ReceiveChestReply(player.CurrentWorld.chests.Close(-1));
     }
     private void ReleaseChest()
     {
         if(!chestOpen)return;
-        if(NetworkClient.active)NetworkClient.Send(new ChestRequest{action=2,position=chestPosition});
+        if((NetworkClient.active&&!NetworkServer.active))NetworkClient.Send(new ChestRequest{action=2,position=chestPosition});
         else if(player.CurrentWorld!=null)player.CurrentWorld.chests.Close(-1);
     }
 }

@@ -11,6 +11,11 @@ public partial class Player
     // disconnected or no longer the local player. Never force Ready() here.
     private IEnumerator PublishPlayerIdentityWhenReady()
     {
+        if(NetworkServer.active&&isLocalPlayer)
+        {
+            PlayerName=PlayerIdentity.DisplayName;SteamId=PlayerIdentity.Id;
+            playerIdentityPublished=true;yield break;
+        }
         while (NetworkClient.active && isLocalPlayer && !playerIdentityPublished)
         {
             if (NetworkClient.ready && NetworkClient.isConnected &&
