@@ -22,6 +22,7 @@ public static class FluidWorldQueries
 
 public partial class World
 {
+    public int betaPopulationJobs;
     public int DropVisualCount=>dropVisuals.Count;public Mesh FirstDropMesh=>dropMeshes.Values.First();public Material FirstDropMaterial=>dropMaterials.Values.First();
     public void StepDrops(float dt){Time.deltaTime=dt;UpdateDroppedItems();}
     public void ClearDrops(){ResetDroppedItems();}
@@ -143,6 +144,12 @@ public partial class PlayerInventory
         world.SpawnItemDrop(new InventoryStack(ItemType.Stone,1),new Vector3(10,1,0));item=world.droppedItems.Items.Single();item.pickupDelay=0;
         player.DropAction(false,item.id);Check(world.droppedItems.Count==1,"server rejects distant pickup requests");
         world.StepDrops(.05f);Check(world.DropVisualCount==1,"world drop builds a cached inventory-mesh visual");
+        int ageBefore=world.CaptureDroppedItems()[0].age;
+        world.GenerationBusy=true;world.StepDrops(.05f);
+        Check(world.CaptureDroppedItems()[0].age>ageBefore,"resident drops continue during terrain/mesh generation");
+        ageBefore=world.CaptureDroppedItems()[0].age;world.betaPopulationJobs=1;world.StepDrops(.05f);
+        Check(world.CaptureDroppedItems()[0].age==ageBefore,"population writes retain their safety pause");
+        world.betaPopulationJobs=0;world.GenerationBusy=false;
         var mesh=world.FirstDropMesh;Check(mesh.vertices.Count==24,"block drops use the shared inventory mesh geometry");
         world.ClearDrops();Check(mesh.destroyed&&world.DropVisualCount==0,"world reset disposes owned meshes and visuals");
         foreach(float dt in new[]{.05f,.02f})
