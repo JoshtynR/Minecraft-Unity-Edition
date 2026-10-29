@@ -72,7 +72,9 @@ namespace Mirror
     public static class NetworkServer {public static bool active,dontListen;public static int shutdowns;public static void Spawn(GameObject obj){}public static void Shutdown(){shutdowns++;active=false;dontListen=false;}}
     public static class NetworkClient
     {
-        public static bool active,isConnected=true,isLoadingScene;
+        public static bool ready,active,isConnected=true,isLoadingScene;
+        public static object connection=new object();
+        public static bool Ready(){ready=true;return true;}
         public static readonly List<object> messages=new List<object>();
         public static void Send<T>(T message){messages.Add(message);}
     }
