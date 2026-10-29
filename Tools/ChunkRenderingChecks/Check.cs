@@ -78,6 +78,8 @@ public partial class World
     public int jobs;
     public Queue<Block> blockToUpdate=new Queue<Block>();
     void ResetBlockSurvival(){}
+    void PrepareRebuildPriority(){}
+    int SelectNextRebuild()=>0;
     Task<Dictionary<ChunkRenderer,MeshData>> UpdateMeshDataAsync(List<ChunkRenderer> chunks,bool modified)
     {
         jobs++;pending=new TaskCompletionSource<Dictionary<ChunkRenderer,MeshData>>();return pending.Task;
@@ -85,6 +87,10 @@ public partial class World
     static void Check(bool value,string why){if(!value)throw new Exception(why);}
     public static void Main()
     {
+        Check(RenderRebuildPriority.IsBetter(4,false,1000,true),"nearby edits precede distant visible work");
+        Check(RenderRebuildPriority.IsBetter(1000,true,500,false),"visible work precedes distant hidden work");
+        Check(RenderRebuildPriority.IsBetter(500,true,1000,true),"nearest visible candidate wins");
+        Check(!RenderRebuildPriority.IsBetter(500,true,500,true),"ties preserve queue order");
         var w=new World();
         w.worldCancellationToken=w.taskTokenSource.Token;
         var c=new ChunkRenderer{ChunkData=new ChunkData{worldPos=Vector3Int.zero}};

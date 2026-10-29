@@ -21,7 +21,7 @@ with tempfile.TemporaryDirectory() as temp:
     temp=Path(temp)
     (temp/'Scheduler.cs').write_text(source)
     (temp/'MeshJobs.cs').write_text('using System.Collections.Concurrent;using System.Collections.Generic;using System.Linq;using System.Threading.Tasks;using UnityEngine;public partial class World{'+runtime_jobs+startup_jobs+create_chunk+'}')
-    files=['Tools/ChunkRenderingChecks/Check.cs','Tools/Shared/UnityVectors.cs',
+    files=['Assets/_Scripts/World/RenderRebuildPriority.cs','Tools/ChunkRenderingChecks/Check.cs','Tools/Shared/UnityVectors.cs',
            'Assets/_Scripts/World/WorldWorkLifetime.cs','Assets/_Scripts/World/World_WorkLifecycle.cs',
            'Assets/_Scripts/World/World_MeshPipeline.cs','Assets/_Scripts/World/World_RenderInvalidation.cs',
            'Assets/_Scripts/World/Rendering/ChunkMeshPipeline.cs']

@@ -49,6 +49,8 @@ public partial class World
 {
  private void AdvanceAtmosphereClock(float dt){}public double CurrentWorldTicks=>1000;
  public bool GenerationBusy,logGenerationTimings;
+ private void PrepareRebuildPriority(){}
+ private int SelectNextRebuild()=>0;
  public WorldDimension dimension;private void UpdatePortals(){}private void StreamDimensionPlayers(){}
  public static World Instance;public bool disabled,IsWorldCreated=true,isSaving;public byte chunksPerFrame=1;
  public Color nightColor,dayColor;public float skyLightMultiplier;
