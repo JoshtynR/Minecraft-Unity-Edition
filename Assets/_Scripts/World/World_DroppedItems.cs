@@ -169,6 +169,7 @@ public partial class World
                     var below=GetBlock(Vector3Int.FloorToInt(item.position+Vector3.down*.01f));
                     bool alive=DroppedItemRules.Tick(item,(feet,move)=>BlockCollision.Resolve(this,feet,DroppedItemRules.HalfWidth,DroppedItemRules.Height,move,false),
                         below!=null&&below.type==BlockType.Ice?.98f:.6f,current,block.type==BlockType.Lava,block.type==BlockType.Fire);
+                    droppedItems.UpdatePosition(item);
                     if(!alive){sleepingDrops.Remove(item.id);droppedItems.Remove(item.id);BroadcastDropRemoval(item.id);}
                     else
                     {

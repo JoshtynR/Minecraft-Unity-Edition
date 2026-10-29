@@ -146,6 +146,8 @@ public partial class World
         return distance;
     }
     [System.NonSerialized] private MobState runtimeSpawnProbe;
+    [System.NonSerialized] private List<MobState> runtimeNearbyMobQueries;
+    private List<MobState> nearbyMobQueries=>System.Threading.LazyInitializer.EnsureInitialized(ref runtimeNearbyMobQueries,()=>new List<MobState>(32));
     private bool MobSpawnClear(Vector3 position,MobType species)
     {
         // Main-thread-only scratch state; never enters the store or network.
@@ -153,7 +155,8 @@ public partial class World
         candidate.species=species;candidate.position=position;
         if(!MobSpawnable(candidate,position))return false;
         var bounds=MobRules.Bounds(candidate);
-        foreach(var other in mobs.Entities)
+        mobs.QueryNearby(position,2,nearbyMobQueries);
+        foreach(var other in nearbyMobQueries)
         {
             // All registered species are smaller than two blocks on each
             // axis. Reject distant saved mobs before species/bounds work.
@@ -265,7 +268,8 @@ public partial class World
         var block=BlockTargeting.Raycast(this,eye,direction,reach,out _,out var point);
         if(block!=null)limit=Mathf.Min(limit,(point-eye).magnitude);
         var ray=new Ray(eye,direction);MobState nearest=null;
-        foreach(var mob in mobs.Entities)
+        mobs.QueryNearby(eye,reach+2,nearbyMobQueries);
+        foreach(var mob in nearbyMobQueries)
             if(MobAreaLoaded(mob.position) && MobRules.Bounds(mob).IntersectRay(ray,out float distance) && distance>=0 && distance<limit)
             {nearest=mob;limit=distance;}
         return nearest;
@@ -306,6 +310,7 @@ public partial class World
         if(!MobAreaLoaded(mob.position+new Vector3(mob.motion.x,0,mob.motion.z)))return;
         var move=BlockCollision.Resolve(this,mob.position,width,height,mob.motion,mob.grounded);
         mob.position+=move;
+        mobs.UpdatePosition(mob);
         bool landed=mob.motion.y<0 && move.y>mob.motion.y+.0001f;
         if(!water && !lava && move.y<0)mob.fallDistance-=move.y;
         if(landed)
@@ -445,6 +450,7 @@ public partial class World
         mobMeshesByType.Clear();mobMaterialsByType.Clear();
         foreach(var visual in mobVisuals.Values)visual.Dispose();mobVisuals.Clear();
         mobEntities.Clear();ResetMobSpawnCache();activeMobs.Clear();activeMobDistances.Clear();mobDespawnRemovals.Clear();mobTickCandidates.Clear();mobVisualCandidates.Clear();mobPlayers.Clear();mobSpawnCandidates.Clear();mobVisualRemovals.Clear();mobDeaths.Clear();
+        runtimeNearbyMobQueries?.Clear();
         nextMobVisualRefresh=0;
         mobTick=0;mobSyncRequested=false;mobRandom=null;
         if(discardSave)mobRestore=null;

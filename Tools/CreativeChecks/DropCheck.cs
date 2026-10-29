@@ -38,6 +38,19 @@ public partial class PlayerInventory
 {
     static void CheckDrops()
     {
+        var spatialDrops=new DroppedItemStore();var nearbyDrops=new System.Collections.Generic.List<DroppedItemState>();
+        var nearDrop=spatialDrops.Spawn(new InventoryStack(ItemType.Stone,1),new Vector3(-.1f,0,-.1f),Vector3.zero,0,0);
+        for(int i=0;i<2000;i++)spatialDrops.Spawn(new InventoryStack(ItemType.Stone,1),new Vector3(1000+i*16,0,1000),Vector3.zero,0,0);
+        spatialDrops.QueryNearby(Vector3.zero,2,nearbyDrops);
+        Check(nearbyDrops.Contains(nearDrop)&&spatialDrops.LastSpatialCandidates==1,"pickup query inspects one nearby drop rather than 2001 saved drops");
+        nearDrop.position=new Vector3(-17,0,-17);spatialDrops.UpdatePosition(nearDrop);spatialDrops.QueryNearby(Vector3.zero,2,nearbyDrops);
+        Check(nearbyDrops.Count==0,"moving drops vacate old spatial buckets");
+        var dropSnapshot=nearDrop.Copy();dropSnapshot.position=Vector3.zero;spatialDrops.Apply(dropSnapshot);spatialDrops.QueryNearby(Vector3.zero,2,nearbyDrops);
+        Check(nearbyDrops.Count==1&&ReferenceEquals(nearbyDrops[0],spatialDrops.Get(nearDrop.id)),"drop snapshot replaces position and identity in the spatial index");
+        spatialDrops.Remove(nearDrop.id);spatialDrops.QueryNearby(Vector3.zero,2,nearbyDrops);Check(nearbyDrops.Count==0,"drop removal clears its indexed entry");
+        spatialDrops.Restore(spatialDrops.Capture());spatialDrops.QueryNearby(new Vector3(1000,0,1000),2,nearbyDrops);Check(nearbyDrops.Count==1,"drop save restoration rebuilds the index");
+        spatialDrops.Restore(null);spatialDrops.QueryNearby(new Vector3(1000,0,1000),2,nearbyDrops);Check(nearbyDrops.Count==0,"drop teardown clears the index");
+        Console.WriteLine("PASS: drop spatial query scaling, movement, snapshot replacement, removal and restoration.");
         var placementMenu=BuildMenu();placementMenu.AddItem(ItemType.Stone,3);
         var placer=placementMenu.GetComponent<Player>();placer.networkStarted=true;Mirror.NetworkClient.active=true;Mirror.NetworkClient.ready=true;
         Check(placer.PlaceForCheck()&&placementMenu.slots[0].count==3&&placementMenu.DropRequestPending,"placement waits for server before consuming an item");
