@@ -7,7 +7,8 @@ public sealed class DroppedItemVisual
     private readonly MeshRenderer[] renderers=new MeshRenderer[4];
     private readonly MaterialPropertyBlock properties=new MaterialPropertyBlock();
     private readonly bool flat;
-    private bool placed,collecting;
+    private readonly EntityVisualMotion motion=new EntityVisualMotion();
+    private bool collecting;
     private float collectionTime;
     private Vector3 collectionStart,collectionTarget;
     private int lastAge=-1;
@@ -35,9 +36,8 @@ public sealed class DroppedItemVisual
     {
         if(lastAge!=state.age){lastAge=state.age;ageTime=Time.unscaledTime;}
         float age=state.age+(Time.unscaledTime-ageTime)*20;
-        Vector3 destination=state.position+Vector3.up*DroppedItemRules.Bob(age,state.hover);
-        root.transform.position=placed?Vector3.Lerp(root.transform.position,destination,Mathf.Clamp01(Time.deltaTime*20)):destination;
-        placed=true;
+        Vector3 destination=motion.Step(state.position,Time.deltaTime,world.DropAuthority?.05f:.25f)+Vector3.up*DroppedItemRules.Bob(age,state.hover);
+        root.transform.position=destination;
         root.transform.rotation=Quaternion.Euler(0,flat&&camera!=null?camera.transform.eulerAngles.y:DroppedItemRules.Rotation(age,state.hover),0);
         int visible=DroppedItemRules.Copies(state.stack.count);
         var lightCell=Vector3Int.FloorToInt(state.position+Vector3.up*.25f);

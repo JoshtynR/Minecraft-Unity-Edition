@@ -335,11 +335,11 @@ public partial class World
     }
     private void UpdateMobs()
     {
-        if(!Application.isPlaying || disabled || !IsWorldCreated || GenerationBusy)return;
+        if(!Application.isPlaying || disabled || !IsWorldCreated)return;
         if(DropAuthority)
         {
             EnsureMobsRestored();
-            if(!isSaving)
+            if(!isSaving&&!GenerationBusy)
             {
                 RefreshMobPlayers();mobEntities.Accumulate(Time.deltaTime);
                 while(mobEntities.TryStep())
@@ -406,9 +406,9 @@ public partial class World
             nextMobVisualRefresh=Time.unscaledTime+.25f;mobVisualCandidates.Clear();
             foreach(var candidate in mobs.Entities)if(MobAreaLoaded(candidate.position))mobVisualCandidates.Add(candidate);
         }
-        foreach(var mob in mobVisualCandidates)
+        foreach(var cached in mobVisualCandidates)
         {
-            if(mobs.Get(mob.id)!=mob)continue;
+            var mob=mobs.Get(cached.id);if(mob==null)continue;
             bool visible=MobAreaLoaded(mob.position);
             if(!mobVisuals.TryGetValue(mob.id,out var visual) && visible)
             {
