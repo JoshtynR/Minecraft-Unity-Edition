@@ -2347,8 +2347,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1c26b1d2ea25fd42ba565ad6c2d2b5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tracks:
+  menuSceneName: MainMenu
+  menuTracks:
   - {fileID: 8300000, guid: 8b1423ccb2fca3c4299f69aca5084cb9, type: 3}
+  worldSceneName: World
+  worldTracks:
   - {fileID: 8300000, guid: 8317cd5792008d34dba9e3873e3e2c89, type: 3}
   - {fileID: 8300000, guid: 2e4245e7fee494144b904caa0e863f7d, type: 3}
   - {fileID: 8300000, guid: f4e759895781b8d40819d13bcfb6b6c0, type: 3}

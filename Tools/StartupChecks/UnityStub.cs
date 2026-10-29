@@ -114,11 +114,13 @@ namespace UnityEngine
   public static class SceneManager
   {
    public static Scene active=new Scene{name="MainMenu"};public static event Action<Scene,LoadSceneMode> sceneLoaded;
+   public static event Action<Scene,Scene> activeSceneChanged;
    public static Scene GetActiveScene()=>active;
-   public static void LoadScene(string name){active=new Scene{name=name};sceneLoaded?.Invoke(active,LoadSceneMode.Single);}
+   public static void LoadScene(string name){var previous=active;active=new Scene{name=name};activeSceneChanged?.Invoke(previous,active);sceneLoaded?.Invoke(active,LoadSceneMode.Single);}
   }
  }
 }
+namespace UnityEngine.Serialization{public class FormerlySerializedAsAttribute:Attribute{public FormerlySerializedAsAttribute(string name){}}}
 namespace UnityEngine.EventSystems{public class PointerEventData{}public interface IPointerEnterHandler{void OnPointerEnter(PointerEventData data);}public interface IPointerExitHandler{void OnPointerExit(PointerEventData data);}}
 namespace TMPro
 {
