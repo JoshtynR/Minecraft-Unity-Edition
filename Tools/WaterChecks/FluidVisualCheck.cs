@@ -55,13 +55,15 @@ namespace UnityEngine
  public struct Rect {public float x,y,width,height;public float xMin=>x;public float xMax=>x+width;public float yMin=>y;public float yMax=>y+height;public Rect(float x,float y,float w,float h){this.x=x;this.y=y;width=w;height=h;}public bool Contains(Vector2 p)=>p.x>=x&&p.x<x+width&&p.y>=y&&p.y<y+height;}
  public static class Mathf {public const float PI=(float)Math.PI;public static float Min(float a,float b)=>Math.Min(a,b);public static int Min(int a,int b)=>Math.Min(a,b);public static int Abs(int x)=>Math.Abs(x);public static float Abs(float x)=>Math.Abs(x);public static int Max(int a,int b)=>Math.Max(a,b);public static float Max(float a,float b)=>Math.Max(a,b);public static float Clamp01(float n)=>Math.Max(0,Math.Min(1,n));public static int FloorToInt(float n)=>(int)Math.Floor(n);public static float Sqrt(float n)=>(float)Math.Sqrt(n);public static float Log(float n)=>(float)Math.Log(n);public static float Cos(float n)=>(float)Math.Cos(n);}
  public enum CursorLockMode {None,Locked}public static class Cursor {public static CursorLockMode lockState=CursorLockMode.Locked;public static bool visible;}
- public class Texture:Object {}
+ public class Texture:Object {public int width=16,height=16;}
+ public class RenderTexture:Texture {}
+ public static class Graphics {public static Material last;public static void Blit(RenderTexture a,RenderTexture b){last=null;}public static void Blit(RenderTexture a,RenderTexture b,Material m){last=m;}}
  public enum TextureFormat {RGBA32}public enum FilterMode {Bilinear}public enum TextureWrapMode {Clamp}
  public class Font:Object {}
  public class Texture2D:Texture {public int width=16,height=16;public Color[] pixels;public FilterMode filterMode;public TextureWrapMode wrapMode;public Texture2D(){}public Texture2D(int w,int h,TextureFormat format,bool mip){width=w;height=h;}public void SetPixels(Color[] colors){pixels=colors;}public void Apply(){}public static Texture2D whiteTexture=new Texture2D();}
  public class Sprite:Object {public Texture2D texture;public Rect rect;public static Sprite Create(Texture2D texture,Rect rect,Vector2 pivot,float pixelsPerUnit)=>new Sprite{texture=texture,rect=rect};}
  public class AnimationCurve {public static AnimationCurve Linear(float a,float b,float c,float d)=>new AnimationCurve();}
- public class Material:Object {public Texture mainTexture;public Material(Material m){}}
+ public class Material:Object {public Texture mainTexture;public Dictionary<string,float> values=new Dictionary<string,float>();public Texture portal;public Material(Material m){}public void SetTexture(string key,Texture t){portal=t;}public void SetFloat(string key,float v){values[key]=v;}}
  public class Mesh:Object {public Vector3[] vertices;public Vector2[] uv;public Color[] colors;public int[] triangles;public void MarkDynamic(){}public void Clear(){vertices=null;}public void SetVertices(Vector3[] a,int start,int count){vertices=new Vector3[count];Array.Copy(a,start,vertices,0,count);}public void SetUVs(int channel,Vector2[] a,int start,int count){uv=new Vector2[count];Array.Copy(a,start,uv,0,count);}public void SetColors(Color[] a,int start,int count){colors=new Color[count];Array.Copy(a,start,colors,0,count);}public void SetTriangles(int[] a,int start,int count,int submesh,bool bounds){triangles=new int[count];Array.Copy(a,start,triangles,0,count);}public void RecalculateBounds(){}}
  public class MeshFilter:Component {public Mesh sharedMesh;}
  public class MeshRenderer:Component {public Material sharedMaterial;public Rendering.ShadowCastingMode shadowCastingMode;public bool receiveShadows;}
@@ -148,12 +150,24 @@ public static class FluidVisualCheck
  {
   var template=new Material(null);var atlas=new Texture2D{width=256,height=256};var assets=new PlayerHudAssets{particleAtlas=atlas,fluidFizz=new AudioClip{name="userFizz"},fluidSplash=new AudioClip{name="userSplash"}};
   Resources.items["FluidParticleMaterial"]=template;Resources.items["PlayerHudAssets"]=assets;
+  Resources.items["PortalScreenMaterial"]=template;
   var world=World.Instance=new GameObject("World").AddComponent<World>();
   var player=new GameObject("Player").AddComponent<Player>();player.world=world;
   player.transform.position=new Vector3(.5f,0,.5f);player.cam=new GameObject("Camera").transform;
   var camera=Camera.main=player.cam.gameObject.AddComponent<Camera>();player.cam.position=new Vector3(.5f,1.5f,.5f);
   world.blocks[new Vector3Int(0,1,0)]=new Block{type=BlockType.Water};
   Call(player,"UpdateFluidView");var effect=player.cam.GetComponent<FluidCameraEffects>();
+  var portalSheet=new Texture2D();((Texture)portalSheet).height=512;
+  BlockDataManager.blockTypeDataDictionary[(int)BlockType.NetherPortal]=new BlockTypeData();
+  BlockDataManager.blockTypeDataDictionary[(int)BlockType.NetherPortal].textureData.specialTextures.Add(new SpecialBlockTexture{part=BlockTexturePart.Surface,image=portalSheet});
+  player.PortalOverlay=.5f;Time.time=.15f;
+  Call(effect,"OnRenderImage",new RenderTexture(),new RenderTexture());
+  Check(Graphics.last!=null&&Graphics.last.portal==portalSheet,"portal screen loads the special Surface image with empty Side/Top slots");
+  Check(Graphics.last.values["_PortalRows"]==32&&Graphics.last.values["_PortalFrame"]==3,"portal screen advances the animation strip at twenty frames per second");
+  player.PortalOverlay=0;Call(effect,"OnRenderImage",new RenderTexture(),new RenderTexture());
+  Check(Graphics.last==null,"portal screen passes through unchanged outside a portal");
+  Time.time=0;
+  Console.WriteLine("PASS: portal Surface-slot loading, animation, and inactive passthrough checks.");
   Shader.SetGlobalVector("_FluidFog",new Vector4(1,2,3,4));RenderSettings.fog=false;
   Call(effect,"OnPreCull");Check(Math.Abs(Shader.GetGlobalVector("_FluidFog").w-.1f)<1e-7&&RenderSettings.fog&&camera.clearFlags==CameraClearFlags.SolidColor,"underwater camera installs Beta fog and hides skybox");
   Call(effect,"OnPostRender");Check(Shader.GetGlobalVector("_FluidFog").w==4&&!RenderSettings.fog&&camera.clearFlags==CameraClearFlags.Skybox,"camera restores global state after rendering");
@@ -238,6 +252,8 @@ public static class FluidVisualCheck
 }
 
 public enum WorldDimension {Nether=-1,Overworld=0}
-public class TextureData {public UnityEngine.Texture2D side,top,bottom;}
+public enum BlockTexturePart {Surface}
+public class SpecialBlockTexture {public BlockTexturePart part;public UnityEngine.Texture2D image;}
+public class TextureData {public UnityEngine.Texture2D side,top,bottom;public List<SpecialBlockTexture> specialTextures=new List<SpecialBlockTexture>();}
 public class BlockTypeData {public TextureData textureData=new TextureData();public UnityEngine.Color albedoTint=UnityEngine.Color.white;}
 public static class BlockDataManager {public static BlockTypeData[] blockTypeDataDictionary=new BlockTypeData[256];}
