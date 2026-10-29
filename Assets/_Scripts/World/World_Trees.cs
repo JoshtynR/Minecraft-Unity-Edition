@@ -20,6 +20,7 @@ public partial class World
             if (treeMeshChanges.TryRemove(origin, out _) && worldData.chunkDict.TryGetValue(origin, out var chunk))
                 chunks.Add(chunk);
         if (chunks.Count == 0) return;
+        foreach(var chunk in chunks)chunk.ChunkData.MarkAllRenderSectionsDirty();
         var meshes = await UpdateMeshDataAsync(chunks, false);
         try
         {

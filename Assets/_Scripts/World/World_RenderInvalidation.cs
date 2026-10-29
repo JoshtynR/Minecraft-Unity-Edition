@@ -15,7 +15,10 @@ public partial class World
         for (int z = min.z; z <= max.z; z += chunkSize)
             if (worldData.chunkDict.TryGetValue(new Vector3Int(x, 0, z), out var renderer) &&
                 renderer != null && renderer.ChunkData != null && !ReferenceEquals(renderer.ChunkData, exclude))
+            {
+                renderer.ChunkData.MarkRenderSectionsDirty(position.y);
                 output.Add(renderer);
+            }
     }
 
     [System.NonSerialized] private HashSet<ChunkRenderer> runtimeChangedBlockRenderers;

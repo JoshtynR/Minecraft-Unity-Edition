@@ -28,3 +28,8 @@ with tempfile.TemporaryDirectory() as temp:
     subprocess.run([args.mcs,'-langversion:latest','-out:'+str(temp/'check.exe'),str(temp/'Scheduler.cs'),str(temp/'MeshJobs.cs'),
                     *[str(root/f) for f in files]],check=True)
     subprocess.run([args.mono,str(temp/'check.exe')],check=True)
+    subprocess.run([args.mcs,'-langversion:latest','-out:'+str(temp/'sections.exe'),
+                    str(root/'Assets/_Scripts/World/ChunkData_RenderSections.cs'),
+                    str(root/'Tools/Shared/UnityVectors.cs'),
+                    str(root/'Tools/ChunkRenderingChecks/SectionCheck.cs')],check=True)
+    subprocess.run([args.mono,str(temp/'sections.exe')],check=True)

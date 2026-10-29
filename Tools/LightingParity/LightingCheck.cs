@@ -47,7 +47,7 @@ public class WorldDataHelper {public static Vector3Int GetChunkPosition(World w,
 public partial class World {public int chunkSize=16;public Data worldData=new Data();public class Data {public Dictionary<Vector3Int,ChunkRenderer> chunkDict=new Dictionary<Vector3Int,ChunkRenderer>();}public WorldDimension dimension;public long betaWorldSeed;public int worldHeight=128,skyLightReduction,updates;public void AddChunkToUpdate(ChunkRenderer c,bool first=false){updates++;}}
 public static class ModernChestVisual {public static bool Enabled;}
 public class ChunkData
-{
+{public void MarkRenderSectionsDirty(int y){}public void MarkAllRenderSectionsDirty(){}
  internal volatile BiomeBlockColors.ChunkColors biomeColors;
  public Vector3Int worldPos;public Vector3Int GetGlobalBlockCoords(Vector3Int p)=>worldPos+p;
  public bool lightingInitialized;

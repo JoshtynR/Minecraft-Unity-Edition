@@ -14,7 +14,7 @@ namespace UnityEngine
 }
 public class Block {}
 public class ChunkData
-{
+{public void MarkRenderSectionsDirty(int y){}public void MarkAllRenderSectionsDirty(){}
     public Vector3Int worldPos;
     public bool modifiedByPlayer;
     public bool fail;
