@@ -11,9 +11,9 @@ namespace Mirror
  public class NetworkConnection {}
  public interface NetworkMessage {}
  public class ClientRpcAttribute:Attribute {}
- public class NetworkConnectionToClient {public GameObject identity;public int connectionId;public ChestReply last;public FurnaceReply lastFurnace;public void Send(ChestReply reply){last=reply;}public void Send(FurnaceReply reply){lastFurnace=reply;}}
+ public class NetworkConnectionToClient:NetworkConnection {public GameObject identity;public int connectionId;public ChestReply last;public FurnaceReply lastFurnace;public void Send(ChestReply reply){last=reply;}public void Send(FurnaceReply reply){lastFurnace=reply;}}
  public static class NetworkServer {public static void SendToAll<T>(T message){}public static bool active;public static Dictionary<int,NetworkConnectionToClient> connections=new Dictionary<int,NetworkConnectionToClient>();}
- public static class NetworkClient {public static void RegisterHandler<T>(Action<T> callback){}public static bool ready=true;public static bool active;public static ChestRequest last;public static FurnaceRequest lastFurnace;public static void Send(FurnaceRequest request){lastFurnace=request;}public static void Send(DropSyncRequest request){}public static void Send(ChestRequest request){last=request;}}
+ public static partial class NetworkClient {public static void RegisterHandler<T>(Action<T> callback){}public static bool ready=true;public static bool active;public static ChestRequest last;public static FurnaceRequest lastFurnace;public static void Send(FurnaceRequest request){lastFurnace=request;}public static void Send(DropSyncRequest request){}public static void Send(ChestRequest request){last=request;}}
 }
 namespace UnityEngine
 {

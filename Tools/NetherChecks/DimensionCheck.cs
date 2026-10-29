@@ -7,6 +7,12 @@ public static class DimensionCheck {
  static void Frame(World w,Vector3Int bottom,Vector3Int axis,bool lit){for(int u=-1;u<=2;u++)for(int v=-1;v<=3;v++){bool edge=u==-1||u==2||v==-1||v==3;if((u==-1||u==2)&&(v==-1||v==3))continue;var p=bottom+axis*u+Vector3Int.up*v;w.blocks[p]=new Block{type=edge?BlockType.Obsidian:lit?BlockType.NetherPortal:BlockType.Air,chunkData=new ChunkData{worldRef=w}};}}
  static void Wait(Func<bool> condition){var until=DateTime.UtcNow.AddSeconds(5);while(!condition()){if(DateTime.UtcNow>until)throw new Exception("Transfer timed out");Thread.Sleep(1);}}
  public static void Main(){
+  var checkpointMethod=typeof(Player).GetMethod("AwaitTransferCheckpoint",BindingFlags.NonPublic|BindingFlags.Static).MakeGenericMethod(typeof(int));
+  var completed=(Task<int>)checkpointMethod.Invoke(null,new object[]{Task.FromResult(7),1000});
+  Check(completed.GetAwaiter().GetResult()==7,"completed transfer checkpoint returns without delay");
+  var never=new TaskCompletionSource<int>();var expiring=(Task<int>)checkpointMethod.Invoke(null,new object[]{never.Task,1});
+  bool timedOut=false;try{expiring.GetAwaiter().GetResult();}catch(TimeoutException){timedOut=true;}
+  Check(timedOut,"missing inventory checkpoint fails with a timeout instead of waiting indefinitely");
   Check(DimensionRules.StorageName("existing",WorldDimension.Overworld)=="existing","Legacy save location");
   Check(DimensionRules.StorageName("existing",WorldDimension.Nether)=="existing/DIM-1","Separate Nether location");
   Check(DimensionRules.Valid((WorldDimension)70)==WorldDimension.Overworld,"Invalid saved dimension migration");

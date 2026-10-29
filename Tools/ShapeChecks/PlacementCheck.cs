@@ -27,6 +27,7 @@ public partial class Player
  public class Objects {public Transform body=new Transform();}
  public Objects objects=new Objects();public Transform transform=new Transform(),cam=new Transform();public World world=new World();public Inventory inventory=new Inventory();public bool networkStarted,isCrouching;public float reach=5,entityWidth=.3f,entityHeight=1.8f;public Vector3Int aimed,placement;
  private object TargetedMob()=>null;
+ private bool RequestBlockPlacement(Vector3Int p,BlockType type,byte facing){Mirror.NetworkClient.Send(new WorldServer.SetBlockMessage(p,type,facing));return true;}
  public Vector3 targetHitPoint;
  private bool TryUseNetherBed(Block block)=>false;
  private bool TryUseBed(Block block)=>false;

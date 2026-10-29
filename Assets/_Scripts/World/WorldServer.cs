@@ -64,13 +64,28 @@ public partial class WorldServer : NetworkBehaviour
     {
         if(conn.identity==null)return;
         var player=conn.identity.GetComponent<Player>();
-        if(player==null||player.DimensionTransferInProgress||message.dimension!=player.dimension)return;
+        if(player==null)return;
+        bool accepted=false;
+        try
+        {
+            if(message.requestId>0&&player.TryReplayPlacement(message.requestId,out accepted))return;
+            accepted=TryApplyBlockMessage(player,message);
+        }
+        finally
+        {
+            if(message.requestId>0)player.CompletePlacementRequest(conn,message.requestId,accepted);
+        }
+    }
+    private bool TryApplyBlockMessage(Player player,SetBlockMessage message)
+    {
+        if(player.DimensionTransferInProgress||message.dimension!=player.dimension)return false;
         var world=player.CurrentWorld;
-        if(world==null||world.isSaving)return;
-        if (message.blockType == BlockType.Air || message.blockType == BlockType.Nothing) return;
-        if(WheatCropRules.IsCrop(message.blockType))return;
-        if((player.transform.position-((Vector3)message.position+Vector3.one*.5f)).sqrMagnitude>64)return;
-        if(!world.CanReplaceChest(message.position,message.blockType))return;
+        if(world==null||world.isSaving)return false;
+        if(!System.Enum.IsDefined(typeof(BlockType),message.blockType))return false;
+        if (message.blockType == BlockType.Air || message.blockType == BlockType.Nothing) return false;
+        if(WheatCropRules.IsCrop(message.blockType))return false;
+        if((player.transform.position-((Vector3)message.position+Vector3.one*.5f)).sqrMagnitude>64)return false;
+        if(!world.CanReplaceChest(message.position,message.blockType))return false;
         byte state=BlockSurvivalRules.IsLeaves(message.blockType)?(byte)4:message.stairFacing;
         var existing=world.GetBlock(message.position);
         if(existing!=null&&existing.type==message.blockType)
@@ -78,17 +93,18 @@ public partial class WorldServer : NetworkBehaviour
             // Interaction is not placement: occupied cells must be accepted,
             // but only for the exact next state allowed by the block itself.
             byte current=SpecialBlockGeometry.State(existing.type,existing.blockShape),next;
-            if(!SpecialBlockGeometry.TryUse(existing.type,current,out next)||state!=next)return;
-            if(SpecialBlockGeometry.IsDoor(existing.type)&&(current&8)!=0)return;
+            if(!SpecialBlockGeometry.TryUse(existing.type,current,out next)||state!=next)return false;
+            if(SpecialBlockGeometry.IsDoor(existing.type)&&(current&8)!=0)return false;
             world.SetBlock(message.position,message.blockType,next);
             BroadcastBlock(world,message.position,message.blockType,next);
             GameAudio.Broadcast(BlockSoundRules.Use(message.blockType,next),(Vector3)message.position+Vector3.one*.5f,.7f,1,world);
-            return;
+            return true;
         }
-        if(!world.CanPlaceSurvivalBlock(message.position,message.blockType,state))return;
+        if(!world.CanPlaceSurvivalBlock(message.position,message.blockType,state))return false;
         world.SetBlock(message.position,message.blockType,state);
         BroadcastBlock(world,message.position,message.blockType,state);
         GameAudio.BroadcastBlock(message.blockType,message.position,false,world);
+        return true;
     }
     public void BroadcastBlock(World world,Vector3Int position,BlockType type,byte state)
     {RpcDimensionBlock(world.dimension,position,type,state);}
@@ -107,9 +123,10 @@ public partial class WorldServer : NetworkBehaviour
     }
     public struct SetBlockMessage : NetworkMessage
     {
-        public Vector3Int position;public BlockType blockType;public byte stairFacing;public WorldDimension dimension;
-        public SetBlockMessage(Vector3Int position,BlockType blockType,byte stairFacing=0)
+        public Vector3Int position;public BlockType blockType;public byte stairFacing;public WorldDimension dimension;public int requestId;
+        public SetBlockMessage(Vector3Int position,BlockType blockType,byte stairFacing=0,int requestId=0)
         {
+            this.requestId=requestId;
             this.position=position;this.blockType=blockType;this.stairFacing=(byte)(stairFacing&15);
             this.dimension=World.Instance!=null?World.Instance.dimension:WorldDimension.Overworld;
         }

@@ -66,7 +66,8 @@ public struct FallingBlockSyncRequest {}
 public class GameManager {public static GameManager Instance;public List<Player> players=new List<Player>();public World world;public Player localPlayer;public int streamRestarts;public void StartCheckingForChunks(){streamRestarts++;}}
 public static class WorldLoadingScreen {public static bool IsLoading;public static void Begin(){IsLoading=true;}public static void Cancel(){IsLoading=false;}}
 public static class GameAudio {public static void Play(string s,UnityEngine.Vector3 p,float v=1){}public static void Broadcast(string s,UnityEngine.Vector3 p,float v,float pitch,World world){}public static void BroadcastBlock(BlockType t,UnityEngine.Vector3Int p,bool broken,World world=null){}}
-public static class SpecialBlockGeometry {public static bool NormalCube(BlockType b)=>b!=BlockType.Air&&b!=BlockType.Nothing&&b!=BlockType.NetherPortal&&b!=BlockType.Fire;public static bool NoCollision(BlockType b)=>!NormalCube(b);public static byte Shape(BlockType t,byte s)=>s;public static byte State(BlockType t,byte s)=>s;public static UnityEngine.Vector3Int PartnerOffset(BlockType t,byte s)=>UnityEngine.Vector3Int.right;}
+public static class SpecialBlockGeometry {public static bool IsDoor(BlockType t)=>t==BlockType.WoodenDoor||t==BlockType.IronDoor;public static bool TryUse(BlockType t,byte s,out byte next){next=(byte)(s^4);return t==BlockType.WoodenDoor||t==BlockType.Trapdoor;}public static bool NormalCube(BlockType b)=>b!=BlockType.Air&&b!=BlockType.Nothing&&b!=BlockType.NetherPortal&&b!=BlockType.Fire;public static bool NoCollision(BlockType b)=>!NormalCube(b);public static byte Shape(BlockType t,byte s)=>s;public static byte State(BlockType t,byte s)=>s;public static UnityEngine.Vector3Int PartnerOffset(BlockType t,byte s)=>UnityEngine.Vector3Int.right;}
+public static class BlockSoundRules {public static string Use(BlockType type,byte state)=>"door";}
 public static class BlockShapesExtensions {public static bool IsPlant(BlockType t)=>t==BlockType.BrownMushroom||t==BlockType.RedMushroom;}
 public static class BlockSurvivalRules {public static bool IsLeaves(BlockType t)=>false;}
 public static class WorldDataHelper {
@@ -116,6 +117,7 @@ public partial class World:UnityEngine.MonoBehaviour {
  private void SetFarmBlock(UnityEngine.Vector3Int p,BlockType t){SetBlock(p,t);}
 }
 public partial class Player:UnityEngine.MonoBehaviour {
+ public bool TryReplayPlacement(int request,out bool accepted){accepted=false;return false;}public void CompletePlacementRequest(Mirror.NetworkConnectionToClient c,int request,bool accepted){}
  protected World world;public bool isLocalPlayer=true,isServer=true,networkStarted,hasBedSpawn;public UnityEngine.Vector3Int bedSpawn;private bool loadingSavedPlayer;private int knownItemWearRevision;public bool AcceptsItemRevision(int revision)=>revision==0;public ulong SteamId;public bool expectsSavedPlayerData;public void RpcLoadPlayer(Mirror.NetworkConnection c,object data){}public int health=20;public PlayerInventory inventory=new PlayerInventory();public Mirror.NetworkConnectionToClient connectionToClient;
  private bool respawnRequested,serverMining,localMining,jumpRequest,survivalPositionKnown;private float verticalMomentum,localWalkDistance,localSprintDistance;private UnityEngine.Vector3 velocity,extraForce;
  public void ResetFluidMovement(){}public void ApplyFluidRespawn(UnityEngine.Vector3 p){health=20;}

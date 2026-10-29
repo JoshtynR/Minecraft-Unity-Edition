@@ -111,7 +111,7 @@ public partial class Player
             {
                 dimensionCheckpoint=new TaskCompletionSource<WorldServer.SavePlayerMessage>(TaskCreationOptions.RunContinuationsAsynchronously);
                 TargetDimensionLoading(connectionToClient,sequence);
-                var state=await dimensionCheckpoint.Task;
+                var state=await AwaitTransferCheckpoint(dimensionCheckpoint.Task,30000);
                 dimensionCheckpoint=null;
                 if(this==null)return;
                 inventory.LoadInventory(state.inventory,state.crafting,state.cursor,state.recovery,state.equipment);
@@ -155,16 +155,26 @@ public partial class Player
             }
             TargetPrepareDimension(connectionToClient,sequence,target,transferDestination,destination.betaWorldSeed);
         }
-        catch(OperationCanceledException) { }
         catch(Exception error)
         {
-            Debug.LogException(error);
             if(this==null)return;
+            if(!(error is OperationCanceledException))Debug.LogException(error);
+            dimensionCheckpoint=null;respawnRequested=false;
             if(sourceReleased&&source!=null)await source.EnsureAreaAsync(Vector3Int.FloorToInt(previousPosition),true);
             dimension=previous;world=source;transform.position=previousPosition;dimensionTransfer=false;ResumeDimensionTransforms();portalCooldown=15;
             portalTravelInProgress=false;
             if(!networkStarted||isLocalPlayer){World.ActivateDimension(source);WorldLoadingScreen.Cancel();}
             if(connectionToClient!=null)TargetCancelDimension(connectionToClient,previous,previousPosition);
+        }
+    }
+    private static async Task<T> AwaitTransferCheckpoint<T>(Task<T> pending,int milliseconds)
+    {
+        using(var timeout=new System.Threading.CancellationTokenSource())
+        {
+            var deadline=Task.Delay(milliseconds,timeout.Token);
+            if(await Task.WhenAny(pending,deadline)!=pending)
+                throw new TimeoutException("Player inventory checkpoint timed out; dimension transfer was cancelled.");
+            timeout.Cancel();return await pending;
         }
     }
     [TargetRpc] private async void TargetDimensionLoading(NetworkConnection connection,int sequence)

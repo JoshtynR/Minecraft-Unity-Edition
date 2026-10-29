@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using UnityEngine;
+namespace Mirror {public static partial class NetworkClient {public static WorldServer.SetBlockMessage placement;public static void Send(WorldServer.SetBlockMessage value){placement=value;}}}
+public partial class WorldServer {public struct SetBlockMessage {public int requestId;public SetBlockMessage(Vector3Int p,BlockType t,byte state,int request){requestId=request;}}}
 
 // Fluid/collision dependencies have their own production parity suites. Here the
 // ground probe supplies collision results to exercise the real drop update loop.
@@ -26,6 +28,8 @@ public partial class World
 }
 public partial class Player
 {
+    public bool PlaceForCheck()=>RequestBlockPlacement(new Vector3Int(),BlockType.Stone,0);
+    public void PlacementReplyForCheck(int request,bool accepted)=>TargetPlacementResult(null,request,accepted);
     public void DropAction(bool dropping,int id){RequestDropAction(dropping,id);}
     public void ReplayDrop(int request,bool dropping,int id,InventoryStack[] snapshot){ProcessDropAction(request,dropping,id,snapshot,false);}
     public void PendingDrop(int request){dropRequestId=request;inventory.DropRequestPending=true;}
@@ -34,6 +38,24 @@ public partial class PlayerInventory
 {
     static void CheckDrops()
     {
+        var placementMenu=BuildMenu();placementMenu.AddItem(ItemType.Stone,3);
+        var placer=placementMenu.GetComponent<Player>();placer.networkStarted=true;Mirror.NetworkClient.active=true;Mirror.NetworkClient.ready=true;
+        Check(placer.PlaceForCheck()&&placementMenu.slots[0].count==3&&placementMenu.DropRequestPending,"placement waits for server before consuming an item");
+        int placementId=Mirror.NetworkClient.placement.requestId;
+        placer.PlacementReplyForCheck(placementId,false);
+        Check(placementMenu.slots[0].count==3&&!placementMenu.DropRequestPending,"server rejection preserves inventory and releases placement lock");
+        placer.PlaceForCheck();placementId=Mirror.NetworkClient.placement.requestId;placementMenu.selectedSlotIndex=1;
+        placer.PlacementReplyForCheck(placementId,true);
+        Check(placementMenu.slots[0].count==2&&placementMenu.slots[1].count==0&&!placementMenu.DropRequestPending,"acceptance consumes from the original slot despite hotbar changes");
+        placer.PlacementReplyForCheck(placementId,true);
+        Check(placementMenu.slots[0].count==2,"duplicate placement replies never consume twice");
+        placer.CompletePlacementRequest(null,placementId,true);
+        bool replayAccepted;
+        Check(placer.TryReplayPlacement(placementId,out replayAccepted)&&replayAccepted,"server caches successful placement acknowledgements for replay");
+        Check(placer.TryReplayPlacement(placementId-1,out replayAccepted)&&!replayAccepted,"server rejects older placement request IDs without applying them");
+        Mirror.NetworkClient.ready=false;Check(!placer.PlaceForCheck()&&!placementMenu.DropRequestPending,"NotReady placements never lock or consume inventory");
+        Mirror.NetworkClient.ready=true;Mirror.NetworkClient.active=false;placer.networkStarted=false;
+        Console.WriteLine("PASS: placement acceptance/rejection, original-slot accounting, duplicate replies and readiness guards.");
         var loot=new GameObject("MiningLoot").AddComponent<World>();
         Check(loot.MiningItemDrop(BlockType.Stone,ItemType.DiamondPickaxe).type==ItemType.Cobblestone,"production world resolves tool harvest drops");
         Check(loot.MiningItemDrop(BlockType.DiamondOre,ItemType.GoldenPickaxe).Empty,"production world suppresses insufficient-tier ore loot");
