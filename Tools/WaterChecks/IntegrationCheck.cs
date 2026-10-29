@@ -84,6 +84,7 @@ public static partial class WorldDataHelper
 }
 public class ChunkData
 {
+    public MeshData GetMeshData()=>new MeshData(true){sourceChunk=this};
     public int chunkSize,chunkHeight=2;
     public World worldRef;
     public Vector3Int worldPos;
@@ -133,6 +134,10 @@ public partial class World
     public static World Instance;
     public WorldDimension dimension;public bool isSaving;public static World FindDimension(WorldDimension id)=>Instance;private void QueuePortalValidation(Vector3Int p){}
     public long betaWorldSeed;
+    private bool chunkUpdateInProgress;
+    private System.Threading.CancellationToken worldCancellationToken;
+    private bool IsLiveChunk(ChunkRenderer renderer)=>renderer!=null&&renderer.ChunkData!=null&&worldData.chunkDict.TryGetValue(renderer.ChunkData.worldPos,out var current)&&ReferenceEquals(renderer,current);
+    public int chunksPerFrame=1;
     public int chunkSize=2,worldHeight=4,playerEdits,meshRequests;
     public bool IsWorldCreated=true,disabled=false;
     public WorldData worldData=new WorldData();

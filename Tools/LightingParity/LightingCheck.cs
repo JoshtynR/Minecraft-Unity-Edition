@@ -42,8 +42,9 @@ public class Block
  public Block GetNeighbor(int index){return GetNeighbors()[index];}
 }
 public class BlockLightNode {public Block block;public byte lightLevel;public BlockLightNode(Block b,byte l){block=b;lightLevel=l;}}
-public class ChunkRenderer {}
-public partial class World {public WorldDimension dimension;public long betaWorldSeed;public int worldHeight=128,skyLightReduction,updates;public void AddChunkToUpdate(ChunkRenderer c,bool first){updates++;}}
+public class ChunkRenderer {public ChunkData ChunkData;}
+public class WorldDataHelper {public static Vector3Int GetChunkPosition(World w,Vector3Int p)=>new Vector3Int((int)Math.Floor((double)p.x/w.chunkSize)*w.chunkSize,0,(int)Math.Floor((double)p.z/w.chunkSize)*w.chunkSize);}
+public partial class World {public int chunkSize=16;public Data worldData=new Data();public class Data {public Dictionary<Vector3Int,ChunkRenderer> chunkDict=new Dictionary<Vector3Int,ChunkRenderer>();}public WorldDimension dimension;public long betaWorldSeed;public int worldHeight=128,skyLightReduction,updates;public void AddChunkToUpdate(ChunkRenderer c,bool first=false){updates++;}}
 public static class ModernChestVisual {public static bool Enabled;}
 public class ChunkData
 {
@@ -101,8 +102,12 @@ public static partial class LightingCheck
   var source=corridor.GetBlock(new Vector3Int(0,2,0));source.BlockData.lightEmission=15;source.light=15;
   corridor.GetBlock(new Vector3Int(2,2,0)).BlockData.opacity=3;
   corridor.GetBlock(new Vector3Int(4,2,0)).BlockData.opacity=1;
-  var neighborChunk=new ChunkData{worldRef=corridor.worldRef,renderer=new ChunkRenderer(),blocks=corridor.blocks};
+  var neighborChunk=new ChunkData{worldPos=new Vector3Int(3,0,0),worldRef=corridor.worldRef,renderer=new ChunkRenderer(),blocks=corridor.blocks};
+  corridor.worldRef.chunkSize=1;
+  neighborChunk.renderer.ChunkData=neighborChunk;
+  corridor.worldRef.worldData.chunkDict[neighborChunk.worldPos]=neighborChunk.renderer;
   corridor.GetBlock(new Vector3Int(3,2,0)).chunkData=neighborChunk;
+  corridor.GetBlock(new Vector3Int(3,2,0)).localChunkPosition=new Vector3Int(0,2,0);
   corridor.blockLightUpdateQueue.Enqueue(new BlockLightNode(source,15));Lighting.CalculateLight(corridor);
   var expected=new[]{15,14,11,10,9,8};for(int x=0;x<6;x++)Check(corridor.GetBlock(new Vector3Int(x,2,0)).light==expected[x],"destination opacity/cross-chunk propagation");
   Check(corridor.worldRef.updates>0,"cross-chunk mesh notification");

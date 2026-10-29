@@ -212,14 +212,7 @@ public partial class World
         changed.blockShape=SpecialBlockGeometry.Shape(type,state);
         renderer.ModifiedByPlayer=true;renderer.ChunkData.modifiedAfterSave=true;
         QueueSurvivalAround(position);QueuePortalValidation(position);
-        AddChunkToUpdate(renderer);
-        if(renderer.ChunkData.IsOnEdge(position))
-            foreach(var neighbor in renderer.ChunkData.GetNeighbourChunk(position))
-            {
-                if(neighbor==null)continue;
-                var neighborRenderer=WorldDataHelper.GetChunk(this,neighbor.worldPos);
-                if(neighborRenderer!=null)AddChunkToUpdate(neighborRenderer);
-            }
+        InvalidateBlockRendering(position);
         return true;
     }
 

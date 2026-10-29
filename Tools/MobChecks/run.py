@@ -4,7 +4,7 @@ p=argparse.ArgumentParser();p.add_argument('--mcs',default='mcs');p.add_argument
 with tempfile.TemporaryDirectory() as folder:
     binary=pathlib.Path(folder)/'mobs.exe'
     sources=['Assets/_Scripts/ItemType.cs','Assets/_Scripts/WorldGeneration/Beta/JavaRandom.cs','Assets/_Scripts/World/HostileSpawnRules.cs','Assets/_Scripts/World/MobState.cs','Assets/_Scripts/World/MobDefinition.cs','Assets/_Scripts/World/MobBrain.cs','Assets/_Scripts/World/MobNavigation.cs','Assets/_Scripts/World/MobEntitySystem.cs','Assets/_Scripts/World/World_MobAI.cs','Assets/_Scripts/World/World_HostileMobs.cs','Tools/MobChecks/Stub.cs','Tools/MobChecks/Check.cs']
-    sources+=['Assets/_Scripts/World/Rendering/MobProjectileGeometry.cs']
+    sources+=['Assets/_Scripts/World/Rendering/MobProjectileGeometry.cs','Assets/_Scripts/EntitySpatialIndex.cs','Tools/Shared/UnityVectors.cs']
     sources+=['Assets/_Scripts/World/Rendering/EntityVisualMotion.cs']
     subprocess.run([a.mcs,'-langversion:latest','-out:'+str(binary),*[str(root/s) for s in sources]],check=True)
     subprocess.run([a.mono,str(binary)],check=True)
