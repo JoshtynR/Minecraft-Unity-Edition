@@ -109,8 +109,8 @@ public partial class PlayerInventory
             inv.tableSlots[0].count=2;Check(saved[0].count==1,"table save snapshots do not alias live inputs");inv.tableSlots[0].count=1;
             inv.CloseInventory();Check(inv.recoveryItems.Count==9&&inv.tableSlots.All(s=>s.count==0),"closing with full storage preserves ingredients in recoverable saves");
             var stored=inv.SavedInventory();inv.LoadInventory(stored,recovery:saved);
-            inv.OpenCraftingTable(tablePosition);Check(inv.tableSlots.All(s=>s.count==0)&&inv.recoveryItems.Count==9,"restoring a table snapshot never also populates a duplicate table grid");
-            inv.RemoveItem(0);inv.RecoverSavedItems();Check(inv.slots[0].type==ItemType.IronIngot&&inv.slots[0].count==9,"saved table inputs recover into free storage");
+            inv.OpenCraftingTable(tablePosition);Check(inv.tableSlots.All(s=>s.count==0)&&inv.recoveryItems.Count==0,"restoring a table snapshot never also populates a duplicate table grid");
+            inv.RemoveItem(0);inv.RecoverSavedItems();Check(inv.slots[0].count==0&&inv.recoveryItems.Count==0,"legacy recovery payloads do not refill inventory after loading");
             inv.CloseInventory();inv.LoadInventory(null);inv.OpenCraftingTable(tablePosition);
             FillTable(inv,ItemType.GoldIngot,4);inv.ClickInventorySlot(40,false,true);
             Check(inv.slots.Sum(s=>s.type==ItemType.GoldBlock?s.count:0)==4&&inv.tableSlots.All(s=>s.count==0),"shift output repeats only while ingredients and capacity remain");

@@ -66,7 +66,7 @@ public partial class PlayerInventory
   inv.ClickInventorySlot(0,false,false);inv.ClickInventorySlot(36,false,false);
   inv.ReturnTransientStacks();Check(inv.slots.Any(x=>x.type==ItemType.Stick&&x.damage==23)&&inv.craftingSlots[0].count==0,"closing crafting returns items with damage intact");
   inv.LoadInventory(new[]{new Slot{type=ItemType.Stick,count=3,damage=41}});
-  Check(inv.slots.Take(3).All(x=>x.count==1&&x.damage==41),"old oversized stacks split safely under item-specific limits");
+  Check(inv.slots[0].count==1&&inv.slots[0].damage==41&&inv.slots[1].count==0,"oversized saved stacks clamp without injecting recovery items");
   inv.LoadInventory(null);
   Check(inv.AddItem(ItemType.Coal,17)&&inv.slots[0].count==8&&inv.slots[1].count==8&&inv.slots[2].count==1,"editable stack limits govern insertion");
   Check(!inv.AddItem((ItemType)99999)&&!inv.AddItem(ItemType.Coal,1,damage:-1),"invalid grants are rejected");

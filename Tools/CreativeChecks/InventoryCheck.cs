@@ -352,12 +352,13 @@ public partial class PlayerInventory
   inv.SetCursor(new InventoryStack(ItemType.Stone,1));inv.ClickInventorySlot(40,false,false);Check(inv.craftingSlots[0].count==1,"incompatible cursor cannot consume recipe");
   inv.SetCursor(new InventoryStack());inv.ClickInventorySlot(40,false,true);Check(inv.slots[0].type==ItemType.WoodenPlanks&&inv.slots[0].count==4&&inv.craftingSlots[0].count==0,"shift craft consumes input and inserts only actual output");
   var old=new Slot[72];for(int i=0;i<72;i++)old[i]=new Slot{type=ItemType.Stone,count=64,index=i};inv.LoadInventory(old);
-  Check(inv.slots.Length==36&&inv.recoveryItems.Count==36&&Total(inv,ItemType.Stone)==72*64,"old 72-slot inventory preserved without hidden live storage");
-  inv.RemoveItem(0);inv.RecoverSavedItems();Check(inv.slots[0].count==64&&inv.recoveryItems.Count==35,"legacy recovery fills free slots only");
+  Check(inv.slots.Length==36&&inv.recoveryItems.Count==0&&Total(inv,ItemType.Stone)==36*64,"legacy saves restore only the real 36 slots");
+  inv.RemoveItem(0);inv.RecoverSavedItems();Check(inv.slots[0].count==0&&inv.recoveryItems.Count==0,"discarded legacy recovery never refills empty slots");
+  inv.AddItem(ItemType.Stone,64);
   inv.SetCursor(new InventoryStack(ItemType.Sand,1));inv.CloseInventory();Check(inv.pickedUpSlot!=null,"closing a full inventory preserves cursor");
   var snapshot=new WorldServer.SavePlayerMessage(new Vector3(),new Quaternion(),new Quaternion(),inv.SavedInventory(),1,inv.SavedCrafting(),inv.SavedCursor(),inv.SavedRecovery(),inv.SavedEquipment());
   inv.slots[0].count=1;Check(snapshot.inventory[0].count==64,"save snapshots do not alias live stacks");
-  inv.LoadInventory(snapshot.inventory,snapshot.crafting,snapshot.cursor,snapshot.recovery,snapshot.equipment);Check(Total(inv,ItemType.Stone)==71*64&&Total(inv,ItemType.Sand)==1,"cursor and legacy overflow survive actual save-message construction and load");
+  inv.LoadInventory(snapshot.inventory,snapshot.crafting,snapshot.cursor,snapshot.recovery,snapshot.equipment);Check(Total(inv,ItemType.Stone)==36*64&&Total(inv,ItemType.Sand)==1,"saved inventory and cursor survive without restoring legacy overflow");
   inv.OpenInventory();inv.canvasRect.sizeDelta=new Vector2(320,200);inv.UpdateInventoryLayout();
   Check(inv.creativePageSize<131&&inv.nextPage.interactable,"small windows page catalogue while both panes remain visible");
   var seen=new HashSet<ItemType>();int pages=(inv.creativeBlocks.Count+inv.creativePageSize-1)/inv.creativePageSize;

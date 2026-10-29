@@ -19,7 +19,11 @@ public partial class PlayerInventory : MonoBehaviour
     [CanBeNull] public Slot pickedUpSlot;
     [HideInInspector] public int selectedSlotIndex;
 
-    private void Awake() { InitializeSlotData(); }
+    private void Awake()
+    {
+        // Prefab/editor contents are not a new player's starting inventory.
+        slots=new Slot[36];InitializeSlotData();
+    }
 
     private void OnDestroy()
     {
