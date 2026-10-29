@@ -33,6 +33,7 @@ with tempfile.TemporaryDirectory() as tmp:
     message.write_text('using System;using UnityEngine;using Mirror;public partial class WorldServer{'+server[start:server.index('    #endregion',start)]+'}')
     subprocess.run([a.mcs, '-langversion:latest', '-out:' + str(binary),
         str(root / 'Assets/_Scripts/World/DimensionRules.cs'),
+        str(root / 'Assets/_Scripts/World/Rendering/EntityVisualMotion.cs'),
         str(root / 'Assets/_Scripts/World/GrassSpreadRules.cs'),
         str(root / "Assets/_Scripts/Entity's/Player/PlayerInventory.cs"),
         str(root / "Assets/_Scripts/Entity's/Player/PlayerInventory_Creative.cs"),

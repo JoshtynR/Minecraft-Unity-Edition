@@ -5,6 +5,14 @@ class Check {
  static MobState Mob(World w,MobType type)=>w.mobs.Spawn(new Vector3(0,64,0),0,type);
  static Player Target(World w,float distance){var player=new Player();player.transform.position=new Vector3(distance,64,0);w.Add(player);return player;}
  static void Main(){
+  foreach(int fps in new[]{30,60,144,240})
+  {
+   var visualMotion=new EntityVisualMotion();visualMotion.Step(Vector3.zero,0,.2f);
+   Vector3 rendered=Vector3.zero;
+   for(int frame=0;frame*5<fps;frame++)rendered=visualMotion.Step(new Vector3(1,0,0),1f/fps,.2f);
+   Assert(Mathf.Abs(rendered.x-1)<.001f,"visual interpolation reaches each network sample independently of rendering frame rate");
+   Assert(visualMotion.Step(new Vector3(30,0,0),1f/fps,.2f).x==30,"teleports snap without dragging an entity across the world");
+  }
   Assert(HostileSpawnRules.EffectiveLight(0,15,0)==15,"daylight remains full strength for hostile spawn checks");
   Assert(HostileSpawnRules.EffectiveLight(0,15,11)==4,"night reduction permits dark surface spawning");
   Assert(HostileSpawnRules.EffectiveLight(9,0,11)==9,"block light is never reduced by time of day");
@@ -56,6 +64,10 @@ class Check {
   world=new World{blocked=true};Target(world,6);world.Step(Mob(world,MobType.Skeleton));Assert(world.ArrowCount==0,"skeleton does not shoot through cover");
   var invulnerable=new Player();invulnerable.health=20;Assert(invulnerable.ApplyMobDamage(2,Vector3.up)&&!invulnerable.ApplyMobDamage(2,Vector3.up)&&invulnerable.health==18,"player hurt window protects from simultaneous mob damage");
 #if FULL_MOB_SYSTEM
+  var smoothWorld=new World();var smoothMob=Mob(smoothWorld,MobType.Cow);smoothWorld.FrameForCheck(.01f);
+  var snapshot=smoothMob.Copy();snapshot.position.x=1;smoothWorld.mobs.Apply(snapshot);
+  smoothWorld.GenerationBusy=true;smoothWorld.FrameForCheck(.01f);
+  Assert(smoothWorld.VisualPositionForCheck(smoothMob.id).x>0,"cached mob visuals follow replacement snapshots even while chunk generation is busy");
   var spawnRulesWorld=new World();spawnRulesWorld.skyLightReduction=11;
   Assert(spawnRulesWorld.SpecificSpawnForCheck(MobType.Cow,new Vector3(.5f,64,.5f)),"production passive spawning still accepts grass under open sky at night");
   spawnRulesWorld.cells[new Vector3Int(0,64,0)]=new Block{type=BlockType.Air,sky=8};

@@ -22,6 +22,7 @@ public partial class World {
  public void RestoreForCheck(MobSaveData data){RestoreMobs(data);EnsureMobsRestored();}
  public int SpawnHostilesForCheck(){spawnHostileMobs=true;skyLightReduction=11;for(int i=0;i<40&&mobs.Count==0;i++)SpawnNaturalHostiles();return mobs.Count;}
  public int RendererCount=>mobVisuals.Count;
+ public Vector3 VisualPositionForCheck(int id)=>mobVisuals[id].root.transform.position;
  public bool SpecificSpawnForCheck(MobType type,Vector3 position)=>BetaSpecificSpawn(type,position);
  public bool SpawnClearForCheck(MobType type,Vector3 position)=>MobSpawnClear(position,type);
 }

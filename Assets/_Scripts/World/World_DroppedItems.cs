@@ -114,15 +114,16 @@ public partial class World
     }
     private void UpdateDroppedItems()
     {
-        if(!Application.isPlaying||disabled||!IsWorldCreated||GenerationBusy)return;
+        if(!Application.isPlaying||disabled||!IsWorldCreated)return;
         EnsureDroppedItemsRestored();
         if(!DropAuthority&&!dropSyncRequested&&NetworkClient.ready)
         {dropSyncRequested=true;NetworkClient.Send(new DropSyncRequest());}
-        if(DropAuthority&&!isSaving)
+        if(DropAuthority&&!isSaving&&!GenerationBusy)
         {
             dropClock+=Time.deltaTime;
             // Catch up without tying gravity or despawn age to Unity's physics rate.
-            while(dropClock+.000001f>=.05f)
+            int catchUpTicks=0;
+            while(dropClock+.000001f>=.05f&&catchUpTicks++<5)
             {
                 dropClock=Mathf.Max(0,dropClock-.05f);dropTickBuffer.Clear();dropTickBuffer.AddRange(droppedItems.Items);
                 foreach(var item in dropTickBuffer)
@@ -178,6 +179,7 @@ public partial class World
                 }
                 if(++dropTick%10==0)MergeNearbyDrops();
             }
+            dropClock=System.Math.Min(dropClock,.25f);
         }
         if(Instance==this&&(!NetworkServer.active||NetworkClient.active))UpdateDropVisuals();
     }
@@ -238,9 +240,9 @@ public partial class World
         {
             nextDropVisualRefresh=Time.unscaledTime+.25f;dropVisualCandidates.Clear();dropVisualCandidates.AddRange(droppedItems.Items);
         }
-        foreach(var item in dropVisualCandidates)
+        foreach(var cached in dropVisualCandidates)
         {
-            if(droppedItems.Get(item.id)!=item)continue;
+            var item=droppedItems.Get(cached.id);if(item==null)continue;
             var block=GetBlock(Vector3Int.FloorToInt(item.position));
             bool visible=block!=null&&block.type!=BlockType.Nothing;
             if(!dropVisuals.TryGetValue(item.id,out var visual)&&visible)

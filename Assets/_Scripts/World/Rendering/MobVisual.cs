@@ -10,6 +10,7 @@ public sealed class MobVisual
     private readonly Color[] tints;
     private readonly MaterialPropertyBlock properties = new MaterialPropertyBlock();
     private Vector3 previous;
+    private readonly EntityVisualMotion motion=new EntityVisualMotion();
     private float walk, amplitude, deathTime, yaw;
     private readonly float deathRadius,deathHeight;
     private bool deathSmoke,deathPropertiesApplied,shearedInitialized,lastSheared;
@@ -25,6 +26,7 @@ public sealed class MobVisual
         deathRadius=MobRules.Width(mob);deathHeight=MobRules.BodyHeight(mob);
         root=new GameObject(mob.species+" "+mob.id);root.transform.SetParent(parent,false);
         root.transform.position=previous=mob.position;root.transform.rotation=Quaternion.Euler(0,mob.yaw,0);
+        motion.Step(mob.position,0,.05f);
         for(int i=0;i<parts.Length;i++)
         {
             if(meshes[i]==null)continue;
@@ -51,7 +53,7 @@ public sealed class MobVisual
             for(int i=0;i<parts.Length;i++)if(i==2||i==3||i>=9)parts[i].gameObject.SetActive(!mob.sheared);
         }
         float t=1-Mathf.Exp(-15*delta);
-        root.transform.position=Vector3.Lerp(root.transform.position,mob.position,t);
+        root.transform.position=motion.Step(mob.position,delta,world.DropAuthority?.05f:.2f);
         yaw=Mathf.LerpAngle(root.transform.eulerAngles.y,mob.yaw,t);root.transform.rotation=Quaternion.Euler(0,yaw,0);
         float moved=new Vector2(root.transform.position.x-previous.x,root.transform.position.z-previous.z).magnitude;
         previous=root.transform.position;walk+=moved*4;
