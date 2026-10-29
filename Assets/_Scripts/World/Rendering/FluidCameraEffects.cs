@@ -59,7 +59,6 @@ public sealed class FluidCameraEffects : MonoBehaviour
     }
     private void OnPostRender(){Restore();}
     private void OnDisable(){Restore();}
-    private void OnDestroy(){if(portalEffect!=null)Destroy(portalEffect);}
 
     private void OnRenderImage(RenderTexture source,RenderTexture destination)
     {
@@ -73,14 +72,23 @@ public sealed class FluidCameraEffects : MonoBehaviour
             if(definitions!=null&&index>=0&&index<definitions.Length&&definitions[index]!=null)
             {
                 var data=definitions[index].textureData;
-                if(data!=null)portalTexture=data.side!=null?data.side:data.top;
+                if(data!=null)
+                {
+                    // The block renderer prioritizes the special Surface slot.
+                    // Portal assets commonly leave all ordinary faces empty.
+                    if(data.specialTextures!=null)
+                        foreach(var part in data.specialTextures)
+                            if(part!=null&&part.part==BlockTexturePart.Surface&&part.image!=null)
+                            {portalTexture=part.image;break;}
+                    if(portalTexture==null)portalTexture=data.side!=null?data.side:data.top;
+                }
             }
         }
         if(portalTexture==null){Graphics.Blit(source,destination);return;}
         int rows=Mathf.Max(1,portalTexture.height/Mathf.Max(1,portalTexture.width));
         portalEffect.SetTexture("_PortalTex",portalTexture);
         portalEffect.SetFloat("_PortalRows",rows);
-        portalEffect.SetFloat("_PortalFrame",Mathf.Floor(Time.time*20)%rows);
+        portalEffect.SetFloat("_PortalFrame",Mathf.FloorToInt(Time.time*20)%rows);
         portalEffect.SetFloat("_Intensity",intensity);
         Graphics.Blit(source,destination,portalEffect);
     }
@@ -230,5 +238,5 @@ public sealed class FluidCameraEffects : MonoBehaviour
         }
         finally{style.richText=rich;style.normal.textColor=previous;}
     }
-    private void OnDestroy(){Restore();if(deathGradient!=null)Destroy(deathGradient);}
+    private void OnDestroy(){Restore();if(deathGradient!=null)Destroy(deathGradient);if(portalEffect!=null)Destroy(portalEffect);}
 }
