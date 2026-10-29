@@ -359,7 +359,13 @@ public partial class PlayerInventory
   var snapshot=new WorldServer.SavePlayerMessage(new Vector3(),new Quaternion(),new Quaternion(),inv.SavedInventory(),1,inv.SavedCrafting(),inv.SavedCursor(),inv.SavedRecovery(),inv.SavedEquipment());
   inv.slots[0].count=1;Check(snapshot.inventory[0].count==64,"save snapshots do not alias live stacks");
   inv.LoadInventory(snapshot.inventory,snapshot.crafting,snapshot.cursor,snapshot.recovery,snapshot.equipment);Check(Total(inv,ItemType.Stone)==36*64&&Total(inv,ItemType.Sand)==1,"saved inventory and cursor survive without restoring legacy overflow");
-  inv.OpenInventory();inv.canvasRect.sizeDelta=new Vector2(320,200);inv.UpdateInventoryLayout();
+  inv.OpenInventory();
+  foreach(var screen in new[]{new Vector2(1920,1080),new Vector2(2560,1080),new Vector2(800,1200),new Vector2(320,200)})
+  {
+   inv.canvasRect.sizeDelta=screen;inv.UpdateInventoryLayout();
+   var dim=inv.creativeRoot.GetChild(0).GetComponent<RectTransform>();
+   Check(Math.Abs(dim.sizeDelta.x*inv.creativeRoot.localScale.x-screen.x)<.01f&&Math.Abs(dim.sizeDelta.y*inv.creativeRoot.localScale.y-screen.y)<.01f,"inventory dimmer covers full canvas at every aspect ratio and UI scale");
+  }
   Check(inv.creativePageSize<131&&inv.nextPage.interactable,"small windows page catalogue while both panes remain visible");
   var seen=new HashSet<ItemType>();int pages=(inv.creativeBlocks.Count+inv.creativePageSize-1)/inv.creativePageSize;
   for(int p=0;p<pages;p++){for(int i=0;i<inv.creativePageSize;i++){int n=p*inv.creativePageSize+i;if(n<inv.creativeBlocks.Count)seen.Add(inv.creativeBlocks[n]);}inv.ChangeCreativePage(1);}

@@ -109,7 +109,9 @@ public partial class PlayerInventory
             var layout=TmiLayout.Calculate(width,height);
             creativeRoot.sizeDelta=new Vector2(layout.width,layout.height);
             creativeRoot.localScale=Vector3.one*layout.scale;
-            creativeRoot.GetChild(0).GetComponent<RectTransform>().sizeDelta=creativeRoot.sizeDelta;
+            // The menu layout has a capped logical size. The dimmer must cover
+            // the entire canvas, compensating for the menu's own UI scale.
+            creativeRoot.GetChild(0).GetComponent<RectTransform>().sizeDelta=new Vector2(width/layout.scale,height/layout.scale);
             inventoryRect.anchoredPosition=new Vector2(sidebarVisible?layout.inventoryX:0,0);
             inventoryBackdrop.anchoredPosition=new Vector2(inventoryRect.anchoredPosition.x,inventoryRect.anchoredPosition.y-2);
             creativePanel.anchoredPosition=new Vector2(layout.sidebarX,0);
