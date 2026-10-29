@@ -14,8 +14,9 @@ public partial class Player
     private InventoryStack lastServerCursorReply;
     private bool lastServerCursorAccepted;
 
+    private bool HostLocalItemTransfer => NetworkServer.active && isLocalPlayer;
     private bool CanRequestItemTransfer => !dimensionTransfer&&!WorldLoadingScreen.IsLoading&&
-        (!networkStarted||(NetworkClient.active&&NetworkClient.ready));
+        (HostLocalItemTransfer||!networkStarted||(NetworkClient.active&&NetworkClient.ready));
 
     private void UpdateItemDrops()
     {
@@ -41,10 +42,11 @@ public partial class Player
         // Do not lock the inventory for a command Mirror cannot send. Pickups
         // are retried by the normal scan after readiness has been restored.
         if(inventory==null||inventory.DropRequestPending||!CanRequestItemTransfer)return;
-        inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted;
+        bool useNetwork=networkStarted&&!HostLocalItemTransfer;
+        inventory.DropRequestPending=true;awaitingNetworkDrop=useNetwork;
         int request=++dropRequestId;
         var snapshot=inventory.DropInventorySnapshot();
-        if(networkStarted)CmdDropAction(request,dropping,id,snapshot,knownItemWearRevision);
+        if(useNetwork)CmdDropAction(request,dropping,id,snapshot,knownItemWearRevision);
         else ProcessDropAction(request,dropping,id,snapshot,false,knownItemWearRevision);
     }
     [Command] private void CmdDropAction(int request,bool dropping,int id,InventoryStack[] snapshot,int revision)
@@ -96,10 +98,11 @@ public partial class Player
     public void RequestInventoryCursorDrop(bool single)
     {
         if(inventory==null||inventory.DropRequestPending||!CanRequestItemTransfer||inventory.CursorSnapshot().Empty)return;
-        inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted;
+        bool useNetwork=networkStarted&&!HostLocalItemTransfer;
+        inventory.DropRequestPending=true;awaitingNetworkDrop=useNetwork;
         int request=++cursorDropRequestId;
         var snapshot=inventory.DropInventorySnapshot();var cursor=inventory.CursorSnapshot();
-        if(networkStarted)CmdInventoryCursorDrop(request,single,snapshot,cursor,knownItemWearRevision);
+        if(useNetwork)CmdInventoryCursorDrop(request,single,snapshot,cursor,knownItemWearRevision);
         else ProcessInventoryCursorDrop(request,single,snapshot,cursor,false,knownItemWearRevision);
     }
     [Command] private void CmdInventoryCursorDrop(int request,bool single,InventoryStack[] snapshot,InventoryStack cursor,int revision)
