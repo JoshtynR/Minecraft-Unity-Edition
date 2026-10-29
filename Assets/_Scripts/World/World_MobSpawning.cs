@@ -74,12 +74,15 @@ public partial class World
         if(light==null)return false;
         if(MobRules.Hostile(species))
         {
-            if(!HostileSpawnRules.Allows(light.GetBlockLight(),light.GetSkyLight(),skyLightReduction,mobRandom.NextInt(32),mobRandom.NextInt(8)))return false;
+            // EntityMob returns before consuming the second roll when raw
+            // saved skylight fails. Daylight reduction only applies afterward.
+            if(light.GetSkyLight()>mobRandom.NextInt(32))return false;
+            if(!HostileSpawnRules.Allows(light.GetBlockLight(),light.GetSkyLight(),skyLightReduction,mobRandom.NextInt(8)))return false;
         }
         else
         {
             var floor=GetBlock(cell+new Vector3Int(0,-1,0));
-            if(floor==null||floor.type!=BlockType.Grass||HostileSpawnRules.EffectiveLight(light.GetBlockLight(),light.GetSkyLight(),skyLightReduction)<=8)return false;
+            if(floor==null||floor.type!=BlockType.Grass||!HostileSpawnRules.PassiveAllows(light.GetBlockLight(),light.GetSkyLight()))return false;
         }
         return MobSpawnClear(feet,species);
     }
@@ -101,10 +104,10 @@ public partial class World
         RefreshEligibleMobChunks();int eligible=mobSpawnCandidates.Count;if(eligible==0)return;
         // Persisted mobs in unloaded chunks must not consume the active-area
         // cap. Beta counts entities in the eligible loaded region only.
-        int count=0;
-        foreach(var entity in mobTickCandidates)
-            if(MobRules.Hostile(entity.species)==hostile&&MobAreaLoaded(entity.position)&&MobPlayerDistance(entity.position)<128*128)count++;
         int cap=HostileSpawnRules.CategoryCap(hostile?maximumActiveHostiles:maximumActivePassiveMobs,eligible);
+        int count=0;
+        foreach(var entity in mobs.Entities)
+            if(MobRules.Hostile(entity.species)==hostile&&MobAreaLoaded(entity.position)&&++count>cap)return;
         // SpawnerAnimals uses <=, so a final pack may carry the category over
         // the scaled cap before the next tick stops spawning it.
         if(count>cap)return;
@@ -134,8 +137,10 @@ public partial class World
                     pz+=mobRandom.NextInt(6)-mobRandom.NextInt(6);
                     var cell=new Vector3Int(px,py,pz);if(!BetaSpawnCell(cell))continue;
                     var feet=new Vector3(px+.5f,py,pz+.5f);
-                    if(MobPlayerDistance(feet)<24*24||(feet-worldSpawn).sqrMagnitude<24*24||!BetaSpecificSpawn(species,feet))continue;
-                    var mob=mobs.Spawn(feet,mobRandom.NextFloat()*360,species);if(mob==null)return;
+                    if(MobPlayerDistance(feet)<24*24||(feet-worldSpawn).sqrMagnitude<24*24)continue;
+                    float yaw=mobRandom.NextFloat()*360;
+                    if(!BetaSpecificSpawn(species,feet))continue;
+                    var mob=mobs.Spawn(feet,yaw,species);if(mob==null)return;
                     TrackMobCandidate(mob);
                     if(species==MobType.Sheep)mob.fleeceColor=BetaSheepColor();
                     BroadcastMob(mob);spawnedInChunk++;

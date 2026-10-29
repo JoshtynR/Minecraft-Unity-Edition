@@ -2,6 +2,8 @@ using System;
 
 public static class HostileSpawnRules
 {
+    public static bool PassiveAllows(int blockLight,int skyLight)
+    {return Math.Max(blockLight,skyLight)>8;}
     // EntityMob performs two independent checks: raw saved skylight against a
     // 0..31 roll, then final block light against a fresh 0..7 roll.
     public static int EffectiveLight(int blockLight,int skyLight,int skyLightReduction)
