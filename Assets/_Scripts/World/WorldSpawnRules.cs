@@ -18,10 +18,19 @@ public static class WorldSpawnRules
         // candidate. Still guarantee respawn for ocean-only, obstructed, or
         // unusual custom terrain instead of leaving the player dead forever.
         int floorY = Math.Max(1, Math.Min(FallbackFloorY, world.worldHeight - 3));
+        // Never carve just a two-block pocket below a roof. Put the fallback
+        // platform at the top obstruction, then clear its entire sky column.
+        for (int y = world.worldHeight - 1; y > floorY; y--)
+        {
+            var above = world.GetBlock(new Vector3Int(0, y, 0));
+            if (above != null && above.type == BlockType.Air) continue;
+            floorY = Math.Min(y, world.worldHeight - 3);
+            break;
+        }
         var floor = new Vector3Int(0, floorY, 0);
         WorldDataHelper.SetBlock(world, floor, BlockType.Stone);
-        WorldDataHelper.SetBlock(world, floor + Vector3Int.up, BlockType.Air);
-        WorldDataHelper.SetBlock(world, floor + Vector3Int.up + Vector3Int.up, BlockType.Air);
+        for (int y = floorY + 1; y < world.worldHeight; y++)
+            WorldDataHelper.SetBlock(world, new Vector3Int(0, y, 0), BlockType.Air);
         var chunkPosition = WorldDataHelper.GetChunkPosition(world, floor);
         var renderer = WorldDataHelper.GetChunk(world, chunkPosition);
         if (renderer != null) world.AddChunkToUpdate(renderer, true);
@@ -41,15 +50,20 @@ public static class WorldSpawnRules
         for (int z = -ring; z <= ring; z++)
         {
             if (Math.Max(Math.Abs(x), Math.Abs(z)) != ring || x * x + z * z > radiusSquared) continue;
-            for (int floorY = world.worldHeight - 3; floorY >= 0; floorY--)
+            // Only the topmost non-air cell can support an open-sky spawn.
+            // Stopping at the first obstruction rejects caves, tree canopies,
+            // liquids and unloaded cells without repeatedly rescanning above.
+            for (int floorY = world.worldHeight - 1; floorY >= 0; floorY--)
             {
                 var floor = world.GetBlock(new Vector3Int(x, floorY, z));
-                if (floor == null || !SpecialBlockGeometry.NormalCube(floor.type)) continue;
-                var feet = world.GetBlock(new Vector3Int(x, floorY + 1, z));
-                var head = world.GetBlock(new Vector3Int(x, floorY + 2, z));
-                if (feet == null || head == null || feet.type != BlockType.Air || head.type != BlockType.Air) continue;
-                spawn = new Vector3(x + .5f, floorY + 1, z + .5f);
-                return true;
+                if (floor == null || floor.type == BlockType.Nothing) break;
+                if (floor.type == BlockType.Air) continue;
+                if (floorY <= world.worldHeight - 3 && SpecialBlockGeometry.NormalCube(floor.type))
+                {
+                    spawn = new Vector3(x + .5f, floorY + 1, z + .5f);
+                    return true;
+                }
+                break;
             }
         }
         return false;
