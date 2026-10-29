@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Mirror
 {
  public class SyncVarAttribute:Attribute {}public class CommandAttribute:Attribute {}public class TargetRpcAttribute:Attribute {}public class NetworkConnection {}
- public static class NetworkServer {public static bool active;}public static class NetworkClient {public static bool active;}
+ public static class NetworkServer {public static bool active;}public static class NetworkClient {public static bool active;public static bool ready=true;}
  public class NetworkManager {public static NetworkManager singleton;public int hostStops,clientStops;public void StopHost(){hostStops++;NetworkServer.active=false;NetworkClient.active=false;}public void StopClient(){clientStops++;NetworkClient.active=false;}}
 }
 namespace UnityEngine.SceneManagement {public static class SceneManager {public static string loaded;public static void LoadScene(string name){loaded=name;}}}
@@ -125,7 +125,8 @@ public partial class Player:MonoBehaviour
 {
  private class FallStub {public void Reset(){}}private readonly FallStub falling=new FallStub();
  private void ResetWalkMotion(){}
- public WorldDimension dimension;public World CurrentWorld=>world??World.Instance;public float PortalOverlay;private void BeginDimensionTravel(WorldDimension target,Vector3 position,bool portal){}
+ private bool dimensionTransfer;
+ public WorldDimension dimension;public World CurrentWorld=>world??World.Instance;public float PortalOverlay;private void BeginDimensionTravel(WorldDimension target,Vector3 position,bool portal){dimensionTransfer=true;}
  public World world;public bool networkStarted,isLocalPlayer=true,isFlying,serverFlying,InWater,sleeping,hasBedSpawn;public Vector3Int bedSpawn;public string SleepMessage=>"";
  public bool isServer;public Mirror.NetworkConnection connectionToClient;
  public bool escapeMenuOpen;
@@ -135,6 +136,7 @@ public partial class Player:MonoBehaviour
  public int health=20;public float entityWidth=.3f,entityHeight=1.8f,eyeHeight=1.578f;public Transform cam;
 }
 public class GameManager {public static GameManager Instance;public Player localPlayer;}
+public static class WorldLoadingScreen {public static bool IsLoading;public static void Begin(){IsLoading=true;}}
 public struct TestLobby {public void Leave(){LobbyManager.leaves++;}}
 public static class LobbyManager {public static TestLobby? currentLobby;public static int leaves;}
 public static class FluidVisualCheck
@@ -236,7 +238,8 @@ public static class FluidVisualCheck
   EscapeMenuManager.ExitToTitle();Check(UnityEngine.SceneManagement.SceneManager.loaded=="MainMenu","offline title action returns to the main menu scene");
   GUI.clickButton=-1;
   player.RequestFluidRespawn();
-  Check(player.health==20&&player.airSupply==300&&!player.burning&&player.transform.position.x==2.5f&&player.transform.position.y==1,"lava death respawns at a verified safe position and clears damage state");
+  Check(player.RespawnPending&&WorldLoadingScreen.IsLoading&&player.health==0,"respawn starts terrain readiness instead of immediately reviving in unloaded chunks");
+  Call(player,"ApplyFluidRespawn",WorldSpawnRules.Resolve(world));
   Check(player.movementResets==1&&Cursor.lockState==CursorLockMode.Locked&&!Cursor.visible,"respawn resets liquid motion and restores the cursor");
   world.blocks.Clear();world.blocks[new Vector3Int(15,3,0)]=new Block{type=BlockType.Stone};
   var edgeSpawn=WorldSpawnRules.Resolve(world);

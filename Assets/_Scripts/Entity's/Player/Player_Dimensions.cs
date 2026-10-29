@@ -122,7 +122,9 @@ public partial class Player
                 var checkpoint=SavePlayer();
                 await source.SaveDimensionAsync();
                 if(source!=null)source.SavePlayer(checkpoint);
-                sourceReleased=await World.ReleaseForDimensionGenerationAsync(source);
+                // Same-dimension respawn only streams the destination area;
+                // do not discard the world shared by surviving players.
+                if(previous!=target)sourceReleased=await World.ReleaseForDimensionGenerationAsync(source);
             }
             if(this==null)return;
             var destination=World.GetDimension(target);
@@ -308,6 +310,7 @@ public partial class Player
     }
     private void FinishDimensionTravel(Vector3 destination)
     {
+        respawnRequested=false;
         transform.position=destination;dimensionTransfer=false;ResumeDimensionTransforms();portalCooldown=15;portalTime=0;
         if(health<=0)ApplyFluidRespawn(destination);
         velocity=extraForce=Vector3.zero;verticalMomentum=0;jumpRequest=false;
