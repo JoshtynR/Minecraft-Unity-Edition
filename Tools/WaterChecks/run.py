@@ -35,7 +35,7 @@ def main():
         height=height.replace('private static void AddFluidUVs','public static void AddFluidUVs')
         (tmp/'WaterMeshCheck.cs').write_text('using UnityEngine; public static class WaterMeshCheck {\n'+height+'\n}')
         world=(ROOT/'Assets/_Scripts/World/World.cs').read_text()
-        method=world[world.index('    public async void SetBlocks(ChunkRenderer'):world.index('    public Vector3Int GetBlockPos(')]
+        method=world[world.index('    public void SetBlocks(ChunkRenderer'):world.index('    public Vector3Int GetBlockPos(')]
         (tmp/'WorldStairPlacement.cs').write_text('using System.Collections.Generic;using System.Linq;using UnityEngine;public partial class World{'+method+'}')
         helper=(ROOT/'Assets/_Scripts/World/WorldDataHelper.cs').read_text()
         method=helper[helper.index('    public static void SetBlock(World world,'):helper.index('    [CanBeNull]',helper.index('    public static void SetBlock(World world,'))]

@@ -18,6 +18,12 @@ public partial class World
     private int chunkUpdateSession;
     private Camera backgroundCamera;
 
+    private bool IsLiveChunk(ChunkRenderer chunk)
+    {
+        if (chunk == null || chunk.ChunkData == null || worldData.chunkDict == null) return false;
+        return worldData.chunkDict.TryGetValue(chunk.ChunkData.worldPos, out var current) && ReferenceEquals(current, chunk);
+    }
+
     private void ResetChunkUpdates()
     {
         lock (chunkUpdateThreadLock)
@@ -49,7 +55,7 @@ public partial class World
                 var chunk = chunksToUpdate[0];
                 chunksToUpdate.RemoveAt(0);
                 queuedChunks.Remove(chunk);
-                if (chunk != null && worldData.chunkDict.TryGetValue(chunk.ChunkData.worldPos, out var current) && current == chunk)
+                if (IsLiveChunk(chunk))
                     chunks.Add(chunk);
             }
         }
@@ -59,10 +65,17 @@ public partial class World
         try
         {
             var meshes = await UpdateMeshDataAsync(chunks, false);
-            if (session != chunkUpdateSession || disabled) return;
-            foreach (var chunk in chunks)
-                if (chunk != null && worldData.chunkDict.TryGetValue(chunk.ChunkData.worldPos, out var current) && current == chunk)
-                    chunk.UpdateChunk(meshes[chunk]);
+            try
+            {
+                if (session != chunkUpdateSession || disabled) return;
+                foreach (var chunk in chunks)
+                    if (IsLiveChunk(chunk)) chunk.UpdateChunk(meshes[chunk]);
+            }
+            finally
+            {
+                // Also release results rejected after pooling, reset or unload.
+                foreach (var mesh in meshes.Values) mesh.ReleaseAfterUpload();
+            }
         }
         catch (OperationCanceledException) { }
         catch (Exception error) { Debug.LogException(error); }

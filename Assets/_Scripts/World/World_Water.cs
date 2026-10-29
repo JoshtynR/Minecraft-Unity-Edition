@@ -34,8 +34,6 @@ public partial class World : IWaterWorld
     [System.NonSerialized] private HashSet<ChunkRenderer> runtimeWaterDirtyChunks;
     private HashSet<ChunkRenderer> waterDirtyChunks => System.Threading.LazyInitializer.EnsureInitialized(ref runtimeWaterDirtyChunks, () => new HashSet<ChunkRenderer>());
     private float waterTickTime;
-    private bool waterMeshBuildInProgress;
-    private int waterSession;
 
     // Block.SetType may run on generation workers. Only enqueue here; all water
     // simulation, network messages, and mesh requests run on Unity's main thread.
@@ -47,8 +45,6 @@ public partial class World : IWaterWorld
         waterSimulation = null;
         lavaSimulation = null;
         fluidTicks=null;fluidRandom=null;ResetFluidRuntime();
-        waterSession++;
-        waterMeshBuildInProgress = false;
         waterTickTime = 0;
         while (waterNotifications.TryDequeue(out _)) { }
         waterChunksToActivate.Clear();
@@ -302,29 +298,13 @@ public partial class World : IWaterWorld
                 waterChanges.Clear();
             }
         }
-        if (waterDirtyChunks.Count > 0 && !waterMeshBuildInProgress) RebuildWaterMeshes();
+        if (waterDirtyChunks.Count > 0) QueueFluidMeshUpdates();
     }
 
-    // Called on Unity's main thread: Task awaits retain its synchronization
-    // context, so RenderMesh never runs on the background chunk-update thread.
-    private async void RebuildWaterMeshes()
+    // Fluids use the same bounded rebuild scheduler as ordinary block edits.
+    private void QueueFluidMeshUpdates()
     {
-        int session = waterSession;
-        var chunks = new List<ChunkRenderer>();
-        foreach (var chunk in waterDirtyChunks) if (chunk != null) chunks.Add(chunk);
+        foreach (var chunk in waterDirtyChunks) AddChunkToUpdate(chunk);
         waterDirtyChunks.Clear();
-        if (chunks.Count == 0) return;
-        waterMeshBuildInProgress = true;
-        try
-        {
-            var meshes = await UpdateMeshDataAsync(chunks, false);
-            if (session != waterSession) return;
-            foreach (var chunk in chunks)
-                if (chunk != null && worldData.chunkDict.TryGetValue(chunk.ChunkData.worldPos, out var current) && current == chunk)
-                    chunk.UpdateChunk(meshes[chunk]);
-        }
-        catch (OperationCanceledException) { }
-        catch (Exception exception) { Debug.LogException(exception); }
-        finally { if (session == waterSession) waterMeshBuildInProgress = false; }
     }
 }

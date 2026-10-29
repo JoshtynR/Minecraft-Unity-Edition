@@ -94,7 +94,7 @@ public partial class World
         await generationGate.WaitAsync(worldCancellationToken);
         try
         {
-            while(chunkUpdateInProgress||waterMeshBuildInProgress)await Task.Yield();
+            while(chunkUpdateInProgress)await Task.Yield();
             if(IsWorldCreated && HasReadyArea(position))return;
             PreparingDimensionArea=fullArea;
             await GenerateWorldCore(position);

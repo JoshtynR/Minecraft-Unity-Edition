@@ -300,7 +300,7 @@ public partial class World : MonoBehaviour
         SetBlocks(chunk, blockPoss, blockType);
     }
 
-    public async void SetBlocks(ChunkRenderer chunk, IEnumerable<Vector3Int> blockPoss, BlockType blockType, byte stairFacing = 0)
+    public void SetBlocks(ChunkRenderer chunk, IEnumerable<Vector3Int> blockPoss, BlockType blockType, byte stairFacing = 0)
     {
         if(disabled||chunk==null||chunk.ChunkData==null||blockPoss==null)return;
         if(WheatCropRules.IsLegacy(blockType)){stairFacing=WheatCropRules.LegacyAge(blockType);blockType=WheatCropRules.Crop;}
@@ -415,24 +415,8 @@ public partial class World : MonoBehaviour
         }
         neightBourUpdates.Add(chunk);
 
-        var meshTask=UpdateMeshDataAsync(neightBourUpdates.ToList());
-        try { await meshTask; }
-        catch(System.OperationCanceledException) { return; }
-        var meshData=meshTask.Result;
-
-        // A scene unload or streaming eviction can release renderers while the
-        // worker is building their meshes. Apply only results still owned by
-        // this world's live chunk map, and release every stale result.
-        var liveChunks=worldData.chunkDict;
-        foreach (var result in meshData)
-        {
-            var chunkRenderer=result.Key;
-            var data=chunkRenderer!=null?chunkRenderer.ChunkData:null;
-            ChunkRenderer current;
-            if(!disabled&&liveChunks!=null&&data!=null&&liveChunks.TryGetValue(data.worldPos,out current)&&ReferenceEquals(current,chunkRenderer))
-                chunkRenderer.UpdateChunk(result.Value);
-            else result.Value?.ReleaseAfterUpload();
-        }
+        // Mutations request rendering; only the shared scheduler starts jobs.
+        foreach (var affected in neightBourUpdates) AddChunkToUpdate(affected);
     }
 
     public void SetBlock(ChunkRenderer chunk, Vector3Int blockPos, BlockType blockType, byte stairFacing = 0)

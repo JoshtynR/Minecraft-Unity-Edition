@@ -214,7 +214,7 @@ public partial class World
         bool wasDisabled=disabled;disabled=true;
         try
         {
-            while(chunkUpdateInProgress||waterMeshBuildInProgress)await Task.Yield();
+            while(chunkUpdateInProgress)await Task.Yield();
             ResetChunkUpdates();
             foreach(var pair in incoming)
             {
