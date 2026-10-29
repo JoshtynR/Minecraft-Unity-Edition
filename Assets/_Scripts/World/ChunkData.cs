@@ -125,6 +125,16 @@ public class ChunkData
             return GetSection(localPos.y).GetBlock(localPos);
         }
         
+        if (ReferenceEquals(meshReadOwner, this))
+        {
+            int dx=(int)Math.Floor((double)localPos.x/chunkSize);
+            int dz=(int)Math.Floor((double)localPos.z/chunkSize);
+            if(dx>=-1&&dx<=1&&dz>=-1&&dz<=1)
+            {
+                var neighbor=meshReadNeighbors[(dx+1)*3+dz+1];
+                return neighbor==null?BlockHelper.NOTHING:neighbor.GetBlock(new Vector3Int(localPos.x-dx*chunkSize,localPos.y,localPos.z-dz*chunkSize));
+            }
+        }
         return this.worldRef.GetBlock(new Vector3Int(this.worldPos.x + localPos.x, this.worldPos.y + localPos.y, this.worldPos.z + localPos.z));
     }
 
@@ -175,10 +185,30 @@ public class ChunkData
     }
 
     private readonly object meshBuildLock = new object();
+    [ThreadStatic] private static ChunkData meshReadOwner;
+    [ThreadStatic] private static ChunkData[] meshReadNeighbors;
 
     public MeshData GetMeshData()
     {
-        lock (meshBuildLock) return BuildMeshData();
+        lock (meshBuildLock)
+        {
+            // Like ChunkCache in Beta: resolve the surrounding chunk references
+            // once, rather than looking them up for every boundary AO sample.
+            // This cache is a per-worker view, not a copy of mutable block data.
+            if(meshReadNeighbors==null)meshReadNeighbors=new ChunkData[9];
+            try
+            {
+                for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++)
+                    worldRef.worldData.chunkDataDict.TryGetValue(worldPos+new Vector3Int(dx*chunkSize,0,dz*chunkSize),out meshReadNeighbors[(dx+1)*3+dz+1]);
+                meshReadOwner=this;
+                return BuildMeshData();
+            }
+            finally
+            {
+                meshReadOwner=null;
+                Array.Clear(meshReadNeighbors,0,meshReadNeighbors.Length);
+            }
+        }
     }
 
     private MeshData BuildMeshData()
