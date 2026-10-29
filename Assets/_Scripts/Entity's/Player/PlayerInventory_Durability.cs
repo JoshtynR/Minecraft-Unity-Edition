@@ -27,7 +27,7 @@ public partial class PlayerInventory
             var stack=Stack(recoveryItems[i]);ItemDurability.Wear(ref stack,amount);
             if(stack.Empty)recoveryItems.RemoveAt(i);
             else{recoveryItems[i].damage=stack.damage;recoveryItems[i].count=stack.count;}
-            UpdateRecoveryNotice();return;
+            return;
         }
     }
     private void RefreshSlotDurability(int index)

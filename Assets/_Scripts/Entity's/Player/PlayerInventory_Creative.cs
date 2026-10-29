@@ -15,8 +15,7 @@ public partial class PlayerInventory
     private TextMeshProUGUI creativePageText, creativeTitleText, creativeNameText;
     private TMP_FontAsset creativeFont;
     private Material inventoryTextMaterial,inventoryLabelMaterial,containerLabelMaterial;
-    private Button previousPage, nextPage, recoveryButton;
-    private TextMeshProUGUI recoveryText;
+    private Button previousPage, nextPage;
     private int creativePage, creativePageSize;
     private float lastMenuWidth=-1,lastMenuHeight=-1;
     private int hoveredSlot=-1;
@@ -77,9 +76,6 @@ public partial class PlayerInventory
             equipmentGhosts[i]=CreativeRect("EmptyEquipment",equipmentRects[i],0,0,16,16);
             ArmorHint(equipmentGhosts[i],i);
         }
-        recoveryButton=CreativeButton("Recover saved items",inventoryRect,0,-95,176,16,RecoverSavedItems);
-        recoveryText=recoveryButton.transform.Find("Label").GetComponent<TextMeshProUGUI>();
-        recoveryButton.gameObject.SetActive(false);
         creativePanel=CreativeRect("TooManyItemsSidebar",creativeRoot,225,0,162,360);
         var catalogShade=creativePanel.gameObject.AddComponent<Image>();catalogShade.color=new Color(0,0,0,.58f);catalogShade.raycastTarget=false;
         creativePanel.gameObject.SetActive(false);
@@ -241,13 +237,6 @@ public partial class PlayerInventory
             tooltipRect.anchoredPosition=new Vector2(x,y);
         }
     }
-    private void UpdateRecoveryNotice()
-    {
-        if(recoveryButton==null)return;
-        recoveryButton.gameObject.SetActive(recoveryItems.Count>0);
-        recoveryText.text="Recover "+recoveryItems.Count+" saved stacks";
-    }
-
     private TextMeshProUGUI InventoryCell(string name,Transform parent,float x,float y,int index)
     {
         var rect=CreativeRect(name,parent,x,y,18,18);
