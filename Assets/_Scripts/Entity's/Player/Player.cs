@@ -105,7 +105,7 @@ public partial class Player : BaseEntity
 
         if (isLocalPlayer)
         {
-            CmdSetPlayerServerData(PlayerIdentity.DisplayName, PlayerIdentity.Id);
+            StartCoroutine(PublishPlayerIdentityWhenReady());
         }
 
         objects.playerName.text = PlayerName;
