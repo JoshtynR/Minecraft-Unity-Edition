@@ -176,11 +176,11 @@ public partial class PlayerInventory
   Check(owned.All(m=>m.destroyed)&&material.destroyed&&!Resources.hud.chestSkin.destroyed,"chest renderer releases owned native meshes and material, preserving source skin");
   var chunkObject=new GameObject("Chunk",typeof(ChunkRenderer));var renderer=chunkObject.GetComponent<ChunkRenderer>();
   var chunk=new ChunkData{worldRef=World.Instance};renderer.Initialize(chunk);
-  var data=new MeshData(true){chests=new System.Collections.Generic.List<Vector3Int>{pos},sourceChunk=chunk};
-  renderer.RenderMesh(data);Check(chunkObject.transform.childCount==1,"actual chunk mesh upload creates a separate chest model");
-  var child=chunkObject.transform.GetChild(0).gameObject;renderer.RenderMesh(data);
+  Func<MeshData> freshUpload=()=>new MeshData(true){chests=new System.Collections.Generic.List<Vector3Int>{pos},sourceChunk=chunk};
+  renderer.RenderMesh(freshUpload());Check(chunkObject.transform.childCount==1,"actual chunk mesh upload creates a separate chest model");
+  var child=chunkObject.transform.GetChild(0).gameObject;renderer.RenderMesh(freshUpload());
   Check(chunkObject.transform.childCount==1&&ReferenceEquals(child,chunkObject.transform.GetChild(0).gameObject),"lighting remesh reuses chest model rather than duplicating owned resources");
-  World.Instance.blocks.Remove(pos);renderer.RenderMesh(data);
+  World.Instance.blocks.Remove(pos);renderer.RenderMesh(freshUpload());
   Check(chunkObject.transform.childCount==0&&child.destroyed,"stale chest mesh upload cannot resurrect mined chest model");
   Resources.hud=null;
   menu.LoadInventory(null);

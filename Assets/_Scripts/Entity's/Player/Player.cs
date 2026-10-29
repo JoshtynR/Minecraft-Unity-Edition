@@ -356,7 +356,7 @@ public partial class Player : BaseEntity
                 {
                     if (networkStarted)
                     {
-                        NetworkClient.Send(new WorldServer.SetBlockMessage(blockPos, type, facing));
+                        return RequestBlockPlacement(blockPos,type,facing);
                     }
                     else
                     {
@@ -767,6 +767,7 @@ public partial class Player : BaseEntity
 
     private void OnDestroy()
     {
+        CancelPendingPlacement();
         DisposeBodySkin();
         CancelDimensionTransfer();
         DisposeFluidView();

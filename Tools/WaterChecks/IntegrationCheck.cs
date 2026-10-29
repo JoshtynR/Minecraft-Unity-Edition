@@ -439,5 +439,5 @@ public static class Lighting { internal static readonly object SyncRoot = new ob
 
 public enum WorldDimension { Nether=-1,Overworld=0 }
 
-public class Player {public World CurrentWorld=>World.Instance;public bool DimensionTransferInProgress;public WorldDimension dimension;public Transform transform=new Transform();}
+public class Player {public World CurrentWorld=>World.Instance;public bool DimensionTransferInProgress;public WorldDimension dimension;public Transform transform=new Transform();public bool TryReplayPlacement(int request,out bool accepted){accepted=false;return false;}public void CompletePlacementRequest(Mirror.NetworkConnectionToClient c,int request,bool accepted){}}
 public class Transform {public UnityEngine.Vector3 position;}
