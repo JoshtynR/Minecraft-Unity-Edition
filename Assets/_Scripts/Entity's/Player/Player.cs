@@ -100,6 +100,7 @@ public partial class Player : BaseEntity
         if(GetComponent<PlayerGameplayAudio>()==null)gameObject.AddComponent<PlayerGameplayAudio>();
 
         meshFilters = GetComponentsInChildren<MeshFilter>();
+        InitializeBodySkin();
         SetMeshLight(15, 15);
 
         if (isLocalPlayer)
@@ -158,6 +159,7 @@ public partial class Player : BaseEntity
 
     public void SetMeshLight(int skyLight, int blockLight)
     {
+        UpdateBodySkinLight(skyLight,blockLight);
         foreach (var meshFilter in meshFilters)
         {
             if (meshFilter == null) continue;
@@ -760,6 +762,7 @@ public partial class Player : BaseEntity
 
     private void OnDestroy()
     {
+        DisposeBodySkin();
         CancelDimensionTransfer();
         DisposeFluidView();
         DisposeMining();
