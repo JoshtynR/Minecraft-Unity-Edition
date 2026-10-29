@@ -10,6 +10,8 @@ namespace UnityEngine {
   public static Vector3 Lerp(Vector3 a,Vector3 b,float t)=>a+(b-a)*t;public void Normalize(){this=normalized;}
  }
  [Serializable] public struct Vector3Int {
+  public static Vector3Int left=>new Vector3Int(-1,0,0);public static Vector3Int right=>new Vector3Int(1,0,0);
+  public static Vector3Int back=>new Vector3Int(0,0,-1);public static Vector3Int forward=>new Vector3Int(0,0,1);
   public static Vector3Int zero=>new Vector3Int();public static Vector3Int up=>new Vector3Int(0,1,0);public static Vector3Int down=>new Vector3Int(0,-1,0);
   public int x,y,z;public Vector3Int(int x,int y,int z){this.x=x;this.y=y;this.z=z;}
   public static Vector3Int FloorToInt(Vector3 v)=>new Vector3Int((int)Math.Floor(v.x),(int)Math.Floor(v.y),(int)Math.Floor(v.z));
