@@ -118,7 +118,10 @@ public partial class World
         EnsureDroppedItemsRestored();
         if(!DropAuthority&&!dropSyncRequested&&NetworkClient.ready)
         {dropSyncRequested=true;NetworkClient.Send(new DropSyncRequest());}
-        if(DropAuthority&&!isSaving&&!GenerationBusy)
+        // Terrain noise and mesh workers do not change resident block cells.
+        // Only population can write cross-chunk features; match the mob guard
+        // instead of freezing items throughout the whole streaming request.
+        if(DropAuthority&&!isSaving&&System.Threading.Volatile.Read(ref betaPopulationJobs)==0)
         {
             dropClock+=Time.deltaTime;
             // Catch up without tying gravity or despawn age to Unity's physics rate.
