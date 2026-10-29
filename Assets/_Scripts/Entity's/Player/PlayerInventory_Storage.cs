@@ -197,7 +197,7 @@ public partial class PlayerInventory
     private void RefreshCraftingOutput()
     {
         ReadCrafting();WriteStack(40,InventoryRules.CraftResult(craftBuffer));
-        UpdateRecoveryNotice();
+
     }
     private void TakeCraftResult(bool shift)
     {
@@ -312,6 +312,6 @@ public partial class PlayerInventory
             var stack=recoveryItems[i];stack.count=InventoryRules.Insert(storageBuffer,stack.type,stack.count,0,36,stack.damage);
             if(stack.count==0)recoveryItems.RemoveAt(i);else i++;
         }
-        CommitStorage();UpdateRecoveryNotice();
+        CommitStorage();
     }
 }
