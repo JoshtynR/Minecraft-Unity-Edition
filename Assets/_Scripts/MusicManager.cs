@@ -2,13 +2,20 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 [DisallowMultipleComponent]
 public class MusicManager : MonoBehaviour
 {
     public static MusicManager Instance { get; private set; }
-    [Header("Playlist")]
-    public List<AudioClip> tracks = new List<AudioClip>();
+    [Header("Menu Music")]
+    public string menuSceneName = "MainMenu";
+    [FormerlySerializedAs("tracks")]
+    public List<AudioClip> menuTracks = new List<AudioClip>();
+    [Header("World Music")]
+    public string worldSceneName = "World";
+    public List<AudioClip> worldTracks = new List<AudioClip>();
     [Header("Playback")]
     public bool playOnStart = true;
     public bool shuffle;
@@ -31,6 +38,8 @@ public class MusicManager : MonoBehaviour
     private readonly List<int> _order = new List<int>();
     private readonly List<AudioClip> _snapshot = new List<AudioClip>();
     private bool _orderShuffled;
+    private int _scenePool = -1;
+    private List<AudioClip> tracks => _scenePool==0 ? menuTracks : _scenePool==1 ? worldTracks : null;
 
     void Awake()
     {
@@ -44,9 +53,12 @@ public class MusicManager : MonoBehaviour
             source.outputAudioMixerGroup = output;
         }
         _rng = new System.Random();
+        _scenePool = ScenePool(SceneManager.GetActiveScene());
+        SceneManager.activeSceneChanged += OnActiveSceneChanged;
     }
     void Start()
     {
+        _playbackRequested=playOnStart;
         SetVolume(PlayerPrefs.GetFloat("musicVolume",100f)/100f); EnsureOrder();
         if (playOnStart && _order.Count > 0) PlayIndex(_order[0], true);
     }
@@ -75,7 +87,8 @@ public class MusicManager : MonoBehaviour
     }
     public void PlayClip(AudioClip clip, bool instant = false)
     {
-        if (clip == null) return;
+        // Do not allow menu-only songs to leak into world playback or vice versa.
+        if (clip == null || FindIndex(clip)<0) return;
         _currentIndex = FindIndex(clip); BeginTrack(clip, instant);
     }
     public void Play()
@@ -121,7 +134,7 @@ public class MusicManager : MonoBehaviour
     public void AddTrack(AudioClip clip)
     {
         if (clip == null) return;
-        if (tracks == null) tracks = new List<AudioClip>(); tracks.Add(clip);
+        if (tracks != null) tracks.Add(clip);
     }
     public void RemoveTrackAt(int index)
     {
@@ -199,5 +212,24 @@ public class MusicManager : MonoBehaviour
         }
         from.Stop(); from.volume = 0; to.volume = volume; _fadeCo = null;
     }
-    void OnDestroy() { if (Instance == this) Instance = null; }
+    private int ScenePool(Scene scene)
+    { return scene.name==menuSceneName ? 0 : scene.name==worldSceneName ? 1 : -1; }
+    private void OnActiveSceneChanged(Scene previous, Scene next)
+    {
+        int pool=ScenePool(next);
+        if(pool==_scenePool)return;
+        bool resume=_playbackRequested,paused=_paused;
+        // Stop both sources and any fade: outgoing scene music is exclusive.
+        StopAll();_scenePool=pool;_currentIndex=-1;_snapshot.Clear();_order.Clear();
+        EnsureOrder();
+        if(resume&&_order.Count>0)
+        {PlayIndex(_order[0],true);if(paused)Pause();}
+        // Empty/unsupported scenes stay silent, retaining playback intent.
+        _playbackRequested=resume;_paused=paused;
+    }
+    void OnDestroy()
+    {
+        SceneManager.activeSceneChanged -= OnActiveSceneChanged;
+        if (Instance == this) Instance = null;
+    }
 }

@@ -15,7 +15,7 @@ static class StartupCheck
  static MusicManager Music(bool shuffle=false,bool loop=true,params AudioClip[] tracks)
  {
   var manager=new GameObject("Music").AddComponent<MusicManager>();manager.shuffle=shuffle;manager.loopPlaylist=loop;
-  manager.tracks=new List<AudioClip>(tracks.Length>0?tracks:new[]{new AudioClip(),new AudioClip(),new AudioClip()});
+  manager.menuTracks=new List<AudioClip>(tracks.Length>0?tracks:new[]{new AudioClip(),new AudioClip(),new AudioClip()});
   Call(manager,"Start");return manager;
  }
  static void Tick(MusicManager music,int frames=1)
@@ -72,10 +72,23 @@ static class StartupCheck
   Check(visited.Count==3&&!music.IsPlaying,"non-looping shuffled playlist ends after one complete pass");End(music);
   music=Music(false,true,new AudioClip(),null,new AudioClip());music.crossfadeSeconds=0;
   Check(music.CurrentIndex==0,"null entries do not prevent startup");music.Next();Check(music.CurrentIndex==2,"null entry is skipped");music.Next();Check(music.CurrentIndex==0,"null entry does not prevent wrapping");
-  var standalone=new AudioClip();music.PlayClip(standalone,true);Check(music.CurrentClip==standalone&&music.CurrentIndex==-1,"standalone clip is reported correctly");
-  Active(music).Stop();Tick(music);Check(music.CurrentIndex==0,"standalone clip rejoins playlist");End(music);
+  var standalone=new AudioClip();var before=music.CurrentClip;music.PlayClip(standalone,true);Check(music.CurrentClip==before,"unassigned clip cannot bypass scene playlist");End(music);
   music=Music(false,true,new AudioClip());music.crossfadeSeconds=0;for(int i=0;i<5;i++){Active(music).Stop();Tick(music);Check(music.CurrentIndex==0&&music.IsPlaying,"single-entry playlist repeats");}End(music);
   music=Music(false,true,(AudioClip)null);Tick(music,30);Check(!music.IsPlaying,"all-null playlist stays idle");End(music);
+  music=Music();var menu=music.CurrentClip;var world=new AudioClip();music.worldTracks.Add(world);
+  music.Next();Tick(music,1);Check(Field<Coroutine>(music,"_fadeCo")!=null,"scene transition test starts during a fade");
+  SceneManager.LoadScene("World");
+  Check(music.CurrentClip==world&&music.IsPlaying&&Field<Coroutine>(music,"_fadeCo")==null,"world scene cancels menu fade and starts world-only pool");
+  var inactive=Field<bool>(music,"_usingA")?Field<AudioSource>(music,"_b"):Field<AudioSource>(music,"_a");
+  Check(!inactive.isPlaying,"outgoing menu source is stopped");
+  music.PlayClip(menu,true);Check(music.CurrentClip==world,"menu clip is rejected in world scene");
+  music.Next();Tick(music,20);Check(music.CurrentClip==world,"world playlist loops only world tracks");
+  music.Pause();SceneManager.LoadScene("MainMenu");Check(!music.IsPlaying&&music.menuTracks.Contains(music.CurrentClip),"scene switch preserves explicit pause");
+  music.Play();music.worldTracks.Clear();SceneManager.LoadScene("World");Check(!music.IsPlaying&&music.CurrentClip==null,"empty world pool stays silent without menu fallback");
+  SceneManager.LoadScene("MainMenu");Check(music.IsPlaying&&music.menuTracks.Contains(music.CurrentClip),"menu pool resumes after empty scene");
+  SceneManager.LoadScene("Other");Check(!music.IsPlaying,"unsupported scene stays silent");
+  SceneManager.LoadScene("MainMenu");music.StopAll();SceneManager.LoadScene("World");SceneManager.LoadScene("MainMenu");Check(!music.IsPlaying,"explicit stop remains stopped across scene changes");End(music);
+  SceneManager.LoadScene("World");music=Music();music.worldTracks.Add(world);music.Play();Check(music.CurrentClip==world,"starting directly in world uses world pool");End(music);SceneManager.LoadScene("MainMenu");
  }
  static WorldLoadingScreen Screen()
  {

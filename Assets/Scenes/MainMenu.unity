@@ -1363,7 +1363,7 @@ GameObject:
   - component: {fileID: 396798706}
   - component: {fileID: 396798705}
   m_Layer: 5
-  m_Name: Panel
+  m_Name: Dirt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2065,7 +2065,7 @@ GameObject:
   - component: {fileID: 513144983}
   - component: {fileID: 513144982}
   m_Layer: 5
-  m_Name: Panel
+  m_Name: Dirt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2347,23 +2347,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1c26b1d2ea25fd42ba565ad6c2d2b5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tracks:
+  menuSceneName: MainMenu
+  menuTracks:
+  - {fileID: 8300000, guid: ed5afe77802917040a62c132612a4f07, type: 3}
+  - {fileID: 8300000, guid: 0420b177ccd04cc4bad059240daaeb49, type: 3}
+  - {fileID: 8300000, guid: 8bc6156d38c040441acd6f1e528ae616, type: 3}
+  - {fileID: 8300000, guid: 0e5fe37ed41d4354f96a8f0df322f194, type: 3}
+  worldSceneName: World
+  worldTracks:
   - {fileID: 8300000, guid: 043e763e3e3d71f4e99505004df96d5e, type: 3}
   - {fileID: 8300000, guid: 89710409ef444864f9391a990386512a, type: 3}
   - {fileID: 8300000, guid: edd2d7f9d6148b64e98001ad05c95300, type: 3}
   - {fileID: 8300000, guid: be2f9e846cd48b24a8563c62ad7c8323, type: 3}
   - {fileID: 8300000, guid: 4c81eeec7ed398444ab8080db2973f94, type: 3}
-  - {fileID: 8300000, guid: ed5afe77802917040a62c132612a4f07, type: 3}
-  - {fileID: 8300000, guid: 684b97c0604ac4f46b5e2e3a62ce98f0, type: 3}
-  - {fileID: 8300000, guid: 0420b177ccd04cc4bad059240daaeb49, type: 3}
+  - {fileID: 8300000, guid: c5d44b642c92db44595d480676ad63c0, type: 3}
   - {fileID: 8300000, guid: ad5534b708793bb4da931608baea1835, type: 3}
   - {fileID: 8300000, guid: 641a9af34e7779b4e93c41d0fdf43776, type: 3}
-  - {fileID: 8300000, guid: 8bc6156d38c040441acd6f1e528ae616, type: 3}
   - {fileID: 8300000, guid: f0782ca453a416b4f8facbe57d8e44cc, type: 3}
   - {fileID: 8300000, guid: 74c027800ad9cab41bb1b92a06533565, type: 3}
   - {fileID: 8300000, guid: 80262f0287f0f174f8d797a54d53b124, type: 3}
   - {fileID: 8300000, guid: 3603a0f258bfa1549bd87d800ffcbe93, type: 3}
-  - {fileID: 8300000, guid: 0e5fe37ed41d4354f96a8f0df322f194, type: 3}
   - {fileID: 8300000, guid: 662baa894ea531443a128f4294ef3d97, type: 3}
   - {fileID: 8300000, guid: 9767292dd432b5f44bccea359249cf69, type: 3}
   playOnStart: 1
@@ -2692,7 +2695,7 @@ GameObject:
   - component: {fileID: 568187497}
   - component: {fileID: 568187496}
   m_Layer: 5
-  m_Name: PanelDirt
+  m_Name: Dirt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2902,7 +2905,7 @@ GameObject:
   - component: {fileID: 656776221}
   - component: {fileID: 656776220}
   m_Layer: 5
-  m_Name: Panel
+  m_Name: PanelDirt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3380,7 +3383,7 @@ GameObject:
   - component: {fileID: 745224953}
   - component: {fileID: 745224952}
   m_Layer: 5
-  m_Name: Panel (1)
+  m_Name: Overlay
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3831,7 +3834,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -152.49994, y: 5329800}
+  m_AnchoredPosition: {x: -152.49994, y: 6257974.5}
   m_SizeDelta: {x: 305, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &845042230
@@ -6755,6 +6758,7 @@ MonoBehaviour:
   renderDistance: 6
   guiScale: 3
   fov: 75
+  musicVolume: 100
 --- !u!4 &1320148712
 Transform:
   m_ObjectHideFlags: 0
@@ -7064,7 +7068,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.8235294}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.92941177}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -7486,7 +7490,7 @@ GameObject:
   - component: {fileID: 1476906250}
   - component: {fileID: 1476906249}
   m_Layer: 5
-  m_Name: Panel
+  m_Name: Dirt
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8922,7 +8926,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.8235294}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.92941177}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -9366,7 +9370,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -152.49997, y: 5169193.5}
+  m_AnchoredPosition: {x: -152.49997, y: 6097368}
   m_SizeDelta: {x: 305, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1737316053
@@ -9496,7 +9500,7 @@ GameObject:
   - component: {fileID: 1744121081}
   - component: {fileID: 1744121080}
   m_Layer: 5
-  m_Name: Panel (2)
+  m_Name: Panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -9534,7 +9538,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.8235294}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.92941177}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -10032,7 +10036,7 @@ GameObject:
   - component: {fileID: 1848466462}
   - component: {fileID: 1848466461}
   m_Layer: 5
-  m_Name: Panel (1)
+  m_Name: Panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10070,7 +10074,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.8235294}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.92941177}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -10624,8 +10628,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: fb10220336b3cb447939b5edcf91f87b, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -10741,7 +10745,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 19.489}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 108.2, y: 47.5}
+  m_AnchoredPosition: {x: 116.9, y: 55.3}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!95 &1945438879
@@ -11464,7 +11468,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.8235294}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.92941177}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -11766,10 +11770,55 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7740483}
     m_Modifications:
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010014, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010014, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010014, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2011159967981331664, guid: 7147530122476ca4cbd97684444b0523,
         type: 3}
       propertyPath: m_Color.a
-      value: 0.8235294
+      value: 0.92941177
       objectReference: {fileID: 0}
     - target: {fileID: 3832831416329544356, guid: 7147530122476ca4cbd97684444b0523,
         type: 3}
