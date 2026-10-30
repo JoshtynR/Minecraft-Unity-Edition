@@ -41,7 +41,7 @@ public partial class PlayerInventory
         inventoryScreenRoot.anchorMin=new Vector2(0,0);inventoryScreenRoot.anchorMax=new Vector2(1,1);
         var backdrop=CreativeRect("DimBackground",inventoryScreenRoot,0,0,0,0);
         backdrop.anchorMin=new Vector2(0,0);backdrop.anchorMax=new Vector2(1,1);
-        var dim=backdrop.gameObject.AddComponent<Image>();dim.color=new Color(0,0,0,.48f);
+        var dim=backdrop.gameObject.AddComponent<Image>();dim.color=new Color(0,0,0,.70f);
         var outside=backdrop.gameObject.AddComponent<InventoryOutsideClick>();outside.playerInventory=this;
         creativeRoot=CreativeRect("InventoryMenu",inventoryScreenRoot,0,0,640,360);
         creativeRoot.localPosition=new Vector3(0,0,-35);

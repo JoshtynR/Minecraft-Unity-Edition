@@ -2,7 +2,6 @@ using TMPro;
 using Mirror;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // Survives the menu scene. Scene activation alone does not mean the voxel world is playable.
@@ -96,15 +95,6 @@ public sealed class WorldLoadingScreen : MonoBehaviour
         bar.gameObject.AddComponent<Image>().color=new Color(128/255f,128/255f,128/255f,1);
         progressFill=Rect("Progress",bar,-50,0,0,2);progressFill.pivot=new Vector2(0,.5f);
         progressFill.gameObject.AddComponent<Image>().color=new Color(128/255f,1,128/255f,1);
-        var cancel = Rect("Cancel", transform, 0, -65, 200, 20);
-        RawImage buttonImage=null;
-        if(assets!=null&&assets.guiWidgets!=null){buttonImage=cancel.gameObject.AddComponent<RawImage>();buttonImage.texture=assets.guiWidgets;buttonImage.color=Color.white;}
-        else cancel.gameObject.AddComponent<Image>().color=new Color(.4f,.4f,.4f,1);
-        var button=cancel.gameObject.AddComponent<Button>();button.transition=Selectable.Transition.None;
-        button.onClick.AddListener(CancelLoad);
-        var label=Text("Label",cancel,0,200,"Cancel",font);
-        label.color=new Color(224/255f,224/255f,224/255f,1);
-        if(buttonImage!=null)cancel.gameObject.AddComponent<LoadingCancelHover>().Initialize(buttonImage,label);
         UpdateLayout();
     }
     private TextMeshProUGUI Text(string name,Transform parent,float y,float width,string value,TMP_FontAsset font)
@@ -152,18 +142,6 @@ public sealed class WorldLoadingScreen : MonoBehaviour
         if(mapReady)ReportProgress(!playerReady?"Loading player":!spawnReady?"Building terrain":"Done",!playerReady?.96f:!spawnReady?.98f:1);
         if (readiness.Advance(mapReady, playerReady, spawnReady, Time.frameCount)) Finish(true);
     }
-    private void CancelLoad()
-    {
-        var network = NetworkManager.singleton;
-        bool inWorld = IsWorldScene(SceneManager.GetActiveScene().name);
-        Cancel();
-        if (network != null)
-        {
-            if (NetworkServer.active) network.StopHost(); else network.StopClient();
-        }
-        if (inWorld && (network == null || string.IsNullOrEmpty(network.offlineScene))) SceneManager.LoadScene("MainMenu");
-        else if (!inWorld && Menu.currentMenu != null && Menu.lastMenu != null) Menu.CloseCurrentMenu();
-    }
     private void Finish(bool enterGame = false)
     {
         visible = false;
@@ -178,20 +156,6 @@ public sealed class WorldLoadingScreen : MonoBehaviour
         if (textMaterial != null) Destroy(textMaterial);
         if (instance == this) instance = null;
     }
-}
-
-public sealed class LoadingCancelHover : MonoBehaviour,IPointerEnterHandler,IPointerExitHandler
-{
-    private RawImage image;
-    private TextMeshProUGUI label;
-    public void Initialize(RawImage background,TextMeshProUGUI text){image=background;label=text;SetHover(false);}
-    private void SetHover(bool hover)
-    {
-        image.uvRect=new Rect(0,1-((hover?86:66)+20)/256f,200/256f,20/256f);
-        label.color=hover?new Color(1,1,160/255f,1):new Color(224/255f,224/255f,224/255f,1);
-    }
-    public void OnPointerEnter(PointerEventData data){SetHover(true);}
-    public void OnPointerExit(PointerEventData data){SetHover(false);}
 }
 
 // Require two completed frames after all conditions hold, including deferred player-save restoration.
