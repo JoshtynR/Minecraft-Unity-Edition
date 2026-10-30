@@ -236,7 +236,9 @@ public partial class PlayerInventory
    Check(background!=null&&ReferenceEquals(background.texture,sheet),"inventory uses configured sheet at native and HD sizes");
    Check(background.uvRect.x==0&&background.uvRect.y==90/256f&&background.uvRect.width==176/256f&&background.uvRect.height==166/256f,"only top-left survival panel is sampled; extra atlas widgets excluded");
    Check(menu.inventoryRect.Find("Bevel")==null&&menu.inventoryRect.Find("CraftArrow")==null,"atlas bevels and arrow are not painted over");
-   Check(menu.inventoryBackdrop.GetComponent<UnityEngine.UI.Image>().color.a>.5f&&menu.creativePanel.GetComponent<UnityEngine.UI.Image>().color.a>.5f,"survival and TooManyItems panels have independent dark backplates");
+   Check(menu.creativeRoot.Find("InventoryBackdrop")==null&&menu.creativePanel.GetComponent<UnityEngine.UI.Image>()==null,"inventory and TMI do not add panel-sized dim rectangles");
+   var dim=menu.inventoryScreenRoot.Find("DimBackground").GetComponent<UnityEngine.UI.Image>();
+   Check(dim.color.a>0&&dim.color.a<1&&dim.transform.parent==menu.inventoryScreenRoot,"inventory, TMI and containers share one translucent canvas dimmer");
    var previousArtwork=menu.previousPage.GetComponent<UnityEngine.UI.RawImage>();
    Check(previousArtwork!=null&&ReferenceEquals(previousArtwork.texture,widgets)&&ReferenceEquals(menu.previousPage.targetGraphic,previousArtwork),"catalogue arrows use the configured Minecraft GUI widget artwork");
    menu.ToggleTooManyItems();

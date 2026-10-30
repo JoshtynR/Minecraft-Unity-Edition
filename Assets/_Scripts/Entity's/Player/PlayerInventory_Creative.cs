@@ -11,7 +11,7 @@ public partial class PlayerInventory
     private readonly List<RectTransform> creativeCells = new List<RectTransform>();
     private readonly RectTransform[] craftingRects = new RectTransform[4];
     private readonly RectTransform[] equipmentRects = new RectTransform[4],equipmentGhosts = new RectTransform[4];
-    private RectTransform inventoryScreenRoot, creativeRoot, creativePanel, inventoryBackdrop, craftResultRect, tooltipRect;
+    private RectTransform inventoryScreenRoot, creativeRoot, creativePanel, craftResultRect, tooltipRect;
     private TextMeshProUGUI creativePageText, creativeTitleText, creativeNameText;
     private TMP_FontAsset creativeFont;
     private Material inventoryTextMaterial,inventoryLabelMaterial,containerLabelMaterial;
@@ -45,8 +45,8 @@ public partial class PlayerInventory
         var outside=backdrop.gameObject.AddComponent<InventoryOutsideClick>();outside.playerInventory=this;
         creativeRoot=CreativeRect("InventoryMenu",inventoryScreenRoot,0,0,640,360);
         creativeRoot.localPosition=new Vector3(0,0,-35);
-        inventoryBackdrop=CreativeRect("InventoryBackdrop",creativeRoot,0,-2,182,172);
-        var inventoryShade=inventoryBackdrop.gameObject.AddComponent<Image>();inventoryShade.color=new Color(0,0,0,.58f);inventoryShade.raycastTarget=false;
+        // All container modes and TMI share the full-canvas DimBackground.
+        // No panel-sized dark overlays: those leave visible rectangular borders.
         inventoryRect=CreativeRect("SurvivalInventory",creativeRoot,0,0,176,166);
         texturedInventory=assets!=null&&assets.inventory!=null;
         if(texturedInventory)
@@ -82,7 +82,6 @@ public partial class PlayerInventory
             ArmorHint(equipmentGhosts[i],i);
         }
         creativePanel=CreativeRect("TooManyItemsSidebar",creativeRoot,225,0,162,360);
-        var catalogShade=creativePanel.gameObject.AddComponent<Image>();catalogShade.color=new Color(0,0,0,.58f);catalogShade.raycastTarget=false;
         creativePanel.gameObject.SetActive(false);
         creativeTitleText=CreativeText("Title",creativePanel,0,170,150,16,"Too Many Items",8,Color.white);
         previousPage=CreativeWidgetButton("<",creativePanel,-65,-170,20,20,assets!=null?assets.guiWidgets:null,()=>ChangeCreativePage(-1));
@@ -115,7 +114,6 @@ public partial class PlayerInventory
             creativeRoot.sizeDelta=new Vector2(layout.width,layout.height);
             creativeRoot.localScale=Vector3.one*layout.scale;
             inventoryRect.anchoredPosition=new Vector2(sidebarVisible?layout.inventoryX:0,0);
-            inventoryBackdrop.anchoredPosition=new Vector2(inventoryRect.anchoredPosition.x,inventoryRect.anchoredPosition.y-2);
             creativePanel.anchoredPosition=new Vector2(layout.sidebarX,0);
             creativePanel.sizeDelta=new Vector2(layout.columns*18+8,layout.height);
             creativeTitleText.rectTransform.anchoredPosition=new Vector2(0,layout.height/2-11);
