@@ -118,10 +118,7 @@ static class StartupCheck
   WorldLoadingScreen.ReportProgress("Done",2);Check(fill.sizeDelta.x==100,"progress is clamped to the native 100px bar");WorldLoadingScreen.ResetProgress();
   Check(fill.sizeDelta.x==0,"a new terrain generation resets progress");
   ScreenResize(original,dirt);
-  var cancel=original.transform.children.Single(c=>c.gameObject.name=="Cancel");
-  var hover=cancel.GetComponent<LoadingCancelHover>();var widget=cancel.GetComponent<UnityEngine.UI.RawImage>();
-  hover.OnPointerEnter(null);Check(widget.uvRect.y==1-106/256f,"cancel button uses the native highlighted texture row");
-  hover.OnPointerExit(null);Check(widget.uvRect.y==1-86/256f,"cancel button restores the native normal texture row");
+  Check(!original.transform.children.Any(c=>c.gameObject.name=="Cancel"),"loading screen does not create a cancel button");
   Check(preview.enabled,"world-camera suppression does not affect menu scenes");
   WorldLoadingScreen.Begin();Check(Screen()==original,"duplicate begin calls share one overlay");
   SceneManager.LoadScene("World");LoadingTick(10);Check(WorldLoadingScreen.IsLoading,"scene activation does not reveal game");
@@ -141,7 +138,7 @@ static class StartupCheck
   WorldLoadingScreen.Begin();LoadingTick(30);SceneManager.LoadScene("MainMenu");Check(!WorldLoadingScreen.IsLoading,"leaving world removes overlay");
   WorldLoadingScreen.Begin();WorldLoadingScreen.Cancel();Check(!WorldLoadingScreen.IsLoading,"disconnect cancels loading before world scene exists");
   SceneManager.LoadScene("World");WorldLoadingScreen.Begin();original=Screen();Mirror.NetworkManager.singleton=new Mirror.NetworkManager{offlineScene=""};
-  Call(original,"CancelLoad");Check(!WorldLoadingScreen.IsLoading&&Mirror.NetworkManager.singleton.stopped&&SceneManager.GetActiveScene().name=="MainMenu","cancel disconnects and returns to menu without configured offline scene");
+  WorldLoadingScreen.Cancel();Check(!WorldLoadingScreen.IsLoading,"programmatic disconnect cleanup still dismisses the loading screen");SceneManager.LoadScene("MainMenu");
   Application.isBatchMode=true;WorldLoadingScreen.Begin();Check(!WorldLoadingScreen.IsLoading,"headless server does not create loading UI");Application.isBatchMode=false;
   var network=new GameObject("Network").AddComponent<MinecraftNetworkManager>();
   network.OnServerDisconnect(null);Check(network.disconnects==1,"cancel before world-server creation still performs base disconnect");
