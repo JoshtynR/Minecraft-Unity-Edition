@@ -34,6 +34,13 @@ assert load.index('loadingSavedPlayer = true;') < load.index('ExecuteAfterFrames
 assert load.index('loadingSavedPlayer = false;') > load.index('inventory.LoadInventory(')
 assert load.index('savedPlayerApplied = true;') > load.index('inventory.LoadInventory(')
 server = (root / 'Assets/_Scripts/World/WorldServer.cs').read_text()
+save_loop=server[server.index('    public IEnumerator SaveLoop()'):server.index('    [Serializable]',server.index('    public IEnumerator SaveLoop()'))]
+assert 'WaitForSecondsRealtime(2*60)' in save_loop and 'World.SaveAllDimensions();' in save_loop
+assert 'World.SaveAllDimensions();' not in player, 'Opening pause menu must not trigger a full save'
+for container in ['Chest','Furnace']:
+    ui=(root / ("Assets/_Scripts/Entity's/Player/PlayerInventory_"+container+'.cs')).read_text()
+    assert '.SaveWorld();' not in ui, 'Closing a container waits for autosave rather than saving the entire world'
+assert 'await World.SaveAllDimensionsAsync()' in (root/'Assets/_Scripts/Menus/MenuManagers/EscapeMenuManager.cs').read_text()
 spawn = server[server.index('    public void SpawnPlayerMessageHandler('):server.index('    public struct SpawnPlayerMessage')]
 assert spawn.index('expectsSavedPlayerData = true;') < spawn.index('NetworkServer.AddPlayerForConnection(')
 assert spawn.index('PrepareDimensionJoin();') < spawn.index('NetworkServer.AddPlayerForConnection(')

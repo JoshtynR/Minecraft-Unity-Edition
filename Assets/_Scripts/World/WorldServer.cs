@@ -147,7 +147,7 @@ public partial class WorldServer : NetworkBehaviour
     {
         while (true)
         {
-            yield return new WaitForSecondsRealtime(5*60);
+            yield return new WaitForSecondsRealtime(2*60);
             World.SaveAllDimensions();
         }
     }

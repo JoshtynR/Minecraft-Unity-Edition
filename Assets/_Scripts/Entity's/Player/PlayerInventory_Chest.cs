@@ -34,7 +34,6 @@ public partial class PlayerInventory
             var reply=world.chests.Process(world.StorageName,-1,request,accessible);
             if(reply.accepted&&!reply.dropped.Empty)player.SpawnMenuDrop(reply.dropped);
             ReceiveChestReply(reply);
-            if(reply.accepted&&!reply.opened)world.SaveWorld();
         }
     }
     public void ApplyChestPlayerSnapshot(InventoryStack[] inventory,InventoryStack cursor)
