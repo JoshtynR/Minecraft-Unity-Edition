@@ -82,12 +82,21 @@ public static class InventoryRules
         var dropped=new InventoryStack(cursor.type,count,cursor.damage);
         cursor.count-=count;cursor.Normalize();return dropped;
     }
-    public static bool EquipmentAccepts(int index,ItemType type) => index==0&&type==ItemType.Pumpkin;
+    public static int EquipmentIndex(ItemType type) => type>=ItemType.LeatherHelmet&&type<=ItemType.GoldenBoots?
+        ((int)type-(int)ItemType.LeatherHelmet)%4:type==ItemType.Pumpkin?0:-1;
+    public static bool EquipmentAccepts(int index,ItemType type) => index>=0&&index<4&&EquipmentIndex(type)==index;
     public static void ClickEquipment(ref InventoryStack slot,ref InventoryStack cursor,int index)
     {
         slot.Normalize();cursor.Normalize();
         if(cursor.Empty){cursor=slot;slot=new InventoryStack();return;}
-        if(!EquipmentAccepts(index,cursor.type)||!slot.Empty)return;
+        if(!EquipmentAccepts(index,cursor.type))return;
+        if(!slot.Empty)
+        {
+            // One carried piece can replace the equipped piece atomically.
+            // A stack of pumpkins must not overflow a one-item equipment slot.
+            if(cursor.count==1){var previous=slot;slot=cursor;cursor=previous;}
+            return;
+        }
         slot=new InventoryStack(cursor.type,1,cursor.damage);cursor.count--;cursor.Normalize();
     }
     public static int Capacity(InventoryStack[] slots,ItemType type,int start,int end,int damage=0)

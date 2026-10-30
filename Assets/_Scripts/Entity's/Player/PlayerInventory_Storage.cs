@@ -89,7 +89,13 @@ public partial class PlayerInventory
         var slot=GetSlot(index);if(slot==null)return;
         if(shift&&index<36)
         {
-            ReadStorage();InventoryRules.Shift(storageBuffer,index);CommitStorage();
+            var value=Stack(slot);int equipment=InventoryRules.EquipmentIndex(value.type);
+            if(!tableOpen&&!value.Empty&&equipment>=0&&Stack(equipmentSlots[equipment]).Empty)
+            {
+                var equipped=new InventoryStack(value.type,1,value.damage);value.count--;
+                WriteStack(index,value);WriteStack(41+equipment,equipped);
+            }
+            else {ReadStorage();InventoryRules.Shift(storageBuffer,index);CommitStorage();}
         }
         else if(shift)
         {
@@ -145,6 +151,8 @@ public partial class PlayerInventory
     }
     public bool IsInventoryDoubleClick(int index,bool right,int eventClickCount)
     {
+        // Equipment clicks equip/swap, never consolidate the carried item.
+        if(index>=41&&index<45){lastInventoryClickType=ItemType.Nothing;lastInventoryClickTime=-10;return false;}
         if(right)return false;
         var stack=Stack(pickedUpSlot);if(stack.Empty)stack=Stack(GetSlot(index));
         if(stack.Empty){lastInventoryClickType=ItemType.Nothing;lastInventoryClickTime=Time.unscaledTime;return false;}

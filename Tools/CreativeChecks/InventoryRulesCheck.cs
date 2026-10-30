@@ -71,6 +71,6 @@ public partial class PlayerInventory
   }
   Check(TmiLayout.SlotY(0)==-67&&TmiLayout.SlotY(9)==-9&&TmiLayout.SlotY(35)==-45&&TmiLayout.SlotX(35)==72,"Beta survival slot coordinates");
   foreach(ItemType type in Enum.GetValues(typeof(ItemType)))for(int armor=0;armor<4;armor++)
-   Check(InventoryRules.EquipmentAccepts(armor,type)==(armor==0&&type==ItemType.Pumpkin),"equipment validity follows the available Beta block registry, including pumpkin-only exception");
+   Check(InventoryRules.EquipmentAccepts(armor,type)==(ItemDurability.ArmorPart(type)==armor||armor==0&&type==ItemType.Pumpkin),"equipment accepts each armour material only in its matching slot, plus pumpkin helmets");
  }
 }
