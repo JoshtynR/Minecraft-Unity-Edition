@@ -25,10 +25,10 @@ public partial class PlayerInventory
         furnacePending = true;
         if ((NetworkClient.active&&!NetworkServer.active)) { NetworkClient.Send(request); return; }
         var world = player.CurrentWorld;
-        if (world == null) { ReceiveFurnaceReply(new FurnaceReply { error = "World closed." }); return; }
+        if (world == null) { ReceiveFurnaceReply(new FurnaceReply { sessionClosed=true,error = "World closed." }); return; }
         if (world.isSaving && request.action != 2) { ReceiveFurnaceReply(new FurnaceReply { error = "World is saving; try again in a moment." }); return; }
         bool accessible = player != null && player.health > 0 && world.FurnaceAccessible(transform.position + Vector3.up * 1.6f, request.position);
-        var reply = world.furnaces.Process(world.worldName, -1, request, accessible);
+        var reply = world.furnaces.Process(world.StorageName, -1, request, accessible);
         if (reply.accepted && !reply.dropped.Empty) player.SpawnMenuDrop(reply.dropped);
         ReceiveFurnaceReply(reply);
         if (reply.accepted && !reply.opened) world.SaveWorld();
@@ -36,6 +36,8 @@ public partial class PlayerInventory
     public void ReceiveFurnaceReply(FurnaceReply reply)
     {
         furnacePending = false;
+        if(reply.sessionClosed)
+        {EndFurnacePanel();furnaceCloseRequested=false;CloseInventory();return;}
         if (!reply.accepted)
         {
             Debug.LogWarning(reply.error);

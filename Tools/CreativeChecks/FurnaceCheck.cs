@@ -93,6 +93,9 @@ public partial class PlayerInventory
   World.Instance.blocks[position]=new Block(BlockType.Furnace,position,null){blockShape=(byte)4};
   var assets=new PlayerHudAssets{furnace=new Texture2D{width=256,height=256}};Resources.hud=assets;
   menu.AddItem(ItemType.IronOre,2);menu.AddItem(ItemType.Coal,1);menu.RequestFurnace(position);
+  NetworkServer.active=true;NetworkClient.active=true;Time.unscaledTime+=1;new WorldServer().PollChests();
+  Check(World.Instance.furnaces.HasOwner(-1)&&menu.furnaceOpen,"network session reaper preserves direct local-host furnace owner");
+  NetworkServer.active=false;NetworkClient.active=false;
   Check(menu.furnaceOpen&&menu.isOpen&&menu.furnacePanel.GetComponent<UnityEngine.UI.RawImage>().texture==assets.furnace,"right click opens texture-backed furnace UI");
   Check(menu.inventorySlotsRect.parent==menu.furnacePanel&&menu.furnaceRects[2].GetComponent<InventorySlot>().slotIndex==302,"player inventory and three furnace slots are clickable");
   Check(menu.furnaceRects[0].anchoredPosition.x==-24&&menu.furnaceRects[0].anchoredPosition.y==58&&menu.furnaceRects[2].anchoredPosition.x==36,"slots use native sheet coordinates");
@@ -115,7 +118,11 @@ public partial class PlayerInventory
   var arrow=menu.furnaceArrow.GetComponent<UnityEngine.UI.RawImage>();
   Check(arrow.uvRect.y==1-31/256f&&menu.furnaceFlame.GetComponent<UnityEngine.UI.RawImage>().uvRect.y==1-14/256f,"progress sprites sample the native arrow and flame regions");
   menu.transform.position=new Vector3(30,0,30);Time.unscaledTime+=1;menu.UpdateFurnacePanel();Check(!menu.furnaceOpen,"walking away closes offline furnace session");
-  menu.transform.position=Vector3.zero;NetworkClient.active=true;menu.RequestFurnace(position);
+  menu.transform.position=Vector3.zero;
+  menu.RequestFurnace(position);menu.furnacePending=true;menu.furnaceCloseRequested=true;
+  menu.ReceiveFurnaceReply(World.Instance.furnaces.Close(-1));menu.ReceiveFurnaceReply(World.Instance.furnaces.Close(-1));
+  Check(!menu.isOpen&&!menu.furnaceOpen&&!menu.furnacePending&&!menu.furnaceCloseRequested&&!menu.inventoryScreenRoot.gameObject.activeSelf&&Cursor.lockState==CursorLockMode.Locked,"missing furnace session releases menu, dimmer and controls");
+  NetworkClient.active=true;menu.RequestFurnace(position);
   Check(menu.furnacePending,"network open waits for authoritative reply");menu.CloseInventory();
   menu.ReceiveFurnaceReply(new FurnaceReply{accepted=true,opened=true,position=position,items=new InventoryStack[3],inventory=new InventoryStack[36]});
   Check(NetworkClient.lastFurnace.action==2&&menu.furnacePending,"close requested during network open is sent after acceptance");

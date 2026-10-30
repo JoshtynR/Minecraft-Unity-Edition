@@ -89,6 +89,7 @@ public partial class WorldServer
     {
         foreach (int owner in world.furnaces.Owners())
         {
+            if(owner==-1)continue; // Local UI owns lifetime/range checks.
             bool connected = NetworkServer.connections.TryGetValue(owner, out var connection) && connection != null && connection.identity != null;
             var player = connected ? connection.identity.GetComponent<Player>() : null;
             if (player != null && player.dimension == world.dimension && !player.DimensionTransferInProgress && player.health > 0 && world.FurnaceAccessible(player.transform.position + Vector3.up * 1.6f, world.furnaces.Position(owner))) continue;
