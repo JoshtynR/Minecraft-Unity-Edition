@@ -254,6 +254,25 @@ public partial class PlayerInventory
    var window=menu.inventoryRect.Find("PlayerPreview");
    Check(window.localPosition.x==-37&&window.localPosition.y==40&&window.GetComponent<UnityEngine.UI.Image>()==null,"preview sits in existing black sheet window");
    CheckCanvasPreview(menu);
+   var layers=Enumerable.Range(0,10).Select(i=>new Texture2D{width=64,height=32}).ToArray();
+   ((PlayerHudAssets)Resources.hud).armourLayers=layers;
+   ((PlayerHudAssets)Resources.hud).leatherArmourOverlays=new[]{new Texture2D{width=64,height=32},new Texture2D{width=64,height=32}};
+   foreach(var helmet in new[]{ItemType.LeatherHelmet,ItemType.ChainmailHelmet,ItemType.IronHelmet,ItemType.DiamondHelmet,ItemType.GoldenHelmet})
+   {
+    int material=((int)helmet-(int)ItemType.LeatherHelmet)/4;
+    for(int part=0;part<4;part++)
+    {
+     menu.WriteStack(41+part,new InventoryStack((ItemType)((int)helmet+part),1));
+     var graphic=menu.armourPreviewGraphics[part];
+     Check(graphic.gameObject.activeSelf&&ReferenceEquals(graphic.mainTexture,layers[material*2+(part==2?1:0)]),"each armour piece uses its material and correct layer texture");
+     Check(menu.armourPreviewData[part].vertices.Count==(part==0?24:part==3?48:72),"preview armour includes only the matching body parts");
+     Check(menu.armourPreviewData[part].uv.All(uv=>uv.x>=0&&uv.x<=1&&uv.y>=0&&uv.y<=1),"inflation does not distort or overflow armour atlas UVs");
+     Check(menu.leatherPreviewGraphics[part].gameObject.activeSelf==(material==0),"leather detail overlay is hidden for metal armour");
+    }
+   }
+   var cachedArmour=menu.armourPreviewData[0];menu.WriteStack(41,new InventoryStack(ItemType.GoldenHelmet,1,1));
+   Check(ReferenceEquals(cachedArmour,menu.armourPreviewData[0]),"durability updates reuse preview geometry");
+   for(int part=0;part<4;part++){menu.WriteStack(41+part,new InventoryStack());Check(!menu.armourPreviewGraphics[part].gameObject.activeSelf,"unequipping hides preview armour immediately");}
    menu.OnDestroy();Check(!sheet.destroyed,"inventory cleanup preserves source sheet");
   }
   Resources.hud=null;

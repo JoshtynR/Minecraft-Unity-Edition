@@ -8,9 +8,14 @@ public partial class PlayerInventory
     private InventoryPlayerGraphic inventoryPreviewGraphic;
     private InventoryPlayerGraphic[] inventoryHelmetGraphics;
     private RectTransform inventoryPreviewRect;
+    private PlayerHudAssets inventoryPreviewAssets;
+    private readonly InventoryPlayerGraphic[] armourPreviewGraphics=new InventoryPlayerGraphic[4],leatherPreviewGraphics=new InventoryPlayerGraphic[4];
+    private readonly MeshData[] armourPreviewData=new MeshData[4];
+    private readonly ItemType[] armourPreviewTypes=new ItemType[4];
 
     private void BuildInventoryPreview(Transform parent,PlayerHudAssets assets)
     {
+        inventoryPreviewAssets=assets;
         inventoryPreviewSkin=assets!=null?assets.inventoryPlayerSkin:null;
         if(inventoryPreviewSkin==null)
         {
@@ -36,12 +41,19 @@ public partial class PlayerInventory
         SkinBox(data,0,0,-2,4,12,2,4,16,4,12);
         inventoryPreviewData=data;
         inventoryPreviewGraphic.Initialize(data,inventoryPreviewSkin);
+        // Draw inner leggings before the outer chestplate/boots/helmet.
+        foreach(int part in new[]{2,3,1,0})
+        {
+            armourPreviewGraphics[part]=CreativeRect("PreviewArmour"+part,parent,0,0,50,70).gameObject.AddComponent<InventoryPlayerGraphic>();
+            leatherPreviewGraphics[part]=CreativeRect("PreviewLeatherDetails"+part,parent,0,0,50,70).gameObject.AddComponent<InventoryPlayerGraphic>();
+            armourPreviewGraphics[part].gameObject.SetActive(false);leatherPreviewGraphics[part].gameObject.SetActive(false);
+        }
     }
-    private void SkinBox(MeshData data,float x0,float y0,float z0,float x1,float y1,float z1,int u,int v,int width,int height)
+    private void SkinBox(MeshData data,float x0,float y0,float z0,float x1,float y1,float z1,int u,int v,int width,int height,float inflate=0,float atlasHeight=0)
     {
-        var box=new BlockShape(x0,y0,z0,x1,y1,z1);
+        var box=new BlockShape(x0-inflate,y0-inflate,z0-inflate,x1+inflate,y1+inflate,z1+inflate);
         float depth=z1-z0;
-        float skinHeight=inventoryPreviewSkin.height*64f/inventoryPreviewSkin.width;
+        float skinHeight=atlasHeight>0?atlasHeight:inventoryPreviewSkin.height*64f/inventoryPreviewSkin.width;
         foreach(var direction in BlockHelper.directions)
         {
             box.SetFaceVertices(direction,Vector3Int.zero,data);data.AddQuadTriangles();
@@ -64,6 +76,8 @@ public partial class PlayerInventory
         {
             float pitch=Mathf.Clamp(point.y*.1f,-12,12),yaw=Mathf.Clamp(-point.x*.2f,-30,30);
             inventoryPreviewGraphic.SetLook(pitch,yaw);
+            for(int i=0;i<4;i++)
+            {if(armourPreviewGraphics[i]!=null)armourPreviewGraphics[i].SetLook(pitch,yaw);if(leatherPreviewGraphics[i]!=null)leatherPreviewGraphics[i].SetLook(pitch,yaw);}
             if(inventoryHelmetGraphics!=null)
                 foreach(var face in inventoryHelmetGraphics)face.SetLook(pitch,yaw);
         }
@@ -71,6 +85,7 @@ public partial class PlayerInventory
     private void RefreshPreviewEquipment()
     {
         if(inventoryPreview==null)return;
+        RefreshArmourPreview();
         bool pumpkin=equipmentSlots[0]!=null&&equipmentSlots[0].type==ItemType.Pumpkin&&equipmentSlots[0].count>0;
         if(pumpkin&&inventoryPreviewHelmet==null)
         {
@@ -93,10 +108,49 @@ public partial class PlayerInventory
         }
         if(inventoryPreviewHelmet!=null)inventoryPreviewHelmet.SetActive(pumpkin);
     }
+    private MeshData BuildArmourPreview(int part)
+    {
+        var data=new MeshData(false);float inflate=part==2?.5f:1;
+        if(part==0)SkinBox(data,-4,24,-4,4,32,4,8,0,8,8,inflate,32);
+        if(part==1||part==2)SkinBox(data,-4,12,-2,4,24,2,20,16,8,12,inflate,32);
+        if(part==1)
+        {
+            SkinBox(data,-8,12,-2,-4,24,2,44,16,4,12,inflate,32);
+            SkinBox(data,4,12,-2,8,24,2,44,16,4,12,inflate,32);
+        }
+        if(part==2||part==3)
+        {
+            SkinBox(data,-4,0,-2,0,12,2,4,16,4,12,inflate,32);
+            SkinBox(data,0,0,-2,4,12,2,4,16,4,12,inflate,32);
+        }
+        return data;
+    }
+    private void RefreshArmourPreview()
+    {
+        for(int part=0;part<4;part++)
+        {
+            var graphic=armourPreviewGraphics[part];if(graphic==null)continue;
+            var stack=Stack(equipmentSlots[part]);var type=stack.Empty?ItemType.Nothing:stack.type;
+            if(type==armourPreviewTypes[part])continue;
+            armourPreviewTypes[part]=type;graphic.gameObject.SetActive(false);leatherPreviewGraphics[part].gameObject.SetActive(false);
+            if(ItemDurability.ArmorPart(type)!=part||inventoryPreviewAssets==null)continue;
+            int material=((int)type-(int)ItemType.LeatherHelmet)/4,layer=part==2?1:0,index=material*2+layer;
+            var textures=inventoryPreviewAssets.armourLayers;
+            if(textures==null||index>=textures.Length||textures[index]==null)continue;
+            if(armourPreviewData[part]==null)armourPreviewData[part]=BuildArmourPreview(part);
+            graphic.color=material==0?new Color(160/255f,101/255f,64/255f,1):Color.white;
+            graphic.Initialize(armourPreviewData[part],textures[index]);graphic.gameObject.SetActive(true);
+            var overlays=inventoryPreviewAssets.leatherArmourOverlays;
+            if(material==0&&overlays!=null&&overlays.Length>layer&&overlays[layer]!=null)
+            {var detail=leatherPreviewGraphics[part];detail.Initialize(armourPreviewData[part],overlays[layer]);detail.gameObject.SetActive(true);}
+        }
+    }
     private void DisposeInventoryPreview()
     {
         // Canvas graphics own their internal meshes. Skins/materials remain shared assets.
         inventoryPreviewData=null;inventoryPreviewSkin=null;
         inventoryPreviewGraphic=null;inventoryHelmetGraphics=null;
+        inventoryPreviewAssets=null;
+        for(int i=0;i<4;i++){armourPreviewData[i]=null;armourPreviewGraphics[i]=null;leatherPreviewGraphics[i]=null;}
     }
 }
