@@ -42,6 +42,13 @@ public partial class PlayerInventory
    Check(Math.Abs(data.uv[start+i].x*64-pixels[i*2])<.0001f&&Math.Abs((1-data.uv[start+i].y)*64-pixels[i*2+1])<.0001f,
     "entity atlas pixel corner follows native box face order: part "+part+" "+face+" corner "+i);
  }
+ static void CheckDoubleChestFaceUV(int half,int part,Direction face,params int[] pixels)
+ {
+  var faces=BlockHelper.directions.Where(d=>d!=(half<0?Direction.right:Direction.left)).ToArray();
+  var data=ChestModelGeometry.Build(part,half);int start=Array.IndexOf(faces,face)*4;
+  for(int i=0;i<4;i++)Check(Math.Abs(data.uv[start+i].x*64-pixels[i*2])<.0001f&&Math.Abs((1-data.uv[start+i].y)*64-pixels[i*2+1])<.0001f,
+   "double chest native UV corner: half "+half+" part "+part+" face "+face+" vertex "+i);
+ }
  static void CheckChests(PlayerInventory menu)
  {
   // Explicit native box atlas corners, in BlockShape vertex order. In particular,
@@ -58,6 +65,26 @@ public partial class PlayerInventory
   CheckChestFaceUV(1,Direction.forwards,14,14,14,19,28,19,28,14);
   CheckChestFaceUV(2,Direction.backwards,4,1,4,5,6,5,6,1);
   CheckChestFaceUV(2,Direction.forwards,1,1,1,5,3,5,3,1);
+  foreach(int half in new[]{-1,1})
+  {
+   CheckDoubleChestFaceUV(half,0,Direction.up,29,19,44,19,44,33,29,33);
+   CheckDoubleChestFaceUV(half,0,Direction.down,14,19,29,19,29,33,14,33);
+   CheckDoubleChestFaceUV(half,0,Direction.backwards,58,33,58,43,43,43,43,33);
+   CheckDoubleChestFaceUV(half,0,Direction.forwards,29,33,29,43,14,43,14,33);
+   CheckDoubleChestFaceUV(half,1,Direction.up,29,0,44,0,44,14,29,14);
+   CheckDoubleChestFaceUV(half,1,Direction.down,14,0,29,0,29,14,14,14);
+   CheckDoubleChestFaceUV(half,1,Direction.backwards,58,14,58,19,43,19,43,14);
+   CheckDoubleChestFaceUV(half,2,Direction.backwards,4,1,4,5,3,5,3,1);
+   foreach(int part in new[]{0,1,2})
+   {
+    var joined=ChestModelGeometry.Build(part,half);
+    Check(joined.vertices.Count==20&&joined.triangles.Count==30,"internal joining face is omitted, not sampled from transparent atlas pixels");
+    float edge=half<0?joined.vertices.Max(p=>p.x):joined.vertices.Min(p=>p.x);
+    Check(Math.Abs(edge-(half<0?.5f:-.5f))<.000001f,"half geometry terminates exactly on shared cell boundary");
+   }
+  }
+  CheckDoubleChestFaceUV(-1,0,Direction.left,14,33,14,43,0,43,0,33);
+  CheckDoubleChestFaceUV(1,0,Direction.right,43,33,43,43,29,43,29,33);
   for(int part=0;part<3;part++)
   {
    var mesh=ChestModelGeometry.Build(part);
@@ -169,7 +196,7 @@ public partial class PlayerInventory
   foreach(int half in new[]{-1,1})foreach(int part in new[]{0,1,2})
   {
    var halfModel=ChestModelGeometry.Build(part,half);
-   Check(halfModel.vertices.Count==24&&halfModel.uv.All(uv=>uv.x>=0&&uv.x<=1&&uv.y>=0&&uv.y<=1),"double chest model uses valid per-half atlas geometry");
+   Check(halfModel.vertices.Count==20&&halfModel.uv.All(uv=>uv.x>=0&&uv.x<=1&&uv.y>=0&&uv.y<=1),"double chest model uses valid per-half atlas geometry");
   }
   menu.RequestChest(pos);menu.chestPending=true;menu.chestCloseRequested=true;
   menu.ReceiveChestReply(World.Instance.chests.Close(-1));

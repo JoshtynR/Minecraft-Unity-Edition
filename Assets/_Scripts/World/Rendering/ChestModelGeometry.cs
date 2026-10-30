@@ -7,16 +7,19 @@ public static class ChestModelGeometry
     {
         var data=new MeshData(false);
         int x=half>0?0:1,width=half==0?14:15;
-        if(part==0)Box(data,x,0,1,width,10,14,0,19,false);
-        else if(part==1)Box(data,x,9,1,width,5,14,0,0,true);
-        else Box(data,half==0?7:half<0?15:0,7,0,half==0?2:1,4,1,0,0,true);
+        if(part==0)Box(data,x,0,1,width,10,14,0,19,false,half);
+        else if(part==1)Box(data,x,9,1,width,5,14,0,0,true,half);
+        else Box(data,half==0?7:half<0?15:0,7,0,half==0?2:1,4,1,0,0,true,half);
         return data;
     }
-    private static void Box(MeshData data,float x,float y,float z,int width,int height,int depth,int u,int v,bool hinged)
+    private static void Box(MeshData data,float x,float y,float z,int width,int height,int depth,int u,int v,bool hinged,int half)
     {
         var box=new BlockShape(x,y,z,x+width,y+height,z+depth);
         foreach(var direction in BlockHelper.directions)
         {
+            // The half-atlases leave their joining faces transparent. They are
+            // internal faces, not surfaces that should be rasterized at all.
+            if(half<0&&direction==Direction.right||half>0&&direction==Direction.left)continue;
             int start=data.vertices.Count;box.SetFaceVertices(direction,Vector3Int.zero,data);data.AddQuadTriangles();
             float sx=u+depth,sy=v+depth,sw=width,sh=height;
             // Entity box caps use the opposite atlas rectangles to terrain cubes.
@@ -41,6 +44,18 @@ public static class ChestModelGeometry
             {
                 data.uv[start]=new Vector3(left,bottom,0);data.uv[start+1]=new Vector3(right,bottom,0);
                 data.uv[start+2]=new Vector3(right,top,0);data.uv[start+3]=new Vector3(left,top,0);
+            }
+            if(half!=0)
+            {
+                // Convert vanilla cube UVs into our Z-reflected chest vertex
+                // winding. Mirrored side strips put the OUTER dark rim at the
+                // centre join; caps have their own winding, so do not mirror U.
+                if(direction!=Direction.up&&direction!=Direction.down)
+                    for(int i=start;i<start+4;i++)
+                    {var uv=data.uv[i];uv.x=left+right-uv.x;data.uv[i]=uv;}
+                else if(direction==Direction.down)
+                    for(int i=start;i<start+4;i++)
+                    {var uv=data.uv[i];uv.y=top+bottom-uv.y;data.uv[i]=uv;}
             }
             for(int i=start;i<data.vertices.Count;i++)
             {
