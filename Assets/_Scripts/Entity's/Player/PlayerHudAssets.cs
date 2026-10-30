@@ -14,6 +14,10 @@ public class PlayerHudAssets : ScriptableObject
     public Texture2D furnace;
     [Tooltip("Player skin used directly by the inventory preview. A skin material is optional.")]
     public Texture2D inventoryPlayerSkin;
+    [Tooltip("Armour textures in pairs: leather, chainmail, iron, diamond, gold; layer 1 then layer 2.")]
+    public Texture2D[] armourLayers=new Texture2D[10];
+    [Tooltip("Optional modern leather detail overlays: layer 1 then layer 2.")]
+    public Texture2D[] leatherArmourOverlays=new Texture2D[2];
     public Texture2D chestSkin;
     public Texture2D chestContainer;
     public Texture2D waterOverlay,fireOverlay;

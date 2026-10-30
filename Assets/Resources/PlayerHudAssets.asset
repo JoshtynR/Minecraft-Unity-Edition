@@ -19,6 +19,20 @@ MonoBehaviour:
   craftingTable: {fileID: 2800000, guid: 54ba8932ad9360147b828eb24a9b7979, type: 3}
   furnace: {fileID: 2800000, guid: b694fe66e6aa91e408d19a3a1836d7ee, type: 3}
   inventoryPlayerSkin: {fileID: 2800000, guid: 299e8a93456f7694aa545bfe4796646d, type: 3}
+  armourLayers:
+  - {fileID: 2800000, guid: 37598b88709b6864b8dc036043b5690a, type: 3}
+  - {fileID: 2800000, guid: ba9dcb4dc35f0364989c274eda738b1f, type: 3}
+  - {fileID: 2800000, guid: 49999de31a95a9f4497b6dd9221c4d22, type: 3}
+  - {fileID: 2800000, guid: 39dcd11e7e77cf940becdcc68f875699, type: 3}
+  - {fileID: 2800000, guid: 369d919de448a7340bfa8c2c9cd4014a, type: 3}
+  - {fileID: 2800000, guid: 2bad75cb2fad8ef43839849ce3dcf300, type: 3}
+  - {fileID: 2800000, guid: ab1c7b32baccabb468d14fbe06b9f6d8, type: 3}
+  - {fileID: 2800000, guid: 7254692df3b262040bc75f904a8d7b5f, type: 3}
+  - {fileID: 2800000, guid: 44289c84e2aec4c479b12484ab5a2980, type: 3}
+  - {fileID: 2800000, guid: e2d257700fc747043b2a0fbf2213d931, type: 3}
+  leatherArmourOverlays:
+  - {fileID: 2800000, guid: 4cdcf596560a04e4bb5f1226f9d64f95, type: 3}
+  - {fileID: 2800000, guid: 63bdeec9bce31ac4d8bd239b5046180c, type: 3}
   chestSkin: {fileID: 2800000, guid: 430149226c39f5340baaa4b854e369d3, type: 3}
   chestContainer: {fileID: 2800000, guid: 6b8fdecc7993e024dbc6591d03546e2f, type: 3}
   waterOverlay: {fileID: 0}
