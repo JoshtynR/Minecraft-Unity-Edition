@@ -4,6 +4,7 @@ Shader "Voxel/Mob"
     SubShader
     {
         Tags { "RenderType"="Opaque" }
+        Cull Off
         Pass
         {
             CGPROGRAM
