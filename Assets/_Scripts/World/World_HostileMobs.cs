@@ -146,7 +146,7 @@ public partial class World
         }
         foreach(var p in destroyed)
         {
-            // Respect the existing non-empty/open chest protection; otherwise
+            // Respect open-container session protection; otherwise
             // broadcasting Air after a rejected write would desync clients.
             if(!CanReplaceChest(p,BlockType.Air))continue;
             var type=GetBlock(p).type;if(type==BlockType.Air||type==BlockType.Nothing)continue;

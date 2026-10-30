@@ -31,6 +31,13 @@ public partial class World
         if(block!=null&&IsFurnace(block.type)&&!IsFurnace(next))return furnaces.CanRemove(StorageName,position);
         return block==null||block.type!=BlockType.Chest||next==BlockType.Chest||chests.CanRemove(StorageName,position);
     }
+    private void RemoveChest(Vector3Int position)
+    {
+        if(!DropAuthority)return;
+        chests.Load(StorageName);
+        foreach(var stack in chests.Remove(position))
+            if(!stack.Empty)SpawnItemDrop(stack,(Vector3)position+Vector3.one*.5f);
+    }
     public bool ChestAccessible(Vector3 eye,Vector3Int position,float reach)
     {
         var block=GetBlock(position);if(block==null||block.type!=BlockType.Chest)return false;

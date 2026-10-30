@@ -17,6 +17,7 @@ namespace UnityEngine
 namespace UnityEngine.Rendering {public enum IndexFormat {UInt32}public enum ShadowCastingMode {Off}}
 public partial class World:MonoBehaviour
 {
+ public void BreakChestForTest(Vector3Int position){RemoveChest(position);}
  public bool GenerationBusy;
  public World worldRenderer=>this;public WorldDimension dimension;public string StorageName=>DimensionRules.StorageName(worldName,dimension);public static World FindDimension(WorldDimension id)=>Instance;public static System.Collections.Generic.IEnumerable<World> LoadedDimensions=>new[]{Instance};
  public bool IsWorldCreated=true,disabled;public int worldHeight=128;
@@ -41,6 +42,13 @@ public partial class PlayerInventory
    Check(Math.Abs(data.uv[start+i].x*64-pixels[i*2])<.0001f&&Math.Abs((1-data.uv[start+i].y)*64-pixels[i*2+1])<.0001f,
     "entity atlas pixel corner follows native box face order: part "+part+" "+face+" corner "+i);
  }
+ static void CheckDoubleChestFaceUV(int half,int part,Direction face,params int[] pixels)
+ {
+  var faces=BlockHelper.directions.Where(d=>d!=(half<0?Direction.right:Direction.left)).ToArray();
+  var data=ChestModelGeometry.Build(part,half);int start=Array.IndexOf(faces,face)*4;
+  for(int i=0;i<4;i++)Check(Math.Abs(data.uv[start+i].x*64-pixels[i*2])<.0001f&&Math.Abs((1-data.uv[start+i].y)*64-pixels[i*2+1])<.0001f,
+   "double chest native UV corner: half "+half+" part "+part+" face "+face+" vertex "+i);
+ }
  static void CheckChests(PlayerInventory menu)
  {
   // Explicit native box atlas corners, in BlockShape vertex order. In particular,
@@ -57,6 +65,26 @@ public partial class PlayerInventory
   CheckChestFaceUV(1,Direction.forwards,14,14,14,19,28,19,28,14);
   CheckChestFaceUV(2,Direction.backwards,4,1,4,5,6,5,6,1);
   CheckChestFaceUV(2,Direction.forwards,1,1,1,5,3,5,3,1);
+  foreach(int half in new[]{-1,1})
+  {
+   CheckDoubleChestFaceUV(half,0,Direction.up,29,19,44,19,44,33,29,33);
+   CheckDoubleChestFaceUV(half,0,Direction.down,14,19,29,19,29,33,14,33);
+   CheckDoubleChestFaceUV(half,0,Direction.backwards,58,33,58,43,43,43,43,33);
+   CheckDoubleChestFaceUV(half,0,Direction.forwards,29,33,29,43,14,43,14,33);
+   CheckDoubleChestFaceUV(half,1,Direction.up,29,0,44,0,44,14,29,14);
+   CheckDoubleChestFaceUV(half,1,Direction.down,14,0,29,0,29,14,14,14);
+   CheckDoubleChestFaceUV(half,1,Direction.backwards,58,14,58,19,43,19,43,14);
+   CheckDoubleChestFaceUV(half,2,Direction.backwards,4,1,4,5,3,5,3,1);
+   foreach(int part in new[]{0,1,2})
+   {
+    var joined=ChestModelGeometry.Build(part,half);
+    Check(joined.vertices.Count==20&&joined.triangles.Count==30,"internal joining face is omitted, not sampled from transparent atlas pixels");
+    float edge=half<0?joined.vertices.Max(p=>p.x):joined.vertices.Min(p=>p.x);
+    Check(Math.Abs(edge-(half<0?.5f:-.5f))<.000001f,"half geometry terminates exactly on shared cell boundary");
+   }
+  }
+  CheckDoubleChestFaceUV(-1,0,Direction.left,14,33,14,43,0,43,0,33);
+  CheckDoubleChestFaceUV(1,0,Direction.right,43,33,43,43,29,43,29,33);
   for(int part=0;part<3;part++)
   {
    var mesh=ChestModelGeometry.Build(part);
@@ -97,7 +125,7 @@ public partial class PlayerInventory
   reply=store.Process("",1,new ChestRequest{action=6,position=pos,sequence=5,right=true},true);
   Check(reply.dropped.count==1&&reply.cursor.count==62,"chest outside right click returns one authoritative world-drop stack");
   reply.chest[0].count=0;
-  Check(!store.CanRemove("",pos),"occupied chest cannot be broken");
+  Check(!store.CanRemove("",pos),"open chest cannot be broken during an active transaction");
   reply=store.Close(1);Check(!reply.opened&&reply.chest[0].Empty&&closes==1&&store.CanRemove("",pos),"closing retains the updated server contents and shuts lid");
   Check(!store.Process("",1,open,false).accepted,"out-of-range or obstructed open rejected");
   open.inventory=new InventoryStack[35];Check(!store.Process("",1,open,true).accepted,"malformed inventory rejected");
@@ -122,6 +150,12 @@ public partial class PlayerInventory
    Check(reply.chest.Length==27&&reply.chest.All(stack=>stack.Empty),"splitting pair leaves first half's own contents unchanged");
    reply=store.Process(name,11,new ChestRequest{action=0,position=otherHalf,inventory=new InventoryStack[36]},true);store.Close(11);
    Check(reply.chest[26].count==19,"splitting pair preserves second half's own contents");
+   Check(store.CanRemove(name,otherHalf),"closed filled chest is breakable");
+   var extracted=store.Remove(otherHalf);
+   Check(extracted[26].type==ItemType.Stick&&extracted[26].count==19&&store.Remove(otherHalf).Length==0,"removal returns contents exactly once");
+   store.SaveWorld(name);store=new ChestStorage();
+   reply=store.Process(name,12,new ChestRequest{action=0,position=otherHalf,inventory=new InventoryStack[36]},true);store.Close(12);
+   Check(reply.chest.All(stack=>stack.Empty),"removed contents cannot reappear after saving and reopening");
   }
   finally{if(Directory.Exists(directory))Directory.Delete(directory,true);}
   menu.LoadInventory(null);menu.AddItem(ItemType.Stone,63);menu.RequestChest(pos);
@@ -162,7 +196,7 @@ public partial class PlayerInventory
   foreach(int half in new[]{-1,1})foreach(int part in new[]{0,1,2})
   {
    var halfModel=ChestModelGeometry.Build(part,half);
-   Check(halfModel.vertices.Count==24&&halfModel.uv.All(uv=>uv.x>=0&&uv.x<=1&&uv.y>=0&&uv.y<=1),"double chest model uses valid per-half atlas geometry");
+   Check(halfModel.vertices.Count==20&&halfModel.uv.All(uv=>uv.x>=0&&uv.x<=1&&uv.y>=0&&uv.y<=1),"double chest model uses valid per-half atlas geometry");
   }
   menu.RequestChest(pos);menu.chestPending=true;menu.chestCloseRequested=true;
   menu.ReceiveChestReply(World.Instance.chests.Close(-1));
@@ -228,6 +262,22 @@ public partial class PlayerInventory
   Check(chunkObject.transform.childCount==1&&ReferenceEquals(child,chunkObject.transform.GetChild(0).gameObject),"lighting remesh reuses chest model rather than duplicating owned resources");
   World.Instance.blocks.Remove(pos);renderer.RenderMesh(freshUpload());
   Check(chunkObject.transform.childCount==0&&child.destroyed,"stale chest mesh upload cannot resurrect mined chest model");
+  var dropCell=new Vector3Int(20,3,4);var keptCell=dropCell+Vector3Int.right;
+  var contents=new InventoryStack[36];contents[0]=new InventoryStack(ItemType.Diamond,5);contents[1]=new InventoryStack(ItemType.IronPickaxe,1,7);
+  World.Instance.chests.Process("",600,new ChestRequest{action=0,position=dropCell,inventory=contents},true,keptCell);
+  World.Instance.chests.Process("",600,new ChestRequest{action=1,position=dropCell,sequence=1,slot=54,shift=true},true,keptCell);
+  World.Instance.chests.Process("",600,new ChestRequest{action=1,position=dropCell,sequence=2,slot=55,shift=true},true,keptCell);
+  World.Instance.chests.Close(600);
+  var keptBag=new InventoryStack[36];keptBag[0]=new InventoryStack(ItemType.Stick,12);
+  World.Instance.chests.Process("",601,new ChestRequest{action=0,position=keptCell,inventory=keptBag},true);
+  World.Instance.chests.Process("",601,new ChestRequest{action=1,position=keptCell,sequence=1,slot=27,shift=true},true);World.Instance.chests.Close(601);
+  var priorDrops=World.Instance.droppedItems.Items.Select(item=>item.id).ToArray();
+  World.Instance.BreakChestForTest(dropCell);
+  var emitted=World.Instance.droppedItems.Items.Where(item=>!priorDrops.Contains(item.id)).ToArray();
+  Check(emitted.Length==2&&emitted.Any(item=>item.stack.type==ItemType.Diamond&&item.stack.count==5)&&emitted.Any(item=>item.stack.type==ItemType.IronPickaxe&&item.stack.damage==7),"breaking filled chest emits each stack with count and durability preserved");
+  World.Instance.BreakChestForTest(dropCell);Check(World.Instance.droppedItems.Items.Count()==priorDrops.Length+2,"repeated removal does not duplicate contents");
+  var surviving=World.Instance.chests.Process("",602,new ChestRequest{action=0,position=keptCell,inventory=new InventoryStack[36]},true);World.Instance.chests.Close(602);
+  Check(surviving.chest[0].type==ItemType.Stick&&surviving.chest[0].count==12,"breaking one double-chest half leaves other half contents untouched");
   Resources.hud=null;
   menu.LoadInventory(null);
  }
