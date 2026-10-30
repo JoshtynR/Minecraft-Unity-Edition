@@ -11,8 +11,8 @@ public partial class PlayerInventory
     private int chestSequence;
     private Vector3Int chestPosition;
     private RectTransform chestPanel;
-    private readonly Slot[] chestSlots=new Slot[27];
-    private readonly RectTransform[] chestRects=new RectTransform[27];
+    private Slot[] chestSlots=new Slot[27];
+    private RectTransform[] chestRects=new RectTransform[27];
     public void RequestChest(Vector3Int position)
     {
         if(DropRequestPending||chestPending||chestOpen||furnacePending||furnaceOpen||isOpen)return;
@@ -31,7 +31,7 @@ public partial class PlayerInventory
             if(world==null){ReceiveChestReply(new ChestReply{sessionClosed=true,error="World closed."});return;}
             if(world.isSaving&&request.action!=2)
             {ReceiveChestReply(new ChestReply{error="World is saving; try the chest again in a moment."});return;}
-            var reply=world.chests.Process(world.StorageName,-1,request,accessible);
+            var reply=world.chests.Process(world.StorageName,-1,request,accessible,world.ChestPartner(request.position));
             if(reply.accepted&&!reply.dropped.Empty)player.SpawnMenuDrop(reply.dropped);
             ReceiveChestReply(reply);
         }
@@ -56,8 +56,8 @@ public partial class PlayerInventory
         }
         ApplyChestPlayerSnapshot(reply.inventory,reply.cursor);chestSequence=reply.sequence;
         if(!reply.opened){EndChestPanel();chestCloseRequested=false;CloseInventory();return;}
-        if(!chestOpen){chestOpen=true;chestPosition=reply.position;BuildChestPanel();OpenInventory();}
-        for(int i=0;i<27;i++)
+        if(!chestOpen){chestSlots=new Slot[reply.chest.Length];chestRects=new RectTransform[reply.chest.Length];chestOpen=true;chestPosition=reply.position;BuildChestPanel();OpenInventory();}
+        for(int i=0;i<chestSlots.Length;i++)
         {
             var stack=reply.chest[i];var slot=chestSlots[i];
             ClearSlotIcon(chestRects[i]);CreateItemIcon(stack.type,chestRects[i]);
@@ -72,46 +72,48 @@ public partial class PlayerInventory
     }
     private void BuildChestPanel()
     {
-        chestPanel=CreativeRect("ChestContainer",creativeRoot,inventoryRect.anchoredPosition.x,0,176,168);
+        int extra=chestSlots.Length==54?54:0;
+        chestPanel=CreativeRect("ChestContainer",creativeRoot,inventoryRect.anchoredPosition.x,0,176,168+extra);
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         if(assets!=null&&assets.chestContainer!=null)
         {
-            var upper=CreativeRect("ChestBackground",chestPanel,0,48,176,72).gameObject.AddComponent<RawImage>();
-            upper.texture=assets.chestContainer;upper.uvRect=new Rect(0,1-72/256f,176/256f,72/256f);upper.raycastTarget=false;
-            var lower=CreativeRect("PlayerBackground",chestPanel,0,-36,176,96).gameObject.AddComponent<RawImage>();
+            var upper=CreativeRect("ChestBackground",chestPanel,0,48,176,72+extra).gameObject.AddComponent<RawImage>();
+            upper.texture=assets.chestContainer;upper.uvRect=new Rect(0,1-(72+extra)/256f,176/256f,(72+extra)/256f);upper.raycastTarget=false;
+            var lower=CreativeRect("PlayerBackground",chestPanel,0,-36-extra/2,176,96).gameObject.AddComponent<RawImage>();
             lower.texture=assets.chestContainer;lower.uvRect=new Rect(0,1-222/256f,176/256f,96/256f);lower.raycastTarget=false;
         }
         else Panel(chestPanel);
-        for(int i=0;i<27;i++)
+        for(int i=0;i<chestSlots.Length;i++)
         {
-            var rect=CreativeRect("ChestSlot"+i,chestPanel,-72+i%9*18,58-i/9*18,18,18);
+            var rect=CreativeRect("ChestSlot"+i,chestPanel,-72+i%9*18,58+extra/2-i/9*18,18,18);
             if(assets!=null&&assets.chestContainer!=null)rect.gameObject.AddComponent<Image>().color=Color.clear;
             else SlotBackground(rect);
             var input=rect.gameObject.AddComponent<InventorySlot>();input.playerInventory=this;input.slotIndex=100+i;
             chestRects[i]=rect;chestSlots[i]=new Slot(100+i){countText=SlotCount(rect)};
         }
-        ContainerLabel("ChestTitle",chestPanel,8,6,"Chest");
-        ContainerLabel("PlayerTitle",chestPanel,8,74,"Inventory");
+        ContainerLabel("ChestTitle",chestPanel,8,6,extra>0?"Large Chest":"Chest");
+        ContainerLabel("PlayerTitle",chestPanel,8,74+extra,"Inventory");
         inventorySlotsRect.SetParent(chestPanel,false);
+        inventorySlotsRect.anchoredPosition=new Vector2(0,-extra/2);
         inventoryRect.gameObject.SetActive(false);creativePanel.gameObject.SetActive(false);
         inventoryHighlightRect.SetAsLastSibling();pickedUpItemRect.SetAsLastSibling();tooltipRect.SetAsLastSibling();
     }
     private void ClickChest(int index,bool right,bool shift)
     {
         if(chestPending)return;
-        int target=index>=100?index-100:index>=0&&index<36?27+index:-1;
-        if(target<0||target>=63)return;
+        int target=index>=100?index-100:index>=0&&index<36?chestSlots.Length+index:-1;
+        if(target<0||target>=chestSlots.Length+36)return;
         SendChest(new ChestRequest{action=1,position=chestPosition,slot=target,right=right,shift=shift,sequence=chestSequence+1});
     }
     private void DragChest(int[] indices,bool right)
     {
         if(chestPending){queuedChestDrag=(int[])indices.Clone();queuedChestDragRight=right;return;}var targets=new int[indices.Length];
-        for(int i=0;i<indices.Length;i++)targets[i]=indices[i]>=100?indices[i]-100:indices[i]+27;
+        for(int i=0;i<indices.Length;i++)targets[i]=indices[i]>=100?indices[i]-100:indices[i]+chestSlots.Length;
         SendChest(new ChestRequest{action=4,position=chestPosition,slots=targets,right=right,sequence=chestSequence+1});
     }
     private void CollectChest(int index)
     {
-        if(chestPending){queuedChestCollection=index;return;}int target=index>=100?index-100:index+27;
+        if(chestPending){queuedChestCollection=index;return;}int target=index>=100?index-100:index+chestSlots.Length;
         SendChest(new ChestRequest{action=5,position=chestPosition,slot=target,sequence=chestSequence+1});
     }
     private void DropChestCursor(bool single)
@@ -126,6 +128,7 @@ public partial class PlayerInventory
     {
         chestOpen=false;queuedChestCollection=-1;queuedChestDrag=null;HideSlotHover();
         inventorySlotsRect.SetParent(inventoryRect,false);
+        inventorySlotsRect.anchoredPosition=new Vector2(0,0);
         inventoryRect.gameObject.SetActive(true);
         if(chestPanel!=null){chestPanel.gameObject.SetActive(false);Destroy(chestPanel.gameObject);chestPanel=null;}
     }

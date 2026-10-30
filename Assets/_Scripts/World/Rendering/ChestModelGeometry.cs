@@ -1,14 +1,15 @@
 using UnityEngine;
 
-// Modern single chest: model units are sixteenths of a block, atlas units sixty-fourths.
+// Modern chest and paired halves: model units are sixteenths, atlas units sixty-fourths.
 public static class ChestModelGeometry
 {
-    public static MeshData Build(int part)
+    public static MeshData Build(int part,int half=0)
     {
         var data=new MeshData(false);
-        if(part==0)Box(data,1,0,1,14,10,14,0,19,false);
-        else if(part==1)Box(data,1,9,1,14,5,14,0,0,true);
-        else Box(data,7,7,0,2,4,1,0,0,true);
+        int x=half>0?0:1,width=half==0?14:15;
+        if(part==0)Box(data,x,0,1,width,10,14,0,19,false);
+        else if(part==1)Box(data,x,9,1,width,5,14,0,0,true);
+        else Box(data,half==0?7:half<0?15:0,7,0,half==0?2:1,4,1,0,0,true);
         return data;
     }
     private static void Box(MeshData data,float x,float y,float z,int width,int height,int depth,int u,int v,bool hinged)

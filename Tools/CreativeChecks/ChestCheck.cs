@@ -66,15 +66,15 @@ public partial class PlayerInventory
   Check(ChestModelGeometry.LidAngle(0)==0&&ChestModelGeometry.LidAngle(1)==90&&ChestModelGeometry.LidAngle(.5f)>45,"hinged lid uses eased quarter-turn");
   Check(ChestModelGeometry.Facing(2)==0&&ChestModelGeometry.Facing(3)==180&&ChestModelGeometry.Facing(4)==90&&ChestModelGeometry.Facing(5)==-90,"all four block directions rotate modern chest consistently");
   var random=new System.Random(42);
-  for(int run=0;run<200;run++)
+  for(int run=0;run<400;run++)
   {
-   var chest=new InventoryStack[27];var inventory=new InventoryStack[36];var cursor=new InventoryStack();
-   for(int i=0;i<27;i++)chest[i]=new InventoryStack(ItemType.Stone,random.Next(65));
+   var chest=new InventoryStack[run<200?27:54];var inventory=new InventoryStack[36];var cursor=new InventoryStack();
+   for(int i=0;i<chest.Length;i++)chest[i]=new InventoryStack(ItemType.Stone,random.Next(65));
    for(int i=0;i<36;i++)inventory[i]=new InventoryStack(ItemType.Dirt,random.Next(65));
    int total=chest.Sum(x=>x.count)+inventory.Sum(x=>x.count);
    for(int click=0;click<100;click++)
    {
-    Check(ChestTransactions.Click(chest,inventory,ref cursor,random.Next(63),random.Next(2)==0,random.Next(3)==0),"valid chest transaction accepted");
+    Check(ChestTransactions.Click(chest,inventory,ref cursor,random.Next(chest.Length+36),random.Next(2)==0,random.Next(3)==0),"valid chest transaction accepted");
     Check(chest.Sum(x=>x.count)+inventory.Sum(x=>x.count)+cursor.count==total,"chest clicks conserve all items");
     Check(chest.Concat(inventory).All(x=>x.count>=0&&x.count<=64),"chest transactions respect stack bounds");
    }
@@ -110,6 +110,18 @@ public partial class PlayerInventory
    Check(File.Exists(Path.Combine(directory,"chests.json.bak")),"save keeps previous chest file as backup");
    store=new ChestStorage();reply=store.Process(name,7,open,true);
    Check(reply.chest[0].count==19&&reply.chest[0].type==ItemType.Stick,"contents survive storage reconstruction and disk reload");
+   store.Close(7);var otherHalf=pos+Vector3Int.right;
+   store.Process(name,8,new ChestRequest{action=0,position=pos,inventory=new InventoryStack[36]},true,otherHalf);
+   store.Process(name,8,new ChestRequest{action=1,position=pos,sequence=1,slot=0},true,otherHalf);
+   store.Process(name,8,new ChestRequest{action=1,position=pos,sequence=2,slot=53},true,otherHalf);
+   store.Close(8);store.SaveWorld(name);store=new ChestStorage();
+   reply=store.Process(name,9,new ChestRequest{action=0,position=otherHalf,inventory=new InventoryStack[36]},true,pos);
+   Check(reply.chest.Length==54&&reply.chest[0].Empty&&reply.chest[53].count==19,"double chest reload preserves canonical per-half contents from either opener");
+   store.Close(9);
+   reply=store.Process(name,10,new ChestRequest{action=0,position=pos,inventory=new InventoryStack[36]},true);store.Close(10);
+   Check(reply.chest.Length==27&&reply.chest.All(stack=>stack.Empty),"splitting pair leaves first half's own contents unchanged");
+   reply=store.Process(name,11,new ChestRequest{action=0,position=otherHalf,inventory=new InventoryStack[36]},true);store.Close(11);
+   Check(reply.chest[26].count==19,"splitting pair preserves second half's own contents");
   }
   finally{if(Directory.Exists(directory))Directory.Delete(directory,true);}
   menu.LoadInventory(null);menu.AddItem(ItemType.Stone,63);menu.RequestChest(pos);
@@ -133,6 +145,25 @@ public partial class PlayerInventory
   menu.ClickInventorySlot(100,false,true);menu.CloseInventory();
   menu.OpenInventory();Check(menu.creativePanel.gameObject.activeSelf,"normal inventory restores enabled TMI preference after chest");menu.CloseInventory();menu.ToggleTooManyItems();
   Check(menu.slots.Sum(s=>s.count)==63,"round trip returns exactly original item count");
+  var previousPosition=menu.transform.position;menu.transform.position=new Vector3(2.5f,2,2);
+  var partner=pos+Vector3Int.right;World.Instance.blocks[partner]=new Block(BlockType.Chest,partner,null);
+  Check(World.Instance.ChestPartner(pos)==partner&&World.Instance.ChestPartner(partner)==pos,"both halves resolve the same adjacent pair");
+  Check(!World.Instance.CanPlaceChest(partner+Vector3Int.right),"placement rejects a third chest beside a pair");
+  menu.RequestChest(pos);
+  Check(menu.chestSlots.Length==54&&menu.chestPanel.sizeDelta.y==222&&menu.inventorySlotsRect.anchoredPosition.y==-27,"double chest opens six rows with player inventory shifted below");
+  Check(World.Instance.openChestLids.Contains(pos)&&World.Instance.openChestLids.Contains(partner),"opening either half opens both lids");
+  Check(!World.Instance.chests.Process("",123,new ChestRequest{action=0,position=partner,inventory=new InventoryStack[36]},true,pos).accepted,"pair session locks the other half against concurrent opening");
+  menu.ClickInventorySlot(0,false,true);menu.ClickInventorySlot(100,false,false);menu.ClickInventorySlot(153,false,false);menu.CloseInventory();
+  menu.RequestChest(partner);Check(menu.chestOpen&&menu.chestSlots[53].count==63,"opening opposite half keeps canonical slot order including final slot");
+  menu.ClickInventorySlot(153,false,true);menu.CloseInventory();Check(menu.slots.Sum(s=>s.count)==63,"double chest transfer conserves items across both halves");
+  World.Instance.blocks[pos+Vector3Int.up]=new Block(BlockType.Stone,pos+Vector3Int.up,null);
+  Check(!World.Instance.ChestAccessible(menu.transform.position+Vector3.up*1.6f,partner,menu.player.reach),"blocked lid above either half prevents opening");World.Instance.blocks.Remove(pos+Vector3Int.up);
+  World.Instance.blocks.Remove(partner);menu.transform.position=previousPosition;
+  foreach(int half in new[]{-1,1})foreach(int part in new[]{0,1,2})
+  {
+   var halfModel=ChestModelGeometry.Build(part,half);
+   Check(halfModel.vertices.Count==24&&halfModel.uv.All(uv=>uv.x>=0&&uv.x<=1&&uv.y>=0&&uv.y<=1),"double chest model uses valid per-half atlas geometry");
+  }
   menu.RequestChest(pos);menu.chestPending=true;menu.chestCloseRequested=true;
   menu.ReceiveChestReply(World.Instance.chests.Close(-1));
   menu.ReceiveChestReply(World.Instance.chests.Close(-1));
@@ -177,6 +208,14 @@ public partial class PlayerInventory
   World.Instance.SetChestLid(pos,false);for(int i=0;i<10;i++)tick.Invoke(model,null);
   Check(GameAudio.plays==soundCount+2,"closing chest emits one additional sound");
   Check((float)typeof(ModernChestVisual).GetField("progress",flags).GetValue(model)==0,"rendered lid returns to closed state");
+  var oldMeshes=((System.Collections.Generic.List<Mesh>)typeof(ModernChestVisual).GetField("meshes",flags).GetValue(model)).ToArray();
+  Resources.hud.chestLeftSkin=new Texture2D();Resources.hud.chestRightSkin=new Texture2D();
+  World.Instance.blocks[partner]=new Block(BlockType.Chest,partner,null);Time.unscaledTime+=1;tick.Invoke(model,null);
+  Check((int)typeof(ModernChestVisual).GetField("modelHalf",flags).GetValue(model)!=0&&oldMeshes.All(mesh=>mesh.destroyed),"joining chest rebuilds half geometry and releases old meshes");
+  var joinedMaterial=(Material)typeof(ModernChestVisual).GetField("material",flags).GetValue(model);
+  Check(joinedMaterial.mainTexture==Resources.hud.chestRightSkin,"negative model-X half uses right chest atlas");
+  World.Instance.blocks.Remove(partner);Time.unscaledTime+=1;tick.Invoke(model,null);
+  Check((int)typeof(ModernChestVisual).GetField("modelHalf",flags).GetValue(model)==0&&joinedMaterial.mainTexture==Resources.hud.chestSkin,"splitting pair restores single-chest geometry and atlas");
   var owned=(System.Collections.Generic.List<Mesh>)typeof(ModernChestVisual).GetField("meshes",flags).GetValue(model);
   var material=(Material)typeof(ModernChestVisual).GetField("material",flags).GetValue(model);
   typeof(ModernChestVisual).GetMethod("OnDestroy",flags).Invoke(model,null);

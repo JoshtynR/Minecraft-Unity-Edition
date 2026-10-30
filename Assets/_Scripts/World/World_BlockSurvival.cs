@@ -20,6 +20,7 @@ public partial class World
     public bool CanPlaceSurvivalBlock(Vector3Int position, BlockType type, byte state)
     {
         if (position.y < 0 || position.y >= worldHeight) return false;
+        if(type==BlockType.Chest&&!CanPlaceChest(position))return false;
         return BlockSurvivalRules.CanPlace(type, state, position, p => GetBlock(p).type);
     }
 

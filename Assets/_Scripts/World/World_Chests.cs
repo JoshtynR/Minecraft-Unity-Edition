@@ -20,7 +20,9 @@ public partial class World
     public void SetChestLid(Vector3Int position,bool opened)
     {
         bool changed=opened?openChestLids.Add(position):openChestLids.Remove(position);
-        if(changed&&Instance==this)GameAudio.Play(opened?"random/chestopen":"random/chestclosed",(Vector3)position+Vector3.one*.5f,.5f);
+        var partner=ChestPartner(position);
+        bool soundOwner=!partner.HasValue||position.x<partner.Value.x||position.x==partner.Value.x&&position.z<partner.Value.z;
+        if(changed&&soundOwner&&Instance==this)GameAudio.Play(opened?"random/chestopen":"random/chestclosed",(Vector3)position+Vector3.one*.5f,.5f);
     }
     public bool CanReplaceChest(Vector3Int position,BlockType next)
     {
@@ -35,15 +37,47 @@ public partial class World
         if((eye-((Vector3)position+Vector3.one*.5f)).sqrMagnitude>(reach+1)*(reach+1))return false;
         var above=GetBlock(position+Vector3Int.up);
         if(above!=null&&SpecialBlockGeometry.NormalCube(above.type))return false;
+        var partner=ChestPartner(position);
+        if(partner.HasValue&&SpecialBlockGeometry.NormalCube(GetBlock(partner.Value+Vector3Int.up).type))return false;
         Vector3 end=(Vector3)position+Vector3.one*.5f;
         int steps=Mathf.Max(1,Mathf.CeilToInt((end-eye).magnitude/.1f));
         for(int i=1;i<steps;i++)
         {
-            var p=Vector3Int.FloorToInt(Vector3.Lerp(eye,end,(float)i/steps));if(p==position)return true;
+            var p=Vector3Int.FloorToInt(Vector3.Lerp(eye,end,(float)i/steps));if(p==position||partner.HasValue&&p==partner.Value)return true;
             var other=GetBlock(p);
             if(other==null||other.type==BlockType.Nothing||SpecialBlockGeometry.NormalCube(other.type))return false;
         }
         return true;
+    }
+    private static readonly Vector3Int[] ChestNeighbors={Vector3Int.left,Vector3Int.right,Vector3Int.forward,Vector3Int.back};
+    public Vector3Int? ChestPartner(Vector3Int position)
+    {
+        Vector3Int? result=null;
+        foreach(var delta in ChestNeighbors)
+            if(GetBlock(position+delta).type==BlockType.Chest)
+            {if(result.HasValue)return null;result=position+delta;}
+        if(!result.HasValue)return null;
+        foreach(var delta in ChestNeighbors)
+            if(result.Value+delta!=position&&GetBlock(result.Value+delta).type==BlockType.Chest)return null;
+        return result;
+    }
+    public bool CanPlaceChest(Vector3Int position)
+    {
+        int neighbors=0;
+        foreach(var delta in ChestNeighbors)
+        {
+            var p=position+delta;if(GetBlock(p).type!=BlockType.Chest)continue;
+            if(++neighbors>1||ChestPartner(p).HasValue)return false;
+            foreach(int owner in chests.Owners())if(chests.Position(owner)==p)return false;
+        }
+        return true;
+    }
+    public byte ChestRenderFacing(Vector3Int position,byte facing)
+    {
+        var pair=ChestPartner(position);if(!pair.HasValue)return facing;
+        var first=pair.Value.x<position.x||pair.Value.x==position.x&&pair.Value.z<position.z?pair.Value:position;
+        byte preferred=SpecialBlockGeometry.State(BlockType.Chest,GetBlock(first).blockShape);
+        return pair.Value.x!=position.x?(preferred==2||preferred==3?preferred:(byte)2):(preferred==4||preferred==5?preferred:(byte)4);
     }
 }
 
@@ -62,7 +96,7 @@ public partial class WorldServer
         if(world.isSaving&&request.action!=2)
         {connection.Send(new ChestReply{error="World is saving; try the chest again in a moment."});return;}
         bool accessible=player.health>0&&world.ChestAccessible(player.transform.position+Vector3.up*1.6f,request.position,player.reach);
-        var reply=world.chests.Process(world.StorageName,connection.connectionId,request,accessible);
+        var reply=world.chests.Process(world.StorageName,connection.connectionId,request,accessible,world.ChestPartner(request.position));
         if(reply.accepted&&!reply.dropped.Empty)player.SpawnMenuDrop(reply.dropped);
         if(reply.accepted)player.GetComponent<PlayerInventory>().ApplyChestPlayerSnapshot(reply.inventory,reply.cursor);
         connection.Send(reply);

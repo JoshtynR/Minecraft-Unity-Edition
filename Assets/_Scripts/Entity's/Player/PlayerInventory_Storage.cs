@@ -36,7 +36,7 @@ public partial class PlayerInventory
     }
     public Slot GetSlot(int index)
     {
-        if(chestOpen&&index>=100&&index<127)return chestSlots[index-100];
+        if(chestOpen&&index>=100&&index<100+chestSlots.Length)return chestSlots[index-100];
         if(furnaceOpen&&index>=300&&index<303)return furnaceSlots[index-300];
         if(tableOpen&&index>=200&&index<209)return tableSlots[index-200];
         InitializeSlotData();return index>=0&&index<36 ? slots[index] : index>=36&&index<40 ? craftingSlots[index-36] : index==40 ? craftedOutput : index>=41&&index<45 ? equipmentSlots[index-41] : null;
@@ -137,7 +137,7 @@ public partial class PlayerInventory
     private bool DragSlotAccepts(int index)
     {
         if(index==40||(index>=41&&index<45)||index==302)return false;
-        bool valid=(index>=0&&index<40)||(index>=100&&index<127)||(index>=200&&index<209)||(index>=300&&index<302);
+        bool valid=(index>=0&&index<40)||(chestOpen&&index>=100&&index<100+chestSlots.Length)||(index>=200&&index<209)||(index>=300&&index<302);
         if(!valid)return false;
         if((chestPending||furnacePending)&&inventoryDragFromPickup&&Stack(pickedUpSlot).Empty)return true;
         var slot=GetSlot(index);var cursor=Stack(pickedUpSlot);var value=Stack(slot);
