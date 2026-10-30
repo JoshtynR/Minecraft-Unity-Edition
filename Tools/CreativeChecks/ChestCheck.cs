@@ -116,6 +116,9 @@ public partial class PlayerInventory
   Check(menu.chestOpen&&menu.isOpen&&menu.chestPanel!=null&&!menu.creativePanel.gameObject.activeSelf,"right-click bridge opens 27-slot container without creative catalogue");
   Check(menu.inventorySlotsRect.parent==menu.chestPanel&&menu.chestSlots.Length==27,"container reuses all 36 player storage slots");
   Check(menu.chestPanel.anchoredPosition.x==0,"chest opens centered without catalogue space");
+  NetworkServer.active=true;NetworkClient.active=true;Time.unscaledTime+=1;new WorldServer().PollChests();
+  Check(World.Instance.chests.Owners().Contains(-1)&&menu.chestOpen,"network session reaper preserves direct local-host chest owner");
+  NetworkServer.active=false;NetworkClient.active=false;
   CheckContainerLabel(menu,menu.chestPanel,"ChestTitle",8,6);
   CheckContainerLabel(menu,menu.chestPanel,"PlayerTitle",8,74);
   menu.ClickInventorySlot(0,false,true);
@@ -130,6 +133,10 @@ public partial class PlayerInventory
   menu.ClickInventorySlot(100,false,true);menu.CloseInventory();
   menu.OpenInventory();Check(menu.creativePanel.gameObject.activeSelf,"normal inventory restores enabled TMI preference after chest");menu.CloseInventory();menu.ToggleTooManyItems();
   Check(menu.slots.Sum(s=>s.count)==63,"round trip returns exactly original item count");
+  menu.RequestChest(pos);menu.chestPending=true;menu.chestCloseRequested=true;
+  menu.ReceiveChestReply(World.Instance.chests.Close(-1));
+  menu.ReceiveChestReply(World.Instance.chests.Close(-1));
+  Check(!menu.isOpen&&!menu.chestOpen&&!menu.chestPending&&!menu.chestCloseRequested&&!menu.inventoryScreenRoot.gameObject.activeSelf&&Cursor.lockState==CursorLockMode.Locked,"duplicate/missing chest close releases menu, dimmer and controls without recursive retry");
   NetworkClient.active=true;
   menu.RequestChest(pos);var networkStore=new ChestStorage();
   var opened=networkStore.Process("",99,NetworkClient.last,true);menu.ReceiveChestReply(opened);

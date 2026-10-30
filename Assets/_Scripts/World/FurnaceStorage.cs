@@ -17,6 +17,7 @@ public struct FurnaceRequest : NetworkMessage
 public struct FurnaceReply : NetworkMessage
 {
     public bool accepted, opened;
+    public bool sessionClosed;
     public string error;
     public Vector3Int position;
     public InventoryStack[] items, inventory;
@@ -87,7 +88,7 @@ public sealed class FurnaceStorage
     }
     public FurnaceReply Close(int owner)
     {
-        if (!sessions.TryGetValue(owner, out var session)) return new FurnaceReply { error = "Furnace session closed." };
+        if (!sessions.TryGetValue(owner, out var session)) return new FurnaceReply { sessionClosed=true, error = "Furnace session closed." };
         session.cursor.count = InventoryRules.Insert(session.inventory, session.cursor.type, session.cursor.count, 0, 36, session.cursor.damage);
         session.cursor.Normalize(); var reply = Reply(session, false); sessions.Remove(owner); return reply;
     }
@@ -105,7 +106,8 @@ public sealed class FurnaceStorage
             var opened = new Session { position = request.position, inventory = (InventoryStack[])request.inventory.Clone(), cursor = request.cursor };
             sessions.Add(owner, opened); return Reply(opened, true);
         }
-        if (!sessions.TryGetValue(owner, out var session) || session.position != request.position) return new FurnaceReply { error = "Furnace session closed." };
+        if (!sessions.TryGetValue(owner, out var session)) return new FurnaceReply { sessionClosed=true, error = "Furnace session closed." };
+        if (session.position != request.position) return new FurnaceReply { error = "Stale furnace action." };
         if (request.action == 3) return Reply(session, true);
         if (request.sequence != session.sequence + 1) return new FurnaceReply { error = "Stale furnace action." };
         bool valid;InventoryStack dropped=new InventoryStack();

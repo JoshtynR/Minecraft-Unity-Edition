@@ -89,6 +89,9 @@ public partial class WorldServer
         CheckFurnaceSessions(world);
         foreach(int owner in world.chests.Owners())
         {
+            // Local-host sessions are owned and range-checked by the local UI,
+            // not by a Mirror connection with ID -1.
+            if(owner==-1)continue;
             NetworkConnectionToClient connection;
             bool connected=NetworkServer.connections.TryGetValue(owner,out connection)&&connection!=null&&connection.identity!=null;
             var player=connected?connection.identity.GetComponent<Player>():null;

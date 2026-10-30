@@ -28,10 +28,10 @@ public partial class PlayerInventory
         {
             var world=player.CurrentWorld;
             bool accessible=world!=null&&world.ChestAccessible(transform.position+Vector3.up*1.6f,request.position,player.reach);
-            if(world==null){chestPending=false;return;}
+            if(world==null){ReceiveChestReply(new ChestReply{sessionClosed=true,error="World closed."});return;}
             if(world.isSaving&&request.action!=2)
             {ReceiveChestReply(new ChestReply{error="World is saving; try the chest again in a moment."});return;}
-            var reply=world.chests.Process(world.worldName,-1,request,accessible);
+            var reply=world.chests.Process(world.StorageName,-1,request,accessible);
             if(reply.accepted&&!reply.dropped.Empty)player.SpawnMenuDrop(reply.dropped);
             ReceiveChestReply(reply);
             if(reply.accepted&&!reply.opened)world.SaveWorld();
@@ -47,6 +47,8 @@ public partial class PlayerInventory
     public void ReceiveChestReply(ChestReply reply)
     {
         chestPending=false;
+        if(reply.sessionClosed)
+        {EndChestPanel();chestCloseRequested=false;CloseInventory();return;}
         if(!reply.accepted)
         {
             Debug.LogWarning(reply.error);
@@ -131,7 +133,7 @@ public partial class PlayerInventory
     private void UpdateChestPanel()
     {
         if(!chestOpen)return;
-        if(chestNetworkSession&&!(NetworkClient.active&&!NetworkServer.active))
+        if(player.CurrentWorld==null||(chestNetworkSession&&!(NetworkClient.active&&!NetworkServer.active)))
         {chestPending=false;EndChestPanel();CloseInventory();return;}
         chestPanel.anchoredPosition=new Vector2(inventoryRect.anchoredPosition.x,0);
         if(!(NetworkClient.active&&!NetworkServer.active)&&!player.CurrentWorld.ChestAccessible(transform.position+Vector3.up*1.6f,chestPosition,player.reach))

@@ -19,6 +19,7 @@ public struct ChestRequest : NetworkMessage
 public struct ChestReply : NetworkMessage
 {
     public bool accepted,opened;
+    public bool sessionClosed;
     public string error;
     public Vector3Int position;
     public InventoryStack[] chest,inventory;
@@ -76,7 +77,7 @@ public sealed class ChestStorage
     public Vector3Int Position(int owner) => sessions[owner].position;
     public ChestReply Close(int owner)
     {
-        Session session;if(!sessions.TryGetValue(owner,out session))return new ChestReply{accepted=false,error="Chest session closed."};
+        Session session;if(!sessions.TryGetValue(owner,out session))return new ChestReply{sessionClosed=true,error="Chest session closed."};
         session.cursor.count=InventoryRules.Insert(session.inventory,session.cursor.type,session.cursor.count,0,36,session.cursor.damage);
         session.cursor.Normalize();
         var reply=Reply(session,false);sessions.Remove(owner);LidChanged?.Invoke(session.position,false);return reply;
@@ -97,7 +98,8 @@ public sealed class ChestStorage
             session=new Session{position=request.position,inventory=(InventoryStack[])request.inventory.Clone(),cursor=request.cursor};
             sessions.Add(owner,session);LidChanged?.Invoke(request.position,true);return Reply(session,true);
         }
-        if(!sessions.TryGetValue(owner,out session)||session.position!=request.position||request.sequence!=session.sequence+1)
+        if(!sessions.TryGetValue(owner,out session))return new ChestReply{sessionClosed=true,error="Chest session closed."};
+        if(session.position!=request.position||request.sequence!=session.sequence+1)
             return new ChestReply{error="Stale chest action."};
         bool valid;InventoryStack dropped=new InventoryStack();
         if(request.action==1)valid=ChestTransactions.Click(entries[session.position].items,session.inventory,ref session.cursor,request.slot,request.right,request.shift);
