@@ -31,7 +31,7 @@ public static class BlockTargeting
         return distance>=0 && !float.IsInfinity(distance);
     }
 
-    public static Block Raycast(World world,Vector3 origin,Vector3 direction,float reach,out Vector3Int adjacent,out Vector3 hitPoint)
+    public static Block Raycast(World world,Vector3 origin,Vector3 direction,float reach,out Vector3Int adjacent,out Vector3 hitPoint,bool sourceFluids=false)
     {
         adjacent=new Vector3Int();hitPoint=new Vector3();
         float length=direction.magnitude;
@@ -49,7 +49,7 @@ public static class BlockTargeting
         for(int visited=0;visited<512&&entered<=reach;visited++)
         {
             var block=world.GetBlock(cell);
-            if(block!=null&&HandMining.IsTarget(block.type))
+            if(block!=null&&(HandMining.IsTarget(block.type)||sourceFluids&&(block.type==BlockType.Water||block.type==BlockType.Lava)&&block.waterLevel==0))
             {
                 var shape=block.blockShape.GetShape();float distance;Vector3Int normal;
                 if(RayBox(shape,cell,origin,direction,out distance,out normal)&&distance<=reach)

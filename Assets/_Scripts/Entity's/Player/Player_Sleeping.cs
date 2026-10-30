@@ -23,7 +23,8 @@ public partial class Player
     private bool sleepGameUIWasActive;
     public string SleepMessage=>Time.unscaledTime<sleepMessageUntil?sleepMessage:string.Empty;
     private Vector3 SavedSleepPosition=>sleeping?sleepReturnPosition:transform.position;
-    internal bool FullyAsleep=>sleeping&&NetworkTime.time-sleepStartedAt>=5;
+    private double SleepClock=>networkStarted?NetworkTime.time:Time.unscaledTime;
+    internal bool FullyAsleep=>sleeping&&SleepClock-sleepStartedAt>=5;
     public Vector3 SleepingDirection
     {
         get
@@ -72,13 +73,22 @@ public partial class Player
 
         CancelFoodForTravel();serverMining=localMining=false;
         hasBedSpawn=true;bedSpawn=head;sleepingBed=head;sleepingFoot=foot;sleepReturnPosition=transform.position;sleepHealth=health;
-        sleepStartedAt=networkStarted?NetworkTime.time:Time.unscaledTime;sleeping=true;int attempt=++sleepAttempt;
+        sleepStartedAt=SleepClock;sleeping=true;int attempt=++sleepAttempt;
         SetBedOccupied(world,head,true);SetBedOccupied(world,foot,true);
         var liePosition=(Vector3)head+new Vector3(.5f,9f/16f,.5f);
         MoveForSleep(liePosition);
         if(networkStarted&&!(isServer&&isLocalPlayer))TargetEnterBed(connectionToClient,liePosition);
-        else {EnterSleepClient(liePosition);StartCoroutine(CompleteOfflineSleep(attempt));}
-        if(NetworkServer.active&&WorldServer.instance!=null)WorldServer.instance.EvaluateSleep();
+        else EnterSleepClient(liePosition);
+        BeginSleepCompletion(attempt);
+    }
+
+    private void BeginSleepCompletion(int attempt)
+    {
+        // A solo Mirror host still uses the server clock and all-player quorum.
+        // Do not also start an offline timer that wakes it without setting time.
+        if(networkStarted)
+        {if(NetworkServer.active&&WorldServer.instance!=null)WorldServer.instance.EvaluateSleep();}
+        else StartCoroutine(CompleteOfflineSleep(attempt));
     }
 
     private static bool SleepingAtNight(double ticks)
@@ -106,7 +116,7 @@ public partial class Player
     {
         // Classic clients spend 100 ticks entering bed before the night skips.
         yield return new WaitForSecondsRealtime(5f);
-        if(!sleeping||attempt!=sleepAttempt)yield break;
+        if(networkStarted||!sleeping||attempt!=sleepAttempt)yield break;
         double now=world.CurrentWorldTicks,time=(now%SkyClock.DayTicks+SkyClock.DayTicks)%SkyClock.DayTicks;
         world.worldTimeTicks=now+(SkyClock.DayTicks-time);
         WakeFromBed(true);

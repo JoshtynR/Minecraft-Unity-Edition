@@ -705,6 +705,7 @@ public partial class Player : BaseEntity
         {
             if(TryUseMob(true))return;
             if (TryUseBlock()) return;
+            if (TryUseBucket()) return;
             if (TryStartEating()) return;
             if (placeCoroutine == null)
             {
