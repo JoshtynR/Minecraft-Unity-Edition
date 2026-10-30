@@ -25,6 +25,8 @@ for entry in expected:
         assert 1 <= int(definition['maxStack']) <= 64 and int(definition['maxDamage']) >= 0
 assert len(actual)==251 and len(expected)==122
 print('251 asset entries verified ('+('custom item values preserved' if a.custom_assets else '122 Beta item/variant defaults')+').',flush=True)
+changes=(root/'Assets/_Scripts/World/World_BlockChanges.cs').read_text()
+assert 'if(removingChest)RemoveChest(pos);' in changes, 'Live block removal must emit chest contents through the authority-owned drop hook'
 with tempfile.TemporaryDirectory() as tmp:
     binary = Path(tmp) / 'creative.exe'
     server=(root/'Assets/_Scripts/World/WorldServer.cs').read_text()

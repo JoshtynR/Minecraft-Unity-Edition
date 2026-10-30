@@ -17,6 +17,7 @@ namespace UnityEngine
 namespace UnityEngine.Rendering {public enum IndexFormat {UInt32}public enum ShadowCastingMode {Off}}
 public partial class World:MonoBehaviour
 {
+ public void BreakChestForTest(Vector3Int position){RemoveChest(position);}
  public bool GenerationBusy;
  public World worldRenderer=>this;public WorldDimension dimension;public string StorageName=>DimensionRules.StorageName(worldName,dimension);public static World FindDimension(WorldDimension id)=>Instance;public static System.Collections.Generic.IEnumerable<World> LoadedDimensions=>new[]{Instance};
  public bool IsWorldCreated=true,disabled;public int worldHeight=128;
@@ -97,7 +98,7 @@ public partial class PlayerInventory
   reply=store.Process("",1,new ChestRequest{action=6,position=pos,sequence=5,right=true},true);
   Check(reply.dropped.count==1&&reply.cursor.count==62,"chest outside right click returns one authoritative world-drop stack");
   reply.chest[0].count=0;
-  Check(!store.CanRemove("",pos),"occupied chest cannot be broken");
+  Check(!store.CanRemove("",pos),"open chest cannot be broken during an active transaction");
   reply=store.Close(1);Check(!reply.opened&&reply.chest[0].Empty&&closes==1&&store.CanRemove("",pos),"closing retains the updated server contents and shuts lid");
   Check(!store.Process("",1,open,false).accepted,"out-of-range or obstructed open rejected");
   open.inventory=new InventoryStack[35];Check(!store.Process("",1,open,true).accepted,"malformed inventory rejected");
@@ -122,6 +123,12 @@ public partial class PlayerInventory
    Check(reply.chest.Length==27&&reply.chest.All(stack=>stack.Empty),"splitting pair leaves first half's own contents unchanged");
    reply=store.Process(name,11,new ChestRequest{action=0,position=otherHalf,inventory=new InventoryStack[36]},true);store.Close(11);
    Check(reply.chest[26].count==19,"splitting pair preserves second half's own contents");
+   Check(store.CanRemove(name,otherHalf),"closed filled chest is breakable");
+   var extracted=store.Remove(otherHalf);
+   Check(extracted[26].type==ItemType.Stick&&extracted[26].count==19&&store.Remove(otherHalf).Length==0,"removal returns contents exactly once");
+   store.SaveWorld(name);store=new ChestStorage();
+   reply=store.Process(name,12,new ChestRequest{action=0,position=otherHalf,inventory=new InventoryStack[36]},true);store.Close(12);
+   Check(reply.chest.All(stack=>stack.Empty),"removed contents cannot reappear after saving and reopening");
   }
   finally{if(Directory.Exists(directory))Directory.Delete(directory,true);}
   menu.LoadInventory(null);menu.AddItem(ItemType.Stone,63);menu.RequestChest(pos);
@@ -228,6 +235,22 @@ public partial class PlayerInventory
   Check(chunkObject.transform.childCount==1&&ReferenceEquals(child,chunkObject.transform.GetChild(0).gameObject),"lighting remesh reuses chest model rather than duplicating owned resources");
   World.Instance.blocks.Remove(pos);renderer.RenderMesh(freshUpload());
   Check(chunkObject.transform.childCount==0&&child.destroyed,"stale chest mesh upload cannot resurrect mined chest model");
+  var dropCell=new Vector3Int(20,3,4);var keptCell=dropCell+Vector3Int.right;
+  var contents=new InventoryStack[36];contents[0]=new InventoryStack(ItemType.Diamond,5);contents[1]=new InventoryStack(ItemType.IronPickaxe,1,7);
+  World.Instance.chests.Process("",600,new ChestRequest{action=0,position=dropCell,inventory=contents},true,keptCell);
+  World.Instance.chests.Process("",600,new ChestRequest{action=1,position=dropCell,sequence=1,slot=54,shift=true},true,keptCell);
+  World.Instance.chests.Process("",600,new ChestRequest{action=1,position=dropCell,sequence=2,slot=55,shift=true},true,keptCell);
+  World.Instance.chests.Close(600);
+  var keptBag=new InventoryStack[36];keptBag[0]=new InventoryStack(ItemType.Stick,12);
+  World.Instance.chests.Process("",601,new ChestRequest{action=0,position=keptCell,inventory=keptBag},true);
+  World.Instance.chests.Process("",601,new ChestRequest{action=1,position=keptCell,sequence=1,slot=27,shift=true},true);World.Instance.chests.Close(601);
+  var priorDrops=World.Instance.droppedItems.Items.Select(item=>item.id).ToArray();
+  World.Instance.BreakChestForTest(dropCell);
+  var emitted=World.Instance.droppedItems.Items.Where(item=>!priorDrops.Contains(item.id)).ToArray();
+  Check(emitted.Length==2&&emitted.Any(item=>item.stack.type==ItemType.Diamond&&item.stack.count==5)&&emitted.Any(item=>item.stack.type==ItemType.IronPickaxe&&item.stack.damage==7),"breaking filled chest emits each stack with count and durability preserved");
+  World.Instance.BreakChestForTest(dropCell);Check(World.Instance.droppedItems.Items.Count()==priorDrops.Length+2,"repeated removal does not duplicate contents");
+  var surviving=World.Instance.chests.Process("",602,new ChestRequest{action=0,position=keptCell,inventory=new InventoryStack[36]},true);World.Instance.chests.Close(602);
+  Check(surviving.chest[0].type==ItemType.Stick&&surviving.chest[0].count==12,"breaking one double-chest half leaves other half contents untouched");
   Resources.hud=null;
   menu.LoadInventory(null);
  }

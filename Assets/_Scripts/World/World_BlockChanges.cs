@@ -122,7 +122,7 @@ public partial class World
         QueueSurvivalAround(pos);
         if (BlockSurvivalRules.IsLog(previousType) && !BlockSurvivalRules.IsLog(blockType)) QueueLeavesAroundRemovedLog(pos);
         QueuePortalValidation(pos);
-        if(removingChest)chests.Removed(pos);
+        if(removingChest)RemoveChest(pos);
         if(removingFurnace)RemoveFurnace(pos);
         if(removingCrop)DropWheat(pos,cropAge);
         if(IsFurnace(blockType))TrackFurnace(pos);

@@ -69,11 +69,15 @@ public sealed class ChestStorage
     {
         Load(name);
         foreach(var session in sessions.Values)if(session.position==position||session.partner==position)return false;
-        Entry entry;if(!entries.TryGetValue(position,out entry))return true;
-        foreach(var item in entry.items)if(!item.Empty)return false;
         return true;
     }
-    public void Removed(Vector3Int position){entries.Remove(position);}
+    public InventoryStack[] Remove(Vector3Int position)
+    {
+        if(!entries.TryGetValue(position,out var entry))return new InventoryStack[0];
+        // Consume the storage entry before spawning drops so a repeated block
+        // update cannot emit the same contents twice. The paired half is separate.
+        entries.Remove(position);return (InventoryStack[])entry.items.Clone();
+    }
     public int[] Owners() {var owners=new int[sessions.Count];sessions.Keys.CopyTo(owners,0);return owners;}
     public Vector3Int Position(int owner) => sessions[owner].position;
     public ChestReply Close(int owner)
