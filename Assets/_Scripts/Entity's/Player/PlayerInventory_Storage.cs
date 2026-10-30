@@ -68,6 +68,7 @@ public partial class PlayerInventory
         RefreshSlotDurability(index);
         if(index>=41&&index<45)
         {
+            EquipmentRevision++;
             if(equipmentGhosts[index-41]!=null)equipmentGhosts[index-41].gameObject.SetActive(value.Empty);
             RefreshPreviewEquipment();
         }

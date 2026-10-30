@@ -51,7 +51,8 @@ namespace TMPro
  public enum TextAlignmentOptions {Center}
  public class TextMeshProUGUI:Component {public TMP_FontAsset font;public Material fontSharedMaterial;public float fontSize;public TextAlignmentOptions alignment;public Color color;public bool raycastTarget,extraPadding;public string text;}
 }
-public class Player {public int health=20,hunger=20,experienceLevel,airSupply=300;public float experienceProgress,saturation=5;}
+public class PlayerInventory {public int ArmourValue;}
+public class Player {public PlayerInventory inventory=new PlayerInventory();public int health=20,hunger=20,experienceLevel,airSupply=300;public float experienceProgress,saturation=5;}
 public class GameManager {public static GameManager Instance;public Player localPlayer;}
 public static class HudCheck
 {
@@ -77,6 +78,9 @@ public static class HudCheck
   Check(!root.activeSelf,"HUD hidden before local player exists");
   GameManager.Instance=new GameManager{localPlayer=new Player{health=19,hunger=5,experienceLevel=7,experienceProgress=0.5f}};Call(hud,"LateUpdate");
   Check(root.activeSelf&&root.transform.anchoredPosition.x==3&&root.transform.anchoredPosition.y==4,"HUD follows hotbar");
+  Check(!Child(root,"Armour0").activeSelf,"unarmoured player has no armour HUD");
+  GameManager.Instance.localPlayer.inventory.ArmourValue=19;Call(hud,"LateUpdate");
+  Check(Get<RawImage>(Child(root,"Armour0")).uvRect.x==34/256f&&Get<RawImage>(Child(root,"Armour9")).uvRect.x==25/256f,"armour HUD uses full and half native icons");
   Check(Get<RawImage>(Child(root,"Heart9")).uvRect.x==61/256f,"nineteen health gives final half heart");
   Check(Get<RawImage>(Child(root,"Food2")).uvRect.x==61/256f&&!Get<RawImage>(Child(root,"Food3")).enabled,"five hunger shows half third food icon");
   var fill=Get<RawImage>(Child(root,"XPFill"));Check(fill.rectTransform.sizeDelta.x==91&&fill.uvRect.width==91/256f,"half XP crops fill and UV equally");

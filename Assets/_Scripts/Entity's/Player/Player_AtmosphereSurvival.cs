@@ -70,7 +70,7 @@ public partial class Player
         bool immune=(local?isFlying:serverFlying)||fluid||below==null||below.type==BlockType.Nothing||below.type==BlockType.Ladder;
         int damage=falling.Step(transform.position.y,local?isGrounded:serverGrounded,immune);
         if(damage>0)
-        {health=Mathf.Max(0,health-damage);GameAudio.Broadcast(damage>4?"damage/fallbig":"damage/fallsmall",transform.position,1,1,world);}
+        {ApplyArmouredDamage(damage);GameAudio.Broadcast(damage>4?"damage/fallbig":"damage/fallsmall",transform.position,1,1,world);}
     }
 
     private void AdvanceCactusDamage()
@@ -80,7 +80,7 @@ public partial class Player
         if((local?isFlying:serverFlying)||NetworkTime.time<hurtUntil||
             !BlockCollision.TouchesBlock(world,transform.position,entityWidth,entityHeight,BlockType.Cactus))return;
         hurtUntil=NetworkTime.time+.5;
-        health=Mathf.Max(0,health-1);
+        ApplyArmouredDamage(1);
         exhaustion=System.Math.Min(40,exhaustion+.3f);
         GameAudio.Broadcast("damage/hit",transform.position,1,1,world);
     }

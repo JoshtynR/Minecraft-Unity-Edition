@@ -119,6 +119,7 @@ public partial class World:UnityEngine.MonoBehaviour {
  private void SetFarmBlock(UnityEngine.Vector3Int p,BlockType t){SetBlock(p,t);}
 }
 public partial class Player:UnityEngine.MonoBehaviour {
+ public void ApplyArmouredDamage(int damage){health=System.Math.Max(0,health-damage);} // Unarmoured explosion fixture.
  public bool TryReplayPlacement(int request,out bool accepted){accepted=false;return false;}public void CompletePlacementRequest(Mirror.NetworkConnectionToClient c,int request,bool accepted){}
  protected World world;public bool isLocalPlayer=true,isServer=true,networkStarted,hasBedSpawn;public UnityEngine.Vector3Int bedSpawn;private bool loadingSavedPlayer;private int knownItemWearRevision;public bool AcceptsItemRevision(int revision)=>revision==0;public ulong SteamId;public bool expectsSavedPlayerData;public void LoadPlayer(WorldServer.SavePlayerMessage data){}public void RpcLoadPlayer(Mirror.NetworkConnection c,object data){}public int health=20;public PlayerInventory inventory=new PlayerInventory();public Mirror.NetworkConnectionToClient connectionToClient;
  private bool respawnRequested,serverMining,localMining,jumpRequest,survivalPositionKnown;private float verticalMomentum,localWalkDistance,localSprintDistance;private UnityEngine.Vector3 velocity,extraForce;

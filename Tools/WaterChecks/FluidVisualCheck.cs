@@ -123,6 +123,7 @@ public static class WorldDataHelper
 }
 public partial class Player:MonoBehaviour
 {
+ public void ApplyArmouredDamage(int damage){health=System.Math.Max(0,health-damage);} // Unarmoured fluid fixture.
  private class FallStub {public void Reset(){}}private readonly FallStub falling=new FallStub();
  private void ResetWalkMotion(){}
  private bool dimensionTransfer;

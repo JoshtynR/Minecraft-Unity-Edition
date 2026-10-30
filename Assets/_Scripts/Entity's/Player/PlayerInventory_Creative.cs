@@ -293,7 +293,7 @@ public partial class PlayerInventory
     }
     private void ArmorHint(RectTransform parent,int part)
     {
-        // Empty-equipment silhouettes; the current registry has no armor items.
+        // Empty-equipment silhouettes for helmet, chestplate, leggings and boots.
         // Beta's pumpkin-only helmet exception is handled by InventoryRules.
         string[][] pixels={
             new[]{"01111110","11111111","11000011","11000011","11000011","00000000","00000000","00000000"},

@@ -70,6 +70,7 @@ public static class BlockCollision {public static bool Supported(World w,Vector3
 public static class BlockTargeting {public static Block Raycast(World w,Vector3 p,Vector3 d,float distance,out Vector3Int cell,out Vector3 point){cell=new Vector3Int();point=p+d*distance;return w.blocked?new Block{type=BlockType.Stone}:null;}}
 public static class FluidWorldQueries {public static bool Touches(World w,Vector3 p,float width,float height,BlockType type,out Vector3 flow){flow=Vector3.zero;return w.water&&type==BlockType.Water;}public static BlockType AtEye(World w,Vector3 p)=>w.water?BlockType.Water:BlockType.Air;}
 public partial class Player:MonoBehaviour {
+ public void ApplyArmouredDamage(int damage){health=System.Math.Max(0,health-damage);} // Unarmoured fixture; real protection covered by CreativeChecks.
  public PlayerInventory inventory=new PlayerInventory();
  public WorldDimension dimension;
  public int health=20;public bool networkStarted,isServer,isLocalPlayer,isFlying,dimensionTransfer,serverFlying;public double hurtUntil;public float exhaustion;public bool DimensionTransferInProgress=>dimensionTransfer;public World CurrentWorld;public Mirror.NetworkConnection connectionToClient=new Mirror.NetworkConnection();public int pushes;

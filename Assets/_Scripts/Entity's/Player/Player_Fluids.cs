@@ -27,7 +27,7 @@ public partial class Player
         while(fluidHazardTime+.000001f>=.05f)
         {
             fluidHazardTime=Mathf.Max(0,fluidHazardTime-.05f);
-            health=Mathf.Max(0,health-fluidHazards.Tick(water,head,lava,fire,immune));
+            ApplyArmouredDamage(fluidHazards.Tick(water,head,lava,fire,immune));
         }
         airSupply=fluidHazards.air;burning=fluidHazards.fireTicks>0;
     }
