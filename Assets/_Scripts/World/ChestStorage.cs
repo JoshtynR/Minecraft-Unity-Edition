@@ -36,6 +36,7 @@ public sealed class ChestStorage
     private sealed class Session
     {
         public Vector3Int position;public InventoryStack[] inventory;public InventoryStack cursor;public int sequence;
+        public Vector3Int? partner;
     }
     private readonly Dictionary<Vector3Int,Entry> entries=new Dictionary<Vector3Int,Entry>();
     private readonly Dictionary<int,Session> sessions=new Dictionary<int,Session>();
@@ -67,7 +68,7 @@ public sealed class ChestStorage
     public bool CanRemove(string name,Vector3Int position)
     {
         Load(name);
-        foreach(var session in sessions.Values)if(session.position==position)return false;
+        foreach(var session in sessions.Values)if(session.position==position||session.partner==position)return false;
         Entry entry;if(!entries.TryGetValue(position,out entry))return true;
         foreach(var item in entry.items)if(!item.Empty)return false;
         return true;
@@ -80,9 +81,9 @@ public sealed class ChestStorage
         Session session;if(!sessions.TryGetValue(owner,out session))return new ChestReply{sessionClosed=true,error="Chest session closed."};
         session.cursor.count=InventoryRules.Insert(session.inventory,session.cursor.type,session.cursor.count,0,36,session.cursor.damage);
         session.cursor.Normalize();
-        var reply=Reply(session,false);sessions.Remove(owner);LidChanged?.Invoke(session.position,false);return reply;
+        var reply=Reply(session,false);sessions.Remove(owner);LidChanged?.Invoke(session.position,false);if(session.partner.HasValue)LidChanged?.Invoke(session.partner.Value,false);return reply;
     }
-    public ChestReply Process(string name,int owner,ChestRequest request,bool accessible)
+    public ChestReply Process(string name,int owner,ChestRequest request,bool accessible,Vector3Int? partner=null)
     {
         Load(name);
         Session session;
@@ -91,30 +92,47 @@ public sealed class ChestStorage
         if(request.action==0)
         {
             if(sessions.ContainsKey(owner))return new ChestReply{error="Close the current chest first."};
-            foreach(var active in sessions.Values)if(active.position==request.position)return new ChestReply{error="Chest is being used by another player."};
+            foreach(var active in sessions.Values)if(active.position==request.position||active.partner==request.position||partner.HasValue&&(active.position==partner.Value||active.partner==partner.Value))return new ChestReply{error="Chest is being used by another player."};
             if(!ChestTransactions.Valid(request.inventory,request.cursor))return new ChestReply{error="Invalid inventory."};
             Entry entry;if(!entries.TryGetValue(request.position,out entry))
                 entries.Add(request.position,new Entry{position=request.position,items=new InventoryStack[ChestTransactions.Size]});
-            session=new Session{position=request.position,inventory=(InventoryStack[])request.inventory.Clone(),cursor=request.cursor};
-            sessions.Add(owner,session);LidChanged?.Invoke(request.position,true);return Reply(session,true);
+            if(partner.HasValue&&!entries.ContainsKey(partner.Value))entries.Add(partner.Value,new Entry{position=partner.Value,items=new InventoryStack[27]});
+            session=new Session{position=request.position,partner=partner,inventory=(InventoryStack[])request.inventory.Clone(),cursor=request.cursor};
+            sessions.Add(owner,session);LidChanged?.Invoke(request.position,true);if(partner.HasValue)LidChanged?.Invoke(partner.Value,true);return Reply(session,true);
         }
         if(!sessions.TryGetValue(owner,out session))return new ChestReply{sessionClosed=true,error="Chest session closed."};
         if(session.position!=request.position||request.sequence!=session.sequence+1)
             return new ChestReply{error="Stale chest action."};
         bool valid;InventoryStack dropped=new InventoryStack();
-        if(request.action==1)valid=ChestTransactions.Click(entries[session.position].items,session.inventory,ref session.cursor,request.slot,request.right,request.shift);
-        else if(request.action==4)valid=ChestTransactions.Drag(entries[session.position].items,session.inventory,ref session.cursor,request.slots,request.right);
-        else if(request.action==5)valid=ChestTransactions.Collect(entries[session.position].items,session.inventory,ref session.cursor,request.slot);
+        var items=Items(session);
+        if(request.action==1)valid=ChestTransactions.Click(items,session.inventory,ref session.cursor,request.slot,request.right,request.shift);
+        else if(request.action==4)valid=ChestTransactions.Drag(items,session.inventory,ref session.cursor,request.slots,request.right);
+        else if(request.action==5)valid=ChestTransactions.Collect(items,session.inventory,ref session.cursor,request.slot);
         else if(request.action==6){dropped=InventoryRules.Drop(ref session.cursor,request.right);valid=!dropped.Empty;}
         else valid=false;
         if(!valid)
             return new ChestReply{error="Invalid chest action."};
-        session.sequence++;var reply=Reply(session,true);reply.dropped=dropped;return reply;
+        StoreItems(session,items);session.sequence++;var reply=Reply(session,true);reply.dropped=dropped;return reply;
+    }
+    // Stable spatial ordering is independent of which half the player clicked.
+    // Each physical chest retains its original 27-slot save entry.
+    private Vector3Int First(Session session)
+    {var p=session.position;var q=session.partner;return q.HasValue&&(q.Value.x<p.x||q.Value.x==p.x&&q.Value.z<p.z)?q.Value:p;}
+    private InventoryStack[] Items(Session session)
+    {
+        if(!session.partner.HasValue)return (InventoryStack[])entries[session.position].items.Clone();
+        var first=First(session);var second=first==session.position?session.partner.Value:session.position;
+        var result=new InventoryStack[54];Array.Copy(entries[first].items,result,27);Array.Copy(entries[second].items,0,result,27,27);return result;
+    }
+    private void StoreItems(Session session,InventoryStack[] items)
+    {
+        var first=First(session);Array.Copy(items,entries[first].items,27);
+        if(session.partner.HasValue){var second=first==session.position?session.partner.Value:session.position;Array.Copy(items,27,entries[second].items,0,27);}
     }
     private ChestReply Reply(Session session,bool opened) => new ChestReply
     {
         accepted=true,opened=opened,position=session.position,sequence=session.sequence,
         inventory=(InventoryStack[])session.inventory.Clone(),cursor=session.cursor,
-        chest=(InventoryStack[])entries[session.position].items.Clone()
+        chest=Items(session)
     };
 }

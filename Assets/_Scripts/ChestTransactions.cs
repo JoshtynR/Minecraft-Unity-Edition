@@ -11,11 +11,11 @@ public static class ChestTransactions
     }
     private static bool Valid(InventoryStack stack) => stack.Empty?stack.count==0:
         ItemCatalog.Valid(stack.type)&&stack.count>0&&stack.count<=InventoryRules.Limit(stack.type)&&stack.damage>=0;
-    // 0..26 are chest slots, 27..62 are the player's existing inventory slots.
+    // Chest slots (27 or 54) precede the player's 36 inventory slots.
     public static bool Click(InventoryStack[] chest,InventoryStack[] inventory,ref InventoryStack cursor,int index,bool right,bool shift)
     {
-        if(chest==null||chest.Length!=Size||!Valid(inventory,cursor)||index<0||index>=Size+36)return false;
-        bool fromChest=index<Size;int slot=fromChest?index:index-Size;
+        if(chest==null||(chest.Length!=Size&&chest.Length!=54)||!Valid(inventory,cursor)||index<0||index>=chest.Length+36)return false;
+        bool fromChest=index<chest.Length;int slot=fromChest?index:index-chest.Length;
         var source=fromChest?chest:inventory;var target=fromChest?inventory:chest;
         if(shift)
         {
@@ -28,17 +28,17 @@ public static class ChestTransactions
     }
     public static bool Drag(InventoryStack[] chest,InventoryStack[] inventory,ref InventoryStack cursor,int[] indices,bool right)
     {
-        if(chest==null||chest.Length!=Size||!Valid(inventory,cursor)||indices==null)return false;
-        var combined=new InventoryStack[Size+36];Array.Copy(chest,combined,Size);Array.Copy(inventory,0,combined,Size,36);
+        if(chest==null||(chest.Length!=Size&&chest.Length!=54)||!Valid(inventory,cursor)||indices==null)return false;
+        var combined=new InventoryStack[chest.Length+36];Array.Copy(chest,combined,chest.Length);Array.Copy(inventory,0,combined,chest.Length,36);
         InventoryRules.Drag(combined,ref cursor,indices,right);
-        Array.Copy(combined,chest,Size);Array.Copy(combined,Size,inventory,0,36);return true;
+        Array.Copy(combined,chest,chest.Length);Array.Copy(combined,chest.Length,inventory,0,36);return true;
     }
     public static bool Collect(InventoryStack[] chest,InventoryStack[] inventory,ref InventoryStack cursor,int index)
     {
-        if(chest==null||chest.Length!=Size||!Valid(inventory,cursor)||index<0||index>=Size+36)return false;
-        var combined=new InventoryStack[Size+36];Array.Copy(chest,combined,Size);Array.Copy(inventory,0,combined,Size,36);
+        if(chest==null||(chest.Length!=Size&&chest.Length!=54)||!Valid(inventory,cursor)||index<0||index>=chest.Length+36)return false;
+        var combined=new InventoryStack[chest.Length+36];Array.Copy(chest,combined,chest.Length);Array.Copy(inventory,0,combined,chest.Length,36);
         if(cursor.Empty)InventoryRules.Click(ref combined[index],ref cursor,false);
         InventoryRules.Collect(combined,ref cursor);
-        Array.Copy(combined,chest,Size);Array.Copy(combined,Size,inventory,0,36);return true;
+        Array.Copy(combined,chest,chest.Length);Array.Copy(combined,chest.Length,inventory,0,36);return true;
     }
 }

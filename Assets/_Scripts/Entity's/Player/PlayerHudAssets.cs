@@ -19,6 +19,7 @@ public class PlayerHudAssets : ScriptableObject
     [Tooltip("Optional modern leather detail overlays: layer 1 then layer 2.")]
     public Texture2D[] leatherArmourOverlays=new Texture2D[2];
     public Texture2D chestSkin;
+    public Texture2D chestLeftSkin,chestRightSkin;
     public Texture2D chestContainer;
     public Texture2D waterOverlay,fireOverlay;
     [Tooltip("Packed 256x256 Minecraft particle atlas. Runtime effects animate regions of this sheet directly.")]
