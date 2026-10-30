@@ -51,4 +51,22 @@ public static class ItemDurability
     // space has no invented rod wear, and armor is not damaged just by carrying it.
     public static int FishingWear(bool caughtEntity,bool caughtFish,bool stuck)=>stuck?2:caughtEntity?3:caughtFish?1:0;
     public static int ArmorPart(ItemType type)=>type>=ItemType.LeatherHelmet&&type<=ItemType.GoldenBoots?((int)type-(int)ItemType.LeatherHelmet)%4:-1;
+    public static int ArmorValue(InventoryStack[] equipment)
+    {
+        int points=0,remaining=0,maximum=0;
+        if(equipment!=null)for(int i=0;i<equipment.Length;i++)
+        {
+            var stack=equipment[i];int part=ArmorPart(stack.type),max=Maximum(stack.type);
+            if(stack.Empty||part<0||part!=i||max<=0)continue;
+            points+=part==0||part==3?3:part==1?8:6;
+            maximum+=max;remaining+=Math.Max(0,max-stack.damage);
+        }
+        return maximum==0?0:(points-1)*remaining/maximum+1;
+    }
+    public static int ReduceArmorDamage(int damage,int armor,ref int remainder)
+    {
+        if(damage<=0)return 0;
+        int scaled=damage*(25-Math.Max(0,Math.Min(20,armor)))+remainder;
+        remainder=scaled%25;return scaled/25;
+    }
 }

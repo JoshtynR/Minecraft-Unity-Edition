@@ -48,7 +48,7 @@ public partial class World
                     if(clear)exposure+=.125f;
                 }
                 float impact=(1-distance)*exposure;
-                player.health=Math.Max(0,player.health-(int)((impact*impact+impact)/2*8*10+1));
+                player.ApplyArmouredDamage((int)((impact*impact+impact)/2*8*10+1));
             }
         GameAudio.Broadcast("random/explode",center,1,1,this);
     }

@@ -19,6 +19,7 @@ public class PlayerSurvivalHUD : MonoBehaviour
     private readonly RawImage[] hearts = new RawImage[10];
     private readonly RawImage[] food = new RawImage[10];
     private readonly RawImage[] bubbles = new RawImage[10];
+    private readonly RawImage[] armour = new RawImage[10];
     private readonly RawImage[] heartBackgrounds=new RawImage[10],damageHearts=new RawImage[10],foodBackgrounds=new RawImage[10];
     private readonly SurvivalHudAnimation animation=new SurvivalHudAnimation();
     private int lastAnimationTick=-1;
@@ -71,6 +72,8 @@ public class PlayerSurvivalHUD : MonoBehaviour
             food[i] = CreateImage("Food" + i, foodX, 30, 9, 9, 52, 27);
             bubbles[i]=CreateImage("Air"+i,82-i*8,40,9,9,16,18);
             bubbles[i].gameObject.SetActive(false);
+            armour[i]=CreateImage("Armour"+i,heartX,40,9,9,16,9);
+            armour[i].gameObject.SetActive(false);
         }
         CreateImage("XPBackground", -91, 24, 182, 5, 0, 64);
         xpFill = CreateImage("XPFill", -91, 24, 182, 5, 0, 69);
@@ -93,7 +96,7 @@ public class PlayerSurvivalHUD : MonoBehaviour
     private bool Ready()
     {
         if(root==null||hotbar==null||xpFill==null||levelText==null)return false;
-        for(int i=0;i<10;i++)if(hearts[i]==null||food[i]==null||bubbles[i]==null||heartBackgrounds[i]==null||damageHearts[i]==null||foodBackgrounds[i]==null)return false;
+        for(int i=0;i<10;i++)if(hearts[i]==null||food[i]==null||bubbles[i]==null||armour[i]==null||heartBackgrounds[i]==null||damageHearts[i]==null||foodBackgrounds[i]==null)return false;
         return true;
     }
 
@@ -140,9 +143,12 @@ public class PlayerSurvivalHUD : MonoBehaviour
         if (root.gameObject.activeSelf != visible) root.gameObject.SetActive(visible);
         if (player == null) return;
         int air=Mathf.Clamp(player.airSupply,0,300);
+        int armourPoints=player.inventory!=null?player.inventory.ArmourValue:0;
         int fullAir=Mathf.CeilToInt((air-2)*10/300f),totalAir=Mathf.CeilToInt(air*10/300f);
         for(int i=0;i<10;i++)
         {
+            armour[i].gameObject.SetActive(armourPoints>0);
+            armour[i].uvRect=SheetRect(armourPoints>=i*2+2?34:armourPoints==i*2+1?25:16,9,9,9);
             bubbles[i].gameObject.SetActive(player.airSupply<300&&i<totalAir);
             bubbles[i].uvRect=SheetRect(i<fullAir?16:25,18,9,9);
         }

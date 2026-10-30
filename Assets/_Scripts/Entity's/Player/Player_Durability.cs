@@ -5,6 +5,44 @@ public partial class Player
 {
     private int serverItemWearRevision,knownItemWearRevision;
     private double nextPlayerAttack, hurtUntil;
+    private int armourDamageRemainder,lastEquipmentRevision=-1;
+    private void UpdateArmourEquipment()
+    {
+        if(inventory==null||!networkStarted||!isLocalPlayer||isServer||!NetworkClient.ready)return;
+        if(lastEquipmentRevision==inventory.EquipmentRevision)return;
+        CmdEquipment(inventory.EquipmentSnapshot(),knownItemWearRevision);
+        lastEquipmentRevision=inventory.EquipmentRevision;
+    }
+    [Command] private void CmdEquipment(InventoryStack[] equipment,int revision)
+    {
+        if(!AcceptsItemRevision(revision)||equipment==null||equipment.Length!=4||inventory==null)return;
+        for(int i=0;i<4;i++)
+        {
+            var stack=equipment[i];if(stack.Empty)continue;
+            if(stack.count!=1||stack.damage<0||stack.damage>ItemDurability.Maximum(stack.type)||
+                !(ItemDurability.ArmorPart(stack.type)==i||i==0&&stack.type==ItemType.Pumpkin))return;
+        }
+        inventory.ApplyEquipmentSnapshot(equipment);
+    }
+    public void ApplyArmouredDamage(int damage)
+    {
+        if(damage<=0||health<=0)return;
+        bool wearingArmour=inventory!=null&&inventory.ArmourValue>0;
+        int applied=inventory==null?damage:inventory.AbsorbArmourDamage(damage,ref armourDamageRemainder);
+        health=Mathf.Max(0,health-applied);
+        if(networkStarted&&isServer&&wearingArmour)
+        {
+            serverItemWearRevision++;
+            if(isLocalPlayer)knownItemWearRevision=serverItemWearRevision;
+            else TargetArmourWear(connectionToClient,inventory.EquipmentSnapshot(),serverItemWearRevision);
+        }
+    }
+    [TargetRpc] private void TargetArmourWear(NetworkConnection connection,InventoryStack[] equipment,int revision)
+    {
+        if(inventory==null||revision<=knownItemWearRevision)return;
+        inventory.ApplyEquipmentSnapshot(equipment);knownItemWearRevision=revision;
+        lastEquipmentRevision=inventory.EquipmentRevision;
+    }
     public int ItemWearRevision=>knownItemWearRevision;
     public bool AcceptsItemRevision(int revision)=>revision==serverItemWearRevision;
     private void WearItemOnHit(Player target)
@@ -33,7 +71,7 @@ public partial class Player
                 nextPlayerAttack=NetworkTime.time+.25;
                 target.hurtUntil=NetworkTime.time+.5;
                 int damage=MobRules.AttackDamage(snapshot[slot].type);
-                target.health=Mathf.Max(0,target.health-damage);
+                target.ApplyArmouredDamage(damage);
                 var push=target.transform.position-transform.position+Vector3.up;
                 if(networkStarted&&!(target.isServer&&target.isLocalPlayer))target.RpcAddForce(target.connectionToClient,push,6);
                 else target.AddForce(push,6);

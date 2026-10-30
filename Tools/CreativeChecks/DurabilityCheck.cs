@@ -19,6 +19,27 @@ public partial class PlayerInventory
 {
     static void CheckDurability()
     {
+        foreach(var helmet in new[]{ItemType.LeatherHelmet,ItemType.ChainmailHelmet,ItemType.IronHelmet,ItemType.DiamondHelmet,ItemType.GoldenHelmet})
+        {
+            var gear=new InventoryStack[4];for(int i=0;i<4;i++)gear[i]=new InventoryStack((ItemType)((int)helmet+i),1);
+            Check(ItemDurability.ArmorValue(gear)==20,"all pristine Beta armour materials provide twenty points");
+            int remainder=0,total=0;for(int hit=0;hit<25;hit++)total+=ItemDurability.ReduceArmorDamage(1,20,ref remainder);
+            Check(total==5&&remainder==0,"armour retains fractional damage rather than granting immunity to weak hits");
+            for(int i=0;i<4;i++)gear[i].damage=ItemDurability.Maximum(gear[i].type);
+            Check(ItemDurability.ArmorValue(gear)==1,"fully worn Beta armour retains its final protection point until it breaks");
+        }
+        var armourInv=new GameObject("ArmourFixture").AddComponent<PlayerInventory>();
+        armourInv.ApplyEquipmentSnapshot(new[]{new InventoryStack(ItemType.LeatherHelmet,1,33),new InventoryStack(),new InventoryStack(),new InventoryStack()});
+        int armourRemainder=0;armourInv.AbsorbArmourDamage(1,ref armourRemainder);
+        Check(armourInv.EquipmentSnapshot()[0].Empty&&armourInv.ArmourValue==0,"incoming damage breaks worn armour and clears its equipment slot");
+        armourInv.ApplyEquipmentSnapshot(new[]{new InventoryStack(ItemType.Pumpkin,1),new InventoryStack(),new InventoryStack(),new InventoryStack()});
+        Check(armourInv.AbsorbArmourDamage(4,ref armourRemainder)==4&&armourInv.EquipmentSnapshot()[0].damage==0,"pumpkin helmets provide no armour or durability wear");
+        var armourPlayer=armourInv.gameObject.AddComponent<Player>();armourPlayer.health=20;
+        armourInv.ApplyEquipmentSnapshot(new[]{new InventoryStack(ItemType.IronHelmet,1),new InventoryStack(ItemType.IronChestplate,1),new InventoryStack(ItemType.IronLeggings,1),new InventoryStack(ItemType.IronBoots,1)});
+        armourPlayer.networkStarted=true;armourPlayer.isServer=true;armourPlayer.isLocalPlayer=true;Mirror.NetworkClient.ready=false;
+        armourPlayer.ApplyArmouredDamage(10);
+        Check(armourPlayer.health==18&&armourInv.EquipmentSnapshot().All(piece=>piece.damage==10),"real local-host damage path reduces damage and wears every armour piece without network readiness");
+        Check(armourPlayer.ItemWearRevision>0,"authoritative armour wear advances inventory reconciliation revision");
         foreach(var definition in ItemCatalog.All)
         {
             int max=definition.maxDamage;

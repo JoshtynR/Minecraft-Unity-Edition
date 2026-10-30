@@ -496,6 +496,7 @@ public partial class Player : BaseEntity
     {
         if (dimensionTransfer) return;
         if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) return;
+        if(IsReadyForPlay)UpdateArmourEquipment();
         base.Update();
         if (Application.isPlaying)
         {

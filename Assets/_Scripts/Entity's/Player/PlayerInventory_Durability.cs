@@ -3,6 +3,21 @@ using UnityEngine.UI;
 
 public partial class PlayerInventory
 {
+    public int EquipmentRevision {get;private set;}
+    private readonly InventoryStack[] armourValueBuffer=new InventoryStack[4];
+    public InventoryStack[] EquipmentSnapshot()
+    {InitializeSlotData();var result=new InventoryStack[4];for(int i=0;i<4;i++)result[i]=Stack(equipmentSlots[i]);return result;}
+    public int ArmourValue
+    {get{InitializeSlotData();for(int i=0;i<4;i++)armourValueBuffer[i]=Stack(equipmentSlots[i]);return ItemDurability.ArmorValue(armourValueBuffer);}}
+    public void ApplyEquipmentSnapshot(InventoryStack[] equipment)
+    {if(equipment==null||equipment.Length!=4)return;for(int i=0;i<4;i++)WriteStack(41+i,equipment[i]);}
+    public int AbsorbArmourDamage(int damage,ref int remainder)
+    {
+        int result=ItemDurability.ReduceArmorDamage(damage,ArmourValue,ref remainder);
+        if(damage>0)for(int i=0;i<4;i++)
+        {var stack=Stack(equipmentSlots[i]);if(!stack.Empty&&ItemDurability.ArmorPart(stack.type)==i)ApplyItemWear(41+i,stack,damage);}
+        return result;
+    }
     public InventoryStack HeldItem()
     {InitializeSlotData();return selectedSlotIndex>=0&&selectedSlotIndex<9?Stack(slots[selectedSlotIndex]):new InventoryStack();}
     public bool ApplyItemWear(int index,InventoryStack expected,int amount)
