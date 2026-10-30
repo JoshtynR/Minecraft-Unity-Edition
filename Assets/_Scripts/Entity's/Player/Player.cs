@@ -624,10 +624,6 @@ public partial class Player : BaseEntity
                 escapeMenu.Toggle();
                 escapeMenuOpen = escapeMenu.opened;
 
-                if (escapeMenuOpen && (isServer || !NetworkClient.active) && !world.isSaving)
-                {
-                    World.SaveAllDimensions();
-                }
             }
         }
 

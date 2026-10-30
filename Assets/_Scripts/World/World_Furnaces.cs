@@ -74,7 +74,6 @@ public partial class WorldServer
         if (reply.accepted && !reply.dropped.Empty) player.SpawnMenuDrop(reply.dropped);
         if (reply.accepted) player.GetComponent<PlayerInventory>().ApplyChestPlayerSnapshot(reply.inventory, reply.cursor);
         connection.Send(reply);
-        if (reply.accepted && !reply.opened) world.SaveWorld();
     }
     public void CloseFurnaceForDisconnect(NetworkConnectionToClient connection)
     {
@@ -96,7 +95,7 @@ public partial class WorldServer
             var reply = world.furnaces.Close(owner);
             if (player != null) player.GetComponent<PlayerInventory>().ApplyChestPlayerSnapshot(reply.inventory, reply.cursor);
             if (connected) connection.Send(reply);
-            world.SaveWorld();
+            if (!connected) world.SaveWorld();
         }
     }
 }

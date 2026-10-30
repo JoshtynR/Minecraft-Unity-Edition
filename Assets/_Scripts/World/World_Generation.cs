@@ -119,7 +119,7 @@ public partial class World
         }
 
         // Newly generated/edited chunks used to remain pinned until the global
-        // five-minute autosave. Write back only dirty chunks leaving the halo,
+        // two-minute autosave. Write back only dirty chunks leaving the halo,
         // then evict them just like the clean chunks below.
         var savedForEviction=await SaveChunksForEvictionAsync(worldGenerationData.chunkDataToSaveAndRemove);
         
