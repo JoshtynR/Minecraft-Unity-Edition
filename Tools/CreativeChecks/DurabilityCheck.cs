@@ -19,6 +19,34 @@ public partial class PlayerInventory
 {
     static void CheckDurability()
     {
+        var equipMenu=BuildMenu();
+        foreach(var helmetType in new[]{ItemType.LeatherHelmet,ItemType.ChainmailHelmet,ItemType.IronHelmet,ItemType.DiamondHelmet,ItemType.GoldenHelmet})
+        for(int part=0;part<4;part++)
+        {
+            var type=(ItemType)((int)helmetType+part);equipMenu.LoadInventory(null);
+            equipMenu.WriteStack(0,new InventoryStack(type,1,1));
+            var pointer=new UnityEngine.EventSystems.PointerEventData{button=UnityEngine.EventSystems.PointerEventData.InputButton.Left,clickCount=1};
+            var from=equipMenu.inventorySlotsRect.GetChild(0).GetComponent<InventorySlot>();
+            equipMenu.lastInventoryClickType=ItemType.Nothing;equipMenu.lastInventoryClickTime=-10;
+            from.OnPointerDown(pointer);from.OnPointerUp(pointer);
+            var to=equipMenu.equipmentRects[part].GetComponent<InventorySlot>();
+            to.OnPointerDown(pointer);to.OnPointerUp(pointer);
+            Check(equipMenu.equipmentSlots[part].type==type&&equipMenu.equipmentSlots[part].damage==1&&equipMenu.pickedUpSlot==null&&equipMenu.slots[0].count==0,"rapid pointer pickup/equip works for every armour material and slot");
+            var savedEquipment=equipMenu.SavedEquipment();equipMenu.LoadInventory(null,null,null,null,savedEquipment);
+            Check(equipMenu.equipmentSlots[part].type==type&&equipMenu.equipmentSlots[part].damage==1,"equipped armour and durability survive actual load validation");
+            equipMenu.ClickInventorySlot(41+part,false,true);
+            Check(equipMenu.equipmentSlots[part].count==0&&equipMenu.slots[0].type==type,"shift-unequip returns armour to player storage");
+            equipMenu.ClickInventorySlot(0,false,true);
+            Check(equipMenu.equipmentSlots[part].type==type&&equipMenu.slots[0].count==0,"shift-click equips armour into the correct empty slot");
+        }
+        equipMenu.LoadInventory(null);equipMenu.WriteStack(41,new InventoryStack(ItemType.IronHelmet,1,3));
+        equipMenu.SetCursor(new InventoryStack(ItemType.DiamondHelmet,1,5));equipMenu.ClickInventorySlot(41,false,false);
+        Check(equipMenu.equipmentSlots[0].type==ItemType.DiamondHelmet&&equipMenu.equipmentSlots[0].damage==5&&equipMenu.pickedUpSlot.type==ItemType.IronHelmet&&equipMenu.pickedUpSlot.damage==3,"equipped armour swaps atomically with cursor, preserving both durability values");
+        equipMenu.SetCursor(new InventoryStack(ItemType.IronBoots,1));equipMenu.ClickInventorySlot(41,false,false);
+        Check(equipMenu.equipmentSlots[0].type==ItemType.DiamondHelmet&&equipMenu.pickedUpSlot.type==ItemType.IronBoots,"wrong armour part cannot replace helmet");
+        equipMenu.SetCursor(new InventoryStack(ItemType.Pumpkin,64));equipMenu.ClickInventorySlot(41,false,false);
+        Check(equipMenu.equipmentSlots[0].type==ItemType.DiamondHelmet&&equipMenu.pickedUpSlot.count==64,"stacked pumpkins cannot overflow an occupied helmet slot");
+        equipMenu.OnDestroy();
         foreach(var helmet in new[]{ItemType.LeatherHelmet,ItemType.ChainmailHelmet,ItemType.IronHelmet,ItemType.DiamondHelmet,ItemType.GoldenHelmet})
         {
             var gear=new InventoryStack[4];for(int i=0;i<4;i++)gear[i]=new InventoryStack((ItemType)((int)helmet+i),1);
