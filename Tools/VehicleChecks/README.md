@@ -45,8 +45,11 @@ exist; hulls are generated at runtime under the dimension renderer root.
 - Vehicles persist per dimension through world metadata. Rider references and
   control input are transient and are not restored from disk. Old saves without
   a vehicle array load with none.
-- This is an initial gameplay implementation, not a 1:1 vehicle port. Hulls are
-  simple solid-colour models, not texture-accurate vanilla models. Vehicle/entity
+- Classic 64x32 hull models now use `entity/boat/boat.png` and
+  `entity/cart/cart.png`, referenced by `PlayerHudAssets` for player builds.
+  Meshes use the classic box UV layout, rotated floors and cart interior liner;
+  native meshes/materials are disposed with their visual. Physics is unchanged.
+- This is an initial gameplay implementation, not a 1:1 vehicle port. Vehicle/entity
   bumping, mob passengers, damage stages, oars, chest/furnace carts and vehicle
   portal transport are not implemented. Storage is capped at 128 per dimension.
 - These checks do not exercise Mirror weaving, actual transport, GPU rendering,

@@ -19,6 +19,7 @@ public class PlayerHudAssets : ScriptableObject
     [Tooltip("Optional modern leather detail overlays: layer 1 then layer 2.")]
     public Texture2D[] leatherArmourOverlays=new Texture2D[2];
     public Texture2D chestSkin;
+    public Texture2D boatSkin,minecartSkin;
     public Texture2D chestLeftSkin,chestRightSkin;
     public Texture2D chestContainer;
     public Texture2D waterOverlay,fireOverlay;

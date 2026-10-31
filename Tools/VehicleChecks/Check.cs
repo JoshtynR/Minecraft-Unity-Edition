@@ -9,6 +9,9 @@ namespace UnityEngine
  public enum PrimitiveType {Cube}
  public class Collider {public bool enabled;}
  public class MeshRenderer {public Material sharedMaterial;}
+ public class MeshFilter {public Mesh sharedMesh;}
+ public class Mesh {public string name;public void SetVertices(List<Vector3> v){}public void SetUVs(int channel,List<Vector2> v){}public void SetTriangles(List<int> t,int sub){}public void RecalculateNormals(){}public void RecalculateBounds(){}}
+ public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public class Texture2D {public static Texture2D whiteTexture=new Texture2D();}
  public class Shader {public static Shader Find(string s)=>new Shader();}
  public class Material {public Material(Material m){}public Material(Shader s){}public Texture2D mainTexture;public Color color;public bool HasProperty(string s)=>true;public void SetColor(string s,Color c){}public void SetFloat(string s,float f){}}
@@ -45,6 +48,7 @@ namespace Mirror
  public static class NetworkServer {public static bool active;public static Dictionary<int,int> connections=new Dictionary<int,int>();public static void SendToAll<T>(T message){}}
 }
 public enum WorldDimension {Overworld,Nether}
+public class PlayerHudAssets {public Texture2D boatSkin,minecartSkin;}
 public struct InventoryStack {public ItemType type;public int count;public bool Empty=>count<=0;public InventoryStack(ItemType t,int n){type=t;count=n;}}
 public class Inventory {public InventoryStack[] slots=new InventoryStack[36];public bool DropRequestPending,isOpen;public int selectedSlotIndex;public InventoryStack HeldItem()=>slots[selectedSlotIndex];public InventoryStack[] DropInventorySnapshot()=>(InventoryStack[])slots.Clone();public void ApplyDropInventory(InventoryStack[] s){slots=(InventoryStack[])s.Clone();}}
 public static class ChestTransactions {public static bool Valid(InventoryStack[] s,InventoryStack c)=>s!=null&&s.Length==36;}
@@ -93,6 +97,21 @@ public static class VehicleCheck
  static World Ready(){var w=new World();for(int x=-32;x<=32;x+=16)for(int z=-32;z<=32;z+=16)w.worldData.chunkDict[new Vector3Int(x,0,z)]=new ChunkRenderer();return w;}
  public static void Main()
  {
+  foreach(var kind in new[]{VehicleKind.Boat,VehicleKind.Minecart})
+  {
+   var model=VehicleModelGeometry.Build(kind);int count=kind==VehicleKind.Boat?120:124;
+   Check(model.vertices.Count==count&&model.uv.Count==count,"classic model faces and UV channels");
+   Check(model.triangles.Count==count/4*6,"classic model triangle count");
+   float minY=100,maxY=-100,minZ=100,maxZ=-100;
+   foreach(var v in model.vertices){minY=Math.Min(minY,v.y);maxY=Math.Max(maxY,v.y);minZ=Math.Min(minZ,v.z);maxZ=Math.Max(maxZ,v.z);}
+   Check(Math.Abs(minY)<.00001f&&Math.Abs(maxY-.625f)<.00001f,"classic hull base and rim heights");
+   Check(Math.Abs(maxZ-minZ-(kind==VehicleKind.Boat?1.5f:1.25f))<.00001f,"classic hull length follows forward axis");
+   foreach(var uv in model.uv)Check(uv.x>=0&&uv.x<=1&&uv.y>=0&&uv.y<=1,"skin UV inside 64x32 atlas");
+   // First floor box's +X face starts at (u+d+w+d, v+d),
+   // inset by the reference 0.1 texel and with image V inverted.
+   float u=kind==VehicleKind.Boat?32:24,top=kind==VehicleKind.Boat?12:12;
+   Check(Math.Abs(model.uv[0].x-(u-.1f)/64)<.00001f&&Math.Abs(model.uv[0].y-(1-(top+.1f)/32))<.00001f,"floor atlas offsets and V conversion");
+  }
   for(int shape=0;shape<10;shape++)
   {
    VehiclePhysics.RailEnds(shape,out var a,out var b);

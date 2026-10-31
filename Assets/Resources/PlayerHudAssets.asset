@@ -34,6 +34,8 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 4cdcf596560a04e4bb5f1226f9d64f95, type: 3}
   - {fileID: 2800000, guid: 63bdeec9bce31ac4d8bd239b5046180c, type: 3}
   chestSkin: {fileID: 2800000, guid: 430149226c39f5340baaa4b854e369d3, type: 3}
+  boatSkin: {fileID: 2800000, guid: b2be9375bb6a89547918204c3b6c1636, type: 3}
+  minecartSkin: {fileID: 2800000, guid: 3118b312f335c734e85deb634d80d449, type: 3}
   chestLeftSkin: {fileID: 2800000, guid: 37a20bb4a29a20943b1d68f2c461a45b, type: 3}
   chestRightSkin: {fileID: 2800000, guid: 3c1725d4d79f7b54fa84a11a3b86442d, type: 3}
   chestContainer: {fileID: 2800000, guid: 6b8fdecc7993e024dbc6591d03546e2f, type: 3}
