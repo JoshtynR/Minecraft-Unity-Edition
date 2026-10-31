@@ -59,6 +59,7 @@ public partial class World
  private void UpdateWater(){}
  private void UpdateFurnaces(){}
  private void UpdateMobs(){}
+ private void UpdateVehicles(){}
  private void UpdateFallingBlocks(){}
  private void UpdateLeafDecay(){}
  private void UpdateDroppedItems(){}

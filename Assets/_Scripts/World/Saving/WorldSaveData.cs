@@ -17,6 +17,7 @@ public class WorldSaveData
     public DroppedItemState[] droppedItems;
     public FallingBlockState[] fallingBlocks;
     public MobSaveData mobs;
+    public VehicleState[] vehicles;
     // Read-only compatibility with releases that stored every species as cows.
     public MobSaveData cows;
     public MobSaveData SavedMobs => mobs ?? cows;

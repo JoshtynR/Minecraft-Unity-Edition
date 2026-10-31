@@ -241,6 +241,12 @@ public partial class Player : BaseEntity
         if(sleeping)return;
         if (dimensionTransfer) { CancelFoodForTravel(); falling.Reset(); ResetWalkMotion(); return; }
         if (WorldLoadingScreen.IsLoading && (!networkStarted || isLocalPlayer)) { falling.Reset(); ResetWalkMotion(); return; }
+        if(UpdateVehicleSeat())
+        {
+            ResetFluidMovement();
+            if(isServer||!networkStarted){AdvanceFluidHazards(Time.fixedDeltaTime);AdvanceCactusDamage();AdvanceSurvival(Time.fixedDeltaTime);}
+            return;
+        }
         if (!networkStarted || isLocalPlayer)
         {
             if (hunger <= 6 && !isFlying) isSprinting = false;
@@ -518,10 +524,11 @@ public partial class Player : BaseEntity
         
         if (!Application.isPlaying || !isLocalPlayer && networkStarted) return;
         GetPlayerInput();
+        UpdateVehicleControls();
         UpdateEating();
         if(IsEating){horizontal*=.2f;vertical*=.2f;isSprinting=false;}
         UpdateFluidView();
-        if(!IsEating&&TargetedMob()==null)UpdateMining();else CancelMining();
+        if(!IsEating&&TargetedMob()==null&&TargetedVehicle()==0&&world.RiddenVehicle(this)==null)UpdateMining();else CancelMining();
         if(!sleeping)
         {
             DoHeadRotation();
@@ -681,6 +688,7 @@ public partial class Player : BaseEntity
 
         if (Input.GetMouseButtonDown(0))
         {
+            if(TryUseVehicle(true))return;
             if(TryUseMob(false))return;
             RaycastHit ray;
             if (Physics.Raycast(objects.cam.position, objects.cam.forward, out ray, reach, LayerMask.GetMask("Default")))
@@ -703,6 +711,7 @@ public partial class Player : BaseEntity
         }
         if (Input.GetMouseButtonDown(1))
         {
+            if(TryUseVehicle(false))return;
             if(TryUseMob(true))return;
             if (TryUseBlock()) return;
             if (TryUseBucket()) return;

@@ -14,6 +14,7 @@ public class WorldSettingsManager : MonoBehaviour
     private DroppedItemState[] droppedItems;
     private FallingBlockState[] fallingBlocks;
     private MobSaveData mobs;
+    private VehicleState[] vehicles;
     private string fluidWorldName;
     
     private void Awake()
@@ -45,6 +46,7 @@ public class WorldSettingsManager : MonoBehaviour
             droppedItems=worldSaveData.droppedItems;
             fallingBlocks=worldSaveData.fallingBlocks;
             mobs=worldSaveData.SavedMobs;
+            vehicles=worldSaveData.vehicles;
             fluidWorldName=worldSaveData.worldName;
         });
     }
@@ -60,6 +62,7 @@ public class WorldSettingsManager : MonoBehaviour
             World.Instance.RestoreDroppedItems(fluidWorldName==worldName?droppedItems:null);
             World.Instance.RestoreFallingBlocks(fluidWorldName==worldName?fallingBlocks:null);
             World.Instance.RestoreMobs(fluidWorldName==worldName?mobs:null);
+            World.Instance.RestoreVehicles(fluidWorldName==worldName?vehicles:null);
         }
     }
 
