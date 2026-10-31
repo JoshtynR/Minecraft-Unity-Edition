@@ -16,5 +16,5 @@ spawning=(root/'Assets/_Scripts/World/World_MobSpawning.cs').read_text()
 assert 'GetSkyLight()>mobRandom.NextInt(32)' in spawning and 'skyLightReduction,mobRandom.NextInt(8)' in spawning
 assert 'for(int group=0;group<3' in spawning and 'attempt<4' in spawning
 assert 'for(int x=-8;x<=8;x++)' in spawning and 'CategoryCap' in spawning
-assert 'mobRandom.NextInt(hostile?50:40)' in spawning and 'speciesRoll>=40' in spawning
+assert 'TotalSpawnWeight(hostile)' in spawning and 'mobRandom.NextInt(spawnWeight+(hostile?10:0))' in spawning and 'speciesRoll>=spawnWeight' in spawning
 print('Production spawning uses Beta eligible chunks, pack walks, caps and independent light rolls.')

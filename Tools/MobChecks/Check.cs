@@ -5,6 +5,18 @@ class Check {
  static MobState Mob(World w,MobType type)=>w.mobs.Spawn(new Vector3(0,64,0),0,type);
  static Player Target(World w,float distance){var player=new Player();player.transform.position=new Vector3(distance,64,0);w.Add(player);return player;}
  static void Main(){
+  var original=MobDefinitions.Default(MobType.Cow);
+  var tune=MobTuning.From(original);tune.maxHealth=5;tune.walkSpeed=.12f;tune.spawnWeight=100;tune.maxGroup=2;
+  var existing=new MobStore();var savedCow=existing.Spawn(new Vector3(0,64,0),0,MobType.Cow);var savedMobs=new MobSaveData{entities=existing.Capture()};
+  MobDefinitions.Configure(new[]{tune});
+  Assert(MobDefinitions.Get(MobType.Cow).MaxHealth==5&&MobDefinitions.Get(MobType.Cow).WalkSpeed==.12f,"catalogue health and speed overrides apply");
+  Assert(MobDefinitions.Default(MobType.Cow).MaxHealth==10,"built-in defaults remain immutable");
+  Assert(MobDefinitions.TotalSpawnWeight(false)==132&&MobDefinitions.SelectSpawn(false,131)==MobType.Cow,"custom weighted roll uses entire configured range");
+  existing.Restore(savedMobs);Assert(existing.Get(savedCow.id)!=null&&existing.Get(savedCow.id).health==5,"lowered health cap preserves and clamps saved mob");
+  Assert(savedMobs.entities[0].health==10,"restore does not mutate save input");
+  tune.walkSpeed=float.NaN;tune.maxHealth=-10;tune.maxGroup=100;tune.spawnWeight=-1;MobDefinitions.Configure(new[]{tune});
+  Assert(MobDefinitions.Get(MobType.Cow).MaxHealth==1&&MobDefinitions.Get(MobType.Cow).WalkSpeed==original.WalkSpeed&&MobDefinitions.Get(MobType.Cow).MaxGroup==12&&MobDefinitions.Get(MobType.Cow).SpawnWeight==0,"invalid overrides safely clamped");
+  MobDefinitions.Configure(null);Assert(MobDefinitions.Get(MobType.Cow).MaxHealth==10&&MobDefinitions.TotalSpawnWeight(false)==40,"new session resets to built-in defaults");
   var indexedStore=new MobStore();var nearby=new System.Collections.Generic.List<MobState>();
   var indexedMob=indexedStore.Spawn(new Vector3(-.1f,64,-.1f),0,MobType.Cow);
   for(int i=0;i<2000;i++)indexedStore.Spawn(new Vector3(1000+i*16,64,1000),0,MobType.Cow);

@@ -160,11 +160,12 @@ public partial class World
                 float speed=Vector3.Dot(v.velocity,horizontal);
                 if(v.occupied&&Mathf.Abs(speed)<.1f&&v.throttle!=0)
                 {float a=v.inputYaw*Mathf.Deg2Rad;speed=Vector3.Dot(new Vector3(Mathf.Sin(a),0,Mathf.Cos(a)),horizontal)*v.throttle*.8f;}
-                speed-=tangent.y*8f*dt;
+                var tuning=VehicleTuning.Current;
+                speed-=tangent.y*tuning.cartSlopeAcceleration*dt;
                 bool powered=rail.type==BlockType.PoweredRail&&(SpecialBlockGeometry.State(rail.type,rail.blockShape)&8)!=0;
                 if(rail.type==BlockType.PoweredRail&&!powered)speed*=Mathf.Pow(.5f,dt/.05f);
-                else if(powered&&Mathf.Abs(speed)>.01f)speed+=Mathf.Sign(speed)*6f*dt;
-                speed=Mathf.Clamp(speed,-8,8)*Mathf.Pow(v.occupied?.997f:.96f,dt/.05f);
+                else if(powered&&Mathf.Abs(speed)>.01f)speed+=Mathf.Sign(speed)*tuning.cartPoweredAcceleration*dt;
+                speed=Mathf.Clamp(speed,-tuning.cartMaxSpeed,tuning.cartMaxSpeed)*Mathf.Pow(v.occupied?.997f:.96f,dt/.05f);
                 v.velocity=horizontal*speed;
                 var projected=(Vector3)cell+VehiclePhysics.RailPoint(shape,t)+Vector3.up*.0625f;
                 requested=projected-v.position+tangent*(speed*dt/Mathf.Max(.5f,new Vector3(tangent.x,0,tangent.z).magnitude));

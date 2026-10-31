@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class ModernChestVisual : MonoBehaviour
 {
+    public static float LidSpeed=2;
     public static bool Enabled {get;private set;}
     private World world;
     private Vector3Int position;
@@ -61,7 +62,7 @@ public class ModernChestVisual : MonoBehaviour
     private void Update()
     {
         if(world==null||lid==null)return;
-        progress=Mathf.MoveTowards(progress,world.openChestLids.Contains(position)?1:0,Time.deltaTime*2);
+        progress=Mathf.MoveTowards(progress,world.openChestLids.Contains(position)?1:0,Time.deltaTime*LidSpeed);
         lid.localRotation=Quaternion.Euler(ChestModelGeometry.LidAngle(progress),0,0);
         if(Time.unscaledTime<lightTime)return;lightTime=Time.unscaledTime+.2f;
         RefreshModel();

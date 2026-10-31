@@ -70,6 +70,7 @@ public partial class World
 
     private bool BetaSpecificSpawn(MobType species,Vector3 feet)
     {
+        if(MobDefinitions.Get(species).SpawnWeight<=0)return false;
         var cell=Vector3Int.FloorToInt(feet);var light=GetBlock(cell);
         if(light==null)return false;
         if(MobRules.Hostile(species))
@@ -101,6 +102,7 @@ public partial class World
     {
         if(dimension!=WorldDimension.Overworld||mobPlayers.Count==0||worldData.chunkDict==null||mobs.Count>=MobStore.Capacity)return;
         if(hostile?!spawnHostileMobs:!spawnPassiveMobs)return;
+        int spawnWeight=MobDefinitions.TotalSpawnWeight(hostile);if(spawnWeight<=0)return;
         RefreshEligibleMobChunks();int eligible=mobSpawnCandidates.Count;if(eligible==0)return;
         // Persisted mobs in unloaded chunks must not consume the active-area
         // cap. Beta counts entities in the eligible loaded region only.
@@ -116,20 +118,21 @@ public partial class World
         {
             var chunk=mobSpawnCandidates[(start+index)%eligible];
             if(!worldData.chunkDict.ContainsKey(chunk))continue;
-            int speciesRoll=mobRandom.NextInt(hostile?50:40);
+            int speciesRoll=mobRandom.NextInt(spawnWeight+(hostile?10:0));
             // Slimes occupy weight 40..49 in Beta's monster list. They do not
             // have a registered model/brain yet, so preserve the failed slot
             // instead of inflating the other four monsters' spawn rates.
-            if(hostile&&speciesRoll>=40)continue;
+            if(hostile&&speciesRoll>=spawnWeight)continue;
             var species=MobDefinitions.SelectSpawn(hostile,speciesRoll);
             int x=chunk.x+mobRandom.NextInt(16),y=mobRandom.NextInt(worldHeight),z=chunk.z+mobRandom.NextInt(16);
             var anchor=GetBlock(new Vector3Int(x,y,z));
             if(anchor==null||SpecialBlockGeometry.NormalCube(anchor.type)||anchor.type!=BlockType.Air)continue;
             int spawnedInChunk=0;
-            for(int group=0;group<3&&spawnedInChunk<4;group++)
+            int packCap=MobDefinitions.Get(species).MaxGroup;
+            for(int group=0;group<3&&spawnedInChunk<packCap;group++)
             {
                 int px=x,py=y,pz=z;
-                for(int attempt=0;attempt<4&&spawnedInChunk<4;attempt++)
+                for(int attempt=0;attempt<4&&spawnedInChunk<packCap;attempt++)
                 {
                     px+=mobRandom.NextInt(6)-mobRandom.NextInt(6);
                     // These calls both return zero, but still advance Java's RNG.
