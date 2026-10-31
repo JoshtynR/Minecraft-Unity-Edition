@@ -7,7 +7,7 @@ public static class SpecialBlockMesh
     private static readonly Direction[] Faces={Direction.backwards,Direction.forwards,Direction.left,Direction.right,Direction.down,Direction.up};
     private static readonly Vector3Int[] Neighbors={new Vector3Int(-1,0,0),new Vector3Int(1,0,0),new Vector3Int(0,0,-1),new Vector3Int(0,0,1)};
     public static void Append(BlockType t,byte s,Vector3Int pos,Func<Vector3Int,BlockType> get,
-        Func<Direction,int> layer,Color tint,MeshData mesh,Func<BlockTexturePart,int> parts=null)
+        Func<Direction,int> layer,Color tint,MeshData mesh,Func<BlockTexturePart,int> parts=null,Func<Vector3Int,byte> state=null)
     {
         if(SpecialBlockGeometry.IsTorch(t)){Torch(s,pos,layer(Direction.backwards),tint,mesh);return;}
         if(t==BlockType.Fence)
@@ -23,7 +23,7 @@ public static class SpecialBlockMesh
             }
             return;
         }
-        if(t==BlockType.RedstoneWire){Wire(s,pos,get,layer,tint,mesh,parts);return;}
+        if(t==BlockType.RedstoneWire){Wire(s,pos,get,layer,tint,mesh,parts,state);return;}
         if(SpecialBlockGeometry.IsRail(t))
         {
             int r=t==BlockType.Rail?s:s&7;
@@ -31,7 +31,19 @@ public static class SpecialBlockMesh
             if(r==2){c.y+=1;d.y+=1;} if(r==3){a.y+=1;b.y+=1;}
             if(r==4){a.y+=1;d.y+=1;} if(r==5){b.y+=1;c.y+=1;}
             Quad(pos,a,b,c,d,Texture(parts,t!=BlockType.Rail&&(s&8)!=0?BlockTexturePart.RailPowered:r>=6?BlockTexturePart.RailCorner:BlockTexturePart.RailStraight,layer(r>=6?Direction.backwards:Direction.up)),tint,mesh,true);
-            RotateUV(mesh,r==1||r==2||r==3?1:r>=6?r-6:0);return;
+            // Reference vertex mapping, converting image-top V to Unity V.
+            // Derive both sides from position so the reverse face is not mirrored.
+            for(int i=mesh.uv.Count-8;i<mesh.uv.Count;i++)
+            {
+                var v=mesh.vertices[i];float x=v.x-pos.x,z=v.z-pos.z;
+                var uv=mesh.uv[i];
+                if(r==1||r==2||r==3||r==7){uv.x=z;uv.y=x;}
+                else if(r==8){uv.x=1-x;uv.y=z;}
+                else if(r==9){uv.x=1-z;uv.y=1-x;}
+                else{uv.x=x;uv.y=1-z;}
+                mesh.uv[i]=uv;
+            }
+            return;
         }
         if(t==BlockType.Ladder)
         {
@@ -274,15 +286,20 @@ public static class SpecialBlockMesh
         }
     }
     private static bool Solid(BlockType t)=>SpecialBlockGeometry.NormalCube(t);
-    private static bool Connect(BlockType t)=>t==BlockType.RedstoneWire||t==BlockType.RedstoneTorch||t==BlockType.Lever||t==BlockType.StoneButton||t==BlockType.StonePressurePlate||t==BlockType.WoodenPressurePlate||t==BlockType.DetectorRail;
-    private static void Wire(byte power,Vector3Int p,Func<Vector3Int,BlockType> get,Func<Direction,int> layer,Color tint,MeshData m,Func<BlockTexturePart,int> parts)
+    public static bool WireConnects(BlockType t,byte state,int direction)
+    {
+        if(t==BlockType.RedstoneRepeater||t==BlockType.PoweredRepeater)
+            return direction>=0&&((state&1)==(direction<2?1:0));
+        return t==BlockType.RedstoneWire||t==BlockType.RedstoneTorch||t==BlockType.RedstoneTorchOff||t==BlockType.Lever||t==BlockType.StoneButton||t==BlockType.StonePressurePlate||t==BlockType.WoodenPressurePlate||t==BlockType.DetectorRail;
+    }
+    private static void Wire(byte power,Vector3Int p,Func<Vector3Int,BlockType> get,Func<Direction,int> layer,Color tint,MeshData m,Func<BlockTexturePart,int> parts,Func<Vector3Int,byte> state)
     {
         int mask=0,up=0;
         for(int i=0;i<4;i++)if(get!=null)
         {
             var n=p+Neighbors[i];var t=get(n);
-            bool climb=!Solid(get(p+new Vector3Int(0,1,0)))&&Solid(t)&&get(n+new Vector3Int(0,1,0))==BlockType.RedstoneWire;
-            if(Connect(t)||(!Solid(t)&&Connect(get(n+new Vector3Int(0,-1,0))))||climb)mask|=1<<i;
+            bool climb=!Solid(get(p+new Vector3Int(0,1,0)))&&Solid(t)&&WireConnects(get(n+new Vector3Int(0,1,0)),0,-1);
+            if(WireConnects(t,state==null?(byte)0:state(n),i)||(!Solid(t)&&WireConnects(get(n+new Vector3Int(0,-1,0)),0,-1))||climb)mask|=1<<i;
             if(climb)up|=1<<i;
         }
         float f=power/15f;
@@ -291,18 +308,25 @@ public static class SpecialBlockMesh
         bool lineX=(mask&3)!=0&&(mask&12)==0,lineZ=(mask&12)!=0&&(mask&3)==0;
         if(mask!=0&&!lineX&&!lineZ){if((mask&1)==0)x0=.3125f;if((mask&2)==0)x1=.6875f;if((mask&4)==0)z0=.3125f;if((mask&8)==0)z1=.6875f;}
         Quad(p,V(x0,.015625f,z0),V(x0,.015625f,z1),V(x1,.015625f,z1),V(x1,.015625f,z0),Texture(parts,BlockTexturePart.WireCross,layer(Direction.up)),red,m,true);
+        // A cropped cross must sample the same world-space portion of the
+        // image on both windings, rather than mirroring its reverse face.
+        for(int i=m.uv.Count-8;i<m.uv.Count;i++)
+        {
+            var uv=m.uv[i];var v=m.vertices[i];uv.x=v.x-p.x;uv.y=v.z-p.z;m.uv[i]=uv;
+        }
         // Top = cross artwork, Side = straight artwork. No catalog migration.
         if(lineX||lineZ)
         {
             for(int i=m.uv.Count-8;i<m.uv.Count;i++){var uv=m.uv[i];uv.z=Texture(parts,BlockTexturePart.WireLine,layer(Direction.backwards));m.uv[i]=uv;}
             if(lineX)RotateUV(m,1);
         }
-        else for(int i=m.uv.Count-8;i<m.uv.Count;i++){var uv=m.uv[i];uv.x=x0+uv.x*(x1-x0);uv.y=z0+uv.y*(z1-z0);m.uv[i]=uv;}
         Overlay(m,m.vertices.Count-8,8,Texture(parts,lineX||lineZ?BlockTexturePart.WireLineOverlay:BlockTexturePart.WireCrossOverlay,0));
         for(int i=0;i<4;i++)if((up&(1<<i))!=0)
         {
+            int first=m.vertices.Count;
             if(i<2){float x=i==0?.015625f:.984375f;Quad(p,V(x,0,0),V(x,1.021875f,0),V(x,1.021875f,1),V(x,0,1),Texture(parts,BlockTexturePart.WireLine,layer(Direction.backwards)),red,m,true);}
-            else{float z=i==2?.015625f:.984375f;Quad(p,V(0,0,z),V(0,1.021875f,z),V(1,1.021875f,z),V(1,0,z),layer(Direction.backwards),red,m,true);}
+            else{float z=i==2?.015625f:.984375f;Quad(p,V(0,0,z),V(0,1.021875f,z),V(1,1.021875f,z),V(1,0,z),Texture(parts,BlockTexturePart.WireLine,layer(Direction.backwards)),red,m,true);}
+            Overlay(m,first,8,Texture(parts,BlockTexturePart.WireLineOverlay,0));
         }
     }
 }

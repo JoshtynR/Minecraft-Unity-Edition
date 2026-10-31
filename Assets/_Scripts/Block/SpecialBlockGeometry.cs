@@ -184,8 +184,9 @@ public static class SpecialBlockGeometry
     {
         bool west=RailAt(p,new Vector3Int(-1,0,0),get),east=RailAt(p,new Vector3Int(1,0,0),get);
         bool north=RailAt(p,new Vector3Int(0,0,-1),get),south=RailAt(p,new Vector3Int(0,0,1),get);
-        int shape=current&(t==BlockType.Rail?15:7);
-        if(!west&&!east&&!north&&!south)shape=shape>=1&&shape<=3?1:0;
+        // Recompute from connectivity, not the previous corner/slope. Otherwise
+        // removing a neighbour leaves disconnected curves and floating ramps.
+        int shape=-1;
         if((north||south)&&!west&&!east)shape=0;
         if((west||east)&&!north&&!south)shape=1;
         if(t==BlockType.Rail)
@@ -195,8 +196,23 @@ public static class SpecialBlockGeometry
             if(north&&west&&!south&&!east)shape=8;
             if(north&&east&&!south&&!west)shape=9;
         }
-        if(shape==0){if(IsRail(get(p+new Vector3Int(0,1,-1))))shape=4;else if(IsRail(get(p+new Vector3Int(0,1,1))))shape=5;}
-        if(shape==1){if(IsRail(get(p+new Vector3Int(1,1,0))))shape=2;else if(IsRail(get(p+new Vector3Int(-1,1,0))))shape=3;}
+        if(shape<0)
+        {
+            if(north||south)shape=0;
+            if(west||east)shape=1;
+            // Beta's unpowered junction preference. Powered/detector rails
+            // never curve, and their activation bit is independent of shape.
+            if(t==BlockType.Rail)
+            {
+                if(north&&west)shape=8;
+                if(north&&east)shape=9;
+                if(south&&west)shape=7;
+                if(south&&east)shape=6;
+            }
+        }
+        if(shape<0)shape=(current==1||current==2||current==3)?1:0;
+        if(shape==0){if(IsRail(get(p+new Vector3Int(0,1,-1))))shape=4;if(IsRail(get(p+new Vector3Int(0,1,1))))shape=5;}
+        if(shape==1){if(IsRail(get(p+new Vector3Int(1,1,0))))shape=2;if(IsRail(get(p+new Vector3Int(-1,1,0))))shape=3;}
         return (byte)(shape|(t==BlockType.Rail?0:current&8));
     }
     private static bool RailAt(Vector3Int p,Vector3Int d,Func<Vector3Int,BlockType> get)=>IsRail(get(p+d))||IsRail(get(p+d+new Vector3Int(0,1,0)))||IsRail(get(p+d+new Vector3Int(0,-1,0)));
