@@ -138,6 +138,7 @@ public partial class World
             var rail=GetBlock(railPos);
             if(rail==null||!SpecialBlockGeometry.IsRail(rail.type))continue;
             byte state=SpecialBlockGeometry.RailState(rail.type,SpecialBlockGeometry.State(rail.type,rail.blockShape),railPos,p=>GetBlock(p).type);
+            if(state==SpecialBlockGeometry.State(rail.type,rail.blockShape))continue;
             rail.blockShape=SpecialBlockGeometry.Shape(rail.type,state);
             var railChunk=WorldDataHelper.GetChunk(this,WorldDataHelper.GetChunkPosition(this,railPos));
             if(railChunk!=null){railChunk.ChunkData.modifiedAfterSave=true;CollectRenderUpdatesAround(railPos, affectedChunks);}

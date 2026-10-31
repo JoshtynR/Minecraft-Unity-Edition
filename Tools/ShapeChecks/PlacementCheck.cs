@@ -14,6 +14,8 @@ namespace UnityEngine
 namespace Mirror {public static class NetworkClient {public static WorldServer.SetBlockMessage last;public static void Send(WorldServer.SetBlockMessage message){last=message;}}}
 public class WorldServer
 {
+ public static WorldServer instance;
+ public void TryApplyBlockMessage(Player player,SetBlockMessage message){Mirror.NetworkClient.Send(message);}
  public struct SetBlockMessage {public Vector3Int position;public BlockType blockType;public byte stairFacing;public SetBlockMessage(Vector3Int p,BlockType type,byte facing=0){position=p;blockType=type;stairFacing=facing;}}
 }
 public partial class World
@@ -32,6 +34,7 @@ public partial class Player
  private bool TryUseNetherBed(Block block)=>false;
  private bool TryUseBed(Block block)=>false;
  private bool TryUseFarming(Block block,Vector3Int adjacent)=>false;
+ public bool isServer,isLocalPlayer;
  public bool UseForCheck()=>TryUseBlock();
  public Block TargetedBlock(float reach,out Vector3Int adjacent){adjacent=placement;return world.GetBlock(aimed);}
 }

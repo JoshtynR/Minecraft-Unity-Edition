@@ -109,7 +109,8 @@ public static class BlockHelper
             int first = meshData.vertices.Count;
             SpecialBlockMesh.Append(block.type, SpecialBlockGeometry.State(block.type, block.blockShape), pos,
                 chunk == null ? (Func<Vector3Int,BlockType>)null : p => chunk.GetBlock(p).type,
-                d => blockTypeData.textureData.FaceIndex(SpecialBlockGeometry.TextureDirection(block.type, SpecialBlockGeometry.State(block.type, block.blockShape), d)), blockTypeData.albedoTint, meshData, part => blockTypeData.textureData.PartIndex(part));
+                d => blockTypeData.textureData.FaceIndex(SpecialBlockGeometry.TextureDirection(block.type, SpecialBlockGeometry.State(block.type, block.blockShape), d)), blockTypeData.albedoTint, meshData, part => blockTypeData.textureData.PartIndex(part),
+                chunk == null ? (Func<Vector3Int,byte>)null : p => {var neighbor=chunk.GetBlock(p);return SpecialBlockGeometry.State(neighbor.type,neighbor.blockShape);});
             if (chunk != null)
             {
                 for (int i=first;i<meshData.vertices.Count;i++)
