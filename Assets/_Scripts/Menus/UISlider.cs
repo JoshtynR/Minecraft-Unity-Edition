@@ -13,7 +13,7 @@ public class UISlider : MonoBehaviour
     private Slider slider;
     private TextMeshProUGUI text;
     
-    public static readonly Dictionary<string, UISlider> sliders = new();
+    public static readonly Dictionary<string, UISlider> sliders = new Dictionary<string, UISlider>();
      
     private void Awake()
     {
@@ -37,11 +37,14 @@ public class UISlider : MonoBehaviour
 
     public void SetValue(float value)
     {
-        slider.value = value;
         if (wholeNumbers)
         {
             value = Mathf.Round(value);
         }
+        // Synchronizing a panel is not a user edit and must not trigger saves
+        // or chunk requests. Read back the slider's clamped display value.
+        slider.SetValueWithoutNotify(value);
+        value=slider.value;
         
         if (value == Math.Floor(value))
         {

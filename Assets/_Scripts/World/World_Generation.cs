@@ -47,10 +47,11 @@ public partial class World
     // Coalesce movement requests while a batch is running, then immediately build
     // the next nearest batch. This removes the old one-second gap without allowing
     // overlapping generation jobs or increasing main-thread mesh uploads.
-    public void RequestChunkStreaming(Vector3Int position)
+    public void RequestChunkStreaming(Vector3Int position, bool forceRefresh = false)
     {
         if (!GenerateMoreChunks || disabled) return;
-        if (!streamingLoopRunning && IsWorldCreated && HasReadyArea(position)) return;
+        // A smaller view is already "ready", but still needs an eviction pass.
+        if (!forceRefresh && !streamingLoopRunning && IsWorldCreated && HasReadyArea(position)) return;
         streamingTarget = position;
         streamingRequested = true;
         if (!streamingLoopRunning) RunChunkStreaming();
