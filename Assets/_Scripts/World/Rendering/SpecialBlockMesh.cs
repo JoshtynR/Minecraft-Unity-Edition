@@ -289,7 +289,9 @@ public static class SpecialBlockMesh
     public static bool WireConnects(BlockType t,byte state,int direction)
     {
         if(t==BlockType.RedstoneRepeater||t==BlockType.PoweredRepeater)
-            return direction>=0&&((state&1)==(direction<2?1:0));
+            // BlockRedstoneWire.isPowerProviderOrWire uses the repeater's
+            // output-side remap, not both ends of its axis (delay bits ignored).
+            return direction>=0&&(state&3)==(direction==0?3:direction==1?1:direction==2?0:2);
         return t==BlockType.RedstoneWire||t==BlockType.RedstoneTorch||t==BlockType.RedstoneTorchOff||t==BlockType.Lever||t==BlockType.StoneButton||t==BlockType.StonePressurePlate||t==BlockType.WoodenPressurePlate||t==BlockType.DetectorRail;
     }
     private static void Wire(byte power,Vector3Int p,Func<Vector3Int,BlockType> get,Func<Direction,int> layer,Color tint,MeshData m,Func<BlockTexturePart,int> parts,Func<Vector3Int,byte> state)
@@ -300,13 +302,21 @@ public static class SpecialBlockMesh
             var n=p+Neighbors[i];var t=get(n);
             bool climb=!Solid(get(p+new Vector3Int(0,1,0)))&&Solid(t)&&WireConnects(get(n+new Vector3Int(0,1,0)),0,-1);
             if(WireConnects(t,state==null?(byte)0:state(n),i)||(!Solid(t)&&WireConnects(get(n+new Vector3Int(0,-1,0)),0,-1))||climb)mask|=1<<i;
-            if(climb)up|=1<<i;
+            // Beta's top join accepts power providers, but the vertical strip
+            // itself is emitted only for actual dust on the upper block.
+            if(climb&&get(n+new Vector3Int(0,1,0))==BlockType.RedstoneWire)up|=1<<i;
         }
         float f=power/15f;
         Color red=new Color(power==0?.3f:f*.6f+.4f,Math.Max(0,f*f*.7f-.5f),Math.Max(0,f*f*.6f-.7f),1);
         float x0=0,x1=1,z0=0,z1=1;
         bool lineX=(mask&3)!=0&&(mask&12)==0,lineZ=(mask&12)!=0&&(mask&3)==0;
         if(mask!=0&&!lineX&&!lineZ){if((mask&1)==0)x0=.3125f;if((mask&2)==0)x1=.6875f;if((mask&4)==0)z0=.3125f;if((mask&8)==0)z1=.6875f;}
+        // Modern dot/line images are not a Beta cross image. Assemble that
+        // topology without stretching a lone line across every junction.
+        bool modern=parts!=null&&parts(BlockTexturePart.WireCross)==0&&parts(BlockTexturePart.WireDot)>0;
+        if(modern)ModernWireTop(mask,lineX,lineZ,p,red,m,parts,layer);
+        else
+        {
         Quad(p,V(x0,.015625f,z0),V(x0,.015625f,z1),V(x1,.015625f,z1),V(x1,.015625f,z0),Texture(parts,BlockTexturePart.WireCross,layer(Direction.up)),red,m,true);
         // A cropped cross must sample the same world-space portion of the
         // image on both windings, rather than mirroring its reverse face.
@@ -321,6 +331,7 @@ public static class SpecialBlockMesh
             if(lineX)RotateUV(m,1);
         }
         Overlay(m,m.vertices.Count-8,8,Texture(parts,lineX||lineZ?BlockTexturePart.WireLineOverlay:BlockTexturePart.WireCrossOverlay,0));
+        }
         for(int i=0;i<4;i++)if((up&(1<<i))!=0)
         {
             int first=m.vertices.Count;
@@ -328,5 +339,30 @@ public static class SpecialBlockMesh
             else{float z=i==2?.015625f:.984375f;Quad(p,V(0,0,z),V(0,1.021875f,z),V(1,1.021875f,z),V(1,0,z),Texture(parts,BlockTexturePart.WireLine,layer(Direction.backwards)),red,m,true);}
             Overlay(m,first,8,Texture(parts,BlockTexturePart.WireLineOverlay,0));
         }
+    }
+    private static void ModernWireTop(int mask,bool lineX,bool lineZ,Vector3Int p,Color red,MeshData m,Func<BlockTexturePart,int> parts,Func<Direction,int> layer)
+    {
+        int line=Texture(parts,BlockTexturePart.WireLine,layer(Direction.backwards));
+        int alternate=Texture(parts,BlockTexturePart.WireLineAlternate,line);
+        int overlay=Texture(parts,BlockTexturePart.WireLineOverlay,0);
+        if(lineX||lineZ){WireTile(p,0,0,1,1,lineX?alternate:line,lineX,red,m,overlay);return;}
+        // Beta retains a cross when isolated; it has no modern dot-toggle rule.
+        if(mask==0)mask=15;
+        WireTile(p,.3125f,.3125f,.6875f,.6875f,parts(BlockTexturePart.WireDot),false,red,m,0);
+        if((mask&1)!=0)WireTile(p,0,0,.3125f,1,alternate,true,red,m,overlay);
+        if((mask&2)!=0)WireTile(p,.6875f,0,1,1,alternate,true,red,m,overlay);
+        if((mask&4)!=0)WireTile(p,0,0,1,.3125f,line,false,red,m,overlay);
+        if((mask&8)!=0)WireTile(p,0,.6875f,1,1,line,false,red,m,overlay);
+    }
+    private static void WireTile(Vector3Int p,float x0,float z0,float x1,float z1,int image,bool turn,Color red,MeshData m,int overlay)
+    {
+        int first=m.vertices.Count;
+        Quad(p,V(x0,.015625f,z0),V(x0,.015625f,z1),V(x1,.015625f,z1),V(x1,.015625f,z0),image,red,m,true);
+        for(int i=first;i<m.vertices.Count;i++)
+        {
+            var v=m.vertices[i];var uv=m.uv[i];float x=v.x-p.x,z=v.z-p.z;
+            uv.x=turn?z:x;uv.y=turn?1-x:z;m.uv[i]=uv;
+        }
+        Overlay(m,first,8,overlay);
     }
 }

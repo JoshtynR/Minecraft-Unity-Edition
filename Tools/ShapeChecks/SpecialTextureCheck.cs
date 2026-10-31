@@ -13,7 +13,7 @@ public static partial class ShapeCheck
    var parts=SpecialTextureLayout.Parts(type);
    if(parts.Length==0||!SpecialBlockGeometry.Handles(type))continue;
    var used=new HashSet<int>();
-   Func<BlockTexturePart,int> image=p=>Array.IndexOf(parts,p)<0?0:100+(int)p;
+   Func<BlockTexturePart,int> image=p=>p==BlockTexturePart.WireDot||p==BlockTexturePart.WireLineAlternate||Array.IndexOf(parts,p)<0?0:100+(int)p;
    var neighbors=new List<Func<Vector3Int,BlockType>>{null,
     p=>p.x==-1&&p.y==0&&p.z==0?type:BlockType.Air,
     p=>p.x==1&&p.y==0&&p.z==0?type:BlockType.Air,
@@ -31,7 +31,7 @@ public static partial class ShapeCheck
     SpecialBlockMesh.Append(type,state,new Vector3Int(),get,d=>7,new Color(1,1,1,1),fallback,p=>0);
     foreach(var uv in fallback.uv)Check(uv.z==7,"empty part slots keep legacy texture layers");
    }
-   foreach(var part in parts)Check(used.Contains(image(part)),"exposed slot reaches mesh: "+type+"/"+part);
+   foreach(var part in parts)if(image(part)>0)Check(used.Contains(image(part)),"exposed slot reaches mesh: "+type+"/"+part);
   }
   var cake=SpecialBlockGeometry.Selection(BlockType.Cake,0);
   var bitten=SpecialBlockGeometry.Selection(BlockType.Cake,3);
@@ -83,8 +83,30 @@ public static partial class ShapeCheck
   }
   foreach(var type in new[]{BlockType.RedstoneRepeater,BlockType.PoweredRepeater})
   for(byte state=0;state<16;state++)for(int direction=0;direction<4;direction++)
-   Check(SpecialBlockMesh.WireConnects(type,state,direction)==((state&1)==(direction<2?1:0)),"repeater wire joins follow facing axis, not delay bits");
+   Check(SpecialBlockMesh.WireConnects(type,state,direction)==((state&3)==(direction==0?3:direction==1?1:direction==2?0:2)),"Beta repeater output-side remap, independent of delay bits");
   Check(SpecialBlockMesh.WireConnects(BlockType.RedstoneTorchOff,0,0),"unlit redstone torch retains dust connection");
+  for(int mask=0;mask<16;mask++)
+  {
+   int connections=mask;
+   Func<Vector3Int,BlockType> get=p=>{
+    for(int i=0;i<4;i++)if((connections&(1<<i))!=0&&p.x==offsets[i].x&&p.y==0&&p.z==offsets[i].z)return BlockType.RedstoneWire;
+    return BlockType.Air;
+   };
+   Func<BlockTexturePart,int> modern=p=>p==BlockTexturePart.WireCross||p==BlockTexturePart.WireCrossOverlay?0:100+(int)p;
+   var mesh=new MeshData(false);
+   SpecialBlockMesh.Append(BlockType.RedstoneWire,0,origin,get,f=>7,new Color(1,1,1,1),mesh,modern);
+   bool straight=mask!=0&&((mask&3)==0||(mask&12)==0);
+   int arms=mask==0?4:0;for(int i=0;mask!=0&&i<4;i++)if((mask&(1<<i))!=0)arms++;
+   Check(mesh.vertices.Count==(straight?16:8+arms*16),"modern textures compose Beta isolated cross, lines, elbows and junctions");
+   for(int i=0;i<mesh.vertices.Count;i++)
+   {
+    var uv=mesh.uv[i];
+    Check(uv.z!=7&&uv.z!=100+(int)BlockTexturePart.WireCross,"modern wire never samples missing cross or side fallback");
+    Check(uv.x>=0&&uv.x<=1&&uv.y>=0&&uv.y<=1,"modern arm UV remains inside image");
+    Check(Near(mesh.vertices[i].y,.015625f)||Near(mesh.vertices[i].y,.015525f)||Near(mesh.vertices[i].y,.015725f),"wire keeps Beta one-sixty-fourth surface height");
+   }
+   if(!straight)for(int i=0;i<8;i++)Check(mesh.uv[i].z==100+(int)BlockTexturePart.WireDot,"junction centre uses supplied dot, not stretched line");
+  }
   for(int mask=0;mask<16;mask++)
   {
    int connections=mask;
