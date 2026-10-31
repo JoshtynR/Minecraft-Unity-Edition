@@ -13,5 +13,5 @@ assert start.index('AddComponent<FirstPersonView>')>start.index('if (!isLocalPla
 assert start.index('AddComponent<FirstPersonView>')>start.index('meshFilters = GetComponentsInChildren<MeshFilter>();')
 assert '  - LocalPlayerModel\n  - FirstPerson\n' in (root/'ProjectSettings/TagManager.asset').read_text()
 shader_guid=(root/'Assets/Shaders/FirstPerson.shader.meta').read_text().split('guid: ')[1].splitlines()[0]
-assert shader_guid in (root/'Assets/Resources/FirstPersonMaterial.mat').read_text()
+assert shader_guid in (root/'Assets/Resources/Materials/FirstPersonMaterial.mat').read_text()
 print('Local-player attachment, shader resource linkage, and layer registration verified.')

@@ -18,7 +18,7 @@ public class ModernChestVisual : MonoBehaviour
     public static void Prepare()
     {
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
-        Enabled=assets!=null&&assets.chestSkin!=null&&Resources.Load<Material>("ModernChestMaterial")!=null;
+        Enabled=assets!=null&&assets.chestSkin!=null&&Resources.Load<Material>("Materials/ModernChestMaterial")!=null;
         if(!Enabled)Debug.LogWarning("Modern chest skin/material missing. Chest containers work; closed block meshes remain until chest assets are assigned.");
     }
     public void Initialize(World source,Vector3Int pos,byte facing)
@@ -42,7 +42,7 @@ public class ModernChestVisual : MonoBehaviour
         foreach(var mesh in meshes)if(mesh!=null)Destroy(mesh);
         renderers.Clear();meshes.Clear();lid=null;
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
-        if(material==null)material=new Material(Resources.Load<Material>("ModernChestMaterial"));
+        if(material==null)material=new Material(Resources.Load<Material>("Materials/ModernChestMaterial"));
         material.mainTexture=half<0&&assets.chestRightSkin!=null?assets.chestRightSkin:half>0&&assets.chestLeftSkin!=null?assets.chestLeftSkin:assets.chestSkin;
         if(properties==null)properties=new MaterialPropertyBlock();
         for(int part=0;part<3;part++)

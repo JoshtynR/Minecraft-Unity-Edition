@@ -58,7 +58,7 @@ public sealed class MinecraftTextureImageTools
     }
     private static Texture2D Save(Texture2D source,string name,int width,int height,Color32[] pixels)
     {
-        const string directory="Assets/Textures/Minecraft_Generated";
+        const string directory="Assets/Textures/Generated";
         string absolute=Path.Combine(Path.GetDirectoryName(Application.dataPath),directory);
         if(!AssetDatabase.IsValidFolder(directory)){Directory.CreateDirectory(absolute);AssetDatabase.Refresh();}
         string guid=AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(source));

@@ -10,7 +10,7 @@ public sealed class VehicleVisual : MonoBehaviour
     private float yaw;
     public void Initialize(VehicleState state)
     {
-        var template=Resources.Load<Material>("CowMaterial");
+        var template=Resources.Load<Material>("Materials/CowMaterial");
         material=template!=null?new Material(template):new Material(Shader.Find("Unlit/Color"));
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         var skin=assets==null?null:state.kind==VehicleKind.Boat?assets.boatSkin:assets.minecartSkin;

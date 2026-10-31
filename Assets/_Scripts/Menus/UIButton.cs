@@ -15,8 +15,8 @@ public class UIButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     private void Awake()
     {
         image = GetComponent<Image>().sprite;
-        hoverImage = Resources.LoadAll<Sprite>("Sprites/UI/widgets").First(s => s.name == "button_selected");
-        disabledImage = Resources.LoadAll<Sprite>("Sprites/UI/widgets").First(s => s.name == "slider_background");
+        hoverImage = Resources.LoadAll<Sprite>("UI/Title/widgets").First(s => s.name == "button_selected");
+        disabledImage = Resources.LoadAll<Sprite>("UI/Title/widgets").First(s => s.name == "slider_background");
         clickSound = Resources.Load<AudioClip>("Sounds/UI/click");
 
         if (isDisabled)

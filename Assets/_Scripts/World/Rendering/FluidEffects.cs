@@ -92,7 +92,7 @@ public sealed class FluidEffects : MonoBehaviour
 
     private void Awake()
     {
-        var template=Resources.Load<Material>("FluidParticleMaterial");var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");atlas=assets==null?null:assets.particleAtlas;
+        var template=Resources.Load<Material>("Materials/FluidParticleMaterial");var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");atlas=assets==null?null:assets.particleAtlas;
         for(int i=0;i<EffectLayerCount;i++)
         {
             Texture image=atlas!=null?atlas:assets==null?null:i==0||i==4||i==5||i==6?assets.smokeParticle:i==1?assets.splashParticle:i==2?assets.lavaParticle:assets.bubbleParticle;

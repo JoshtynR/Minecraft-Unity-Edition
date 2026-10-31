@@ -58,7 +58,7 @@ public sealed class BlockBreakOverlay : System.IDisposable
         var assets = Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         if (assets == null || assets.blockBreak == null || assets.blockBreakMaterial == null)
         {
-            if (!warned) Debug.LogWarning("Block cracks need Assets/Textures/Minecraft/block_break.png; import it to bind automatically.");
+            if (!warned) Debug.LogWarning("Block cracks need Assets/Textures/block_break.png; import it to bind automatically.");
             warned = true; return false;
         }
         columns = assets.breakColumns; rows = assets.breakRows;

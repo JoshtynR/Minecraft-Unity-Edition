@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--asset', type=Path, default=ROOT / 'Assets/Block Data.asset')
+    ap.add_argument('--asset', type=Path, default=ROOT / 'Assets/Resources/Block Data.asset')
     ap.add_argument('--atlas', type=Path, default=ROOT / 'Assets/Textures/sprites.png')
     args = ap.parse_args()
     text = args.asset.read_text()

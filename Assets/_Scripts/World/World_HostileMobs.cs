@@ -218,7 +218,7 @@ public partial class World
             }
             visual=new GameObject("Skeleton arrow",typeof(MeshFilter),typeof(MeshRenderer));
             visual.transform.SetParent(worldRenderer.transform,false);visual.GetComponent<MeshFilter>().sharedMesh=mobArrowMesh;
-            visual.GetComponent<MeshRenderer>().sharedMaterial=Resources.Load<Material>("MobArrowMaterial");mobArrowVisuals.Add(message.id,visual);
+            visual.GetComponent<MeshRenderer>().sharedMaterial=Resources.Load<Material>("Materials/MobArrowMaterial");mobArrowVisuals.Add(message.id,visual);
         }
         visual.transform.position=message.position;
         if(message.direction.sqrMagnitude>.0001f)visual.transform.rotation=Quaternion.LookRotation(message.direction);

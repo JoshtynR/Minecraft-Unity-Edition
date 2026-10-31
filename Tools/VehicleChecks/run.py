@@ -15,7 +15,7 @@ print('Vehicle startup, player, save and dimension hooks verified.')
 import re
 asset=(root/'Assets/Resources/PlayerHudAssets.asset').read_text()
 for field,path in [('boatSkin','boat/boat.png'),('minecartSkin','cart/cart.png')]:
-    meta=(root/('Assets/Textures/Minecraft/entity/'+path+'.meta')).read_text()
+    meta=(root/('Assets/Textures/entity/'+path+'.meta')).read_text()
     guid=re.search(r'^guid: (\w+)',meta,re.M).group(1)
     assert re.search(field+r': \{fileID: 2800000, guid: '+guid,asset),field+' build reference missing'
     assert 'enableMipMap: 0' in meta and 'filterMode: 0' in meta

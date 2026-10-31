@@ -113,16 +113,16 @@ public static class AssignmentCheck
    foreach(var part in SpecialTextureLayout.Parts(type))Check(!string.IsNullOrEmpty(MinecraftTextureNames.Part(type,part)),type+"."+part+" has candidates");
   }
   foreach(ItemType type in Enum.GetValues(typeof(ItemType)))if(MinecraftTextureNames.DedicatedItemIcon(type))Check(!string.IsNullOrEmpty(MinecraftTextureNames.Item(type)),"every standalone/native item has icon candidates");
-  var lookup=new MinecraftTextureLookup("Assets/Textures/Minecraft",new[]{
-   "Assets/Textures/Minecraft/gui/stone.png","Assets/Textures/Minecraft/block/stone.png","Assets/Textures/Minecraft/items/diamond.png","Assets/Textures/Elsewhere/block/dirt.png"});
+  var lookup=new MinecraftTextureLookup("Assets/Textures",new[]{
+   "Assets/Textures/gui/stone.png","Assets/Textures/block/stone.png","Assets/Textures/items/diamond.png","Assets/Textures/Elsewhere/block/dirt.png"});
   bool ambiguous;
   Check(lookup.Find(MinecraftTextureKind.Block,"stone",out ambiguous).Contains("/block/"),"GUI names cannot overwrite block textures");
   Check(lookup.Find(MinecraftTextureKind.Item,"diamond",out ambiguous).Contains("/items/"),"legacy plural item directory works");
   Check(lookup.Find(MinecraftTextureKind.Block,"dirt",out ambiguous)==null,"lookup stays inside selected folder");
-  lookup=new MinecraftTextureLookup("Assets/Textures/Minecraft",new[]{"Assets/Textures/Minecraft/grass.png","Assets/Textures/Minecraft/foliage.png"});
+  lookup=new MinecraftTextureLookup("Assets/Textures",new[]{"Assets/Textures/grass.png","Assets/Textures/foliage.png"});
   Check(lookup.Find(MinecraftTextureKind.Block,"grass",out ambiguous)==null,"root grass colour map cannot become a tall-grass face image");
-  Check(lookup.Find(MinecraftTextureKind.Colormap,"grass",out ambiguous)=="Assets/Textures/Minecraft/grass.png","root climate maps have their own lookup category");
-  lookup=new MinecraftTextureLookup("Assets/Textures/Minecraft",new[]{"Assets/Textures/Minecraft/a/blocks/stone.png","Assets/Textures/Minecraft/b/block/stone.png"});
+  Check(lookup.Find(MinecraftTextureKind.Colormap,"grass",out ambiguous)=="Assets/Textures/grass.png","root climate maps have their own lookup category");
+  lookup=new MinecraftTextureLookup("Assets/Textures",new[]{"Assets/Textures/a/blocks/stone.png","Assets/Textures/b/block/stone.png"});
   Check(lookup.Find(MinecraftTextureKind.Block,"stone",out ambiguous)==null&&ambiguous,"duplicate pack names are reported rather than chosen arbitrarily");
   Check(!MinecraftTextureNames.DedicatedItemIcon(ItemType.Dirt)&&!MinecraftTextureNames.FlatBlockIcon(ItemType.Dirt),"ordinary block icons keep their 3D mesh");
   string temp=Path.Combine(Path.GetTempPath(),"minecraft-assign-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(Path.Combine(temp,"Assets"));
@@ -147,7 +147,7 @@ public static class AssignmentCheck
    var bubbleParticle=Image(root+"/particle/bubble.png");
    var particleAtlas=Image(PlayerHudAssetSetup.ParticleAtlasPath,256,256);
    var widgets=Image(root+"/gui/widgets.png",256,256);
-   var guiFont=new Font();UnityEditor.AssetDatabase.assets["Assets/UI/Font/MinecraftRegular.otf"]=guiFont;
+   var guiFont=new Font();UnityEditor.AssetDatabase.assets["Assets/Resources/UI/Font/MinecraftRegular.otf"]=guiFont;
    var smokeParticle=Image(root+"/particle/generic_0.png");
    for(int i=0;i<steve.pixels.Length/2;i++)steve.pixels[i]=new Color32(11,0,0,255);
    for(int i=0;i<10;i++)Image(root+"/block/destroy_stage_"+i+".png",color:(byte)(20+i));
@@ -155,7 +155,7 @@ public static class AssignmentCheck
    var blocks=new BlockDataSO{textureDataList=new List<BlockTypeData>{new BlockTypeData{blockType=BlockType.Dirt},untouched,new BlockTypeData{blockType=BlockType.Torch}}};
    var items=new ItemDataSO{items=new List<ItemDefinition>{new ItemDefinition{id=ItemType.Dirt},new ItemDefinition{id=ItemType.Diamond},new ItemDefinition{id=ItemType.Coal,icon=original},new ItemDefinition{id=ItemType.Clock}}};
    var hud=new PlayerHudAssets();var material=new Material();
-   UnityEditor.AssetDatabase.assets["Assets/Block Data.asset"]=blocks;
+   UnityEditor.AssetDatabase.assets["Assets/Resources/Block Data.asset"]=blocks;
    UnityEditor.AssetDatabase.assets["Assets/Resources/Item Data.asset"]=items;
    UnityEditor.AssetDatabase.assets["Assets/Resources/PlayerHudAssets.asset"]=hud;
    UnityEditor.AssetDatabase.assets["Assets/Resources/InventoryPlayerMaterial.mat"]=material;

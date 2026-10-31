@@ -46,7 +46,7 @@ public class PlayerSurvivalHUD : MonoBehaviour
         if(assets==null)assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         if (assets == null || assets.icons == null)
         {
-            if (!warned) Debug.LogWarning("Survival HUD needs Assets/Textures/Minecraft/gui/icons.png. Import that file; the editor will bind it automatically.", this);
+            if (!warned) Debug.LogWarning("Survival HUD needs Assets/Textures/gui/icons.png. Import that file; the editor will bind it automatically.", this);
             warned = true;
             return;
         }

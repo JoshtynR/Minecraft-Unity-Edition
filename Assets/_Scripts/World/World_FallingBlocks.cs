@@ -243,7 +243,7 @@ public partial class World
             if(!fallingVisuals.TryGetValue(state.id,out var visual)&&visible)
             {
                 if(!fallingMeshes.TryGetValue(state.type,out var mesh))fallingMeshes[state.type]=mesh=ItemVisualMesh.Build(state.type);
-                if(fallingMaterial==null)fallingMaterial=Resources.Load<Material>("DroppedBlockMaterial");
+                if(fallingMaterial==null)fallingMaterial=Resources.Load<Material>("Materials/DroppedBlockMaterial");
                 if(fallingMaterial==null)continue;
                 visual=new FallingBlockVisual(worldRenderer.transform,state.type,mesh,fallingMaterial);fallingVisuals.Add(state.id,visual);
             }

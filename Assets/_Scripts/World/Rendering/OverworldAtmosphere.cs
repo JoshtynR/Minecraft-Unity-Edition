@@ -115,7 +115,7 @@ public sealed class OverworldAtmosphere : MonoBehaviour
     }
     private bool Build()
     {
-        var template=Resources.Load<Material>("SkyMaterial");
+        var template=Resources.Load<Material>("Materials/SkyMaterial");
         if(template==null){Debug.LogError("SkyMaterial resource is missing.");enabled=false;return false;}
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
         sunMaterial=new Material(template);moonMaterial=new Material(template);sunsetMaterial=new Material(template);cloudMaterial=new Material(template);

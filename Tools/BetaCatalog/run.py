@@ -4,7 +4,7 @@ import yaml
 ROOT=Path(__file__).resolve().parents[2]
 ap=argparse.ArgumentParser();ap.add_argument('--mcs',default='mcs');ap.add_argument('--mono',default='mono');a=ap.parse_args()
 catalog=json.loads((ROOT/'Tools/BetaCatalog/catalog.json').read_text())['entries']
-text=(ROOT/'Assets/Block Data.asset').read_text();blocks=yaml.safe_load(text[text.index('MonoBehaviour:\n'):])['MonoBehaviour']['textureDataList']
+text=(ROOT/'Assets/Resources/Block Data.asset').read_text();blocks=yaml.safe_load(text[text.index('MonoBehaviour:\n'):])['MonoBehaviour']['textureDataList']
 assert len(blocks)==len(catalog)==133
 assert sorted(b['blockType'] for b in blocks)==list(range(133))
 lookup={b['blockType']:b for b in blocks}

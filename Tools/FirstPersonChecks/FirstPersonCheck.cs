@@ -42,7 +42,7 @@ class FirstPersonCheck {
   var arm=FirstPersonMesh.Arm(64,32);MeshCheck(arm,24);MeshCheck(FirstPersonMesh.Arm(64,64),24);
   Check(Math.Abs(arm.uv[0].x-44f/64)<.0001&&Math.Abs(arm.uv[0].y)<.0001,"Classic right arm UV");
   var spriteTemplate=new Material();var blockTemplate=new Material();
-  Resources.assets["FirstPersonMaterial"]=spriteTemplate;Resources.assets["DroppedBlockMaterial"]=blockTemplate;
+  Resources.assets["Materials/FirstPersonMaterial"]=spriteTemplate;Resources.assets["Materials/DroppedBlockMaterial"]=blockTemplate;
   Resources.assets["PlayerHudAssets"]=new PlayerHudAssets{inventoryPlayerSkin=new Texture2D()};
   var ui=new GameObject("UI camera").AddComponent<Camera>();ui.depth=0;
   new GameObject("PlayerCanvas").AddComponent<Canvas>().worldCamera=ui;

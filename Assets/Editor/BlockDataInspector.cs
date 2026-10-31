@@ -11,7 +11,7 @@ public class BlockDataInspector : Editor
     [MenuItem("Minecraft/Select Block Data")]
     public static void SelectBlockData()
     {
-        var data = AssetDatabase.LoadAssetAtPath<BlockDataSO>("Assets/Block Data.asset");
+        var data = AssetDatabase.LoadAssetAtPath<BlockDataSO>("Assets/Resources/Block Data.asset");
         if (data == null) return;
         Selection.activeObject = data;
         EditorGUIUtility.PingObject(data);

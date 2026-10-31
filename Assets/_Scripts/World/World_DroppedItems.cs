@@ -262,7 +262,7 @@ public partial class World
                 }
                 if(!dropMaterials.TryGetValue(item.stack.type,out var material))
                 {
-                    var template=Resources.Load<Material>(flat?"DroppedItemMaterial":"DroppedBlockMaterial");
+                    var template=Resources.Load<Material>(flat?"Materials/DroppedItemMaterial":"Materials/DroppedBlockMaterial");
                     if(template==null)continue;
                     material=new Material(template);
                     if(flat)material.mainTexture=definition.icon!=null?definition.icon:Texture2D.whiteTexture;

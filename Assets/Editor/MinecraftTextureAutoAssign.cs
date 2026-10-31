@@ -343,7 +343,7 @@ public static class MinecraftTextureAutoAssign
         }
     }
 
-    public const string Root="Assets/Textures/Minecraft";
+    public const string Root="Assets/Textures";
     private static string ReportPath => Path.Combine(Path.GetDirectoryName(Application.dataPath),"Logs/MinecraftTextureAssignment.txt");
     private sealed class Run
     {
@@ -378,7 +378,7 @@ public static class MinecraftTextureAutoAssign
         if(EditorApplication.isCompiling||EditorApplication.isUpdating)
         {EditorApplication.delayCall+=BindMissingFluidTextures;return;}
         if(!AssetDatabase.IsValidFolder(Root))return;
-        var blocks=AssetDatabase.LoadAssetAtPath<BlockDataSO>("Assets/Block Data.asset");
+        var blocks=AssetDatabase.LoadAssetAtPath<BlockDataSO>("Assets/Resources/Block Data.asset");
         if(blocks==null||blocks.textureDataList==null)return;
         var paths=new List<string>();
         foreach(string guid in AssetDatabase.FindAssets("t:Texture2D",new[]{Root}))paths.Add(AssetDatabase.GUIDToAssetPath(guid));
@@ -417,7 +417,7 @@ public static class MinecraftTextureAutoAssign
         {Debug.LogWarning("Exit Play Mode before assigning game textures.");return;}
         if(!AssetDatabase.IsValidFolder(Root))
         {Debug.LogError("Texture folder not found: "+Root+". Put the texture pack there, let Unity import it, then run this menu again.");return;}
-        var blocks=AssetDatabase.LoadAssetAtPath<BlockDataSO>("Assets/Block Data.asset");
+        var blocks=AssetDatabase.LoadAssetAtPath<BlockDataSO>("Assets/Resources/Block Data.asset");
         var items=AssetDatabase.LoadAssetAtPath<ItemDataSO>("Assets/Resources/Item Data.asset");
         if(blocks==null||items==null)
         {Debug.LogError("Block Data or Item Data is missing. Existing assets were not changed.");return;}
@@ -553,7 +553,7 @@ public static class MinecraftTextureAutoAssign
         if(skin==null)return;
         skin=run.images.Skin(skin);if(skin==null){run.report.AppendLine("UNSUPPORTED Steve skin aspect ratio; player materials preserved.");return;}
         if(hud!=null&&hud.inventoryPlayerSkin!=skin){hud.inventoryPlayerSkin=skin;run.assigned++;}
-        foreach(string path in new[]{"Assets/Textures/Player/player.mat","Assets/Resources/InventoryPlayerMaterial.mat"})
+        foreach(string path in new[]{"Assets/Resources/Player/player.mat","Assets/Resources/InventoryPlayerMaterial.mat"})
         {
             var material=AssetDatabase.LoadAssetAtPath<Material>(path);
             if(material==null||material.mainTexture==skin)continue;

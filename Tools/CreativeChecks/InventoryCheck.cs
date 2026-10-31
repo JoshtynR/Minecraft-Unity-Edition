@@ -100,9 +100,9 @@ namespace UnityEngine
   public static PlayerHudAssets hud;public static bool omitPreviewMaterial;
   public static T Load<T>(string name)where T:Object
   {
-   if(name=="DroppedItemMaterial"||name=="DroppedBlockMaterial")return (T)(Object)new Material();
+   if(name=="Materials/DroppedItemMaterial"||name=="Materials/DroppedBlockMaterial")return (T)(Object)new Material();
    if(name=="InventoryPlayerMaterial"&&omitPreviewMaterial)return null;
-   return name=="InventoryPlayerMaterial"||name=="ModernChestMaterial"?(T)(Object)new Material():name=="PlayerHudAssets"?(T)(Object)hud:null;
+   return name=="InventoryPlayerMaterial"||name=="Materials/ModernChestMaterial"?(T)(Object)new Material():name=="PlayerHudAssets"?(T)(Object)hud:null;
   }
  }
  public enum KeyCode {Alpha1=49,E=69,Q=81,F1=282,LeftShift=304,RightShift=303}

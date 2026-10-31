@@ -4,13 +4,13 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class PlayerHudAssetSetup
 {
-    public const string BreakPath = "Assets/Textures/Minecraft/block_break.png";
-    public const string IconsPath = "Assets/Textures/Minecraft/gui/icons.png";
-    public const string InventoryPath = "Assets/Textures/Minecraft/gui/container/inventory.png";
-    public const string CraftingPath = "Assets/Textures/Minecraft/gui/container/crafting_table.png";
-    public const string FurnacePath = "Assets/Textures/Minecraft/gui/container/furnace.png";
-    public const string CloudPath = "Assets/Textures/Minecraft/environment/clouds.png";
-    public const string ParticleAtlasPath = "Assets/Textures/Minecraft/particle/particles.png";
+    public const string BreakPath = "Assets/Textures/block_break.png";
+    public const string IconsPath = "Assets/Textures/gui/icons.png";
+    public const string InventoryPath = "Assets/Textures/gui/container/inventory.png";
+    public const string CraftingPath = "Assets/Textures/gui/container/crafting_table.png";
+    public const string FurnacePath = "Assets/Textures/gui/container/furnace.png";
+    public const string CloudPath = "Assets/Textures/environment/clouds.png";
+    public const string ParticleAtlasPath = "Assets/Textures/particle/particles.png";
     static PlayerHudAssetSetup() { EditorApplication.delayCall += Bind; }
 
     [MenuItem("Minecraft/Textures/Refresh GUI and Chest Assets")]
@@ -28,29 +28,29 @@ public static class PlayerHudAssetSetup
         var inventory = Prepare(InventoryPath);
         var crafting = config.craftingTable!=null?config.craftingTable:Prepare(CraftingPath);
         var furnace = config.furnace!=null?config.furnace:Prepare(FurnacePath);
-        var guiWidgets=config.guiWidgets!=null?config.guiWidgets:Prepare("Assets/Textures/Minecraft/gui/widgets.png");
-        if(guiWidgets==null)guiWidgets=Prepare("Assets/Resources/Sprites/UI/widgets.png");
-        var loadingBackground=config.loadingBackground!=null?config.loadingBackground:Prepare("Assets/Textures/sprites/options_background.png");
-        var guiFont=config.guiFont!=null?config.guiFont:AssetDatabase.LoadAssetAtPath<Font>("Assets/UI/Font/MinecraftRegular.otf");
+        var guiWidgets=config.guiWidgets!=null?config.guiWidgets:Prepare("Assets/Textures/gui/widgets.png");
+        if(guiWidgets==null)guiWidgets=Prepare("Assets/Resources/UI/Title/widgets.png");
+        var loadingBackground=config.loadingBackground!=null?config.loadingBackground:Prepare("Assets/Resources/UI/Title/options_background.png");
+        var guiFont=config.guiFont!=null?config.guiFont:AssetDatabase.LoadAssetAtPath<Font>("Assets/Resources/UI/Font/MinecraftRegular.otf");
         var playerSkin=config.inventoryPlayerSkin;
-        var playerMaterial=AssetDatabase.LoadAssetAtPath<Material>("Assets/Textures/Player/player.mat");
+        var playerMaterial=AssetDatabase.LoadAssetAtPath<Material>("Assets/Resources/Player/player.mat");
         if(playerSkin==null&&playerMaterial!=null)playerSkin=playerMaterial.mainTexture as Texture2D;
-        if(playerSkin==null)playerSkin=Prepare("Assets/Textures/Minecraft/entity/player/wide/steve.png");
-        if(playerSkin==null)playerSkin=Prepare("Assets/Textures/Minecraft/entity/steve.png");
-        if(playerSkin==null)playerSkin=Prepare("Assets/Textures/Player/steve.png");
-        var chestSkin = Prepare("Assets/Textures/Minecraft/entity/chest/normal.png");
-        if(chestSkin==null)chestSkin=Prepare("Assets/Textures/Minecraft/block/normal.png");
-        var chestContainer=Prepare("Assets/Textures/Minecraft/gui/container/generic_54.png");
-        var waterOverlay=config.waterOverlay!=null?config.waterOverlay:Prepare("Assets/Textures/Minecraft/misc/underwater.png");
-        var fireOverlay=config.fireOverlay!=null?config.fireOverlay:Prepare("Assets/Textures/Minecraft/block/fire_0.png");
-        if(fireOverlay==null)fireOverlay=Prepare("Assets/Textures/Minecraft/fire_0.png");
+        if(playerSkin==null)playerSkin=Prepare("Assets/Textures/entity/player/wide/steve.png");
+        if(playerSkin==null)playerSkin=Prepare("Assets/Textures/entity/steve.png");
+        if(playerSkin==null)playerSkin=Prepare("Assets/Resources/Player/steve.png");
+        var chestSkin = Prepare("Assets/Textures/entity/chest/normal.png");
+        if(chestSkin==null)chestSkin=Prepare("Assets/Textures/block/normal.png");
+        var chestContainer=Prepare("Assets/Textures/gui/container/generic_54.png");
+        var waterOverlay=config.waterOverlay!=null?config.waterOverlay:Prepare("Assets/Textures/misc/underwater.png");
+        var fireOverlay=config.fireOverlay!=null?config.fireOverlay:Prepare("Assets/Textures/block/fire_0.png");
+        if(fireOverlay==null)fireOverlay=Prepare("Assets/Textures/fire_0.png");
         var particleAtlas=Prepare(ParticleAtlasPath);
-        var smokeParticle=config.smokeParticle!=null?config.smokeParticle:Prepare("Assets/Textures/Minecraft/particle/generic_0.png");
-        var splashParticle=config.splashParticle!=null?config.splashParticle:Prepare("Assets/Textures/Minecraft/particle/splash_0.png");
-        var lavaParticle=config.lavaParticle!=null?config.lavaParticle:Prepare("Assets/Textures/Minecraft/particle/lava.png");
-        var bubbleParticle=config.bubbleParticle!=null?config.bubbleParticle:Prepare("Assets/Textures/Minecraft/particle/bubble.png");
-        var sun=config.sunTexture!=null?config.sunTexture:Prepare("Assets/Textures/Minecraft/environment/sun.png");
-        var moon=config.moonTexture!=null?config.moonTexture:Prepare("Assets/Textures/Minecraft/environment/moon_phases.png");
+        var smokeParticle=config.smokeParticle!=null?config.smokeParticle:Prepare("Assets/Textures/particle/generic_0.png");
+        var splashParticle=config.splashParticle!=null?config.splashParticle:Prepare("Assets/Textures/particle/splash_0.png");
+        var lavaParticle=config.lavaParticle!=null?config.lavaParticle:Prepare("Assets/Textures/particle/lava.png");
+        var bubbleParticle=config.bubbleParticle!=null?config.bubbleParticle:Prepare("Assets/Textures/particle/bubble.png");
+        var sun=config.sunTexture!=null?config.sunTexture:Prepare("Assets/Textures/environment/sun.png");
+        var moon=config.moonTexture!=null?config.moonTexture:Prepare("Assets/Textures/environment/moon_phases.png");
         var cloudPath=config.cloudTexture!=null?AssetDatabase.GetAssetPath(config.cloudTexture):CloudPath;
         var clouds=Prepare(cloudPath,true);
         if ((icons == null || config.icons == icons) && (cracks == null || config.blockBreak == cracks) &&
@@ -138,12 +138,12 @@ public class PlayerHudIconImporter : AssetPostprocessor
     {
         foreach (var path in imported)
             if (path == PlayerHudAssetSetup.IconsPath || path == PlayerHudAssetSetup.BreakPath ||
-                path == PlayerHudAssetSetup.InventoryPath || path == PlayerHudAssetSetup.CraftingPath || path == PlayerHudAssetSetup.FurnacePath || path=="Assets/Textures/Minecraft/entity/chest/normal.png" ||
-                path=="Assets/Textures/Minecraft/block/normal.png" || path=="Assets/Textures/Minecraft/gui/container/generic_54.png" ||
-                path=="Assets/Textures/Minecraft/environment/sun.png" || path=="Assets/Textures/Minecraft/environment/moon_phases.png" || path=="Assets/Textures/Minecraft/environment/clouds.png" ||
+                path == PlayerHudAssetSetup.InventoryPath || path == PlayerHudAssetSetup.CraftingPath || path == PlayerHudAssetSetup.FurnacePath || path=="Assets/Textures/entity/chest/normal.png" ||
+                path=="Assets/Textures/block/normal.png" || path=="Assets/Textures/gui/container/generic_54.png" ||
+                path=="Assets/Textures/environment/sun.png" || path=="Assets/Textures/environment/moon_phases.png" || path=="Assets/Textures/environment/clouds.png" ||
                 path==PlayerHudAssetSetup.ParticleAtlasPath ||
-                path=="Assets/Textures/sprites/options_background.png" || path=="Assets/Textures/Player/player.mat" || path=="Assets/Textures/Player/steve.png" ||
-                path=="Assets/Textures/Minecraft/entity/steve.png" || path=="Assets/Textures/Minecraft/entity/player/wide/steve.png")
+                path=="Assets/Resources/UI/Title/options_background.png" || path=="Assets/Resources/Player/player.mat" || path=="Assets/Resources/Player/steve.png" ||
+                path=="Assets/Textures/entity/steve.png" || path=="Assets/Textures/entity/player/wide/steve.png")
             { EditorApplication.delayCall += PlayerHudAssetSetup.Bind; break; }
     }
 }

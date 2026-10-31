@@ -61,7 +61,7 @@ scene=(root/'Assets/Scenes/World.unity').read_text()
 preview=scene.split('--- !u!20 &1755582243\n')[1].split('--- !u!')[0]
 ui_camera=scene.split('--- !u!20 &1556104983\n')[1].split('--- !u!')[0]
 assert '  m_Enabled: 0' in preview and '  m_Enabled: 1' in ui_camera
-background_guid=next(line.split(': ')[1] for line in (root/'Assets/Textures/sprites/options_background.png.meta').read_text().splitlines() if line.startswith('guid:'))
+background_guid=next(line.split(': ')[1] for line in (root/'Assets/Resources/UI/Title/options_background.png.meta').read_text().splitlines() if line.startswith('guid:'))
 assert '  loadingBackground: {fileID: 2800000, guid: '+background_guid in (root/'Assets/Resources/PlayerHudAssets.asset').read_text()
 print('Player initialization, saved-player restore, gameplay guards, and scene/network entry points verified.')
 

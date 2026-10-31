@@ -35,10 +35,10 @@ public sealed class MobVisual
             if((i==0&&!MobRules.Hostile(mob.species))||(i==4&&mob.species==MobType.Cow))parts[i].localRotation=Quaternion.Euler(90,0,0);
             child.GetComponent<MeshFilter>().sharedMesh=meshes[i];
             renderers[i]=child.GetComponent<MeshRenderer>();renderers[i].sharedMaterial=material;
-            if(mob.species==MobType.Skeleton&&i==4)renderers[i].sharedMaterial=Resources.Load<Material>("SkeletonBowMaterial");
+            if(mob.species==MobType.Skeleton&&i==4)renderers[i].sharedMaterial=Resources.Load<Material>("Materials/SkeletonBowMaterial");
             if(mob.species==MobType.Sheep&&(i==2||i==3||i>=9))
             {
-                var fur=Resources.Load<Material>("SheepFurMaterial");if(fur!=null)renderers[i].sharedMaterial=fur;
+                var fur=Resources.Load<Material>("Materials/SheepFurMaterial");if(fur!=null)renderers[i].sharedMaterial=fur;
                 if(i==2)parts[i].localRotation=Quaternion.Euler(90,0,0);
             }
             renderers[i].shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -122,14 +122,14 @@ public sealed class MobVisual
     private void UpdateEffects(MobState mob,World world)
     {
         var definition=MobDefinitions.Get(mob.species);
-        if(mob.loveTicks>0&&heart==null)heart=Effect("Breeding heart",world.MobHeartMesh(),Resources.Load<Material>("MobHeartMaterial"));
+        if(mob.loveTicks>0&&heart==null)heart=Effect("Breeding heart",world.MobHeartMesh(),Resources.Load<Material>("Materials/MobHeartMaterial"));
         if(heart!=null)
         {
             heart.SetActive(mob.loveTicks>0);float phase=(Time.time*1.5f+mob.id*.17f)%1;
             heart.transform.localPosition=new Vector3(Mathf.Sin(mob.id+phase*6)*.2f,definition.Height+.2f+phase*.5f,0);
             heart.transform.localScale=Vector3.one*.2f;var camera=Camera.main;if(camera!=null)heart.transform.rotation=camera.transform.rotation;
         }
-        if(mob.fireTicks>0&&flames==null)flames=Effect("Burning mob",world.MobFireMesh(),Resources.Load<Material>("DroppedBlockMaterial"));
+        if(mob.fireTicks>0&&flames==null)flames=Effect("Burning mob",world.MobFireMesh(),Resources.Load<Material>("Materials/DroppedBlockMaterial"));
         if(flames!=null)
         {flames.SetActive(mob.fireTicks>0);flames.transform.localPosition=new Vector3(-definition.Radius,0,-definition.Radius);flames.transform.localScale=new Vector3(definition.Radius*2,definition.Height,definition.Radius*2);}
     }

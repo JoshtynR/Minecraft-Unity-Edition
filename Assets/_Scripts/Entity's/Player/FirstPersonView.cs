@@ -66,8 +66,8 @@ public sealed class FirstPersonView : MonoBehaviour
         modelRenderer = geometry.gameObject.AddComponent<MeshRenderer>();
         modelRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         modelRenderer.receiveShadows = false;
-        var spriteTemplate = Resources.Load<Material>("FirstPersonMaterial");
-        var blockTemplate = Resources.Load<Material>("DroppedBlockMaterial");
+        var spriteTemplate = Resources.Load<Material>("Materials/FirstPersonMaterial");
+        var blockTemplate = Resources.Load<Material>("Materials/DroppedBlockMaterial");
         if (spriteTemplate == null || blockTemplate == null)
         {
             Debug.LogError("First-person material resources are missing.");

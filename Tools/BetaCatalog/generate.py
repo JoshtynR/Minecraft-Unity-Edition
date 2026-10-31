@@ -71,7 +71,7 @@ p=ROOT/'Assets/_Scripts/Block/BlockType.cs'
 p.write_text('using System;\n\n[Serializable]\npublic enum BlockType\n{\n'+''.join('    '+e['name']+' = '+str(e['localId'])+',\n' for e in entries)+'}\n')
 (ROOT/'Tools/BetaCatalog/catalog.json').write_text(json.dumps({'referenceCommit':'740c583901e1ff1150e9ef37e37dab5bc0e4f807','sourceAliases':{'8':'Water','10':'Lava'},'entries':entries},indent=2)+'\n')
 # Append new serialized entries with unassigned face images, retaining old bytes.
-p=ROOT/'Assets/Block Data.asset';asset=p.read_text()
+p=ROOT/'Assets/Resources/Block Data.asset';asset=p.read_text()
 serialized_ids={int(i) for i in re.findall(r'^  - blockType: (\d+)$',asset,re.M)}
 for e in entries[21:]:
  if e['localId'] in serialized_ids:continue

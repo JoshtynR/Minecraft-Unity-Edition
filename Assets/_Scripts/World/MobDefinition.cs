@@ -26,7 +26,7 @@ public sealed class MobDefinition
     {
         Type=type;MaxHealth=health;Radius=radius;Height=height;WalkSpeed=speed;Behavior=behavior;
         SpawnWeight=spawnWeight;MinGroup=minGroup;MaxGroup=maxGroup;
-        MaterialResource=type+"Material";SoundFamily="mob/"+type.ToString().ToLowerInvariant();
+        MaterialResource="Materials/"+type+"Material";SoundFamily="mob/"+type.ToString().ToLowerInvariant();
         AmbientSound=type==MobType.Creeper?null:SoundFamily+"/say";
         HurtSound=(type==MobType.Pig||type==MobType.Sheep||type==MobType.Spider||type==MobType.Creeper)?SoundFamily+"/say":SoundFamily+"/hurt";
         DeathSound=(type==MobType.Cow||type==MobType.Sheep||type==MobType.Chicken)?HurtSound:SoundFamily+"/death";

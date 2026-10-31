@@ -183,7 +183,7 @@ Storage includes world metadata (`world.json`), chunk files, player data, and co
 | `Assets/_Scripts/Menus` | World selection, creation, settings, and menu flow |
 | `Assets/Editor` | Asset inspectors, texture assignment, and editor utilities |
 | `Assets/Resources` | Runtime-loaded data, materials, prefabs, and sounds |
-| `Assets/Textures/Minecraft` | Block, item, GUI, entity, and environment textures |
+| `Assets/Textures` | Block, item, GUI, entity, and environment textures |
 | `Tools` | Standalone checks, fixtures, and reference comparison tools |
 
 Many large systems use partial classes. For example, `World_*.cs` and `Player_*.cs` divide responsibilities without creating separate world/player instances. Follow the owning subsystem rather than putting all new behaviour into the central class file.

@@ -27,6 +27,6 @@ def main():
    sources.remove('Tools/LightingParity/StairCheck.cs');sources.append(str(a.stair_check.resolve()))
   subprocess.run([a.mcs,'-langversion:latest','-out:'+str(binary),*[str(ROOT/s) for s in sources],str(t/'BlockHelper.cs'),str(t/'ChunkSection.cs')],check=True)
   maps=t/'colormaps.rgba'
-  maps.write_bytes(b''.join(Image.open(ROOT/('Assets/Textures/Minecraft/'+name+'.png')).convert('RGBA').transpose(Image.Transpose.FLIP_TOP_BOTTOM).tobytes() for name in ['grass','foliage']))
+  maps.write_bytes(b''.join(Image.open(ROOT/('Assets/Textures/'+name+'.png')).convert('RGBA').transpose(Image.Transpose.FLIP_TOP_BOTTOM).tobytes() for name in ['grass','foliage']))
   subprocess.run([a.mono,str(binary),str(maps)],check=True)
 if __name__=='__main__':main()

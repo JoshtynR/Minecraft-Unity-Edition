@@ -31,7 +31,7 @@ namespace UnityEditor
   public static BlockDataSO data;
   public static Dictionary<UnityEngine.Object,string> paths=new Dictionary<UnityEngine.Object,string>();
   public static string[] FindAssets(string filter)=>new[]{"data"};
-  public static string GUIDToAssetPath(string guid)=>"Assets/Block Data.asset";
+  public static string GUIDToAssetPath(string guid)=>"Assets/Resources/Block Data.asset";
   public static T LoadAssetAtPath<T>(string path)where T:class=>data as T;
   public static string GetAssetPath(UnityEngine.Object value)=>paths[value];
  }

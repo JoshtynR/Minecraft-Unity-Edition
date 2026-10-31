@@ -15,7 +15,7 @@ public class BlockDataEditor : EditorWindow
     private void OnEnable()
     {
         blockDataManager = FindObjectOfType<BlockDataManager>();
-        data = blockDataManager != null ? blockDataManager.textureData : AssetDatabase.LoadAssetAtPath<BlockDataSO>("Assets/Block Data.asset");
+        data = blockDataManager != null ? blockDataManager.textureData : AssetDatabase.LoadAssetAtPath<BlockDataSO>("Assets/Resources/Block Data.asset");
     }
 
     private void OnGUI()

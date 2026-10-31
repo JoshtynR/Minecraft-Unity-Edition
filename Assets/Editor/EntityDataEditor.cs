@@ -90,7 +90,7 @@ public sealed class EntityDataInspector : Editor
     }
     private static void DrawMaterial(string resource,bool editTexture=true)
     {
-        var material=Resources.Load<Material>(resource);
+        var material=Resources.Load<Material>(resource.Contains("/")?resource:"Materials/"+resource);
         EditorGUI.BeginDisabledGroup(true);EditorGUILayout.ObjectField(resource,material,typeof(Material),false);EditorGUI.EndDisabledGroup();
         if(material==null){EditorGUILayout.HelpBox("Missing Resources material: "+resource,MessageType.Warning);return;}
         if(GUILayout.Button("Open "+resource))Selection.activeObject=material;

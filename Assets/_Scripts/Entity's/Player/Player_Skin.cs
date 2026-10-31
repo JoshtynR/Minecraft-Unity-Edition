@@ -18,7 +18,7 @@ public partial class Player
             if(fallback!=null)skin=fallback.mainTexture;
         }
         if(skin==null)skin=Texture2D.whiteTexture;
-        var template=Resources.Load<Material>("PlayerBodyMaterial");
+        var template=Resources.Load<Material>("Materials/PlayerBodyMaterial");
         if(template==null){Debug.LogWarning("PlayerBodyMaterial is missing; keeping the existing body material.");return;}
         bodySkinMaterial=new Material(template){name="Player body skin (runtime)",mainTexture=skin};
         bodySkinProperties=new MaterialPropertyBlock();

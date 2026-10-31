@@ -26,7 +26,7 @@ public sealed class FluidCameraEffects : MonoBehaviour
     private void Awake()
     {
         view=GetComponent<Camera>();assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
-        var template=Resources.Load<Material>("PortalScreenMaterial");
+        var template=Resources.Load<Material>("Materials/PortalScreenMaterial");
         if(template!=null)portalEffect=new Material(template){name="Portal screen effect (runtime)"};
     }
     private void OnPreCull()
@@ -210,7 +210,7 @@ public sealed class FluidCameraEffects : MonoBehaviour
         bool hover=enabled&&rect.Contains(new Vector2(mouse.x/deathGuiScale,(Screen.height-mouse.y)/deathGuiScale));
         int row=!enabled?46:hover?86:66;
         var widgets=assets!=null?assets.guiWidgets:null;
-        if(widgets==null)widgets=Resources.Load<Texture2D>("Sprites/UI/widgets");
+        if(widgets==null)widgets=Resources.Load<Texture2D>("UI/Title/widgets");
         if(widgets!=null)
         {
             // Native buttons preserve both 100px end caps when resized.

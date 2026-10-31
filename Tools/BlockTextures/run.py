@@ -16,7 +16,7 @@ def main():
         meta=(ROOT/entry['path']).with_suffix('.png.meta').read_text()
         assert 'guid: '+entry['guid'] in meta
         sources[entry['guid']]=entry['path']
-    text=(ROOT/'Assets/Block Data.asset').read_text();asset=yaml.safe_load(text[text.index('MonoBehaviour:\n'):])['MonoBehaviour']
+    text=(ROOT/'Assets/Resources/Block Data.asset').read_text();asset=yaml.safe_load(text[text.index('MonoBehaviour:\n'):])['MonoBehaviour']
     assert isinstance(asset,dict),'Unity YAML nesting'
     blocks=asset['textureDataList'];assert len({b['blockType'] for b in blocks})==len(blocks)
     count=0
@@ -40,7 +40,7 @@ def main():
         assert 'frame = min(frame, cycle - frame)' in animation
     lighting=(ROOT/'Assets/Shaders/VoxelLighting.cginc').read_text()
     assert 'if (_LightingOn > 0.5) col.rgb *= light;' in lighting and 'col.rgb *= i.faceShade;' in lighting
-    inventory_material=(ROOT/'Assets/Resources/InventoryBlockMaterial.mat').read_text()
+    inventory_material=(ROOT/'Assets/Resources/Materials/InventoryBlockMaterial.mat').read_text()
     assert '- _LightingOn: 0' in inventory_material and '- _FaceShadeOn: 1' in inventory_material
     print(f'{len(manifest)} lossless image crops and {count} face image references verified.')
     helper=(ROOT/'Assets/_Scripts/World/Rendering/BlockHelper.cs').read_text()
