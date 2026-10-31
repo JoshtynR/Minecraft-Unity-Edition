@@ -75,6 +75,7 @@ These are implemented systems, not a claim that every edge case is complete or i
 - Buckets that collect source water/lava and place source blocks; water evaporates in the Nether.
 - Falling sand and gravel, support rules, leaf decay, grass spreading, crop states, and farming.
 - TNT/explosions and block/item effects.
+- Rideable boats with buoyancy and minecarts with rail traversal, saved per dimension; see [vehicle controls and current limits](Tools/VehicleChecks/README.md).
 - Functional chests, double chests, furnaces, beds, and crafting interfaces.
 
 ### Player and survival

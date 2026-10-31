@@ -10,7 +10,7 @@ public static class BlockCollision
     private const float ContactPadding = 0.001f;
     private static float Axis(Vector3 v, int axis) { return axis == 0 ? v.x : axis == 1 ? v.y : v.z; }
 
-    public static float Clip(World world, Vector3 feet, float halfWidth, float height, float movement, int axis)
+    public static float Clip(World world, Vector3 feet, float halfWidth, float height, float movement, int axis, System.Func<Vector3Int,bool> ignore = null)
     {
         if (world == null || movement == 0) return movement;
         Vector3 min = new Vector3(feet.x - halfWidth, feet.y, feet.z - halfWidth);
@@ -24,6 +24,7 @@ public static class BlockCollision
         for (int y = Mathf.Max(0,Mathf.FloorToInt(sweepMin.y)-1); y <= Mathf.Min(world.worldHeight - 1,Mathf.FloorToInt(sweepMax.y)); y++)
         for (int z = Mathf.FloorToInt(sweepMin.z); z <= Mathf.FloorToInt(sweepMax.z); z++)
         {
+            if(ignore!=null&&ignore(new Vector3Int(x,y,z)))continue;
             var block = world.GetBlock(new Vector3Int(x,y,z));
             if (block == null || block.type == BlockType.Nothing || block.type == BlockType.Air || block.type == BlockType.Water || block.type == BlockType.Lava || BlockShapesExtensions.IsPlant(block.type) || SpecialBlockGeometry.NoCollision(block.type) || !block.BlockData.generateCollider) continue;
             int parts = SpecialBlockGeometry.CollisionCount(block.type);
@@ -91,20 +92,20 @@ public static class BlockCollision
     public static bool Supported(World world, Vector3 feet, float halfWidth, float height)
     { return Clip(world,feet,halfWidth,height,-0.02f,1) > -0.02f + Epsilon; }
 
-    public static Vector3 Resolve(World world, Vector3 feet, float halfWidth, float height, Vector3 requested, bool allowStep)
+    public static Vector3 Resolve(World world, Vector3 feet, float halfWidth, float height, Vector3 requested, bool allowStep, System.Func<Vector3Int,bool> ignore = null)
     {
-        float y = Clip(world,feet,halfWidth,height,requested.y,1);
+        float y = Clip(world,feet,halfWidth,height,requested.y,1,ignore);
         Vector3 pos = feet + new Vector3(0,y,0);
-        float x = Clip(world,pos,halfWidth,height,requested.x,0); pos.x += x;
-        float z = Clip(world,pos,halfWidth,height,requested.z,2);
+        float x = Clip(world,pos,halfWidth,height,requested.x,0,ignore); pos.x += x;
+        float z = Clip(world,pos,halfWidth,height,requested.z,2,ignore);
         var result = new Vector3(x,y,z);
         if (allowStep && requested.y <= 0 && (x != requested.x || z != requested.z))
         {
-            float up = Clip(world,feet,halfWidth,height,0.5f,1);
+            float up = Clip(world,feet,halfWidth,height,0.5f,1,ignore);
             pos = feet + new Vector3(0,up,0);
-            float sx = Clip(world,pos,halfWidth,height,requested.x,0); pos.x += sx;
-            float sz = Clip(world,pos,halfWidth,height,requested.z,2); pos.z += sz;
-            float down = Clip(world,pos,halfWidth,height,-up,1);
+            float sx = Clip(world,pos,halfWidth,height,requested.x,0,ignore); pos.x += sx;
+            float sz = Clip(world,pos,halfWidth,height,requested.z,2,ignore); pos.z += sz;
+            float down = Clip(world,pos,halfWidth,height,-up,1,ignore);
             if (sx*sx + sz*sz > x*x + z*z + Epsilon) result = new Vector3(sx,up+down,sz);
         }
         return result;

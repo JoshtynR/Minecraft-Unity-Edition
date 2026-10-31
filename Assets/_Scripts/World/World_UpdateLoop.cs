@@ -19,6 +19,7 @@ public partial class World
         UpdateDroppedItems();
         UpdateFurnaces();
         UpdateMobs();
+        UpdateVehicles();
         UpdatePortals();
         StreamDimensionPlayers();
         if (Application.isPlaying) UpdateChunks();

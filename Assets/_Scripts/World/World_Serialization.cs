@@ -85,7 +85,8 @@ public partial class World
                 fluidTicks = CaptureFluidTicks(),
                 droppedItems = CaptureDroppedItems(),
                 fallingBlocks = CaptureFallingBlocks(),
-                mobs = CaptureMobs()
+                mobs = CaptureMobs(),
+                vehicles = CaptureVehicles()
             };
             // Clear synchronously before IO. Changes arriving while a chunk is
             // serialized set dirty again and remain eligible for the next save.

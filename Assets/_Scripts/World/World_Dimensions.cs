@@ -72,6 +72,7 @@ public partial class World
         if(!json.TrimStart().StartsWith("{"))json=Decompress(json);
         var saved=JsonUtility.FromJson<WorldSaveData>(json);
         RestoreFluidTicks(saved.fluidTicks);RestoreDroppedItems(saved.droppedItems);RestoreFallingBlocks(saved.fallingBlocks);RestoreMobs(saved.SavedMobs);
+        RestoreVehicles(saved.vehicles);
     }
     public static void ActivateDimension(World world)
     {
