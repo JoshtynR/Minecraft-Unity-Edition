@@ -16,6 +16,9 @@ Explore sprawling landscapes, build a home, gather resources, craft equipment, a
 - **Player presentation:** First-person hands and held items, movement animations, equipment previews, sounds, and separate menu/world music.
 - **Building convenience:** An optional TooManyItems-style item browser alongside the survival inventory.
 
+  <img width="1920" height="1040" alt="Capture" src="https://github.com/user-attachments/assets/936435ef-11d9-43c8-8dc9-08908c513f2e" />
+
+
 ### A classic foundation, with room to grow
 
 This isn’t a strict recreation of one Minecraft version. Beta 1.7.3 provides the foundation for world generation, while selected newer features—such as hunger and modern chest models—expand the experience.
