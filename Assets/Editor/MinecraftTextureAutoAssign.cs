@@ -178,8 +178,10 @@ public static class MinecraftTextureAutoAssign
                 case BlockTexturePart.RailPowered:return type==BlockType.DetectorRail?"detector_rail_on|rail_detector_powered":"powered_rail_on|rail_golden_powered";
                 case BlockTexturePart.WireCross:return "redstone_dust_cross";
                 case BlockTexturePart.WireLine:return "redstone_dust_line|redstone_dust_line0";
+                case BlockTexturePart.WireDot:return "redstone_dust_dot";
+                case BlockTexturePart.WireLineAlternate:return "redstone_dust_line1";
                 case BlockTexturePart.WireCrossOverlay:return "redstone_dust_cross_overlay";
-                case BlockTexturePart.WireLineOverlay:return "redstone_dust_line_overlay";
+                case BlockTexturePart.WireLineOverlay:return "redstone_dust_line_overlay|redstone_dust_overlay";
                 case BlockTexturePart.LeverBase:return "cobblestone";
                 case BlockTexturePart.LeverHandle:return "lever";
                 case BlockTexturePart.RepeaterTop:return f.side;

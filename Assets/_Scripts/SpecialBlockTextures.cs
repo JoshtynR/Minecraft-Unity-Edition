@@ -12,7 +12,9 @@ public enum BlockTexturePart
     PistonFace, PistonStickyFace, PistonSide, PistonBottom, PistonInner, PistonRod,
     SignFront, SignBack, SignEdge, SignPost, FireA, FireB, FluidStill, FluidFlow,
     CakeInside, ChestFrontLeft, ChestFrontRight, ChestBackLeft, ChestBackRight,
-    ChestTopLeft, ChestTopRight, GrassSideOverlay
+    ChestTopLeft, ChestTopRight, GrassSideOverlay,
+    // Append only: serialized part IDs in existing assets must not shift.
+    WireDot, WireLineAlternate
 }
 
 [Serializable]
@@ -72,7 +74,7 @@ public static class SpecialTextureLayout
             BlockTexturePart.BedFootTop,BlockTexturePart.BedFootSide,BlockTexturePart.BedFootEnd,BlockTexturePart.BedBottom},BlockType.Bed);
         Add(result,new[]{BlockTexturePart.RailStraight,BlockTexturePart.RailCorner},BlockType.Rail);
         Add(result,new[]{BlockTexturePart.RailStraight,BlockTexturePart.RailPowered},BlockType.PoweredRail,BlockType.DetectorRail);
-        Add(result,new[]{BlockTexturePart.WireCross,BlockTexturePart.WireLine,BlockTexturePart.WireCrossOverlay,BlockTexturePart.WireLineOverlay},BlockType.RedstoneWire);
+        Add(result,new[]{BlockTexturePart.WireCross,BlockTexturePart.WireLine,BlockTexturePart.WireCrossOverlay,BlockTexturePart.WireLineOverlay,BlockTexturePart.WireDot,BlockTexturePart.WireLineAlternate},BlockType.RedstoneWire);
         Add(result,new[]{BlockTexturePart.LeverBase,BlockTexturePart.LeverHandle},BlockType.Lever);
         Add(result,new[]{BlockTexturePart.RepeaterTop,BlockTexturePart.RepeaterSide,BlockTexturePart.RepeaterBottom,BlockTexturePart.RepeaterTorch},BlockType.RedstoneRepeater,BlockType.PoweredRepeater);
         Add(result,new[]{BlockTexturePart.PistonFace,BlockTexturePart.PistonSide,BlockTexturePart.PistonBottom,BlockTexturePart.PistonInner},BlockType.Piston);
