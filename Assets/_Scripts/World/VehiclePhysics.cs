@@ -4,6 +4,19 @@ using UnityEngine;
 public enum VehicleKind : byte { Minecart, Boat }
 
 [Serializable]
+public sealed class VehicleTuning
+{
+    public float boatMaxSpeed=7,boatThrust=4,boatTurnSpeed=75,boatBuoyancy=24,boatGravity=9.8f,boatWaterDrag=.97f;
+    public float cartMaxSpeed=8,cartSlopeAcceleration=8,cartPoweredAcceleration=6;
+    public static VehicleTuning Current=new VehicleTuning();
+    private static float Limit(float value,float fallback,float min,float max)=>VehiclePhysics.Finite(value)?Mathf.Clamp(value,min,max):fallback;
+    public VehicleTuning Validated()=>new VehicleTuning{
+        boatMaxSpeed=Limit(boatMaxSpeed,7,.1f,20),boatThrust=Limit(boatThrust,4,0,50),boatTurnSpeed=Limit(boatTurnSpeed,75,0,360),
+        boatBuoyancy=Limit(boatBuoyancy,24,0,100),boatGravity=Limit(boatGravity,9.8f,0,50),boatWaterDrag=Limit(boatWaterDrag,.97f,0,1),
+        cartMaxSpeed=Limit(cartMaxSpeed,8,.1f,20),cartSlopeAcceleration=Limit(cartSlopeAcceleration,8,0,50),cartPoweredAcceleration=Limit(cartPoweredAcceleration,6,0,50)};
+}
+
+[Serializable]
 public sealed class VehicleState
 {
     public int id;
@@ -74,20 +87,21 @@ public static class VehiclePhysics
     }
     public static void BoatVelocity(VehicleState v,float submerged,float dt)
     {
+        var settings=VehicleTuning.Current;
         submerged=Mathf.Clamp01(submerged);
         // Empty hull settles partly submerged; upward acceleration is capped
         // and damped, so a full water voxel cannot launch it out of the lake.
-        v.velocity.y+=(-9.8f+submerged*24f)*dt;
+        v.velocity.y+=(-settings.boatGravity+submerged*settings.boatBuoyancy)*dt;
         v.velocity.y*=Mathf.Pow(submerged>0?.75f:.98f,dt/Step);
         if(submerged>0)
         {
-            v.yaw+=v.steer*75f*dt;
+            v.yaw+=v.steer*settings.boatTurnSpeed*dt;
             float angle=v.yaw*Mathf.Deg2Rad;
-            v.velocity+=new Vector3(Mathf.Sin(angle),0,Mathf.Cos(angle))*(v.throttle*4f*dt);
+            v.velocity+=new Vector3(Mathf.Sin(angle),0,Mathf.Cos(angle))*(v.throttle*settings.boatThrust*dt);
         }
-        float drag=Mathf.Pow(submerged>0?.97f:.9f,dt/Step);
+        float drag=Mathf.Pow(submerged>0?settings.boatWaterDrag:.9f,dt/Step);
         v.velocity.x*=drag;v.velocity.z*=drag;
         var horizontal=new Vector3(v.velocity.x,0,v.velocity.z);
-        if(horizontal.magnitude>7){horizontal=horizontal.normalized*7;v.velocity.x=horizontal.x;v.velocity.z=horizontal.z;}
+        if(horizontal.magnitude>settings.boatMaxSpeed){horizontal=horizontal.normalized*settings.boatMaxSpeed;v.velocity.x=horizontal.x;v.velocity.z=horizontal.z;}
     }
 }

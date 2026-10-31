@@ -163,7 +163,13 @@ public sealed class MobStore
         var saved=data.entities??data.animals;
         if (saved != null)
             foreach (var mob in saved)
-                if (MobRules.Valid(mob) && !animals.ContainsKey(mob.id)) Apply(mob);
+            {
+                // Lowering a configured health cap must not delete old mobs.
+                var restored=mob==null?null:mob.Copy();
+                if(restored!=null&&MobDefinitions.Valid(restored.species)&&restored.health>0)
+                    restored.health=Math.Min(restored.health,MobRules.MaxHealth(restored.species));
+                if (MobRules.Valid(restored) && !animals.ContainsKey(restored.id)) Apply(restored);
+            }
         NextId = Math.Max(NextId, Math.Max(1, data.nextId));
     }
 }

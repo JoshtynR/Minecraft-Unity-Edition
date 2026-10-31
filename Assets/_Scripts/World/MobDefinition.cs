@@ -2,6 +2,15 @@ using System;
 
 public enum MobBehaviorKind { FarmAnimal, Zombie, Skeleton, Creeper, Spider }
 
+[Serializable]
+public sealed class MobTuning
+{
+    public MobType species;
+    public int maxHealth,spawnWeight,maxGroup;
+    public float walkSpeed;
+    public static MobTuning From(MobDefinition d)=>new MobTuning{species=d.Type,maxHealth=d.MaxHealth,spawnWeight=d.SpawnWeight,maxGroup=d.MaxGroup,walkSpeed=d.WalkSpeed};
+}
+
 // Immutable species data. Entity state contains only values that change during play.
 public sealed class MobDefinition
 {
@@ -27,6 +36,22 @@ public sealed class MobDefinition
 
 public static class MobDefinitions
 {
+    private static MobDefinition[] configured;
+    public static void Configure(System.Collections.Generic.IEnumerable<MobTuning> entries)
+    {
+        configured=null;if(entries==null)return;
+        var result=(MobDefinition[])definitions.Clone();var seen=new System.Collections.Generic.HashSet<MobType>();
+        foreach(var entry in entries)
+        {
+            if(entry==null||!Valid(entry.species)||!seen.Add(entry.species))continue;
+            var d=definitions[(int)entry.species];
+            float speed=float.IsNaN(entry.walkSpeed)||float.IsInfinity(entry.walkSpeed)?d.WalkSpeed:Math.Max(0,Math.Min(1,entry.walkSpeed));
+            int max=Math.Max(1,Math.Min(12,entry.maxGroup));
+            result[(int)entry.species]=new MobDefinition(d.Type,Math.Max(1,Math.Min(1024,entry.maxHealth)),d.Radius,d.Height,speed,d.Behavior,
+                Math.Max(0,Math.Min(1000,entry.spawnWeight)),Math.Min(d.MinGroup,max),max);
+        }
+        configured=result;
+    }
     private static readonly MobType[] hostileSpawnOrder={MobType.Spider,MobType.Zombie,MobType.Skeleton,MobType.Creeper};
     private static readonly MobType[] passiveSpawnOrder={MobType.Sheep,MobType.Pig,MobType.Chicken,MobType.Cow};
     private static readonly MobDefinition[] definitions={
@@ -41,16 +66,21 @@ public static class MobDefinitions
         new MobDefinition(MobType.Spider,16,.7f,.9f,.16f,MobBehaviorKind.Spider)
     };
     public static bool Valid(MobType type)=>(int)type>=0&&(int)type<definitions.Length;
-    public static MobDefinition Get(MobType type)
+    public static MobDefinition Default(MobType type)
     {if(!Valid(type))throw new ArgumentOutOfRangeException(nameof(type));return definitions[(int)type];}
+    public static MobDefinition Get(MobType type)
+    {if(!Valid(type))throw new ArgumentOutOfRangeException(nameof(type));return (configured??definitions)[(int)type];}
     public static MobType SelectSpawn(bool hostile,int roll)
     {
         // BiomeGenBase list order matters to the weighted roll even though the
         // same species occur in every ordinary Beta overworld biome.
         var order=hostile?hostileSpawnOrder:passiveSpawnOrder;
         int total=0;for(int i=0;i<order.Length;i++)total+=Get(order[i]).SpawnWeight;
+        if(total==0)return order[0]; // Spawn validation rejects its zero weight.
         roll=((roll%total)+total)%total;
         for(int i=0;i<order.Length;i++)if((roll-=Get(order[i]).SpawnWeight)<0)return order[i];
         return order[0];
     }
+    public static int TotalSpawnWeight(bool hostile)
+    {int total=0;foreach(var type in hostile?hostileSpawnOrder:passiveSpawnOrder)total+=Get(type).SpawnWeight;return total;}
 }

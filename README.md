@@ -218,6 +218,14 @@ Enable `World.logGenerationTimings` in the Inspector for generation-stage diagno
 - Standard blocks support top, bottom, and side images. Special models may require additional face mappings, animation settings, or geometry-specific textures.
 - Preserve existing asset GUIDs and `.meta` files when updating assignments. Recreating a data asset can sever scene/prefab references.
 
+### Entity configuration
+
+Use **Minecraft → Entities → Select Entity Data** for the searchable mob, vehicle,
+and chest settings Inspector. It configures health, movement, spawn weights/pack
+caps, vehicle physics, chest lid speed, and existing skin/material references.
+Gameplay settings apply on the next Play Mode session/build launch. See the
+[entity catalogue guide](Tools/EntityChecks/README.md) for units, limits and tests.
+
 ### Texture assignment utilities
 
 The editor includes:
