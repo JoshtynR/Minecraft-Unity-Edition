@@ -3496,13 +3496,14 @@ MonoBehaviour:
   chunksGenerationPerFrame: 2
   chunkWorkerThreads: 3
   terrainWorkerThreads: 5
+  logGenerationTimings: 0
   worldRenderer: {fileID: 1269315924}
   terrainGenerator: {fileID: 1658937128}
   mapSeedOffset: {x: -251, y: 150, z: 0}
   betaWorldSeed: 0
   GenerateMoreChunks: 1
   gamma: 0
-  worldName: gdfhdhd1
+  worldName: 0
   disabled: 0
   binaryCompressSaves: 0
   OnWorldCreated:
@@ -3525,13 +3526,19 @@ MonoBehaviour:
         m_CallState: 2
   validateDone: 1
   isInPlayMode: 0
-  spawnCows: 1
-  maximumActiveCows: 24
+  overworldFog: 1
+  showClouds: 1
+  worldTimeTicks: 1000
+  chunksToUpdate: []
+  dimension: 0
+  spawnHostileMobs: 1
+  maximumActiveHostiles: 70
   skyLightReduction: 0
+  spawnPassiveMobs: 1
+  maximumActivePassiveMobs: 24
   isSaving: 0
   survivalDifficulty: 1
   naturalRegeneration: 1
-  chunksToUpdate: []
 --- !u!4 &1422854026
 Transform:
   m_ObjectHideFlags: 0
@@ -3842,6 +3849,51 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 316164946}
     m_Modifications:
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010006, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010014, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010014, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 900000000000010014, guid: 7147530122476ca4cbd97684444b0523,
+        type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3832831416329544356, guid: 7147530122476ca4cbd97684444b0523,
         type: 3}
       propertyPath: m_AnchorMax.y
