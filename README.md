@@ -4,7 +4,7 @@ A Minecraft-inspired sandbox built in Unity, bringing the terrain and atmosphere
 
 a fork of this repo https://github.com/BossSloth/Minecraft-Unity
 
-Explore sprawling landscapes, build a home, gather resources, craft equipment, and travel into the Nether. World generation closely follows Beta 1.7.3, including its biomes, caves, trees, ores, and decorations.
+Explore sprawling landscapes, build a home, gather resources, craft equipment, and travel into the Nether. World generation follows Beta 1.7.3, including its biomes, caves, trees, ores, and decorations.
 
 ### Features
 
