@@ -5,14 +5,24 @@ public sealed class PrimedTntVisual : MonoBehaviour
     private Mesh mesh;
     private Material material;
     private MeshRenderer rendererComponent;
-    private MaterialPropertyBlock properties=new MaterialPropertyBlock();
-    private EntityVisualMotion motion=new EntityVisualMotion();
+    [System.NonSerialized] private MaterialPropertyBlock properties;
+    [System.NonSerialized] private EntityVisualMotion motion;
     private bool initialized;
     private float smokeAt;
     private int lastFuse=-1;
     private float fuseSampleAt;
+    private void EnsureRuntimeState()
+    {
+        // Managed helpers can be lost when Unity restores a component after a
+        // script/domain reload. Native property blocks also belong on the main
+        // thread, not in MonoBehaviour field initialization.
+        if(motion==null)motion=new EntityVisualMotion();
+        if(properties==null)properties=new MaterialPropertyBlock();
+    }
     public void Initialize()
     {
+        EnsureRuntimeState();
+        if(rendererComponent!=null)return;
         var template=Resources.Load<Material>("Materials/DroppedBlockMaterial");
         if(template==null)return;
         mesh=ItemVisualMesh.Build(BlockType.TNT);material=new Material(template);
@@ -23,6 +33,8 @@ public sealed class PrimedTntVisual : MonoBehaviour
     }
     public void Step(World world,PrimedTntState item)
     {
+        if(world==null||item==null)return;
+        EnsureRuntimeState();
         var center=item.position+Vector3.up*.49f;
         if(!initialized){transform.position=center;initialized=true;}
         transform.position=motion.Step(center,Time.deltaTime,.1f);

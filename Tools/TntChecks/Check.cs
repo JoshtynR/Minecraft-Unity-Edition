@@ -11,7 +11,6 @@ namespace UnityEngine
 public static class LightExtensions {public static int GetSkyLight(this Block b)=>15;public static int GetBlockLight(this Block b)=>0;}
 public static class RendererExtensions {public static float lastFlash;public static int calls;public static void SetPropertyBlock(this MeshRenderer r,MaterialPropertyBlock p){lastFlash=p.flash;calls++;}}
 public static class ItemVisualMesh {public static Mesh Build(BlockType t)=>new Mesh();}
-public class EntityVisualMotion {public Vector3 Step(Vector3 p,float dt,float period)=>p;}
 public static class ItemDurability {public static void Wear(ref InventoryStack held,int amount){held.damage+=amount;}}
 public static class GameAudio {public static int hisses;public static void Broadcast(string family,Vector3 p,float volume,float pitch,World w){if(family=="random/fuse")hisses++;}}
 public partial class World
@@ -55,6 +54,14 @@ public static class TntCheck
   Assert(visible.worldData.chunkDict[new Vector3Int(0,0,0)].immediateRefreshes==1,"manual ignition immediately removes opaque source mesh");
   var visual=new PrimedTntVisual();visual.Initialize();var sample=visible.CaptureTnt()[0];visual.Step(visible,sample);
   Assert(Math.Abs(RendererExtensions.lastFlash-.152f)<.0001f,"visible hull receives the lit flash phase");
+  var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+  typeof(PrimedTntVisual).GetField("motion",flags).SetValue(visual,null);
+  typeof(PrimedTntVisual).GetField("properties",flags).SetValue(visual,null);
+  visual.Step(visible,sample);
+  Assert(typeof(PrimedTntVisual).GetField("motion",flags).GetValue(visual)!=null&&typeof(PrimedTntVisual).GetField("properties",flags).GetValue(visual)!=null,"restored component recreates missing interpolation and property block helpers");
+  Assert(Math.Abs(RendererExtensions.lastFlash-.152f)<.0001f,"flash still reaches renderer after runtime helpers are lost");
+  var uninitialized=new PrimedTntVisual();uninitialized.Step(visible,sample);
+  Assert(Math.Abs(uninitialized.transform.position.y-(sample.position.y+.49f))<.0001f,"Step safely initializes motion even before explicit Initialize");
   sample.fuse=75;visual.Step(visible,sample);Assert(RendererExtensions.lastFlash==0,"visible hull receives unlit flash phase");
   int calls=RendererExtensions.calls;visible.isSaving=true;visible.TntFrame();
   Assert(RendererExtensions.calls>calls&&visible.CaptureTnt()[0].fuse==80,"save pauses simulation without hiding primed visual");

@@ -9,6 +9,7 @@ with tempfile.TemporaryDirectory() as tmp:
     adapter=Path(tmp)/'Ignition.cs';adapter.write_text('using UnityEngine;public partial class World{'+ignition+'return false;} }')
     files=['Tools/Shared/UnityVectors.cs','Tools/VehicleChecks/Check.cs','Tools/TntChecks/Check.cs','Assets/_Scripts/Block/BlockType.cs','Assets/_Scripts/ItemType.cs','Assets/_Scripts/World/VehiclePhysics.cs','Assets/_Scripts/World/World_Vehicles.cs','Assets/_Scripts/Block/BlockCollision.cs',"Assets/_Scripts/Entity's/Player/BlockTargeting.cs","Assets/_Scripts/Entity's/Player/Player_Vehicles.cs",'Assets/_Scripts/World/Rendering/VehicleVisual.cs','Assets/_Scripts/World/Rendering/VehicleModelGeometry.cs','Assets/_Scripts/World/World_Tnt.cs','Assets/_Scripts/World/Rendering/PrimedTntVisual.cs','Assets/_Scripts/WorldGeneration/Beta/JavaRandom.cs']
     files.append('Assets/_Scripts/WorldGeneration/Beta/BetaMathHelper.cs')
+    files.append('Assets/_Scripts/World/Rendering/EntityVisualMotion.cs')
     files.append('Assets/_Scripts/Block/BetaBlockCatalog.cs')
     bed=(root/'Assets/_Scripts/World/World_NetherBed.cs').read_text()
     resistance=Path(tmp)/'Resistance.cs'
