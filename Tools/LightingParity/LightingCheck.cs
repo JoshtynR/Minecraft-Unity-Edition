@@ -58,7 +58,7 @@ public class ChunkData
  public Queue<BlockLightNode> skyLightRemoveQueue=new Queue<BlockLightNode>(),skyLightUpdateQueue=new Queue<BlockLightNode>(),blockLightRemoveQueue=new Queue<BlockLightNode>(),blockLightUpdateQueue=new Queue<BlockLightNode>();
  public List<Block> skyExtendList=new List<Block>(),skyRemoveList=new List<Block>();public List<ChunkRenderer> chunkToUpdateAfterLighting=new List<ChunkRenderer>();
  public Block GetBlock(Vector3Int p){Block b;return blocks.TryGetValue(worldPos+p,out b)?b:new Block{type=BlockType.Nothing,localChunkPosition=p,chunkData=this};}
- public bool IsOnEdge(Vector3Int p)=>false;public List<ChunkData> GetNeighbourChunk(Vector3Int p)=>new List<ChunkData>();
+ public bool IsOnEdge(Vector3Int p)=>p.x-worldPos.x==0||p.x-worldPos.x==chunkSize-1||p.z-worldPos.z==0||p.z-worldPos.z==chunkSize-1;public List<ChunkData> GetNeighbourChunk(Vector3Int p)=>new List<ChunkData>();
 }
 public static partial class LightingCheck
 {
@@ -145,6 +145,7 @@ public static partial class LightingCheck
   CheckSpecialMeshes();
   CheckFaceLighting();
   CheckGreedyMeshing();
+  CheckTransportAudit(args[1]);
   Console.WriteLine(checks+" lightmap mesh/transport/fluid/biome checks passed (Unity storage mocked).");
  }
 }

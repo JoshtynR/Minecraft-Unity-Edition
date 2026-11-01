@@ -313,7 +313,9 @@ public static class BlockHelper
         if(block==null||block.type==BlockType.Nothing)return new Vector3(0,emission,1);
         int sky=block.GetSkyLight(),light=Math.Max(block.GetBlockLight(),emission);
         var shape=BlockShapesExtensions.ForBlock(block.type);
-        if(shape==BlockShapes.Slab||StairGeometry.IsStair(block.type))
+        // Beta ChunkCache also samples neighbors for tilledField: its inset
+        // top must not use the opaque farmland cell's own zero light.
+        if(shape==BlockShapes.Slab||StairGeometry.IsStair(block.type)||block.type==BlockType.Farmland||block.type==BlockType.MoistFarmland)
             foreach(var dir in SlabLightNeighbors)
             {var neighbor=chunk.GetBlock(pos+dir);if(neighbor!=null){sky=Math.Max(sky,neighbor.GetSkyLight());light=Math.Max(light,neighbor.GetBlockLight());}}
         float ao=block.BlockData.opacity==15&&shape==BlockShapes.FullBlock?.2f:1;

@@ -15,13 +15,17 @@ public static class Lighting
         lock (SyncRoot)
         {
             var options=new ParallelOptions{CancellationToken=token,MaxDegreeOfParallelism=System.Math.Max(1,workerCount)};
-            Parallel.ForEach(chunks,options,chunk =>
+            var seeded=chunks.Where(chunk=>!chunk.lightingInitialized).ToArray();
+            Parallel.ForEach(seeded,options,chunk =>
             {
                 token.ThrowIfCancellationRequested();
-                if (chunk.lightingInitialized) return;
                 RecastSunLightFirstTime(chunk);
                 chunk.lightingInitialized = true;
             });
+            // Beta updates shared borders when a chunk becomes available. A
+            // clean old neighbor has no pending queue of its own; explicitly
+            // import its boundary sources after every new chunk has been seeded.
+            foreach(var chunk in seeded)SeedLoadedBoundaries(chunk);
             // One sequential transport phase prevents adjacent meshing workers
             // from racing writes to packed sky/block light or observing half-
             // initialized neighbors during the first mesh build.
@@ -31,6 +35,27 @@ public static class Lighting
                 if (chunk.HasPendingLighting) chunk.UpdateLight();
             }
         }
+    }
+
+    private static void SeedLoadedBoundaries(ChunkData chunk)
+    {
+        int size=chunk.chunkSize,height=chunk.worldRef.worldHeight;
+        for(int y=0;y<height;y++)for(int edge=0;edge<size;edge++)
+        {
+            SeedBoundary(chunk,new Vector3Int(-1,y,edge),new Vector3Int(0,y,edge));SeedBoundary(chunk,new Vector3Int(size,y,edge),new Vector3Int(size-1,y,edge));
+            SeedBoundary(chunk,new Vector3Int(edge,y,-1),new Vector3Int(edge,y,0));SeedBoundary(chunk,new Vector3Int(edge,y,size),new Vector3Int(edge,y,size-1));
+        }
+    }
+    private static void SeedBoundary(ChunkData owner,Vector3Int local,Vector3Int inside)
+    {
+        var source=owner.GetBlock(local);
+        if(source==null||source.type==BlockType.Nothing)return;
+        var target=owner.GetBlock(inside);if(target==null||target.type==BlockType.Nothing)return;
+        int sky=source.GetSkyLight(),light=System.Math.Max(source.GetBlockLight(),source.BlockData.lightEmission),opacity=target.BlockData.opacity;
+        // Open-air borders already at 15 need no queue entry. Import only light
+        // which can actually improve the newly available destination cell.
+        if(VoxelLightingMath.Attenuate(sky,opacity)>target.GetSkyLight())owner.skyLightUpdateQueue.Enqueue(new BlockLightNode(source,(byte)sky));
+        if(VoxelLightingMath.Attenuate(light,opacity)>target.GetBlockLight())owner.blockLightUpdateQueue.Enqueue(new BlockLightNode(source,(byte)light));
     }
 
     public static void CalculateLight(ChunkData data)
@@ -226,7 +251,7 @@ public static class Lighting
 
     public static void CheckForEdgeUpdate(Block block, ChunkData data)
     {
-        if (block == null) return;
+        if (block == null || block.type == BlockType.Nothing) return;
         block.chunkData.MarkRenderSectionsDirty(block.globalWorldPosition.y);
 
         // Interior cells owned by this build cannot invalidate another column.
@@ -261,9 +286,14 @@ public static class Lighting
                     if (block == null || block.type == BlockType.Nothing) continue;
 
                     int emitted = block.BlockData.lightEmission;
+                    int previous = block.GetBlockLight();
+                    // Reinitialization is also used after population touches a
+                    // previously lit halo. Drop old transport/source values.
+                    block.SetBlockLight(emitted);
+                    if(previous!=emitted)CheckForEdgeUpdate(block,chunkData);
+                    if(previous>emitted)chunkData.blockLightRemoveQueue.Enqueue(new BlockLightNode(block,(byte)previous));
                     if (emitted > 0)
                     {
-                        block.SetBlockLight(emitted);
                         chunkData.blockLightUpdateQueue.Enqueue(new BlockLightNode(block, (byte)emitted));
                     }
                 }
@@ -276,6 +306,7 @@ public static class Lighting
         int worldH = chunkData.worldRef.worldHeight;
 
         int level = chunkData.worldRef.dimension == WorldDimension.Nether ? 0 : 15;
+        int minChanged=worldH,maxChanged=-1;
         for (int y = worldH - 1; y >= 0; y--)
         {
             var block = chunkData.GetBlock(new Vector3Int(startPos.x, y, startPos.z));
@@ -285,10 +316,16 @@ public static class Lighting
             if (changedColumn && level < 15) opacity = Mathf.Max(1, opacity);
             level = Mathf.Max(0, level - opacity);
             block.SetSkyLight(level);
+            if(previous!=level){minChanged=System.Math.Min(minChanged,y);maxChanged=System.Math.Max(maxChanged,y);}
             if (previous > level)
                 chunkData.skyLightRemoveQueue.Enqueue(new BlockLightNode(block, (byte)previous));
             if (level > 0 && (!changedColumn || previous != level))
                 chunkData.skyLightUpdateQueue.Enqueue(new BlockLightNode(block, (byte)level));
         }
+        // Direct column changes can alter a neighbor's corner samples even
+        // when propagation does not change the neighbor's stored light. Batch
+        // notifications by vertical section rather than once for every cell.
+        for(int y=minChanged;y<=maxChanged;y+=16)CheckForEdgeUpdate(chunkData.GetBlock(new Vector3Int(startPos.x,y,startPos.z)),chunkData);
+        if(maxChanged>=0)CheckForEdgeUpdate(chunkData.GetBlock(new Vector3Int(startPos.x,maxChanged,startPos.z)),chunkData);
     }
 }

@@ -168,6 +168,9 @@ public class ChunkSection
     /// <summary>Initializes a cell before this chunk joins the live world.</summary>
     public void SetGeneratedBlock(Vector3Int pos, BlockType type)
     {
+        // A data-only halo may already have supplied light to visible chunks.
+        // Population bypasses live callbacks, so request a fresh light pass.
+        dataRef.lightingInitialized=false;
         pos.y -= yOffset;
         byte state = WheatCropRules.IsCrop(type) ? WheatCropRules.LegacyAge(type) : SpecialBlockGeometry.DefaultState(type);
         blocks.Set(pos.x, pos.y, pos.z, type, state);

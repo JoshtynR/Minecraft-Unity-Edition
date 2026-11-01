@@ -174,7 +174,7 @@ MonoBehaviour:
       animationFramesPerSecond: 20
     isTransparent: 1
     generateCollider: 0
-    opacity: 1
+    opacity: 3
     lightEmission: 0
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 7
@@ -2964,7 +2964,7 @@ MonoBehaviour:
       animationFramesPerSecond: 20
     isTransparent: 1
     generateCollider: 0
-    opacity: 2
+    opacity: 0
     lightEmission: 11
     albedoTint: {r: 1, g: 1, b: 1, a: 1}
   - blockType: 95

@@ -21,6 +21,7 @@ namespace UnityEngine
     }
     public struct Vector3
     {
+        public static float Dot(Vector3 a,Vector3 b)=>a.x*b.x+a.y*b.y+a.z*b.z;
         public float x,y,z;
         public Vector3(float x,float y,float z) { this.x=x; this.y=y; this.z=z; }
         public static implicit operator Vector3(Vector3Int v)=>new Vector3(v.x,v.y,v.z);
@@ -32,7 +33,7 @@ namespace UnityEngine
     }
  public struct Vector4 { public float x,y,z,w; public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;} }
     public struct Vector2 { public float x,y; public Vector2(float x,float y){this.x=x;this.y=y;} }
-    public struct Color {}
+    public struct Color {public float r,g,b,a;}
     public static class Mathf { public static int Max(int a,int b) { return Math.Max(a,b); } public static float Min(float a,float b) { return Math.Min(a,b); } public static float Clamp(float v,float a,float b) { return Math.Min(b,Math.Max(a,v)); } }
     public static class Debug { public static void LogException(Exception e) { throw e; } }
     public static class Application { public static bool isPlaying=true; }
@@ -128,6 +129,7 @@ public partial class World
     public void EmitFluidEffect(Vector3Int p,byte kind) {}
     private void DisposeFluidEffects() {}
     public bool CanReplaceChest(Vector3Int p,BlockType t) { return true; }
+    private void RemoveChest(Vector3Int position){}
     public static bool IsFurnace(BlockType t)=>t==BlockType.Furnace||t==BlockType.LitFurnace;
     private void RemoveFurnace(Vector3Int p){}
     private void TrackFurnace(Vector3Int p){}
@@ -208,6 +210,8 @@ public static partial class IntegrationCheck
         var w = World.Instance = new World();
         WaterCheck.Assert(w.TestPopulationPausesWater(),"population holds authoritative water ticks until the worker completes");
         var c = AddChunk(w,V(0,0,0));
+        c.lightingInitialized=true;c.sections[0].SetGeneratedBlock(V(0,0,0),BlockType.Stone);
+        WaterCheck.Assert(!c.lightingInitialized&&c.GetBlock(V(0,0,0)).type==BlockType.Stone,"population write invalidates a previously lit halo through the actual packed section");
         var cellField=typeof(ChunkSection.PackedBlockStorage).GetField("cells",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
         var lightField=typeof(ChunkSection).GetField("lightMap",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
         WaterCheck.Assert(cellField.FieldType==typeof(ushort[])&&((ushort[])cellField.GetValue(c.sections[0].blocks)).Length==8,"section cells are not a dense two-byte array");
