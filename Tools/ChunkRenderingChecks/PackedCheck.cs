@@ -38,6 +38,8 @@ public static class PackedCheck {
  var v=PackedChunkVertex.Pack(d,0);
  Check(v.position.y==127&&v.texture.z==4097&&v.ny==127&&v.r==255&&v.g==128&&v.a==255);
  Check(v.sky==0x4b80&&v.mode==0x4400&&v.u==0x3c00);
+ d.uv[0]=new Vector3(16,16,4097);d.sides[0]=new Vector3(1,2,4);
+ var greedy=PackedChunkVertex.Pack(d,0);Check(greedy.texture.x==16&&greedy.texture.y==16&&greedy.texture.z==4097&&greedy.flat==0x4000&&greedy.mode==0x4400);
  var mesh=new Mesh();PackedChunkVertex.Upload(mesh,d);Check(mesh.count==1&&mesh.layout.Length==8&&mesh.data.Length==1);
  Console.WriteLine("Packed 56-byte stride, offsets, half conversion, tint/normal quantization, layer precision and upload checks passed (Unity GPU API mocked).");
  }

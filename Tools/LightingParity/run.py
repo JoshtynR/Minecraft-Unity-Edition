@@ -20,6 +20,7 @@ def main():
   binary=t/'lighting.exe'
   sources.append('Tools/LightingParity/SpecialMeshCheck.cs')
   sources.append('Tools/LightingParity/FaceLightingCheck.cs')
+  sources.append('Tools/LightingParity/GreedyMeshCheck.cs')
   sources.append('Assets/_Scripts/World/FluidTickScheduler.cs')
   sources.extend(['Assets/_Scripts/World/Rendering/BiomeColorPalette.cs','Assets/_Scripts/World/Rendering/BiomeBlockColors.cs','Assets/_Scripts/WorldGeneration/Beta/BetaClimate.cs','Assets/_Scripts/WorldGeneration/Beta/JavaRandom.cs','Tools/LightingParity/BiomeColorCheck.cs'])
   sources.append('Assets/_Scripts/WorldGeneration/Beta/BetaMathHelper.cs')
@@ -27,6 +28,6 @@ def main():
    sources.remove('Tools/LightingParity/StairCheck.cs');sources.append(str(a.stair_check.resolve()))
   subprocess.run([a.mcs,'-langversion:latest','-out:'+str(binary),*[str(ROOT/s) for s in sources],str(t/'BlockHelper.cs'),str(t/'ChunkSection.cs')],check=True)
   maps=t/'colormaps.rgba'
-  maps.write_bytes(b''.join(Image.open(ROOT/('Assets/Textures/'+name+'.png')).convert('RGBA').transpose(Image.Transpose.FLIP_TOP_BOTTOM).tobytes() for name in ['grass','foliage']))
+  maps.write_bytes(b''.join(Image.open(ROOT/('Assets/Textures/environment/'+name+'.png')).convert('RGBA').transpose(Image.Transpose.FLIP_TOP_BOTTOM).tobytes() for name in ['grass','foliage']))
   subprocess.run([a.mono,str(binary),str(maps)],check=True)
 if __name__=='__main__':main()

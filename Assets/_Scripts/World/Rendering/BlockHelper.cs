@@ -192,6 +192,8 @@ public static class BlockHelper
 
         int overlay=block.type==BlockType.Grass&&dir!=Direction.up&&dir!=Direction.down?
             blockTypeData.textureData.PartIndex(BlockTexturePart.GrassSideOverlay):0;
+        if(chunk!=null&&!blockTypeData.isTransparent&&shape.isFullBlock()&&block.type!=BlockType.Water&&block.type!=BlockType.Lava&&overlay==0)
+            meshData.MarkLastQuadGreedy();
         if(overlay!=0)
         {
             int first=meshData.vertices.Count-4;

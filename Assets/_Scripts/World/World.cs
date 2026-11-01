@@ -32,6 +32,8 @@ public partial class World : MonoBehaviour
     [Range(1, 8)] public int terrainWorkerThreads = 5;
     [Tooltip("Log terrain, population, lighting/meshing and upload timings for each generation request.")]
     public bool logGenerationTimings;
+    [Tooltip("Merge matching, uniformly lit full-cube faces within each render section. Disable before a rebuild for comparison.")]
+    public bool greedyMeshing = true;
     public WorldRenderer worldRenderer;
     
     public TerrainGenerator terrainGenerator;

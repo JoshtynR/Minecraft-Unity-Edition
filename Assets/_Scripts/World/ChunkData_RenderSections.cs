@@ -33,7 +33,7 @@ public partial class ChunkData
             {
                 if((mask&(1<<index))==0)continue;
                 var section=sections[index];
-                var mesh=new MeshData(true){sourceChunk=this};
+                var mesh=new MeshData(true){sourceChunk=this,greedyMeshing=worldRef.greedyMeshing};
                 batch.renderSections[index]=mesh;
                 for(int x=0;x<chunkSize;x++)for(int y=0;y<16;y++)for(int z=0;z<chunkSize;z++)
                 {

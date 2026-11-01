@@ -2,10 +2,11 @@ using System;
 using UnityEngine;
 public enum BlockType {Stone,Air,Nothing}
 public struct Block {public BlockType type;}
-public class World {public int worldHeight=128;}
+public class World {public int worldHeight=128;public bool greedyMeshing=true;}
 public class ChunkSection {public int yOffset;public Block[,,] blocks=new Block[16,16,16];}
 public class MeshData
 {
+    public bool greedyMeshing;
     public ChunkData sourceChunk;public MeshData[] renderSections;public bool released;
     public MeshData(bool main){}
     public void PrepareForRendering(){}
@@ -32,6 +33,9 @@ public static class SectionCheck
     {
         var data=new ChunkData();for(int i=0;i<8;i++)data.sections[i]=new ChunkSection{yOffset=i*16};
         var initial=data.Build();Check(BlockHelper.visited==32768,"initial build visits all sections");
+        Check(initial.renderSections[0].greedyMeshing,"section captures enabled greedy setting before worker preparation");
+        data.worldRef.greedyMeshing=false;data.MarkRenderSectionsDirty(40);
+        Check(!data.Build().renderSections[2].greedyMeshing,"greedy comparison toggle applies to newly rebuilt sections");
         data.MarkRenderSectionsDirty(40);BlockHelper.visited=0;var changed=data.Build();
         Check(BlockHelper.visited==4096&&changed.renderSections[2]!=null&&changed.renderSections[1]==null,"interior edit builds only one section");
         data.MarkRenderSectionsDirty(31);BlockHelper.visited=0;changed=data.Build();
@@ -52,6 +56,6 @@ public static class SectionCheck
         Check(BlockHelper.visited==4096&&changed.renderSections[4]!=null&&changed.renderSections[2]==null,"immediate refresh scans only requested section");
         BlockHelper.visited=0;changed=data.Build();
         Check(BlockHelper.visited==4096&&changed.renderSections[2]!=null,"immediate refresh preserves ordinary pending dirty sections");
-        Console.WriteLine("10 production render-section scan/dirty-boundary/failure/cleanup checks passed.");
+        Console.WriteLine("12 production render-section scan/dirty-boundary/failure/cleanup checks passed.");
     }
 }

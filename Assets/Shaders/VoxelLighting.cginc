@@ -33,15 +33,18 @@
                 float2 skyBlock : TEXCOORD1;
                 float faceShade : TEXCOORD3;
                 float4 color : COLOR;
-                float fogDistance : TEXCOORD7;
+                float3 viewPosition : TEXCOORD7;
                 float ao : TEXCOORD8;
+                float repeatUV : TEXCOORD2;
             };
             v2f vert(appdata v)
             {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                o.fogDistance = length(UnityObjectToViewPos(v.vertex));
+                // Per-pixel distance keeps fog independent of greedy tessellation.
+                o.viewPosition = UnityObjectToViewPos(v.vertex);
                 o.uv = AnimatedBlockFaceUV(v.uv);
+                o.repeatUV = v.sides.y > 1.5 ? 1 : 0;
                 o.skyBlock = v.light;
                 o.color = v.color;
                 float2 levels=v.light;
@@ -69,7 +72,10 @@
             }
             float4 frag(v2f i) : SV_Target
             {
-                float4 col = (_TextureOn > 0.5) ? UNITY_SAMPLE_TEX2DARRAY(_BlockFaceTextures, i.uv) : float4(1,1,1,1);
+                float3 textureUV=i.uv;
+                // Array sampling stays clamped for cropped special models.
+                if(i.repeatUV>.5)textureUV.xy=frac(textureUV.xy);
+                float4 col = (_TextureOn > 0.5) ? UNITY_SAMPLE_TEX2DARRAY(_BlockFaceTextures, textureUV) : float4(1,1,1,1);
                 #ifdef VOXEL_WATER
                     col.a *= saturate(_WaterOpacity) * i.color.a;
                 #elif defined(VOXEL_PORTAL)
@@ -96,7 +102,7 @@
                     // opaque world this adds white rather than replacing skin.
                     col.rgb=saturate(col.rgb+saturate(_FuseFlash));
                 #endif
-                col.rgb = ApplyWorldFog(col.rgb,i.fogDistance,_FluidFog);
+                col.rgb = ApplyWorldFog(col.rgb,length(i.viewPosition),_FluidFog);
                 #ifndef UNITY_COLORSPACE_GAMMA
                     col.rgb = GammaToLinearSpace(col.rgb);
                 #endif
