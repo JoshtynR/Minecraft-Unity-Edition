@@ -23,11 +23,11 @@ public partial class World
         if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
         fluidEffects.EmitMobDeath(position,radius,height);
     }
-    public void PlayExplosionParticles(Vector3 position,float strength)
+    public void PlayExplosionParticles(Vector3 position,float strength,Vector3Int[] cells=null)
     {
         if(Instance!=this||Application.isBatchMode||!Application.isPlaying)return;
         if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
-        fluidEffects.EmitExplosion(position,strength);
+        fluidEffects.EmitExplosion(position,strength,cells);
     }
     public void PlayTntSmoke(Vector3 position)
     {

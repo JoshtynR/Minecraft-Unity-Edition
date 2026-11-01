@@ -40,7 +40,8 @@ static class AudioCheck
   Check(!Voices().Any(v=>v.isPlaying),"world audio is suppressed while loading");
   GameAudio.PlayClip(clip,Vector3.zero,.2f,false);Check(Voices().Single(v=>v.isPlaying).spatialBlend==0,"UI remains audible in 2D during loading");WorldLoadingScreen.IsLoading=false;
   StopVoices();Camera.main=new GameObject("Camera").AddComponent<Camera>();GameAudio.PlayClip(clip,new Vector3(100,0,0),1);
-  Check(!Voices().Any(v=>v.isPlaying),"distant sounds do not consume voices");Camera.main=null;
+  Check(!Voices().Any(v=>v.isPlaying),"distant sounds do not consume voices");
+  GameAudio.PlayClip(clip,new Vector3(50,0,0),4);Check(Voices().Any(v=>v.isPlaying&&v.maxDistance==64&&v.volume==1),"volume-four explosions retain sixty-four block range without clipping gain");StopVoices();Camera.main=null;
   World.Instance=new World{IsWorldCreated=true};var player=new GameObject("Player").AddComponent<Player>();player.isLocalPlayer=true;
   GameAudio.BroadcastBlock(BlockType.Stone,new Vector3Int(1,2,3),true,World.Instance);Check(World.Instance.breakParticles==1,"offline block breaking triggers one local debris burst");StopVoices();
   GameAudio.BroadcastBlock(BlockType.Stone,new Vector3Int(1,2,3),false,World.Instance);Check(World.Instance.breakParticles==1,"block placement does not trigger destruction debris");StopVoices();

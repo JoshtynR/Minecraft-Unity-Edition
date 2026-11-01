@@ -54,7 +54,8 @@ public sealed class GameAudio : MonoBehaviour
     {
         if(clip==null||Application.isBatchMode||spatial&&WorldLoadingScreen.IsLoading)return;
         var camera=Camera.main;
-        if(spatial&&camera!=null&&(position-camera.transform.position).sqrMagnitude>32*32)return;
+        float audibleRange=Mathf.Max(32,volume*16);
+        if(spatial&&camera!=null&&(position-camera.transform.position).sqrMagnitude>audibleRange*audibleRange)return;
         if(instance==null)instance=new GameObject("GameplayAudio").AddComponent<GameAudio>();
         AudioSource voice=null;
         for(int i=0;i<instance.voices.Length;i++)
@@ -64,6 +65,7 @@ public sealed class GameAudio : MonoBehaviour
         }
         if(voice==null){voice=instance.voices[instance.nextVoice];instance.nextVoice=(instance.nextVoice+1)%instance.voices.Length;}
         voice.Stop();voice.transform.position=position;voice.clip=clip;voice.spatialBlend=spatial?1:0;
+        voice.maxDistance=Mathf.Max(24,volume*16);
         voice.volume=Mathf.Clamp01(volume);voice.pitch=Mathf.Clamp(pitch,.25f,2);voice.Play();
     }
     public static void Broadcast(string family,Vector3 position,float volume=1,float pitch=1,World world=null)

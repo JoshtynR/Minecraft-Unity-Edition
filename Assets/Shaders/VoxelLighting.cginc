@@ -92,7 +92,9 @@
                 if (_Debug > 1.5 && _Debug < 2.5) col.rgb = (i.skyBlock.y / 15).xxx;
                 if (_Debug > 2.5) col.rgb = dot(light,float3(.2126,.7152,.0722)).xxx;
                 #ifdef VOXEL_FUSE_FLASH
-                    col.rgb=lerp(col.rgb,float3(1,1,1),saturate(_FuseFlash));
+                    // RenderTNTPrimed uses SRC_ALPHA, DST_ALPHA. Against the
+                    // opaque world this adds white rather than replacing skin.
+                    col.rgb=saturate(col.rgb+saturate(_FuseFlash));
                 #endif
                 col.rgb = ApplyWorldFog(col.rgb,i.fogDistance,_FluidFog);
                 #ifndef UNITY_COLORSPACE_GAMMA

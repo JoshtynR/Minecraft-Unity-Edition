@@ -12,6 +12,9 @@ public partial class World
         byte state=SpecialBlockGeometry.State(block.type,block.blockShape);
         var partner=position+SpecialBlockGeometry.PartnerOffset(block.type,state);
         var center=(Vector3)position+Vector3.one*.5f;
+        // BlockBed removes both halves before creating its explosion.
+        SetFarmBlock(position,BlockType.Air);
+        if(GetBlock(partner).type==BlockType.Bed)SetFarmBlock(partner,BlockType.Air);
         // Classic strength-five ray blast, with material resistance and permanent bedrock.
         var destroyed=new HashSet<Vector3Int>{position,partner};
         var random=new JavaRandom(unchecked(betaWorldSeed^position.GetHashCode()^(long)(Time.time*20)));
@@ -25,15 +28,9 @@ public partial class World
                 var p=Vector3Int.FloorToInt(ray);var type=GetBlock(p).type;
                 if(type==BlockType.Nothing||type==BlockType.Bedrock)break;
                 if(type!=BlockType.Air)energy-=(BedBlastResistance(type)+.3f)*.3f;
-                if(energy>0&&type!=BlockType.Air)destroyed.Add(p);
+                if(energy>0)destroyed.Add(p);
                 ray+=direction*.3f;energy-=.225f;
             }
-        }
-        foreach(var p in destroyed)
-        {
-            var type=GetBlock(p).type;if(type==BlockType.Nothing||type==BlockType.Bedrock)continue;
-            if(type==BlockType.TNT){PrimeTnt(p,true);continue;}
-            SetFarmBlock(p,BlockType.Air);
         }
         if(GameManager.Instance!=null)
             foreach(var player in GameManager.Instance.players)
@@ -51,8 +48,14 @@ public partial class World
                 float impact=(1-distance)*exposure;
                 player.ApplyArmouredDamage((int)((impact*impact+impact)/2*8*10+1));
             }
-        GameAudio.Broadcast("random/explode",center,1,1,this);
-        EmitExplosionEffects(center,5);
+        foreach(var p in destroyed)
+        {
+            var type=GetBlock(p).type;if(type==BlockType.Nothing||type==BlockType.Bedrock||type==BlockType.Air)continue;
+            if(type==BlockType.TNT){PrimeTnt(p,true);continue;}
+            SetFarmBlock(p,BlockType.Air);
+        }
+        GameAudio.Broadcast("random/explode",center,4,(1+(random.NextFloat()-random.NextFloat())*.2f)*.7f,this);
+        EmitExplosionEffects(center,5,new List<Vector3Int>(destroyed).ToArray());
     }
     private static float BedBlastResistance(BlockType type)
     {
@@ -61,8 +64,15 @@ public partial class World
         if(type==BlockType.Netherrack)return .4f;
         if(type==BlockType.Glass||type==BlockType.GlowStone)return .3f;
         if(type==BlockType.Dirt||type==BlockType.SoulSand||type==BlockType.Gravel)return .5f;
-        if(type==BlockType.Bed||BlockShapesExtensions.IsPlant(type)||SpecialBlockGeometry.NoCollision(type))return 0;
         BetaBlockCatalog.Entry entry;
-        return BetaBlockCatalog.TryGet(type,out entry)?Math.Max(0,entry.Hardness)*3:3;
+        if(!BetaBlockCatalog.TryGet(type,out entry))return 0;
+        // Block.setResistance multiplies by three; getExplosionResistance
+        // divides by five. Most other blocks inherit their hardness directly.
+        switch(entry.SourceId)
+        {
+            case 1:case 4:case 41:case 42:case 43:case 44:case 45:case 48:case 57:case 67:case 84:return 6;
+            case 5:case 14:case 15:case 16:case 21:case 22:case 53:case 56:case 73:case 74:case 85:return 3;
+            default:return Math.Max(0,entry.Hardness);
+        }
     }
 }

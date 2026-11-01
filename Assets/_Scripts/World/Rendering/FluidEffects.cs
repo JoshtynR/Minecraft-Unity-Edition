@@ -175,8 +175,21 @@ public sealed class FluidEffects : MonoBehaviour
             effects[5].Add(NewExplosion(position+new Vector3(RandomSigned(radius),RandomRange(0,height),RandomSigned(radius)),velocity));
         }
     }
-    public void EmitExplosion(Vector3 center,float strength)
+    public void EmitExplosion(Vector3 center,float strength,Vector3Int[] cells=null)
     {
+        if(cells!=null&&cells.Length>0)
+        {
+            foreach(var cell in cells)
+            {
+                var point=(Vector3)cell+new Vector3(RandomRange(0,1),RandomRange(0,1),RandomRange(0,1));
+                var delta=point-center;float distance=delta.magnitude;
+                float speed=.5f/(distance/strength+.1f)*(RandomRange(0,1)*RandomRange(0,1)+.3f);
+                var velocity=distance>.000001f?delta/distance*speed:Vector3.zero;
+                effects[5].Add(NewExplosion((point+center)*.5f,velocity));
+                effects[0].Add(NewSmoke(point,velocity));
+            }
+            return;
+        }
         effects[5].Add(NewExplosion(center,Vector3.zero));
         int count=System.Math.Max(16,System.Math.Min(128,Mathf.FloorToInt(strength*16)));
         for(int i=0;i<count;i++)

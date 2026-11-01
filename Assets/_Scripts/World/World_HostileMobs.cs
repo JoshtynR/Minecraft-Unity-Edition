@@ -111,23 +111,38 @@ public partial class World
         mobs.Remove(mob.id);mob.health=0;BroadcastMob(mob,true);ExplodeMob(mob.position,3);return false;
     }
     private int MobDifficultyDamage(int normal)=>survivalDifficulty==SurvivalDifficulty.Easy?normal/3+1:survivalDifficulty==SurvivalDifficulty.Hard?normal*3/2:normal;
-    private void ExplodeMob(Vector3 center,float strength)
+    private float BlastExposure(Vector3 center,Vector3 feet,float radius,float height)
+    {
+        // World.getBlockDensity samples a dimension-dependent grid, not just
+        // the eight bounding-box corners or one ray to an animal's centre.
+        double dx=1/(radius*4.0+1),dy=1/(height*2.0+1),dz=dx;
+        int clear=0,total=0;
+        for(float x=0;x<=1;x=(float)(x+dx))
+        for(float y=0;y<=1;y=(float)(y+dy))
+        for(float z=0;z<=1;z=(float)(z+dz))
+        {
+            var sample=feet+new Vector3(-radius+radius*2*x,height*y,-radius+radius*2*z);
+            if(MobCanSee(sample,center))clear++;total++;
+        }
+        return total==0?0:clear/(float)total;
+    }
+    private void ExplodeMob(Vector3 center,float strength,bool mobSource=true)
     {
         // Sample cover BEFORE removing blocks so a wall actually protects players.
         foreach(var player in mobPlayers)
         {
             float distance=(player.transform.position-center).magnitude/(strength*2);if(distance>1)continue;
-            float exposure=0;
-            for(int i=0;i<8;i++)
-            {var sample=player.transform.position+new Vector3((i&1)==0?-.25f:.25f,(i&2)==0?.1f:1.6f,(i&4)==0?-.25f:.25f);if(MobCanSee(center+Vector3.up*.5f,sample))exposure+=.125f;}
+            float exposure=BlastExposure(center,player.transform.position,.3f,1.8f);
             float impact=(1-distance)*exposure;
-            if(impact>0)player.ApplyMobDamage(MobDifficultyDamage((int)((impact*impact+impact)*.5f*8*strength*2+1)),player.transform.position-center);
+            int damage=(int)((impact*impact+impact)*.5f*8*strength*2+1);
+            player.ApplyMobDamage(mobSource?MobDifficultyDamage(damage):damage,player.transform.position-center);
         }
         foreach(var animal in new List<MobState>(mobs.Entities))
         {
             float distance=(animal.position-center).magnitude/(strength*2);
-            if(distance>=1||!MobCanSee(center+Vector3.up*.5f,animal.position+Vector3.up*.5f))continue;
-            float impact=1-distance;DamageMob(animal,(int)((impact*impact+impact)*.5f*8*strength*2+1),animal.position-center);
+            if(distance>1)continue;
+            float impact=(1-distance)*BlastExposure(center,animal.position,MobRules.Width(animal),MobRules.BodyHeight(animal));
+            DamageMob(animal,(int)((impact*impact+impact)*.5f*8*strength*2+1),animal.position-center);
         }
         var destroyed=new HashSet<Vector3Int>();
         for(int x=0;x<16;x++)for(int y=0;y<16;y++)for(int z=0;z<16;z++)
@@ -140,7 +155,7 @@ public partial class World
                 var p=Vector3Int.FloorToInt(ray);var type=GetBlock(p).type;
                 if(type==BlockType.Nothing||type==BlockType.Bedrock)break;
                 if(type!=BlockType.Air)energy-=(BedBlastResistance(type)+.3f)*.3f;
-                if(energy>0&&type!=BlockType.Air)destroyed.Add(p);
+                if(energy>0)destroyed.Add(p);
                 ray+=direction*.3f;energy-=.225f;
             }
         }
@@ -152,11 +167,11 @@ public partial class World
             var type=GetBlock(p).type;if(type==BlockType.Air||type==BlockType.Nothing)continue;
             if(type==BlockType.TNT){PrimeTnt(p,true);continue;}
             SetFarmBlock(p,BlockType.Air);
-            if(mobRandom.NextFloat()<1/strength)
+            if(mobRandom.NextFloat()<.3f)
             {var loot=MiningItemDrop(type,ItemType.DiamondPickaxe);if(!loot.Empty)SpawnItemDrop(loot,(Vector3)p+Vector3.one*.5f);}
         }
-        GameAudio.Broadcast("random/explode",center,1,1,this);
-        EmitExplosionEffects(center,strength);
+        GameAudio.Broadcast("random/explode",center,4,(1+(mobRandom.NextFloat()-mobRandom.NextFloat())*.2f)*.7f,this);
+        EmitExplosionEffects(center,strength,new List<Vector3Int>(destroyed).ToArray());
     }
     private void TickMobArrows()
     {

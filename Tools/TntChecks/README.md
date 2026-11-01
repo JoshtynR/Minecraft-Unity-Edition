@@ -2,10 +2,12 @@
 
 Right-click a TNT block with flint and steel. The authoritative interaction removes
 the block, wears the tool once and creates a primed entity with an 80-tick fuse
-(four seconds). It jumps slightly, falls/collides using the existing voxel sweep,
+(roughly four seconds; the source post-decrement detonates on update 81). It jumps slightly, falls/collides using the existing voxel sweep,
 emits packed-atlas smoke, flashes white every five ticks and plays `random/fuse`.
-Detonation uses the existing strength-four ray blast, damage, resistance, drops
+Detonation uses the strength-four ray blast, damage, resistance, drops
 and container-protection logic, plus `random/explode` and shared burst particles.
+The last ten ticks swell quartically; the five-tick flash uses the source's
+increasing alpha and additive white lift rather than replacing the skin.
 
 TNT caught by creeper, bed or TNT explosions receives a shortened 10–29 tick
 fuse rather than dropping an ordinary TNT item. The store is capped at 128 and
@@ -47,3 +49,34 @@ Unity Play Mode/build testing is still required for real sound output, shader
 compilation/flash appearance, particles, full disk save/load, Mirror weaving and
 remote observation. Try multiple TNT blocks, submerged TNT, walls/containers,
 dimension travel and quitting/reloading partway through the fuse.
+
+## Source comparison follow-up
+
+Reviewed the Beta reference's EntityTNTPrimed, RenderTNTPrimed, Explosion,
+BlockTNT, World.getBlockDensity and Block resistance setters/getter.
+
+- Retained the source's small initial-angle radians/degrees quirk and sine table.
+- Corrected the post-decrement fuse boundary, entity centre/feet offset, smoke
+  height and centred swelling; ground collision zeroes vertical motion before
+  the nominal bounce multiplier, as Entity.moveEntity does in the reference.
+- Blast-chain priming is silent; explicit ignition still hisses.
+- Creeper/TNT exposure uses the bounding-box sample grid (45 samples for the
+  standard player) and shape-aware raycasts before block removal. TNT damage
+  does not receive the hostile-creeper difficulty multiplier.
+- Corrected explicit/hardness-derived blast resistance, including noncolliding
+  rails; block collision flags no longer incorrectly imply zero resistance.
+- Creeper/TNT block-drop rolls use 30%, independent of blast strength.
+- Explosion audio uses volume four and source pitch variation; the audio pool
+  now permits the corresponding 64-block range without increasing clipped gain.
+- Effect payloads include affected air cells. Samples use the reference's
+  midpoint explosion position, cell smoke position and outward velocity formula.
+- Beds remove their halves before the blast and measure player cover before
+  destroying surrounding walls, rather than measuring through the new crater.
+
+Not full parity: effects remain capped at 128 sampled cells, four detonations per
+tick and 128 primed entities. World RNG/order, floating-point ray stepping, exact
+explosion knockback/hurt handling, bed blast mob damage/drop/fire semantics,
+redstone/fire ignition and the modern direct-use/creeper ignition interaction
+still differ. Manual creeper ignition is deliberately retained at the user's
+request. Focused fixtures are source-guided checks, not a complete Java-versus-
+Unity live-world equivalence certification.

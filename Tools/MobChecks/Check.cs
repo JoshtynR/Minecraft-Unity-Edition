@@ -90,6 +90,11 @@ class Check {
   Assert(creeper.fuseTicks==29&&world.Step(creeper)==false&&world.mobs.Get(creeper.id)==null,"thirtieth fuse tick explodes and removes creeper once");
   Assert(player.health<20,"creeper explosion damages exposed player");
   world=new World();player=Target(world,2);creeper=Mob(world,MobType.Creeper);world.Step(creeper);world.blocked=true;world.Step(creeper);Assert(creeper.fuseTicks==0,"creeper defuses after losing sight");
+  var exposureWorld=new World();int rayCount=BlockTargeting.rays;
+  Assert(exposureWorld.ExposureForCheck(new Vector3(10,64,10),new Vector3(0,64,0),.3f,1.8f)==1&&BlockTargeting.rays-rayCount==45,"player exposure uses source-sized forty-five-ray grid");
+  exposureWorld.blocked=true;Assert(exposureWorld.ExposureForCheck(new Vector3(10,64,10),new Vector3(0,64,0),.3f,1.8f)==0,"covered exposure grid blocked");
+  var blastWorld=new World{survivalDifficulty=SurvivalDifficulty.Hard};var blastPlayer=Target(blastWorld,5);blastWorld.BlastForCheck(new Vector3(0,64,0),3,false);int tntHealth=blastPlayer.health;
+  blastWorld=new World{survivalDifficulty=SurvivalDifficulty.Hard};blastPlayer=Target(blastWorld,5);blastWorld.BlastForCheck(new Vector3(0,64,0),3,true);Assert(blastPlayer.health<tntHealth,"TNT damage is not scaled as hostile-creeper damage on Hard");
   creeper.ignited=true;for(int i=0;i<29;i++)Assert(world.Step(creeper),"manually ignited creeper continues countdown without sight");
   Assert(!world.Step(creeper)&&world.mobs.Get(creeper.id)==null,"manual ignition cannot defuse and detonates once");
   world=new World();player=Target(world,6);skeleton=Mob(world,MobType.Skeleton);world.Step(skeleton);

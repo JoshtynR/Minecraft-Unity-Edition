@@ -67,7 +67,7 @@ public static class InventoryRules {public static int Capacity(InventoryStack[] 
 public static class BetaItemCatalog {public struct Entry {public int SourceId,Metadata;}public static bool TryGet(ItemType t,out Entry e){e=new Entry();return false;}}
 public static class GameAudio {public static int sounds;public static float Variation(float a,float b)=>(a+b)*.5f;public static void Broadcast(string s,Vector3 p,float v,float pitch,World w){sounds++;}public static void Play(string s,Vector3 p,float v,float pitch=1){sounds++;}}
 public static class BlockCollision {public static bool Supported(World w,Vector3 p,float width,float height)=>p.y<=64.001f;public static Vector3 Resolve(World w,Vector3 p,float r,float h,Vector3 move,bool step){if(p.y+move.y<64)move.y=64-p.y;if(w.mobBank){move.x=0;move.z=0;}return move;}public static bool OverlapsBody(Vector3 p,float r,float h,Vector3Int cell,Bounds box)=>new Bounds(p+Vector3.up*(h*.5f),new Vector3(r*2,h,r*2)).Intersects(new Bounds((Vector3)cell+box.center,box.size));}
-public static class BlockTargeting {public static Block Raycast(World w,Vector3 p,Vector3 d,float distance,out Vector3Int cell,out Vector3 point){cell=new Vector3Int();point=p+d*distance;return w.blocked?new Block{type=BlockType.Stone}:null;}}
+public static class BlockTargeting {public static int rays;public static Block Raycast(World w,Vector3 p,Vector3 d,float distance,out Vector3Int cell,out Vector3 point){rays++;cell=new Vector3Int();point=p+d*distance;return w.blocked?new Block{type=BlockType.Stone}:null;}}
 public static class FluidWorldQueries {public static bool Touches(World w,Vector3 p,float width,float height,BlockType type,out Vector3 flow){flow=Vector3.zero;return w.water&&type==BlockType.Water;}public static BlockType AtEye(World w,Vector3 p)=>w.water?BlockType.Water:BlockType.Air;}
 public partial class Player:MonoBehaviour {
  public void ApplyArmouredDamage(int damage){health=System.Math.Max(0,health-damage);} // Unarmoured fixture; real protection covered by CreativeChecks.
@@ -82,7 +82,9 @@ public partial class Player:MonoBehaviour {
 }
 public partial class World:MonoBehaviour {
  public bool PrimeTnt(Vector3Int p,bool chain=false)=>false;
- public void EmitExplosionEffects(Vector3 p,float strength){}
+ public float ExposureForCheck(Vector3 center,Vector3 feet,float radius,float height)=>BlastExposure(center,feet,radius,height);
+ public void BlastForCheck(Vector3 center,float strength,bool mobSource)=>ExplodeMob(center,strength,mobSource);
+ public void EmitExplosionEffects(Vector3 p,float strength,Vector3Int[] cells=null){}
  public WorldDimension dimension;public SurvivalDifficulty survivalDifficulty=SurvivalDifficulty.Normal;
 #if !FULL_MOB_SYSTEM
  private List<Player> mobPlayers=new List<Player>();private List<MobState> activeMobs=new List<MobState>();private List<Vector3Int> mobSpawnCandidates=new List<Vector3Int>();private MobEntitySystem mobEntities=new MobEntitySystem();public MobEntitySystem MobEntities=>mobEntities;public MobStore mobs=>mobEntities.Store;private JavaRandom mobRandom=new JavaRandom(173);private int mobTick;

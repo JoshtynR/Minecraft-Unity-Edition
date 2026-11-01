@@ -104,7 +104,7 @@ public partial class World:UnityEngine.MonoBehaviour {
  private void Clear(){worldData.chunkDataDict.Clear();worldData.chunkDict.Clear();}
  public void RestoreFluidTicks(object x){}public void RestoreDroppedItems(object x){}public void RestoreFallingBlocks(object x){}public void RestoreMobs(object x){}public void RestoreVehicles(object x){}public void RestoreTnt(object x){}
  public bool PrimeTnt(UnityEngine.Vector3Int p,bool chain=false)=>false;
- public void EmitExplosionEffects(UnityEngine.Vector3 p,float strength){}
+ public void EmitExplosionEffects(UnityEngine.Vector3 p,float strength,UnityEngine.Vector3Int[] cells=null){}
  public void SendMobSnapshot(Mirror.NetworkConnectionToClient c){}
  public object[] CaptureDroppedItems()=>new object[0];
  public object[] CaptureFallingBlocks()=>new object[0];

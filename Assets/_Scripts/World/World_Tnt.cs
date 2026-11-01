@@ -10,8 +10,18 @@ public sealed class PrimedTntState
     public Vector3 position,velocity;
     public PrimedTntState Copy()=>(PrimedTntState)MemberwiseClone();
 }
+// EntityTNTPrimed/RenderTNTPrimed formulas, retaining the original angle quirk.
+public static class TntRules
+{
+    public static Vector3 InitialVelocity(float random)
+    {float angle=random*(float)(Math.PI*2)*Mathf.Deg2Rad;return new Vector3(-BetaMathHelper.Sin(angle)*.4f,4,-BetaMathHelper.Cos(angle)*.4f);}
+    public static float Swell(float fuse)
+    {float t=Mathf.Clamp01(1-(fuse+1)/10f);return 1+t*t*t*t*.3f;}
+    public static float Flash(int fuse,float partial)
+    {return fuse/5%2==0?Mathf.Clamp01((1-(fuse-partial+1)/100f)*.8f):0;}
+}
 public struct TntBatchMessage : NetworkMessage {public WorldDimension dimension;public PrimedTntState[] items;}
-public struct ExplosionEffectMessage : NetworkMessage {public WorldDimension dimension;public Vector3 position;public float strength;}
+public struct ExplosionEffectMessage : NetworkMessage {public WorldDimension dimension;public Vector3 position;public float strength;public Vector3Int[] cells;}
 
 public partial class World
 {
@@ -36,14 +46,21 @@ public partial class World
             realm.primedTnt.Clear();if(message.items!=null)realm.primedTnt.AddRange(message.items);
         });
         NetworkClient.RegisterHandler<ExplosionEffectMessage>(message=>{
-            if(!NetworkServer.active)FindDimension(message.dimension)?.PlayExplosionParticles(message.position,message.strength);
+            if(!NetworkServer.active)FindDimension(message.dimension)?.PlayExplosionParticles(message.position,message.strength,message.cells);
         });
     }
-    public void EmitExplosionEffects(Vector3 center,float strength)
+    public void EmitExplosionEffects(Vector3 center,float strength,Vector3Int[] affected=null)
     {
-        PlayExplosionParticles(center,strength);
+        // Bound particle/network work while retaining source cell-driven placement.
+        Vector3Int[] cells=null;
+        if(affected!=null&&affected.Length>0)
+        {
+            int count=Math.Min(128,affected.Length);cells=new Vector3Int[count];
+            for(int i=0;i<count;i++)cells[i]=affected[(int)((long)i*affected.Length/count)];
+        }
+        PlayExplosionParticles(center,strength,cells);
         if(NetworkServer.active&&NetworkServer.connections.Count>(NetworkClient.active?1:0))
-            NetworkServer.SendToAll(new ExplosionEffectMessage{dimension=dimension,position=center,strength=strength});
+            NetworkServer.SendToAll(new ExplosionEffectMessage{dimension=dimension,position=center,strength=strength,cells=cells});
     }
     public bool PrimeTnt(Vector3Int position,bool chain=false)
     {
@@ -51,10 +68,10 @@ public partial class World
         if(mobRandom==null)mobRandom=new JavaRandom(betaWorldSeed);
         SetFarmBlock(position,BlockType.Air);
         if(GetBlock(position).type!=BlockType.Air)return false;
-        float angle=mobRandom.NextFloat()*(float)Math.PI*2;
         primedTnt.Add(new PrimedTntState{id=nextTntId++,fuse=chain?10+mobRandom.NextInt(20):80,
-            position=(Vector3)position+new Vector3(.5f,0,.5f),velocity=new Vector3(-Mathf.Sin(angle)*.4f,4,-Mathf.Cos(angle)*.4f)});
-        GameAudio.Broadcast("random/fuse",(Vector3)position+Vector3.one*.5f,1,1,this);tntSync=0;return true;
+            position=(Vector3)position+new Vector3(.5f,.01f,.5f),velocity=TntRules.InitialVelocity(mobRandom.NextFloat())});
+        if(!chain)GameAudio.Broadcast("random/fuse",(Vector3)position+Vector3.one*.5f,1,1,this);
+        tntSync=0;return true;
     }
     public PrimedTntState[] CaptureTnt()
     {var copy=new PrimedTntState[primedTnt.Count];for(int i=0;i<copy.Length;i++)copy[i]=primedTnt[i].Copy();return copy;}
@@ -88,16 +105,18 @@ public partial class World
                 var moved=BlockCollision.Resolve(this,item.position,.49f,.98f,requested,false);item.position+=moved;item.velocity*=.98f;
                 if(Mathf.Abs(moved.x-requested.x)>.0001f)item.velocity.x=0;
                 if(Mathf.Abs(moved.z-requested.z)>.0001f)item.velocity.z=0;
-                if(moved.y>requested.y+.0001f){item.velocity.y*=-.5f;item.velocity.x*=.7f;item.velocity.z*=.7f;}
+                if(moved.y>requested.y+.0001f){item.velocity.y=0;item.velocity.x*=.7f;item.velocity.z*=.7f;}
                 else if(moved.y<requested.y-.0001f)item.velocity.y=0;
             }
-            if(item.fuse>0)item.fuse--;
-            if(item.fuse==0&&blasts<4)
+            // Java uses if(fuse-- <= 0): fuse zero lasts until the next tick.
+            bool expired=item.fuse==0;
+            if(!expired)item.fuse--;
+            if(expired&&blasts<4)
             {
                 // Remove before the blast can prime neighbouring blocks.
                 primedTnt.RemoveAt(i);blasts++;
                 RefreshMobPlayers();if(mobRandom==null)mobRandom=new JavaRandom(betaWorldSeed);
-                ExplodeMob(item.position+Vector3.up*.49f,4);
+                ExplodeMob(item.position+Vector3.up*.49f,4,false);
             }
         }
     }
