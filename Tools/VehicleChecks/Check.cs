@@ -17,7 +17,7 @@ namespace UnityEngine
  public class Material {public Material(Material m){}public Material(Shader s){}public Texture2D mainTexture;public Color color;public bool HasProperty(string s)=>true;public void SetColor(string s,Color c){}public void SetFloat(string s,float f){}}
  public struct Color {public Color(float r,float g,float b){}}
  public struct Quaternion {public static Quaternion Euler(float x,float y,float z)=>new Quaternion();public static Quaternion Slerp(Quaternion a,Quaternion b,float t)=>a;}
- public static class Resources {public static T Load<T>(string s)where T:class=>null;}
+ public static class Resources {public static bool tntMaterial;public static T Load<T>(string s)where T:class=>tntMaterial&&s=="Materials/DroppedBlockMaterial"?new Material((Shader)null) as T:null;}
  public static class Time {public static float deltaTime=.05f,unscaledDeltaTime=.05f,fixedDeltaTime=.02f,unscaledTime;}
  public enum KeyCode {LeftShift}
  public static class Input {public static bool GetKeyDown(KeyCode k)=>false;}
@@ -79,7 +79,7 @@ public static class SpecialBlockGeometry
 public static class BetaFluidPhysics {public static float EyeSurface(int y,int state)=>y+1-(state>=8?1:state+1)/9f;}
 public static class HandMining {public static bool IsTarget(BlockType t)=>t!=BlockType.Air&&t!=BlockType.Nothing&&t!=BlockType.Water&&t!=BlockType.Lava;}
 public static class ShapeExtension {public static BlockShape GetShape(this byte state)=>new BlockShape{xMax=16,yMax=16,zMax=16};}
-public class ChunkRenderer {public object ChunkData=new object();public Transform transform=new Transform();}
+public class ChunkRenderer {public object ChunkData=new object();public Transform transform=new Transform();public int immediateRefreshes;public void RefreshBlockSectionNow(int y){immediateRefreshes++;}}
 public class WorldData {public Dictionary<Vector3Int,ChunkRenderer> chunkDict=new Dictionary<Vector3Int,ChunkRenderer>();}
 public static class WorldDataHelper {public static Vector3Int GetChunkPosition(World w,Vector3Int p)=>new Vector3Int((int)Math.Floor(p.x/16f)*16,0,(int)Math.Floor(p.z/16f)*16);}
 public partial class World

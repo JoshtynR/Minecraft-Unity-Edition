@@ -19,7 +19,17 @@ public static class ExplosionParticleCheck
             int x=i==0?4:6,y=i==0?2:3,z=i==0?-3:-4;
             if(p.x<x||p.x>x+1||p.y<y||p.y>y+1||p.z<z||p.z>z+1)throw new Exception("smoke position must originate within affected cell");
             if((midpoint-p*.5f).magnitude>.00001f)throw new Exception("explode particle must originate at source midpoint");
-            if(motion.x<=0||motion.z>=0)throw new Exception("source blast velocity must point outward");
+            // NewExplosion adds +/- .05 jitter after the outward source impulse;
+            // a weak component can legitimately reverse sign. Check its range.
+            float baseSpeed=.5f/(p.magnitude/4+.1f);
+            var direction=p/p.magnitude;
+            float[] actual={motion.x,motion.y,motion.z},axis={direction.x,direction.y,direction.z};
+            for(int a=0;a<3;a++)
+            {
+                float low=Math.Min(axis[a]*baseSpeed*.3f,axis[a]*baseSpeed*1.3f)-.05001f;
+                float high=Math.Max(axis[a]*baseSpeed*.3f,axis[a]*baseSpeed*1.3f)+.05001f;
+                if(actual[a]<low||actual[a]>high)throw new Exception("source blast impulse plus bounded particle jitter");
+            }
         }
         Console.WriteLine("7 source-style affected-cell particle placement/velocity checks passed (Unity rendering mocked).");
     }

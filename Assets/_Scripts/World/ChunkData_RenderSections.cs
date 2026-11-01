@@ -17,10 +17,12 @@ public partial class ChunkData
         while(Interlocked.CompareExchange(ref dirtyRenderSections,previous|mask,previous)!=previous);
     }
 
-    private MeshData BuildSectionMeshData()
+    private MeshData BuildSectionMeshData(int requestedMask = 0)
     {
         if(HasPendingLighting)UpdateLight();
-        int mask=Interlocked.Exchange(ref dirtyRenderSections,0);
+        // Immediate entity conversions refresh only their own section without
+        // consuming dirty work already owned by the normal rebuild scheduler.
+        int mask=requestedMask!=0?requestedMask:Interlocked.Exchange(ref dirtyRenderSections,0);
         // Callers without a cell footprint (snapshots, trees, portals) request
         // a complete rebuild. Known cell changes retain their smaller mask.
         if(mask==0)mask=int.MaxValue;

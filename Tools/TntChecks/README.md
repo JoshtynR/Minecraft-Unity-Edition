@@ -50,6 +50,22 @@ compilation/flash appearance, particles, full disk save/load, Mirror weaving and
 remote observation. Try multiple TNT blocks, submerged TNT, walls/containers,
 dimension travel and quitting/reloading partway through the fuse.
 
+## Ignition presentation regression
+
+Manual ignition now uploads the source's 16x16x16 render section immediately,
+rather than leaving an opaque static TNT cube in the normal rebuild backlog.
+Mesh builds carry a per-column sequence: an older queued result cannot restore
+the removed cube after this immediate upload. Rejected results release buffers
+and requeue their dirty work. Other dirty sections remain scheduled normally;
+blast chains retain batched meshing rather than forcing many synchronous builds.
+
+The primed entity still uses the existing source-style hop/gravity/collision
+rules. Focused tests now check falling from a height, landing, visible transform
+movement and both shader flash phases, not merely countdown expiry. Save and
+population locks pause authoritative simulation but no longer suppress the
+entity's presentation update. Unity GPU validation remains required: prime TNT
+on a ledge, remove its support, and repeat while chunks are loading.
+
 ## Source comparison follow-up
 
 Reviewed the Beta reference's EntityTNTPrimed, RenderTNTPrimed, Explosion,

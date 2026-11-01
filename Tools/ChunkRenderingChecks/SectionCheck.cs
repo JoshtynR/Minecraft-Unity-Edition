@@ -23,6 +23,7 @@ public partial class ChunkData
     public ChunkSection[] sections=new ChunkSection[8];public bool HasPendingLighting;
     public void UpdateLight(){}
     public MeshData Build()=>BuildSectionMeshData();
+    public MeshData BuildImmediate(int mask)=>BuildSectionMeshData(mask);
 }
 public static class SectionCheck
 {
@@ -46,6 +47,11 @@ public static class SectionCheck
         changed.ReleaseAfterUpload();Check(changed.renderSections[3].released,"batch release owns section buffers");
         data.MarkAllRenderSectionsDirty();BlockHelper.visited=0;data.Build();
         Check(BlockHelper.visited==32768,"explicit full rebuild remains available");
-        Console.WriteLine("8 production render-section scan/dirty-boundary/failure/cleanup checks passed.");
+        data.MarkRenderSectionsDirty(40);BlockHelper.visited=0;
+        changed=data.BuildImmediate(1<<4);
+        Check(BlockHelper.visited==4096&&changed.renderSections[4]!=null&&changed.renderSections[2]==null,"immediate refresh scans only requested section");
+        BlockHelper.visited=0;changed=data.Build();
+        Check(BlockHelper.visited==4096&&changed.renderSections[2]!=null,"immediate refresh preserves ordinary pending dirty sections");
+        Console.WriteLine("10 production render-section scan/dirty-boundary/failure/cleanup checks passed.");
     }
 }

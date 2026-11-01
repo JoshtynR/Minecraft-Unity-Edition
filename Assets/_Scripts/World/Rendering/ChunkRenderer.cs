@@ -10,6 +10,7 @@ public class ChunkRenderer : MonoBehaviour
 {
     private MeshFilter meshFilter;
     private Mesh mesh;
+    private long latestMeshSequence;
     private readonly Dictionary<int,ChunkRenderer> sectionRenderers=new Dictionary<int,ChunkRenderer>();
     private readonly Dictionary<Vector3Int,ModernChestVisual> chestVisuals=new Dictionary<Vector3Int,ModernChestVisual>();
     public bool showGizmo = false;
@@ -24,7 +25,7 @@ public class ChunkRenderer : MonoBehaviour
 
     public void Initialize(ChunkData data)
     {
-        if(!ReferenceEquals(ChunkData,data))ReleaseSectionRenderers();
+        if(!ReferenceEquals(ChunkData,data)){ReleaseSectionRenderers();latestMeshSequence=0;}
         meshFilter = GetComponent<MeshFilter>();
         this.ChunkData = data;
     }
@@ -33,6 +34,16 @@ public class ChunkRenderer : MonoBehaviour
     {
         if (meshData.sourceChunk != null && !ReferenceEquals(meshData.sourceChunk, ChunkData))
         {meshData.ReleaseAfterUpload();return;}
+        // An older worker result must not restore a static block after an
+        // immediate block-to-entity conversion has already removed its mesh.
+        if(meshData.buildSequence!=0&&meshData.buildSequence<latestMeshSequence)
+        {
+            // The rejected worker may have consumed other dirty sections too.
+            ChunkData.MarkAllRenderSectionsDirty();
+            ChunkData.worldRef.AddChunkToUpdate(this);
+            meshData.ReleaseAfterUpload();return;
+        }
+        latestMeshSequence=System.Math.Max(latestMeshSequence,meshData.buildSequence);
         if(meshData.renderSections!=null)
         {
             if(mesh!=null)
@@ -87,6 +98,12 @@ public class ChunkRenderer : MonoBehaviour
             if(uploaded!=null)Destroy(uploaded);
             meshData.ReleaseAfterUpload();
         }
+    }
+
+    public void RefreshBlockSectionNow(int worldY)
+    {
+        if(ChunkData==null||worldY<0||worldY>=ChunkData.worldRef.worldHeight)return;
+        RenderMesh(ChunkData.GetMeshData(1<<(worldY/16)));
     }
 
     private void RefreshChestVisuals(List<Vector3Int> positions)

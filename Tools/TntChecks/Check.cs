@@ -4,11 +4,12 @@ using UnityEngine;
 namespace UnityEngine
 {
  public static class Application {public static bool isBatchMode=true;}
+ public static class Debug {public static int errors;public static void LogException(Exception error){errors++;}}
  public struct Vector4 {public Vector4(float x,float y,float z,float w){}}
- public class MaterialPropertyBlock {public void SetFloat(string name,float f){}public void SetVector(string name,Vector4 v){}}
+ public class MaterialPropertyBlock {public float flash;public void SetFloat(string name,float f){if(name=="_FuseFlash")flash=f;}public void SetVector(string name,Vector4 v){}}
 }
 public static class LightExtensions {public static int GetSkyLight(this Block b)=>15;public static int GetBlockLight(this Block b)=>0;}
-public static class RendererExtensions {public static void SetPropertyBlock(this MeshRenderer r,MaterialPropertyBlock p){}}
+public static class RendererExtensions {public static float lastFlash;public static int calls;public static void SetPropertyBlock(this MeshRenderer r,MaterialPropertyBlock p){lastFlash=p.flash;calls++;}}
 public static class ItemVisualMesh {public static Mesh Build(BlockType t)=>new Mesh();}
 public class EntityVisualMotion {public Vector3 Step(Vector3 p,float dt,float period)=>p;}
 public static class ItemDurability {public static void Wear(ref InventoryStack held,int amount){held.damage+=amount;}}
@@ -24,6 +25,7 @@ public partial class World
  public void PlayExplosionParticles(Vector3 p,float s,Vector3Int[] cells=null){particles++;}
  public void PlayTntSmoke(Vector3 p){}
  public void TntTick()=>TickTnt();
+ public void TntFrame()=>UpdateTnt();
 }
 public static class TntCheck
 {
@@ -36,6 +38,32 @@ public static class TntCheck
   Assert(Math.Abs(TntRules.Swell(0)-1.19683f)<.00001f&&TntRules.Swell(-1)==1.3f,"quartic swelling reaches reference limits");
   Assert(Math.Abs(TntRules.Flash(80,0)-.152f)<.00001f&&TntRules.Flash(75,0)==0&&Math.Abs(TntRules.Flash(0,0)-.792f)<.00001f,"alternating source flash grows with fuse age");
   var initial=TntRules.InitialVelocity(.5f);Assert(initial.x<0&&initial.x>-.044f&&initial.z<-.397f&&initial.y==4,"original radians-to-degrees quirk preserved");
+  var falling=Ready();falling.Put(0,10,0,BlockType.TNT);falling.PrimeTnt(new Vector3Int(0,10,0));
+  var start=falling.CaptureTnt()[0].position;falling.TntTick();
+  Assert(falling.CaptureTnt()[0].position.y>start.y,"ignition gives the source upward hop");
+  for(int i=0;i<20;i++)falling.TntTick();
+  Assert(falling.CaptureTnt()[0].position.y<start.y-2,"unsupported ignited TNT falls under gravity");
+  for(int i=0;i<25;i++)falling.TntTick();
+  Assert(Math.Abs(falling.CaptureTnt()[0].position.y-1)<.001f,"falling TNT lands on block collision, not the original source voxel");
+  var supported=Ready();supported.Put(0,9,0,BlockType.Stone);supported.Put(0,10,0,BlockType.TNT);supported.PrimeTnt(new Vector3Int(0,10,0));
+  for(int i=0;i<18;i++)supported.TntTick();
+  Assert(Math.Abs(supported.CaptureTnt()[0].position.y-10)<.001f,"primed TNT rests on its supporting block");
+  supported.Put(0,9,0,BlockType.Air);for(int i=0;i<10;i++)supported.TntTick();
+  Assert(supported.CaptureTnt()[0].position.y<9,"primed TNT resumes falling when its support is removed");
+  Application.isBatchMode=false;Resources.tntMaterial=true;
+  var visible=Ready();visible.Put(0,10,0,BlockType.TNT);visible.PrimeTnt(new Vector3Int(0,10,0));
+  Assert(visible.worldData.chunkDict[new Vector3Int(0,0,0)].immediateRefreshes==1,"manual ignition immediately removes opaque source mesh");
+  var visual=new PrimedTntVisual();visual.Initialize();var sample=visible.CaptureTnt()[0];visual.Step(visible,sample);
+  Assert(Math.Abs(RendererExtensions.lastFlash-.152f)<.0001f,"visible hull receives the lit flash phase");
+  sample.fuse=75;visual.Step(visible,sample);Assert(RendererExtensions.lastFlash==0,"visible hull receives unlit flash phase");
+  int calls=RendererExtensions.calls;visible.isSaving=true;visible.TntFrame();
+  Assert(RendererExtensions.calls>calls&&visible.CaptureTnt()[0].fuse==80,"save pauses simulation without hiding primed visual");
+  calls=RendererExtensions.calls;visible.isSaving=false;visible.betaPopulationJobs=1;visible.TntFrame();
+  Assert(RendererExtensions.calls>calls&&visible.CaptureTnt()[0].fuse==80,"population pauses simulation without hiding primed visual");
+  visual=new PrimedTntVisual();visual.Initialize();sample=visible.CaptureTnt()[0];visual.Step(visible,sample);
+  visible.betaPopulationJobs=0;for(int i=0;i<20;i++)visible.TntFrame();sample=visible.CaptureTnt()[0];visual.Step(visible,sample);
+  Assert(visual.transform.position.y<10,"rendered primed TNT follows falling entity position");
+  Application.isBatchMode=true;Resources.tntMaterial=false;GameAudio.hisses=0;
   Assert(ResistanceAdapter.BedBlastResistance(BlockType.Stone)==6&&ResistanceAdapter.BedBlastResistance(BlockType.WoodenPlanks)==3,"explicit resistance conversion, not hardness times three");
   Assert(ResistanceAdapter.BedBlastResistance(BlockType.Rail)==.7f&&ResistanceAdapter.BedBlastResistance(BlockType.Obsidian)==1200,"rails resist blasts despite having no body collision");
   Assert(ResistanceAdapter.BedBlastResistance(BlockType.Chest)==2.5f&&ResistanceAdapter.BedBlastResistance(BlockType.Bed)==.2f,"hardness-derived resistance for containers and beds");

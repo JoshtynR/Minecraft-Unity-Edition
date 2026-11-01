@@ -20,13 +20,16 @@ create_chunk = generation[generation.index('    private void CreateChunk('):gene
 with tempfile.TemporaryDirectory() as temp:
     temp=Path(temp)
     (temp/'Scheduler.cs').write_text(source)
+    renderer=(root/'Assets/_Scripts/World/Rendering/ChunkRenderer.cs').read_text()
+    gate=renderer[renderer.index('    public void RenderMesh('):renderer.index('        if(meshData.renderSections!=null)')]
+    (temp/'UploadGate.cs').write_text('public partial class ChunkRenderer{private long latestMeshSequence;'+gate+'} public static void CheckTntUploadGate(){var world=new World();var data=new ChunkData{worldRef=world};var r=new ChunkRenderer{ChunkData=data};var current=new MeshData{sourceChunk=data,buildSequence=2};r.RenderMesh(current);var stale=new MeshData{sourceChunk=data,buildSequence=1};r.RenderMesh(stale);if(!stale.released||data.fullDirtyMarks!=1||world.chunksToUpdate.Count!=1)throw new System.Exception("stale mesh must be rejected, released and rescheduled");var later=new MeshData{sourceChunk=data,buildSequence=3};r.RenderMesh(later);if(later.released||r.latestMeshSequence!=3)throw new System.Exception("newer worker result accepted");System.Console.WriteLine("PASS: production upload gate rejects pre-ignition meshes and preserves rejected dirty work.");}}')
     (temp/'MeshJobs.cs').write_text('using System.Collections.Concurrent;using System.Collections.Generic;using System.Linq;using System.Threading.Tasks;using UnityEngine;public partial class World{'+runtime_jobs+startup_jobs+create_chunk+'}')
     files=['Assets/_Scripts/World/RenderRebuildPriority.cs','Tools/ChunkRenderingChecks/Check.cs','Tools/Shared/UnityVectors.cs',
            'Assets/_Scripts/World/WorldWorkLifetime.cs','Assets/_Scripts/World/World_WorkLifecycle.cs',
            'Assets/_Scripts/World/World_MeshPipeline.cs','Assets/_Scripts/World/World_RenderInvalidation.cs',
            'Assets/_Scripts/World/Rendering/ChunkMeshPipeline.cs']
     subprocess.run([args.mcs,'-langversion:latest','-out:'+str(temp/'check.exe'),str(temp/'Scheduler.cs'),str(temp/'MeshJobs.cs'),
-                    *[str(root/f) for f in files]],check=True)
+                    str(temp/'UploadGate.cs'),*[str(root/f) for f in files]],check=True)
     subprocess.run([args.mono,str(temp/'check.exe')],check=True)
     subprocess.run([args.mcs,'-langversion:latest','-out:'+str(temp/'sections.exe'),
                     str(root/'Assets/_Scripts/World/ChunkData_RenderSections.cs'),

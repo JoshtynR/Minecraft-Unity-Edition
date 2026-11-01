@@ -68,6 +68,20 @@ public partial class World
         if(mobRandom==null)mobRandom=new JavaRandom(betaWorldSeed);
         SetFarmBlock(position,BlockType.Air);
         if(GetBlock(position).type!=BlockType.Air)return false;
+        // Manual ignition is an immediate block-to-entity conversion. Leaving
+        // its old opaque cube in the normal rebuild backlog hides both motion
+        // and the flash. Chains retain batched rebuilds to avoid blast spikes.
+        if(!chain&&!Application.isBatchMode)
+        {
+            var key=WorldDataHelper.GetChunkPosition(this,position);
+            if(worldData.chunkDict.TryGetValue(key,out var renderer)&&renderer!=null)
+            {
+                try { renderer.RefreshBlockSectionNow(position.y); }
+                // SetFarmBlock already queued a normal retry. A presentation
+                // failure must not consume TNT without creating its entity.
+                catch(Exception error) { Debug.LogException(error); }
+            }
+        }
         primedTnt.Add(new PrimedTntState{id=nextTntId++,fuse=chain?10+mobRandom.NextInt(20):80,
             position=(Vector3)position+new Vector3(.5f,.01f,.5f),velocity=TntRules.InitialVelocity(mobRandom.NextFloat())});
         if(!chain)GameAudio.Broadcast("random/fuse",(Vector3)position+Vector3.one*.5f,1,1,this);
@@ -122,8 +136,9 @@ public partial class World
     }
     private void UpdateTnt()
     {
-        if(disabled||!IsWorldCreated||isSaving||System.Threading.Volatile.Read(ref betaPopulationJobs)!=0)return;
-        if(DropAuthority)
+        if(disabled||!IsWorldCreated)return;
+        // Population/save pauses authoritative writes, not entity presentation.
+        if(DropAuthority&&!isSaving&&System.Threading.Volatile.Read(ref betaPopulationJobs)==0)
         {
             tntClock=Mathf.Min(tntClock+Time.deltaTime,.15f);
             while(tntClock>=.05f){tntClock-=.05f;TickTnt();}

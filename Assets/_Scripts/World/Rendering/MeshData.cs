@@ -16,6 +16,7 @@ public class MeshData
 
     public int subMeshCount;
     public ChunkData sourceChunk;
+    public long buildSequence;
     public MeshData[] renderSections;
 
     public MeshData waterMesh;         // alpha-blended water only

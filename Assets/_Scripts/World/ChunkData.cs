@@ -188,7 +188,8 @@ public partial class ChunkData
     [ThreadStatic] private static ChunkData meshReadOwner;
     [ThreadStatic] private static ChunkData[] meshReadNeighbors;
 
-    public MeshData GetMeshData()
+    private long meshBuildSequence;
+    public MeshData GetMeshData(int renderSectionMask = 0)
     {
         lock (meshBuildLock)
         {
@@ -201,7 +202,9 @@ public partial class ChunkData
                 for(int dx=-1;dx<=1;dx++)for(int dz=-1;dz<=1;dz++)
                     worldRef.worldData.chunkDataDict.TryGetValue(worldPos+new Vector3Int(dx*chunkSize,0,dz*chunkSize),out meshReadNeighbors[(dx+1)*3+dz+1]);
                 meshReadOwner=this;
-                return BuildSectionMeshData();
+                var result = BuildSectionMeshData(renderSectionMask);
+                result.buildSequence = ++meshBuildSequence;
+                return result;
             }
             finally
             {

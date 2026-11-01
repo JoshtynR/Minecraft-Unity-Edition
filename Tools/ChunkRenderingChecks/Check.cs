@@ -14,7 +14,7 @@ namespace UnityEngine
 }
 public class Block {}
 public class ChunkData
-{public void MarkRenderSectionsDirty(int y){}public void MarkAllRenderSectionsDirty(){}
+{public World worldRef;public int fullDirtyMarks;public void MarkRenderSectionsDirty(int y){}public void MarkAllRenderSectionsDirty(){fullDirtyMarks++;}
     public Vector3Int worldPos;
     public bool modifiedByPlayer;
     public bool fail;
@@ -25,7 +25,7 @@ public class ChunkData
         return built=new MeshData{sourceChunk=this};
     }
 }
-public class ChunkRenderer
+public partial class ChunkRenderer
 {
     public ChunkData ChunkData;
     public int uploads;
@@ -34,6 +34,7 @@ public class ChunkRenderer
 }
 public class MeshData
 {
+    public long buildSequence;
     public ChunkData sourceChunk;
     public bool released;
     public void ReleaseAfterUpload(){released=true;}
@@ -87,6 +88,7 @@ public partial class World
     static void Check(bool value,string why){if(!value)throw new Exception(why);}
     public static void Main()
     {
+        ChunkRenderer.CheckTntUploadGate();
         Check(RenderRebuildPriority.IsBetter(4,false,1000,true),"nearby edits precede distant visible work");
         Check(RenderRebuildPriority.IsBetter(1000,true,500,false),"visible work precedes distant hidden work");
         Check(RenderRebuildPriority.IsBetter(500,true,1000,true),"nearest visible candidate wins");

@@ -40,7 +40,7 @@ namespace UnityEngine
  }
  namespace Rendering { public enum IndexFormat{UInt32} }
 }
-public partial class ChunkData { public bool modifiedByPlayer;public Vector3Int worldPos;public World worldRef;public Block GetBlock(Vector3Int p)=>new Block(); }
+public partial class ChunkData { public MeshData GetMeshData(int mask)=>GetMeshData();public int fullDirtyMarks;public void MarkAllRenderSectionsDirty(){fullDirtyMarks++;}public bool modifiedByPlayer;public Vector3Int worldPos;public World worldRef;public Block GetBlock(Vector3Int p)=>new Block(); }
 public enum BlockType {Chest,Air,Nothing}
 public static class SpecialBlockGeometry {public static byte State(BlockType t,int shape)=>0;}
 public class ModernChestVisual:MonoBehaviour {public void Initialize(World w,Vector3Int p,byte state){}}
@@ -48,7 +48,7 @@ public class Block {public BlockType type;public int blockShape; public void OnB
 public partial class World
 {
  private void AdvanceAtmosphereClock(float dt){}public double CurrentWorldTicks=>1000;
- public bool GenerationBusy,logGenerationTimings;
+ public int worldHeight=128;public bool GenerationBusy,logGenerationTimings;
  private void PrepareRebuildPriority(){}
  private int SelectNextRebuild()=>0;
  public WorldDimension dimension;private void UpdatePortals(){}private void StreamDimensionPlayers(){}
@@ -147,6 +147,14 @@ public static class LifecycleCheck
   Check(Mesh.created==createdBefore&&renderer.filter.sharedMesh==rebuilt,"stale chunk data rejected after pool reuse");
   Check(typeof(ChunkRenderer).GetField("MeshData")==null,"renderer doesn't retain staging lists");
   Invoke(renderer,"OnDestroy");Check(rebuilt.destroyed,"native mesh owner cleanup");
+  var gateWorld=new World();var gateData=new ChunkData{worldRef=gateWorld};var gateRenderer=new ChunkRenderer();gateRenderer.Initialize(gateData);
+  var immediate=Quad(gateData);immediate.buildSequence=2;gateRenderer.RenderMesh(immediate);var immediateMesh=gateRenderer.filter.sharedMesh;
+  var older=Quad(gateData);older.buildSequence=1;gateRenderer.RenderMesh(older);
+  Check(gateRenderer.filter.sharedMesh==immediateMesh&&!immediateMesh.destroyed&&older.vertices.Count==0,"older async mesh cannot restore static TNT and releases staging");
+  Check(gateData.fullDirtyMarks==1&&gateWorld.chunksToUpdate.Count==1,"discarded async sections are marked dirty and rescheduled");
+  var newer=Quad(gateData);newer.buildSequence=3;gateRenderer.RenderMesh(newer);
+  Check(gateRenderer.filter.sharedMesh!=immediateMesh&&immediateMesh.destroyed,"newer async build still replaces the immediate mesh");
+  Invoke(gateRenderer,"OnDestroy");
   var world=new World();World.Instance=world;renderer=new ChunkRenderer();renderer.Initialize(new ChunkData());
   world.worldData.chunkDict[renderer.ChunkData.worldPos]=renderer;
   for(int i=0;i<100;i++)world.AddChunkToUpdate(renderer);
