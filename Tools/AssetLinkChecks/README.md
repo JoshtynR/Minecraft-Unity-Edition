@@ -4,7 +4,7 @@
 python3 Tools/AssetLinkChecks/run.py --baseline a487e7749f1ce98e670256e32ebbc2bfc04d58c0
 ```
 
-Read-only check for duplicate GUIDs, missing required Resources keys, literal
+Read-only check for malformed/duplicate GUIDs, missing required Resources keys, literal
 material loads, and references to project GUIDs lost since the given revision.
 The baseline is the last entity-catalogue commit before the folder reorganization;
 use another revision for future moves. References supplied by Unity packages

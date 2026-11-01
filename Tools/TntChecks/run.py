@@ -1,4 +1,4 @@
-import argparse,subprocess,tempfile
+import argparse,subprocess,tempfile,re
 from pathlib import Path
 root=Path(__file__).resolve().parents[2]
 p=argparse.ArgumentParser();p.add_argument('--mcs',default='mcs');p.add_argument('--mono',default='mono');a=p.parse_args()
@@ -17,3 +17,7 @@ assert 'primedTnt = CaptureTnt()' in (root/'Assets/_Scripts/World/World_Serializ
 assert '_FuseFlash' in (root/'Assets/Shaders/DroppedBlock.shader').read_text()
 for sound in ['random/fuse.ogg','fire/ignite.ogg','random/explode1.ogg']:assert (root/'Assets/Resources/Sounds'/sound).exists()
 print('Existing blast particle/chain hooks, TNT ignition/save/flash and sound assets verified.')
+for script in ['World/World_Tnt.cs','World/Rendering/PrimedTntVisual.cs']:
+    meta=(root/'Assets/_Scripts'/(script+'.meta')).read_text()
+    assert re.search(r'^guid: [0-9a-f]{32}$',meta,re.M),script+' has an invalid Unity import GUID'
+print('Both TNT script import GUIDs are valid 32-character identifiers.')

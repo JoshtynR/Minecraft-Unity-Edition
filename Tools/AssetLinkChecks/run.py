@@ -7,8 +7,10 @@ ap=argparse.ArgumentParser();ap.add_argument('--baseline',help='Git revision bef
 args=ap.parse_args();errors=[];ids={}
 for folder in ['Assets','Packages']:
     for meta in (root/folder).rglob('*.meta'):
-        match=re.search(r'^guid: ([0-9a-f]{32})',meta.read_text(errors='ignore'),re.M)
+        match=re.search(r'^guid: (\S+)',meta.read_text(errors='ignore'),re.M)
         if not match:continue
+        if not re.fullmatch(r'[0-9a-f]{32}',match[1]):
+            errors.append('Malformed GUID: '+str(meta.relative_to(root))+' '+match[1]);continue
         guid=match[1];path=meta.relative_to(root).as_posix()[:-5]
         if guid in ids:errors.append('Duplicate GUID: '+guid+' '+ids[guid]+' / '+path)
         ids[guid]=path
