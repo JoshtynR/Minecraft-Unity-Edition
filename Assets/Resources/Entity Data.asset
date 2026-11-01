@@ -61,6 +61,6 @@ MonoBehaviour:
     boatGravity: 16
     boatWaterDrag: 0.99
     cartMaxSpeed: 8
-    cartSlopeAcceleration: 8
-    cartPoweredAcceleration: 6
+    cartSlopeAcceleration: 3.125
+    cartPoweredAcceleration: 24
   chestLidSpeed: 2

@@ -9,13 +9,13 @@ public sealed class VehicleTuning
     // Converted from blocks/tick to blocks/second. Turn speed follows travel,
     // not the steering key; buoyancy is the fully submerged rise acceleration.
     public float boatMaxSpeed=8,boatThrust=1.42688f,boatTurnSpeed=400,boatBuoyancy=2.8f,boatGravity=16,boatWaterDrag=.99f;
-    public float cartMaxSpeed=8,cartSlopeAcceleration=8,cartPoweredAcceleration=6;
+    public float cartMaxSpeed=8,cartSlopeAcceleration=3.125f,cartPoweredAcceleration=24;
     public static VehicleTuning Current=new VehicleTuning();
     private static float Limit(float value,float fallback,float min,float max)=>VehiclePhysics.Finite(value)?Mathf.Clamp(value,min,max):fallback;
     public VehicleTuning Validated()=>new VehicleTuning{
         boatMaxSpeed=Limit(boatMaxSpeed,8,.1f,20),boatThrust=Limit(boatThrust,1.42688f,0,50),boatTurnSpeed=Limit(boatTurnSpeed,400,0,1440),
         boatBuoyancy=Limit(boatBuoyancy,2.8f,0,100),boatGravity=Limit(boatGravity,16,0,50),boatWaterDrag=Limit(boatWaterDrag,.99f,0,1),
-        cartMaxSpeed=Limit(cartMaxSpeed,8,.1f,20),cartSlopeAcceleration=Limit(cartSlopeAcceleration,8,0,50),cartPoweredAcceleration=Limit(cartPoweredAcceleration,6,0,50)};
+        cartMaxSpeed=Limit(cartMaxSpeed,8,.1f,20),cartSlopeAcceleration=Limit(cartSlopeAcceleration,3.125f,0,50),cartPoweredAcceleration=Limit(cartPoweredAcceleration,24,0,50)};
 }
 
 [Serializable]
@@ -67,34 +67,28 @@ public static class VehiclePhysics
     public static Vector3 RailPoint(int shape,float t)
     {
         RailEnds(shape,out var a,out var b);
-        if(shape<6)return Vector3.Lerp(a,b,t);
-        var c=new Vector3(.5f,0,.5f);float u=1-t;
-        return a*(u*u)+c*(2*u*t)+b*(t*t);
+        // Beta projects corners onto the straight chord between rail exits.
+        return Vector3.Lerp(a,b,t);
     }
     public static Vector3 RailTangent(int shape,float t)
     {
         RailEnds(shape,out var a,out var b);
-        return shape<6?(b-a).normalized:((new Vector3(.5f,0,.5f)-a)*(1-t)+(b-new Vector3(.5f,0,.5f))*t).normalized;
+        return (b-a).normalized;
     }
     public static float RailParameter(int shape,Vector3 point)
     {
-        // Bounded search also handles curved track without a per-cart allocation.
-        float best=0,distance=float.MaxValue;
-        for(int i=0;i<=32;i++)
-        {
-            float t=i/32f;var delta=RailPoint(shape,t)-point;
-            float d=delta.x*delta.x+delta.z*delta.z;
-            if(d<distance){distance=d;best=t;}
-        }
-        float lo=Mathf.Max(0,best-1/32f),hi=Mathf.Min(1,best+1/32f);
-        for(int i=0;i<10;i++)
-        {
-            float l=(2*lo+hi)/3,r=(lo+2*hi)/3;
-            var dl=RailPoint(shape,l)-point;var dr=RailPoint(shape,r)-point;
-            if(dl.x*dl.x+dl.z*dl.z<dr.x*dr.x+dr.z*dr.z)hi=r;else lo=l;
-        }
-        return (lo+hi)*.5f;
+        RailEnds(shape,out var a,out var b);
+        var delta=b-a;delta.y=0;point-=a;point.y=0;
+        return Mathf.Clamp01(Vector3.Dot(point,delta)/delta.sqrMagnitude);
     }
+    // Preserve horizontal momentum when a rail redirects the cart. A dot
+    // product alone loses half the speed at each 45-degree corner transition.
+    public static float CartSpeed(Vector3 velocity,Vector3 direction)
+    {
+        float magnitude=(float)Math.Sqrt(velocity.x*velocity.x+velocity.z*velocity.z);
+        return Vector3.Dot(velocity,direction)<0?-magnitude:magnitude;
+    }
+    public static float CartRock(VehicleState v)=>BoatRock(v)*.3f;
     public static void BoatVelocity(VehicleState v,float submerged,float dt)
     {
         var settings=VehicleTuning.Current;

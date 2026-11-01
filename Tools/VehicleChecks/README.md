@@ -28,8 +28,9 @@ break drops, and unoccupied save snapshots. Integration hooks are also checked.
   inside a block or into unloaded terrain.
 - Attack a boat to build hit damage (bare hands need several quick hits; weapons
   hit harder). A broken boat drops exactly one boat item and releases its rider.
-  Wall impacts never break it. Empty minecarts still recover with one attack;
-  occupied minecarts retain their existing protection.
+  Wall impacts never break it. Minecarts use the same damage threshold, rocking
+  and damage decay; destroying an occupied cart releases its rider and drops
+  exactly one minecart.
 
 No prefab or scene registration is needed. Recipes and item entries already
 exist; hulls are generated at runtime under the dimension renderer root.
@@ -40,7 +41,7 @@ exist; hulls are generated at runtime under the dimension renderer root.
   interpolates separately. Solo actions execute directly on the host.
 - Remote clients receive dimension-tagged state snapshots at 10 Hz; mounting,
   placement, control and dismount requests are checked by the authority.
-- Rail states 0–9 provide straight, sloped and curved paths. Powered rails use
+- Rail states 0–9 provide straight, sloped and diagonal corner paths. Powered rails use
   their existing activation bit; this does not add a redstone circuit simulator.
 - The existing block sweep resolves terrain collisions. On track, only blocks
   directly supporting rails are excluded to accommodate the hull on slopes.
@@ -98,3 +99,36 @@ remote spectators in Play Mode/builds. Entity push ordering, network interpolati
 water currents affecting rider motion, entity damage from environment and vehicle
 portal transport are not full source parity. Particle work is bounded at 40 per
 wake tick and pooled by the existing renderer; vehicles remain capped at 128.
+
+## Regular minecart fixes
+
+- Corner projection uses the Beta exit-to-exit chord and an analytic projection.
+  Rail redirection preserves horizontal speed instead of repeatedly multiplying
+  it by the angle between consecutive track pieces.
+- Default slope acceleration is 3.125 blocks/second squared (0.0078125
+  blocks/tick added each tick); powered acceleration is 24 (0.06 blocks/tick
+  added each tick). Both the tuning fallback and shipped Entity Data are updated.
+- Unpowered rails stop speed below 0.6 blocks/second; powered straight rails
+  start stopped carts away from a solid end bumper. Powered rails in the open
+  do not arbitrarily launch stationary carts. Existing activation bits are used;
+  circuit power propagation and detector output are still not implemented.
+- Derailed carts have a per-axis speed cap, strong ground friction and airborne
+  damping. Terrain sweeps and rail-support exclusions remain in use.
+- Cart pairs exchange momentum once per pair per simulation tick, with loaded
+  area, height, distance and track-direction checks. This is a bounded vehicle
+  collision approximation, not a full Beta entity collision port; player/mob
+  pushing and automatic mob pickup are not included.
+- Minecart hits accumulate damage, rock the hull, and decay once per tick.
+  Occupied carts can be destroyed and release their rider; duplicate attacks
+  after removal cannot create another item. Disk snapshots omit transient hits.
+- Hull visuals tilt to the current slope in either facing direction. The shared
+  sitting pose remains in use for cart and boat riders.
+
+Regression cases cover powered launches on both axes and both X directions,
+open-station idling, exact low-speed braking, corner momentum, ground stopping,
+cart momentum transfer, occupied destruction, visual pitch and all four downhill
+slope directions. The existing boat, interaction, chunk, model, save-hook and
+riding-pose checks also pass. Unity rendering, Mirror weaving and real multiplayer
+transport still require an editor/build smoke test. This retains the five-substep
+voxel simulation and camera-relative rider starting nudge; it is not full 1:1
+Beta minecart tick order. Chest/furnace carts remain unimplemented.

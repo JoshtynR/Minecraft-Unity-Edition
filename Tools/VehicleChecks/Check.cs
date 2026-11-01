@@ -156,6 +156,34 @@ public static class VehicleCheck
   for(int x=0;x<20;x++)w.Put(x,1,0,BlockType.Rail,1);
   Check(w.SpawnVehicle(VehicleKind.Minecart,new Vector3(.5f,1.0625f,.5f),0),"place cart on rail");var cart=w.Vehicle(1);cart.velocity=new Vector3(5,0,0);
   for(int i=0;i<30;i++)w.Sim(cart);Check(cart.position.x>3&&Math.Abs(cart.position.z-.5f)<.01f,"cart traverses consecutive rails");
+  // Brakes stop creep exactly, and a bumper starts a powered station.
+  w=Ready();w.Put(0,1,0,BlockType.PoweredRail,1);
+  cart=new VehicleState{kind=VehicleKind.Minecart,position=new Vector3(.5f,1.0625f,.5f),velocity=new Vector3(.5f,0,0)};
+  w.Sim(cart);Check(cart.velocity.sqrMagnitude==0,"unpowered rail stops low-speed creep");
+  w.Put(0,1,0,BlockType.PoweredRail,9);w.Sim(cart);
+  Check(cart.velocity.sqrMagnitude==0,"open powered station does not choose arbitrary launch direction");
+  w.Put(-1,1,0,BlockType.Stone);w.Sim(cart);
+  Check(cart.velocity.x>.4f&&cart.position.x>.5f,"powered rail launches away from west bumper");
+  w.Put(-1,1,0,BlockType.Air);w.Put(1,1,0,BlockType.Stone);cart.position=new Vector3(.5f,1.0625f,.5f);cart.velocity=Vector3.zero;w.Sim(cart);
+  Check(cart.velocity.x<-.4f&&cart.position.x<.5f,"powered rail launches away from east bumper");
+  w=Ready();w.Put(0,1,0,BlockType.PoweredRail,8);w.Put(0,1,-1,BlockType.Stone);
+  cart=new VehicleState{kind=VehicleKind.Minecart,position=new Vector3(.5f,1.0625f,.5f)};w.Sim(cart);
+  Check(cart.velocity.z>.4f,"north-south powered station launches along Z");
+  w=Ready();w.Put(0,1,0,BlockType.Rail,9);
+  cart=new VehicleState{kind=VehicleKind.Minecart,position=new Vector3(.6f,1.0625f,.1f),velocity=new Vector3(0,0,4),occupied=true};w.Sim(cart);
+  Check(Math.Abs(cart.velocity.magnitude-4*.997f)<.001f,"corner redirects momentum without projection loss");
+  Check((VehiclePhysics.RailPoint(9,.5f)-new Vector3(.75f,0,.25f)).magnitude<.001f,"Beta corner uses diagonal chord");
+  w=Ready();for(int x=-3;x<=3;x++)for(int z=-3;z<=3;z++)w.Put(x,0,z,BlockType.Stone);
+  cart=new VehicleState{kind=VehicleKind.Minecart,position=new Vector3(.5f,1,.5f),velocity=new Vector3(4,0,0)};
+  for(int i=0;i<20;i++)w.Sim(cart);Check(Math.Abs(cart.velocity.x)<.01f,"derailed cart quickly stops on solid floor");
+  w=Ready();w.SpawnVehicle(VehicleKind.Minecart,new Vector3(.5f,2,.5f),90);w.SpawnVehicle(VehicleKind.Minecart,new Vector3(1.6f,2,.5f),90);
+  w.Vehicle(1).velocity=new Vector3(4,0,0);w.Tick();
+  Check(w.Vehicle(2).velocity.x>1,"moving cart transfers momentum to stationary cart");
+  w=Ready();w.Put(0,0,0,BlockType.Stone);w.Put(0,1,0,BlockType.Rail,1);w.SpawnVehicle(VehicleKind.Minecart,new Vector3(.5f,1.0625f,.5f),90);
+  var cartRider=new Player{world=w};Check(w.UseVehicle(cartRider,1,false),"cart mounts with shared riding state");
+  for(int i=0;i<4;i++)Check(w.UseVehicle(cartRider,1,true)&&w.drops.Count==0,"cart requires accumulated damage");
+  Check(w.Vehicle(1).hitTicks==10&&Math.Abs(VehiclePhysics.CartRock(w.Vehicle(1)))>0,"cart hit rocks its visual");
+  Check(w.UseVehicle(cartRider,1,true)&&w.Vehicle(1)==null&&!cartRider.IsMounted&&w.drops.Count==1&&w.drops[0].type==ItemType.Minecart,"destroy occupied cart releases rider and drops one cart");
   // Continuous circuit: straight -> SE curve -> straight south.
   w=Ready();w.Put(0,1,0,BlockType.Rail,0);w.Put(0,1,1,BlockType.Rail,9);w.Put(1,1,1,BlockType.Rail,1);w.Put(2,1,1,BlockType.Rail,1);
   cart=new VehicleState{kind=VehicleKind.Minecart,position=new Vector3(.5f,1.0625f,.6f),velocity=new Vector3(0,0,5),occupied=true};
@@ -163,7 +191,24 @@ public static class VehicleCheck
   w=Ready();w.Put(0,0,0,BlockType.Stone);w.Put(1,0,0,BlockType.Stone);w.Put(1,1,0,BlockType.Stone);w.Put(0,1,0,BlockType.Rail,2);w.Put(1,2,0,BlockType.Rail,1);w.Put(2,2,0,BlockType.Rail,1);
   cart=new VehicleState{kind=VehicleKind.Minecart,position=new Vector3(.3f,1.3625f,.5f),velocity=new Vector3(6,0,0),occupied=true};
   for(int i=0;i<8;i++)w.Sim(cart);Check(cart.position.x>1&&cart.position.y>2,"cart climbs slope without hitting track support");
+  cart.position=new Vector3(.5f,1.5625f,.5f);cart.yaw=90;
+  Check(Math.Abs(w.VehiclePitch(cart)+45)<.001f,"cart visual tilts uphill");cart.yaw=270;
+  Check(Math.Abs(w.VehiclePitch(cart)-45)<.001f,"cart visual tilts with reversed facing on slope");
   w.Put(2,2,0,BlockType.Stone);cart.position=new Vector3(1.4f,2.0625f,.5f);cart.velocity=new Vector3(8,0,0);for(int i=0;i<5;i++)w.Sim(cart);Check(cart.position.x<=1.511f,"cart cannot pass solid wall");
+  for(int slope=2;slope<=5;slope++)
+  {
+   w=Ready();w.Put(0,1,0,BlockType.Rail,(byte)slope);VehiclePhysics.RailEnds(slope,out var sa,out var sb);
+   var high=sa.y>sb.y?sa:sb;var low=sa.y>sb.y?sb:sa;var downhill=low-high;downhill.y=0;downhill=downhill.normalized;
+   var hc=new Vector3Int(high.x==0?-1:high.x==1?1:0,2,high.z==0?-1:high.z==1?1:0);
+   var lc=new Vector3Int(low.x==0?-1:low.x==1?1:0,1,low.z==0?-1:low.z==1?1:0);
+   byte flat=(byte)(Math.Abs(downhill.x)>.5?1:0);
+   for(int n=1;n<=4;n++){w.Put(hc.x*n,2,hc.z*n,BlockType.Rail,flat);w.Put(lc.x*n,1,lc.z*n,BlockType.Rail,flat);}
+   for(int x=-5;x<=5;x++)for(int z=-5;z<=5;z++)w.Put(x,0,z,BlockType.Stone);
+   w.Put(0,0,0,BlockType.Stone);w.Put(hc.x,1,hc.z,BlockType.Stone);
+   cart=new VehicleState{kind=VehicleKind.Minecart,occupied=true,position=(Vector3)hc+new Vector3(.5f,.0625f,.5f),velocity=downhill*4};
+   for(int n=0;n<15;n++)w.Sim(cart);
+   Check(cart.position.y<1.1f&&Vector3.Dot(cart.velocity,downhill)>3,"descending slope reaches lower rail with momentum, shape "+slope);
+  }
   w=Ready();w.worldData.chunkDict.Remove(new Vector3Int(16,0,0));cart=new VehicleState{kind=VehicleKind.Minecart,position=new Vector3(15.4f,4,.5f),velocity=new Vector3(8,0,0)};var before=cart.position;w.Sim(cart);Check((cart.position-before).magnitude<.001f,"unloaded swept boundary suspends simulation");
   w=Ready();for(int x=-2;x<3;x++)for(int z=-2;z<3;z++)w.Put(x,1,z,BlockType.Water);
   boat=new VehicleState{kind=VehicleKind.Boat,position=new Vector3(.5f,1.5f,.5f)};for(int i=0;i<200;i++)w.Sim(boat);Check(boat.position.y>1.8f&&boat.position.y<2,"boat settles at water surface using five material slices");

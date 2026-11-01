@@ -8,7 +8,7 @@ public sealed class VehicleVisual : MonoBehaviour
     private Mesh mesh;
     private Vector3 target;
     private float yaw;
-    private float rock;
+    private float rock,pitch;
     private World world;
     private bool boat;
     private Vector3 velocity;
@@ -31,12 +31,12 @@ public sealed class VehicleVisual : MonoBehaviour
         gameObject.AddComponent<MeshRenderer>().sharedMaterial=material;
         target=state.position;yaw=state.yaw;transform.SetPositionAndRotation(target,Quaternion.Euler(0,yaw,0));
     }
-    public void SetTarget(VehicleState state){target=state.position;velocity=state.velocity;yaw=state.yaw;rock=state.kind==VehicleKind.Boat?VehiclePhysics.BoatRock(state):0;}
+    public void SetTarget(VehicleState state){target=state.position;velocity=state.velocity;yaw=state.yaw;rock=state.kind==VehicleKind.Boat?VehiclePhysics.BoatRock(state):VehiclePhysics.CartRock(state);pitch=world!=null?world.VehiclePitch(state):0;}
     private void LateUpdate()
     {
         float blend=1-Mathf.Exp(-20*Time.deltaTime);
         transform.position=Vector3.Lerp(transform.position,target,blend);
-        transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.Euler(0,yaw,rock),blend);
+        transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.Euler(pitch,yaw,rock),blend);
         wakeClock=Mathf.Min(wakeClock+Time.deltaTime,.1f);
         while(wakeClock>=VehiclePhysics.Step)
         {

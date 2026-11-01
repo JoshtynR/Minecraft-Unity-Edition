@@ -97,14 +97,10 @@ public partial class World
         var v=Vehicle(id);if(v==null)return false;
         if(attack)
         {
-            if(v.occupied&&v.kind!=VehicleKind.Boat)return false;
-            if(v.kind==VehicleKind.Boat)
-            {
-                v.rockDirection=-v.rockDirection;v.hitTicks=10;
-                v.damage=Math.Min(1000,v.damage+Math.Max(1,Math.Min(20,attackDamage))*10);
-                vehicleBroadcast=0;
-                if(v.damage<=40)return true;
-            }
+            v.rockDirection=-v.rockDirection;v.hitTicks=10;
+            v.damage=Math.Min(1000,v.damage+Math.Max(1,Math.Min(20,attackDamage))*10);
+            vehicleBroadcast=0;
+            if(v.damage<=40)return true;
             // Intentional exception to Beta's planks/sticks loot: recover
             // exactly one usable boat, and never destroy it on a wall impact.
             if(!SpawnItemDrop(new InventoryStack(v.kind==VehicleKind.Boat?ItemType.Boat:ItemType.Minecart,1),v.position+Vector3.up*.3f))return false;
@@ -144,6 +140,15 @@ public partial class World
         if(rail!=null&&SpecialBlockGeometry.IsRail(rail.type))return true;
         cell+=Vector3Int.down;rail=GetBlock(cell);
         return rail!=null&&SpecialBlockGeometry.IsRail(rail.type);
+    }
+    public float VehiclePitch(VehicleState v)
+    {
+        if(v.kind!=VehicleKind.Minecart||!TryVehicleRail(v.position,out _,out var rail))return 0;
+        int shape=SpecialBlockGeometry.State(rail.type,rail.blockShape);if(rail.type!=BlockType.Rail)shape&=7;
+        var tangent=VehiclePhysics.RailTangent(shape,.5f);
+        float yaw=v.yaw*Mathf.Deg2Rad;
+        float facing=Vector3.Dot(tangent,new Vector3(Mathf.Sin(yaw),0,Mathf.Cos(yaw)))<0?-1:1;
+        return -Mathf.Atan2(tangent.y*facing,new Vector3(tangent.x,0,tangent.z).magnitude)*Mathf.Rad2Deg;
     }
     private float BoatSubmersion(VehicleState v)
     {
@@ -206,6 +211,8 @@ public partial class World
         if(!VehicleAreaReady(v.position))return;
         if(v.inputExpires<Time.unscaledTime)v.throttle=v.steer=0;
         if(v.kind==VehicleKind.Boat){TickBoat(v);return;}
+        if(v.hitTicks>0)v.hitTicks--;
+        if(v.damage>0)v.damage--;
         const float dt=VehiclePhysics.Step/5;
         for(int sub=0;sub<5;sub++)
         {
@@ -217,14 +224,26 @@ public partial class World
                 var local=v.position-(Vector3)cell;float t=VehiclePhysics.RailParameter(shape,local);
                 var tangent=VehiclePhysics.RailTangent(shape,t);
                 var horizontal=new Vector3(tangent.x,0,tangent.z).normalized;
-                float speed=Vector3.Dot(v.velocity,horizontal);
+                float speed=VehiclePhysics.CartSpeed(v.velocity,horizontal);
                 if(v.occupied&&Mathf.Abs(speed)<.1f&&v.throttle!=0)
                 {float a=v.inputYaw*Mathf.Deg2Rad;speed=Vector3.Dot(new Vector3(Mathf.Sin(a),0,Mathf.Cos(a)),horizontal)*v.throttle*.8f;}
                 var tuning=VehicleTuning.Current;
-                speed-=tangent.y*tuning.cartSlopeAcceleration*dt;
+                speed-=Mathf.Sign(tangent.y)* (Mathf.Abs(tangent.y)>.001f?tuning.cartSlopeAcceleration*dt:0);
                 bool powered=rail.type==BlockType.PoweredRail&&(SpecialBlockGeometry.State(rail.type,rail.blockShape)&8)!=0;
-                if(rail.type==BlockType.PoweredRail&&!powered)speed*=Mathf.Pow(.5f,dt/.05f);
-                else if(powered&&Mathf.Abs(speed)>.01f)speed+=Mathf.Sign(speed)*tuning.cartPoweredAcceleration*dt;
+                if(rail.type==BlockType.PoweredRail&&!powered)
+                    speed=Mathf.Abs(speed)<.6f?0:speed*Mathf.Pow(.5f,dt/VehiclePhysics.Step);
+                else if(powered)
+                {
+                    if(Mathf.Abs(speed)>.2f)speed+=Mathf.Sign(speed)*tuning.cartPoweredAcceleration*dt;
+                    else if(shape==0||shape==1)
+                    {
+                        var axis=shape==1?Vector3Int.right:new Vector3Int(0,0,1);
+                        // A solid bumper supplies the starting direction. Open
+                        // powered track must not pick an arbitrary direction.
+                        if(SpecialBlockGeometry.NormalCube(GetBlock(cell-axis).type))speed=.4f;
+                        else if(SpecialBlockGeometry.NormalCube(GetBlock(cell+axis).type))speed=-.4f;
+                    }
+                }
                 speed=Mathf.Clamp(speed,-tuning.cartMaxSpeed,tuning.cartMaxSpeed)*Mathf.Pow(v.occupied?.997f:.96f,dt/.05f);
                 v.velocity=horizontal*speed;
                 var projected=(Vector3)cell+VehiclePhysics.RailPoint(shape,t)+Vector3.up*.0625f;
@@ -233,7 +252,10 @@ public partial class World
             }
             else
             {
-                v.velocity.y-=16f*dt;v.velocity.x*=.995f;v.velocity.z*=.995f;
+                v.velocity.y-=16f*dt;
+                v.velocity.x=Mathf.Clamp(v.velocity.x,-VehicleTuning.Current.cartMaxSpeed,VehicleTuning.Current.cartMaxSpeed);
+                v.velocity.z=Mathf.Clamp(v.velocity.z,-VehicleTuning.Current.cartMaxSpeed,VehicleTuning.Current.cartMaxSpeed);
+                v.velocity*=Mathf.Pow(v.onGround?.5f:.95f,dt/VehiclePhysics.Step);
                 requested=v.velocity*dt;
             }
             if(!VehicleAreaReady(v.position+requested,VehiclePhysics.Radius(v.kind)+.1f))return;
@@ -242,9 +264,35 @@ public partial class World
             Func<Vector3Int,bool> support=onRail?(Func<Vector3Int,bool>)(p=>{var b=GetBlock(p+Vector3Int.up);return b!=null&&SpecialBlockGeometry.IsRail(b.type);}):null;
             var moved=BlockCollision.Resolve(this,v.position,VehiclePhysics.Radius(v.kind),.6f,requested,false,support);
             v.position+=moved;
+            v.onGround=requested.y<0&&moved.y>requested.y+.0001f;
             if(Mathf.Abs(moved.x-requested.x)>.0001f)v.velocity.x=0;
             if(Mathf.Abs(moved.y-requested.y)>.0001f)v.velocity.y=0;
             if(Mathf.Abs(moved.z-requested.z)>.0001f)v.velocity.z=0;
+        }
+    }
+    private void CollideMinecarts()
+    {
+        for(int i=0;i<vehicles.Count;i++)for(int j=i+1;j<vehicles.Count;j++)
+        {
+            var a=vehicles[i];var b=vehicles[j];
+            if(a.kind!=VehicleKind.Minecart||b.kind!=VehicleKind.Minecart||
+                !VehicleAreaReady(a.position)||!VehicleAreaReady(b.position)||Mathf.Abs(a.position.y-b.position.y)>=.6f)continue;
+            var delta=b.position-a.position;delta.y=0;
+            if(Mathf.Abs(delta.x)>1.18f||Mathf.Abs(delta.z)>1.18f||delta.sqrMagnitude<.0001f)continue;
+            float distance=delta.magnitude;
+            var direction=delta/distance;
+            float yaw=a.yaw*Mathf.Deg2Rad;
+            var heading=new Vector3(Mathf.Sin(yaw),0,Mathf.Cos(yaw));
+            if(TryVehicleRail(a.position,out _,out var rail))
+            {
+                int shape=SpecialBlockGeometry.State(rail.type,rail.blockShape);if(rail.type!=BlockType.Rail)shape&=7;
+                heading=VehiclePhysics.RailTangent(shape,.5f);heading.y=0;heading=heading.normalized;
+            }
+            if(Mathf.Abs(Vector3.Dot(direction,heading))<.8f)continue;
+            var impulse=direction*(Mathf.Min(1,1/distance)*1f);
+            var average=(a.velocity+b.velocity)*.5f;average.y=0;
+            a.velocity=new Vector3(a.velocity.x*.2f,a.velocity.y,a.velocity.z*.2f)+average-impulse;
+            b.velocity=new Vector3(b.velocity.x*.2f,b.velocity.y,b.velocity.z*.2f)+average+impulse;
         }
     }
     private void UpdateVehicles()
@@ -255,7 +303,7 @@ public partial class World
             foreach(var v in vehicles)if(v.occupied&&(v.driver==null||v.driver.health<=0||v.driver.CurrentWorld!=this||v.driver.DimensionTransferInProgress))
             {v.driver=null;v.occupied=false;v.riderId=0;v.throttle=v.steer=0;}
             vehicleClock=Mathf.Min(vehicleClock+Time.deltaTime,.15f);
-            while(vehicleClock>=VehiclePhysics.Step){vehicleClock-=VehiclePhysics.Step;foreach(var v in vehicles)TickVehicle(v);}
+            while(vehicleClock>=VehiclePhysics.Step){vehicleClock-=VehiclePhysics.Step;foreach(var v in vehicles)TickVehicle(v);CollideMinecarts();}
             vehicleBroadcast-=Time.unscaledDeltaTime;
             if(vehicleBroadcast<=0&&NetworkServer.active&&NetworkServer.connections.Count>(NetworkClient.active?1:0))
             {vehicleBroadcast=.1f;var copy=new VehicleState[vehicles.Count];for(int i=0;i<copy.Length;i++)copy[i]=vehicles[i].Copy();NetworkServer.SendToAll(new VehicleBatchMessage{dimension=dimension,vehicles=copy});}
