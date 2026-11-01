@@ -31,6 +31,16 @@ public static class ExplosionParticleCheck
                 if(actual[a]<low||actual[a]>high)throw new Exception("source blast impulse plus bounded particle jitter");
             }
         }
-        Console.WriteLine("7 source-style affected-cell particle placement/velocity checks passed (Unity rendering mocked).");
+        var splashes=(IList)Field(layers.GetValue(1),"particles");
+        effects.EmitBoatWake(Vector3.zero,0,new Vector3(0,0,3));
+        if(splashes.Count!=0)throw new Exception("boat wake speed threshold");
+        effects.EmitBoatWake(Vector3.zero,0,new Vector3(0,0,5));
+        if(splashes.Count!=16)throw new Exception("source wake particle count at quarter block per tick");
+        foreach(var particle in splashes)
+        {
+            var p=(Vector3)Field(particle,"position");
+            if(Math.Abs(p.y-.175f)>.00001f||Math.Abs(p.x)>.7001f||p.z< -1.0001f||p.z>.8001f)throw new Exception("boat wake converted side/stern placement");
+        }
+        Console.WriteLine("10 source-style explosion/wake placement, velocity and threshold checks passed (Unity rendering mocked).");
     }
 }

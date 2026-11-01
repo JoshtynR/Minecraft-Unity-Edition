@@ -71,7 +71,7 @@ public sealed class EntityDataInspector : Editor
         EditorGUILayout.LabelField("Minecart",EditorStyles.boldLabel);
         foreach(string field in new[]{"cartMaxSpeed","cartSlopeAcceleration","cartPoweredAcceleration"})EditorGUILayout.PropertyField(settings.FindPropertyRelative(field));
         DrawHud("minecartSkin");
-        EditorGUILayout.HelpBox("Vehicle speeds use blocks/second. Water drag is the retained horizontal speed per 20 Hz tick (0–1). Collision dimensions, rail rules and model UV layout remain fixed.",MessageType.Info);
+        EditorGUILayout.HelpBox("Boat max speed caps each horizontal axis (blocks/second). Thrust is camera-relative rider acceleration; turn speed follows movement (degrees/second), not A/D rotation. Buoyancy is fully submerged rise acceleration; gravity controls partial-submersion lift. Water drag is retained horizontal speed per 20 Hz tick (0–1). Boats never break on collision and drop a boat item when broken.",MessageType.Info);
     }
     private void DrawChests()
     {

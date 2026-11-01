@@ -16,22 +16,27 @@ break drops, and unoccupied save snapshots. Integration hooks are also checked.
 ## In-game use
 
 - Craft or select the existing **Minecart** and **Boat** items.
-- Right-click a rail with a minecart, or source water with a boat, to place it.
+- Right-click a rail with a minecart; boats can be placed above source water or
+  a targeted block with sufficient free space (lava placement is rejected).
 - Right-click the hull to ride. One player can occupy each vehicle.
-- Boats: W/S thrust, A/D steering. Minecarts: W/S give a starting push in the
+- Boats: W/S and A/D provide forward/strafe rider input relative to the camera.
+  The hull turns toward actual travel, not directly with A/D. Minecarts: W/S give a starting push in the
   camera-relative direction along the track; momentum, slopes and rail state
   then determine movement. Holding forward is not an engine.
-- Left Shift dismounts when a nearby loaded, unobstructed standing spot exists.
+- Left Shift dismounts when a nearby loaded, unobstructed floor or water surface exists.
   If the shore is unavailable, the rider stays aboard rather than spawning
   inside a block or into unloaded terrain.
-- Left-click an empty hull to recover its item. Occupied vehicles are protected.
+- Attack a boat to build hit damage (bare hands need several quick hits; weapons
+  hit harder). A broken boat drops exactly one boat item and releases its rider.
+  Wall impacts never break it. Empty minecarts still recover with one attack;
+  occupied minecarts retain their existing protection.
 
 No prefab or scene registration is needed. Recipes and item entries already
 exist; hulls are generated at runtime under the dimension renderer root.
 
 ## Integration and limits
 
-- Fixed 20 Hz authority simulation with five collision substeps; presentation
+- Fixed 20 Hz boat simulation in source tick order; minecarts retain five collision substeps. Presentation
   interpolates separately. Solo actions execute directly on the host.
 - Remote clients receive dimension-tagged state snapshots at 10 Hz; mounting,
   placement, control and dismount requests are checked by the authority.
@@ -48,10 +53,48 @@ exist; hulls are generated at runtime under the dimension renderer root.
 - Classic 64x32 hull models now use `entity/boat/boat.png` and
   `entity/cart/cart.png`, referenced by `PlayerHudAssets` for player builds.
   Meshes use the classic box UV layout, rotated floors and cart interior liner;
-  native meshes/materials are disposed with their visual. Physics is unchanged.
-- This is an initial gameplay implementation, not a 1:1 vehicle port. Vehicle/entity
-  bumping, mob passengers, damage stages, oars, chest/furnace carts and vehicle
+  native meshes/materials are disposed with their visual.
+- This is source-guided boat movement, not a complete 1:1 entity-engine port. Mob
+  passengers, oars, chest/furnace carts and vehicle
   portal transport are not implemented. Storage is capped at 128 per dimension.
 - These checks do not exercise Mirror weaving, actual transport, GPU rendering,
   Unity scene timing, or full on-disk save/load. Test those in Play Mode and a
   standalone build, including server/client riding and repeated dimension trips.
+
+## Beta boat pass
+
+Compared against EntityBoat, Entity.updateRidden/moveFlying, EntityLiving movement,
+World.isAABBInMaterial and ModelBiped in `jacobo-mc/mc_b1.7.3_release`.
+
+- Hull radius .75 and height .6; five whole-AABB water slices shifted down .125,
+  using metadata/8 rather than the separate eye-immersion rule.
+- Partial-submersion lift .04*(2*fraction-1) blocks/tick; full immersion halves
+  downward motion then adds .007. Horizontal cap .4 blocks/tick per axis,
+  ground halving, and post-collision .99 horizontal/.95 vertical damping.
+- Camera-relative rider input approximates the reset-per-tick rider's .02
+  movement, .98 input damping, .91 air/.8 water friction and 20% transfer.
+  This does not run the full rider EntityLiving collision/current/ladder path.
+- Heading follows displacement with a maximum 20-degree turn per tick. Boats
+  exchange separation impulses, clear thin snow at hull corners, and leave
+  source-pattern side/stern splash particles above .15 blocks/tick.
+- Hit rocking/damage decay uses the source tick rate and >40 break threshold.
+  Damage is included in live snapshots but omitted from saved state.
+- Deliberate exceptions: no collision destruction; player destruction returns
+  one boat instead of three planks/two sticks. Safe Shift dismount is retained,
+  including an unobstructed water-surface exit. Lava placement remains rejected.
+- Entity Data defaults are updated, with the same configurable tuning fields.
+  Max speed is per-axis; turn speed limits travel-following yaw; buoyancy controls
+  full-immersion rise, while gravity controls partial-immersion lift.
+- `BetaMotionPose.Seated()` is a shared, mount-agnostic pose. `Player.IsMounted`
+  currently queries vehicle ownership for both boats and carts; future pig rides
+  can extend that state query and use the same animator. This does not add pig
+  riding yet. Player feet/eye coordinates use lower classic boat/cart seats.
+
+Focused tests include 2,000 deterministic source-formula cases, water-edge sampling,
+collisions without destruction, damage/drop accounting, rider release, water exits,
+shared pose transitions and actual custom splash emission. Unity transforms,
+rendering and transport are mocked; verify seat alignment, input feel, rocking and
+remote spectators in Play Mode/builds. Entity push ordering, network interpolation,
+water currents affecting rider motion, entity damage from environment and vehicle
+portal transport are not full source parity. Particle work is bounded at 40 per
+wake tick and pooled by the existing renderer; vehicles remain capped at 128.

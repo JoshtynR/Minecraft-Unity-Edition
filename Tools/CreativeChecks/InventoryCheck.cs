@@ -152,6 +152,8 @@ namespace UnityEngine.EventSystems
 public enum Direction {down,up,backwards,forwards,left,right}
 public class ChunkData
 {
+ public void MarkAllRenderSectionsDirty(){}
+ public MeshData GetMeshData(int mask=0)=>new MeshData(true){sourceChunk=this};
  public bool modifiedByPlayer;public Vector3Int worldPos;public World worldRef;
  public Block GetBlock(Vector3Int local)=>worldRef.GetBlock(worldPos+local);
 }

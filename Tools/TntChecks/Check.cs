@@ -19,7 +19,6 @@ public partial class World
  public int blasts,particles;public float lastStrength;
  private void RefreshMobPlayers(){}
  private void ExplodeMob(Vector3 p,float strength,bool mobSource=true){blasts++;lastStrength=strength;EmitExplosionEffects(p,strength);}
- private void SetFarmBlock(Vector3Int p,BlockType t){Put(p.x,p.y,p.z,t);}
  private bool TryIgnitePortal(Vector3Int p)=>false;
  public void PlayExplosionParticles(Vector3 p,float s,Vector3Int[] cells=null){particles++;}
  public void PlayTntSmoke(Vector3 p){}

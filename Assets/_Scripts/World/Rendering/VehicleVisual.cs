@@ -8,8 +8,14 @@ public sealed class VehicleVisual : MonoBehaviour
     private Mesh mesh;
     private Vector3 target;
     private float yaw;
-    public void Initialize(VehicleState state)
+    private float rock;
+    private World world;
+    private bool boat;
+    private Vector3 velocity;
+    private float wakeClock;
+    public void Initialize(VehicleState state,World owner=null)
     {
+        world=owner;boat=state.kind==VehicleKind.Boat;
         var template=Resources.Load<Material>("Materials/CowMaterial");
         material=template!=null?new Material(template):new Material(Shader.Find("Unlit/Color"));
         var assets=Resources.Load<PlayerHudAssets>("PlayerHudAssets");
@@ -25,12 +31,19 @@ public sealed class VehicleVisual : MonoBehaviour
         gameObject.AddComponent<MeshRenderer>().sharedMaterial=material;
         target=state.position;yaw=state.yaw;transform.SetPositionAndRotation(target,Quaternion.Euler(0,yaw,0));
     }
-    public void SetTarget(VehicleState state){target=state.position;yaw=state.yaw;}
+    public void SetTarget(VehicleState state){target=state.position;velocity=state.velocity;yaw=state.yaw;rock=state.kind==VehicleKind.Boat?VehiclePhysics.BoatRock(state):0;}
     private void LateUpdate()
     {
         float blend=1-Mathf.Exp(-20*Time.deltaTime);
         transform.position=Vector3.Lerp(transform.position,target,blend);
-        transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.Euler(0,yaw,0),blend);
+        transform.rotation=Quaternion.Slerp(transform.rotation,Quaternion.Euler(0,yaw,rock),blend);
+        wakeClock=Mathf.Min(wakeClock+Time.deltaTime,.1f);
+        while(wakeClock>=VehiclePhysics.Step)
+        {
+            wakeClock-=VehiclePhysics.Step;
+            if(boat&&world!=null&&velocity.x*velocity.x+velocity.z*velocity.z>9)
+                world.PlayBoatWake(target,yaw,velocity);
+        }
     }
     private void OnDestroy(){if(mesh!=null)Destroy(mesh);if(material!=null)Destroy(material);}
 }

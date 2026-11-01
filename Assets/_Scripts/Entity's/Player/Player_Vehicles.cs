@@ -4,6 +4,9 @@ using UnityEngine;
 public partial class Player
 {
     private float nextVehicleControl;
+    // Animation consumers depend on mounted state, not a particular vehicle.
+    // Future pig mounting can extend this query and reuse BetaMotionPose.Seated.
+    public bool IsMounted=>world!=null&&world.RiddenVehicle(this)!=null;
     private int TargetedVehicle()=>world==null||cam==null?0:world.TargetVehicle(cam.position,cam.forward,reach);
     private bool TryUseVehicle(bool attack)
     {
@@ -27,7 +30,7 @@ public partial class Player
            slot>=0&&slot<9&&ChestTransactions.Valid(snapshot,new InventoryStack())&&VehiclePhysics.Finite(look)&&look.sqrMagnitude>.5f&&world.RiddenVehicle(this)==null)
         {
             var eye=transform.position+Vector3.up*eyeHeight;
-            if(id!=0&&world.TargetVehicle(eye,look,reach)==id)accepted=world.UseVehicle(this,id,attack);
+            if(id!=0&&world.TargetVehicle(eye,look,reach)==id)accepted=world.UseVehicle(this,id,attack,MobRules.AttackDamage(snapshot[slot].type));
             else if(id==0&&!attack&&(snapshot[slot].type==ItemType.Boat||snapshot[slot].type==ItemType.Minecart)&&!snapshot[slot].Empty)
             {
                 var hit=BlockTargeting.Raycast(world,eye,look,reach,out _,out _,true);
@@ -35,8 +38,8 @@ public partial class Player
                 {
                 bool boat=snapshot[slot].type==ItemType.Boat;
                 var p=hit.globalWorldPosition;var position=(Vector3)p+new Vector3(.5f,.0625f,.5f);
-                bool allowed=boat?hit.type==BlockType.Water:SpecialBlockGeometry.IsRail(hit.type);
-                if(boat)position.y=BetaFluidPhysics.EyeSurface(p.y,hit.waterLevel)-.2f;
+                bool allowed=boat?hit.type!=BlockType.Lava:SpecialBlockGeometry.IsRail(hit.type);
+                if(boat)position.y=p.y+1;
                 else if(allowed)
                 {int shape=SpecialBlockGeometry.State(hit.type,hit.blockShape);if(hit.type!=BlockType.Rail)shape&=7;position=(Vector3)p+VehiclePhysics.RailPoint(shape,.5f)+Vector3.up*.0625f;}
                 if(allowed&&world.SpawnVehicle(boat?VehicleKind.Boat:VehicleKind.Minecart,position,Mathf.Atan2(look.x,look.z)*Mathf.Rad2Deg))
@@ -80,7 +83,7 @@ public partial class Player
         if(world==null||health<=0)return false;
         var v=world.RiddenVehicle(this);if(v==null)return false;
         if(!world.VehicleAreaReady(v.position))return true;
-        var target=v.position+Vector3.up*.45f;
+        var target=VehiclePhysics.SeatPosition(v);
         transform.position=(transform.position-target).sqrMagnitude>9?target:Vector3.Lerp(transform.position,target,1-Mathf.Exp(-20*Time.fixedDeltaTime));
         verticalMomentum=0;velocity=Vector3.zero;isFlying=false;isSprinting=false;jumpRequest=false;falling.Reset();ResetWalkMotion();
         return true;

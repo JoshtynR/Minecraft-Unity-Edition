@@ -9,6 +9,9 @@ with tempfile.TemporaryDirectory() as folder:
     sources.append('Assets/_Scripts/World/Rendering/VehicleModelGeometry.cs')
     subprocess.run([a.mcs,'-langversion:latest','-out:'+str(binary),*[str(root/s) for s in sources]],check=True)
     subprocess.run([a.mono,str(binary)],check=True)
+    pose=Path(folder)/'riding.exe'
+    subprocess.run([a.mcs,'-langversion:latest','-out:'+str(pose),str(root/'Tools/Shared/UnityVectors.cs'),str(root/'Tools/VehicleChecks/RidingCheck.cs'),str(root/'Assets/_Scripts/BetaPlayerMotion.cs'),str(root/"Assets/_Scripts/Entity's/Player/MinecraftWalkAnimator.cs")],check=True)
+    subprocess.run([a.mono,str(pose)],check=True)
 for path,needle in [('Assets/_Scripts/World/World_UpdateLoop.cs','UpdateVehicles();'),('Assets/_Scripts/World/World.cs','InitializeVehicles();'),('Assets/_Scripts/World/World_Serialization.cs','vehicles = CaptureVehicles()'),('Assets/_Scripts/Menus/WorldSettingsManager.cs','RestoreVehicles('),('Assets/_Scripts/World/World_Dimensions.cs','RestoreVehicles(saved.vehicles)'),("Assets/_Scripts/Entity's/Player/Player.cs",'if(UpdateVehicleSeat())')]:
     assert needle in (root/path).read_text(),path
 print('Vehicle startup, player, save and dimension hooks verified.')

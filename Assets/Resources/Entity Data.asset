@@ -54,12 +54,12 @@ MonoBehaviour:
     maxGroup: 4
     walkSpeed: 0.16
   vehicles:
-    boatMaxSpeed: 7
-    boatThrust: 4
-    boatTurnSpeed: 75
-    boatBuoyancy: 24
-    boatGravity: 9.8
-    boatWaterDrag: 0.97
+    boatMaxSpeed: 8
+    boatThrust: 1.42688
+    boatTurnSpeed: 400
+    boatBuoyancy: 2.8
+    boatGravity: 16
+    boatWaterDrag: 0.99
     cartMaxSpeed: 8
     cartSlopeAcceleration: 8
     cartPoweredAcceleration: 6

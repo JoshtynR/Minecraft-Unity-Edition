@@ -51,6 +51,7 @@ public enum WorldDimension {Overworld,Nether}
 public class PlayerHudAssets {public Texture2D boatSkin,minecartSkin;}
 public struct InventoryStack {public ItemType type;public int count,damage;public bool Empty=>count<=0;public InventoryStack(ItemType t,int n){type=t;count=n;damage=0;}}
 public class Inventory {public InventoryStack[] slots=new InventoryStack[36];public bool DropRequestPending,isOpen;public int selectedSlotIndex;public InventoryStack HeldItem()=>slots[selectedSlotIndex];public InventoryStack[] DropInventorySnapshot()=>(InventoryStack[])slots.Clone();public void ApplyDropInventory(InventoryStack[] s){slots=(InventoryStack[])s.Clone();}}
+public static class MobRules {public static int AttackDamage(ItemType type)=>type==ItemType.DiamondSword?10:1;}
 public static class ChestTransactions {public static bool Valid(InventoryStack[] s,InventoryStack c)=>s!=null&&s.Length==36;}
 public class FallState {public void Reset(){}}
 public partial class Player
@@ -62,6 +63,7 @@ public partial class Player
  public void CompleteDropAction(int r,InventoryStack[] s,bool accepted,bool n){inventory.DropRequestPending=false;if(accepted)inventory.ApplyDropInventory(s);}
  public void Action(int req,int id,bool attack,Vector3 look){ProcessVehicleAction(req,id,attack,0,inventory.DropInventorySnapshot(),knownItemWearRevision,look,false);}
  public bool Click()=>TryUseVehicle(false);
+ public bool SeatForCheck()=>UpdateVehicleSeat();
 }
 public class BlockData {public bool generateCollider=true;}
 public class Block {public BlockType type;public byte blockShape,waterLevel;public Vector3Int globalWorldPosition;public BlockData BlockData=new BlockData();}
@@ -87,10 +89,13 @@ public partial class World
  public WorldData worldData=new WorldData();public Dictionary<Vector3Int,Block> blocks=new Dictionary<Vector3Int,Block>();public int worldHeight=128,betaPopulationJobs;public bool DropAuthority=true,isSaving,disabled,IsWorldCreated=true;public WorldDimension dimension;public ChunkRenderer worldRenderer=new ChunkRenderer();public List<InventoryStack> drops=new List<InventoryStack>();
  public Block GetBlock(Vector3Int p){if(blocks.TryGetValue(p,out var b))return b;return new Block{type=worldData.chunkDict.ContainsKey(WorldDataHelper.GetChunkPosition(this,p))?BlockType.Air:BlockType.Nothing,globalWorldPosition=p};}
  public void Put(int x,int y,int z,BlockType t,byte s=0){var p=new Vector3Int(x,y,z);blocks[p]=new Block{type=t,blockShape=s,globalWorldPosition=p};}
+ private void SetFarmBlock(Vector3Int p,BlockType t){Put(p.x,p.y,p.z,t);}
+ public void PlayBoatWake(Vector3 p,float yaw,Vector3 velocity){}
  public static World FindDimension(WorldDimension d)=>null;public static void Destroy(object o){}
  public bool SpawnItemDrop(InventoryStack stack,Vector3 position){drops.Add(stack);return true;}
  public void Tick(){Time.unscaledTime+=.05f;UpdateVehicles();}
  public void Sim(VehicleState v){TickVehicle(v);}
+ public float WetForCheck(VehicleState v)=>BoatSubmersion(v);
 }
 public static class VehicleCheck
 {
@@ -98,6 +103,31 @@ public static class VehicleCheck
  static World Ready(){var w=new World();for(int x=-32;x<=32;x+=16)for(int z=-32;z<=32;z+=16)w.worldData.chunkDict[new Vector3Int(x,0,z)]=new ChunkRenderer();return w;}
  public static void Main()
  {
+  var random=new Random(173);
+  for(int i=0;i<2000;i++)
+  {
+   var sample=new VehicleState{occupied=i%3!=0,onGround=i%7==0,velocity=new Vector3((float)(random.NextDouble()*24-12),(float)(random.NextDouble()*10-5),(float)(random.NextDouble()*24-12)),throttle=(float)(random.NextDouble()*2-1),steer=(float)(random.NextDouble()*2-1),inputYaw=(float)(random.NextDouble()*720-360)};
+   double sub=(i%6)/5.0,x=sample.velocity.x,y=sample.velocity.y,z=sample.velocity.z;
+   if(sub<1)y+=.8*(sub*2-1);else{if(y<0)y*=.5;y+=.14;}
+   if(sample.occupied)
+   {
+    double angle=sample.inputYaw*Math.PI/180,length=Math.Max(1,Math.Sqrt(sample.throttle*sample.throttle+sample.steer*sample.steer));
+    double impulse=.02*.98*(sub>0?.8:.91)*.2/.05/length;
+    x+=(sample.steer*Math.Cos(angle)+sample.throttle*Math.Sin(angle))*impulse;
+    z+=(sample.throttle*Math.Cos(angle)-sample.steer*Math.Sin(angle))*impulse;
+   }
+   x=Math.Max(-8,Math.Min(8,x));z=Math.Max(-8,Math.Min(8,z));
+   if(sample.onGround){x*=.5;y*=.5;z*=.5;}
+   VehiclePhysics.BoatVelocity(sample,(float)sub,.05f);
+   Check(Math.Abs(sample.velocity.x-x)<.00001&&Math.Abs(sample.velocity.y-y)<.00001&&Math.Abs(sample.velocity.z-z)<.00001,"source pre-move buoyancy/rider/cap/ground formula");
+   VehiclePhysics.BoatDrag(sample);
+   Check(Math.Abs(sample.velocity.x-x*.99)<.00001&&Math.Abs(sample.velocity.y-y*.95)<.00001&&Math.Abs(sample.velocity.z-z*.99)<.00001,"source post-move damping formula");
+  }
+  var turn=new VehicleState{yaw=0,occupied=true,steer=1};VehiclePhysics.BoatVelocity(turn,.6f,.05f);
+  Check(turn.velocity.x>0&&Math.Abs(turn.velocity.z)<.00001f&&turn.yaw==0,"strafe applies camera-relative impulse, not rudder rotation");
+  VehiclePhysics.BoatHeading(turn,new Vector3(.1f,0,0));Check(turn.yaw==20,"yaw follows travel at twenty degrees per tick");
+  turn.yaw=179;float radians=-179*Mathf.Deg2Rad;VehiclePhysics.BoatHeading(turn,new Vector3(Mathf.Sin(radians)*.1f,0,Mathf.Cos(radians)*.1f));
+  Check(Math.Abs(turn.yaw-181)<.001f,"yaw wraps through shortest turn");
   foreach(var kind in new[]{VehicleKind.Boat,VehicleKind.Minecart})
   {
    var model=VehicleModelGeometry.Build(kind);int count=kind==VehicleKind.Boat?120:124;
@@ -121,7 +151,7 @@ public static class VehicleCheck
   }
   var boat=new VehicleState{kind=VehicleKind.Boat};VehiclePhysics.BoatVelocity(boat,0,.05f);Check(boat.velocity.y<0,"dry boat falls");
   boat.velocity=Vector3.zero;VehiclePhysics.BoatVelocity(boat,1,.05f);Check(boat.velocity.y>0,"submerged boat rises");
-  boat.throttle=1;for(int i=0;i<1000;i++)VehiclePhysics.BoatVelocity(boat,.4f,.05f);Check(boat.velocity.magnitude<7.1f,"boat speed bounded");
+  boat.throttle=1;boat.occupied=true;for(int i=0;i<1000;i++){VehiclePhysics.BoatVelocity(boat,.4f,.05f);VehiclePhysics.BoatDrag(boat);}Check(Math.Abs(boat.velocity.x)<=8&&Math.Abs(boat.velocity.z)<=8,"boat horizontal speed bounded per axis");
   var w=Ready();for(int x=-5;x<24;x++)for(int z=-5;z<6;z++)w.Put(x,0,z,BlockType.Stone);
   for(int x=0;x<20;x++)w.Put(x,1,0,BlockType.Rail,1);
   Check(w.SpawnVehicle(VehicleKind.Minecart,new Vector3(.5f,1.0625f,.5f),0),"place cart on rail");var cart=w.Vehicle(1);cart.velocity=new Vector3(5,0,0);
@@ -136,11 +166,40 @@ public static class VehicleCheck
   w.Put(2,2,0,BlockType.Stone);cart.position=new Vector3(1.4f,2.0625f,.5f);cart.velocity=new Vector3(8,0,0);for(int i=0;i<5;i++)w.Sim(cart);Check(cart.position.x<=1.511f,"cart cannot pass solid wall");
   w=Ready();w.worldData.chunkDict.Remove(new Vector3Int(16,0,0));cart=new VehicleState{kind=VehicleKind.Minecart,position=new Vector3(15.4f,4,.5f),velocity=new Vector3(8,0,0)};var before=cart.position;w.Sim(cart);Check((cart.position-before).magnitude<.001f,"unloaded swept boundary suspends simulation");
   w=Ready();for(int x=-2;x<3;x++)for(int z=-2;z<3;z++)w.Put(x,1,z,BlockType.Water);
-  boat=new VehicleState{kind=VehicleKind.Boat,position=new Vector3(.5f,1.5f,.5f)};for(int i=0;i<200;i++)w.Sim(boat);Check(boat.position.y>1.3f&&boat.position.y<1.8f,"boat settles at water surface");
+  boat=new VehicleState{kind=VehicleKind.Boat,position=new Vector3(.5f,1.5f,.5f)};for(int i=0;i<200;i++)w.Sim(boat);Check(boat.position.y>1.8f&&boat.position.y<2,"boat settles at water surface using five material slices");
   Check(w.SpawnVehicle(VehicleKind.Boat,new Vector3(.5f,1.5f,.5f),0),"spawn boat");var player=new Player{world=w};player.transform.position=new Vector3(.5f,1.5f,-1);
   Check(w.UseVehicle(player,1,false),"mount boat");Check(!w.UseVehicle(new Player{world=w},1,false),"one rider only");
+  Check(player.IsMounted,"mounted-state query works through actual vehicle ownership");
+  for(int i=0;i<50;i++)player.SeatForCheck();
+  Check((player.transform.position-VehiclePhysics.SeatPosition(w.Vehicle(1))).magnitude<.001f,"player follows lower, offset boat seat");
   var saved=w.CaptureVehicles();Check(!saved[0].occupied&&saved[0].driver==null,"save excludes live rider");w.RestoreVehicles(saved);Check(w.Vehicle(1)!=null&&!w.Vehicle(1).occupied,"restore vehicle unmounted");
-  Check(w.UseVehicle(player,1,true)&&w.drops.Count==1,"break empty vehicle returns item");Check(!w.UseVehicle(player,1,true)&&w.drops.Count==1,"cannot duplicate broken vehicle");
+  for(int i=0;i<4;i++)Check(w.UseVehicle(player,1,true)&&w.drops.Count==0,"boat accumulates hit damage without dropping early");
+  Check(w.UseVehicle(player,1,true)&&w.drops.Count==1&&w.drops[0].type==ItemType.Boat&&w.drops[0].count==1,"broken boat returns one boat, never planks or sticks");Check(!w.UseVehicle(player,1,true)&&w.drops.Count==1,"cannot duplicate broken vehicle");
+  Check(!player.IsMounted,"restored/broken vehicles do not leave mounted state stuck");
+  w=Ready();for(int x=-4;x<=4;x++)for(int z=-4;z<=4;z++){w.Put(x,0,z,BlockType.Stone);w.Put(x,1,z,BlockType.Water);}
+  w.SpawnVehicle(VehicleKind.Boat,new Vector3(.5f,1.88f,.5f),0);player=new Player{world=w};w.UseVehicle(player,1,false);
+  Check(w.LeaveVehicle(player)&&!player.IsMounted&&player.transform.position.y>=1.88f,"dismount safely at water surface, without requiring a shore or sinking two blocks");
+  w=Ready();for(int x=-4;x<=4;x++)for(int z=-4;z<=4;z++)w.Put(x,0,z,BlockType.Stone);
+  for(int z=-2;z<=2;z++){w.Put(2,1,z,BlockType.Stone);w.Put(2,2,z,BlockType.Stone);}
+  w.SpawnVehicle(VehicleKind.Boat,new Vector3(.5f,1,.5f),90);boat=w.Vehicle(1);boat.velocity=new Vector3(8,0,0);player=new Player{world=w};w.UseVehicle(player,1,false);
+  for(int i=0;i<20;i++)w.Sim(boat);
+  Check(w.Vehicle(1)==boat&&boat.occupied&&w.drops.Count==0&&boat.position.x<=1.2501f,"wall collision clips hull but never destroys boat or rider");
+  w.UseVehicle(new Player{world=w},1,true,10);
+  Check(w.Vehicle(1)==null&&w.drops.Count==1&&w.drops[0].type==ItemType.Boat&&!player.IsMounted,"player attack can break occupied boat, safely eject rider and recover a boat item");
+  w=Ready();w.Put(0,1,0,BlockType.Water);
+  boat=new VehicleState{kind=VehicleKind.Boat,position=new Vector3(1.6f,1.2f,1.6f)};
+  Check(w.WetForCheck(boat)==1,"water sampling covers the whole hull, including narrow corner overlap");
+  w.GetBlock(new Vector3Int(0,1,0)).waterLevel=7;
+  Check(Math.Abs(w.WetForCheck(boat)-.2f)<.0001f,"five-layer water test uses source metadata divided by eight");
+  w=Ready();w.SpawnVehicle(VehicleKind.Boat,new Vector3(.5f,2,.5f),0);w.SpawnVehicle(VehicleKind.Boat,new Vector3(2,2,.5f),0);
+  w.Sim(w.Vehicle(1));Check(w.Vehicle(1).velocity.x<0&&w.Vehicle(2).velocity.x>0,"nearby boats exchange separation impulses without breaking");
+  w=Ready();w.Put(0,0,0,BlockType.Stone);w.Put(0,1,0,BlockType.SnowLayer);
+  boat=new VehicleState{kind=VehicleKind.Boat,position=new Vector3(.5f,1,.5f)};w.Sim(boat);
+  Check(w.GetBlock(new Vector3Int(0,1,0)).type==BlockType.Air,"boat clears thin snow beneath hull corners");
+  w=Ready();w.SpawnVehicle(VehicleKind.Boat,new Vector3(.5f,2,.5f),0);w.UseVehicle(new Player{world=w},1,true);boat=w.Vehicle(1);
+  Check(boat.damage==10&&boat.hitTicks==10&&Math.Abs(VehiclePhysics.BoatRock(boat))>0,"boat hit creates source damage and rocking state");
+  w.Sim(boat);Check(boat.damage==9&&boat.hitTicks==9,"hit damage and rocking decay once per game tick");
+  Check(boat.Copy().damage==9&&w.CaptureVehicles()[0].damage==0,"live snapshots carry hit state but disk snapshots omit transient damage");
   w=Ready();w.Put(0,1,0,BlockType.Rail,1);player=new Player{world=w};player.transform.position=new Vector3(.5f,1,-1);player.inventory.slots[0]=new InventoryStack(ItemType.Minecart,1);
   var aim=new Vector3(0,-1.3f,1.5f).normalized;
   player.Action(1,0,false,aim);Check(player.inventory.slots[0].Empty&&w.Vehicle(1)!=null,"player item spawns cart and consumes original slot");player.Action(1,0,false,aim);Check(w.Vehicle(2)==null,"request replay cannot duplicate spawn");

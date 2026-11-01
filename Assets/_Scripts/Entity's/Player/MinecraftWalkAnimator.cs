@@ -26,7 +26,7 @@ public sealed class MinecraftWalkAnimator : MonoBehaviour
         // Keep authored crouch translations for both local and remote players.
         // The old fixed-duration walking clip no longer drives the limbs.
         animator.SetFloat("speed",0);
-        animator.SetBool("sneaking",player.isCrouching&&!player.isFlying);
+        animator.SetBool("sneaking",player.isCrouching&&!player.isFlying&&!player.IsMounted);
     }
     private void LateUpdate()
     {
@@ -34,13 +34,15 @@ public sealed class MinecraftWalkAnimator : MonoBehaviour
         if(player.sleeping){ApplySleepPose();return;}
         RestoreSleepPose();
         var pose=player.WalkPose;float degrees=180f/Mathf.PI;
-        float crouch=player.isCrouching&&!player.isFlying?.4f:0;
+        bool riding=player.IsMounted;
+        if(riding)pose=pose.Seated();
+        float crouch=player.isCrouching&&!player.isFlying&&!riding?.4f:0;
         float right=pose.RightArm;
         if(player.inventory!=null&&!player.inventory.HeldItem().Empty)right=right*.5f-.31415927f;
         if(parts.leftArm!=null)parts.leftArm.localRotation=leftArm*Quaternion.Euler(0,0,-pose.IdleRoll*degrees)*Quaternion.Euler((pose.LeftArm+crouch-pose.IdleX)*degrees,0,0);
         if(parts.rightArm!=null)parts.rightArm.localRotation=rightArm*Quaternion.Euler(0,0,pose.IdleRoll*degrees)*Quaternion.Euler((right+crouch+pose.IdleX)*degrees,0,0);
-        if(parts.leftLeg!=null)parts.leftLeg.localRotation=leftLeg*Quaternion.Euler(pose.LeftLeg*degrees,0,0);
-        if(parts.rightLeg!=null)parts.rightLeg.localRotation=rightLeg*Quaternion.Euler(pose.RightLeg*degrees,0,0);
+        if(parts.leftLeg!=null)parts.leftLeg.localRotation=leftLeg*Quaternion.Euler(pose.LeftLeg*degrees,pose.LeftLegYaw*degrees,0);
+        if(parts.rightLeg!=null)parts.rightLeg.localRotation=rightLeg*Quaternion.Euler(pose.RightLeg*degrees,pose.RightLegYaw*degrees,0);
     }
 
     private void ApplySleepPose()

@@ -53,4 +53,14 @@ public sealed class BetaPlayerMotion
 public struct BetaMotionPose
 {
     public float X,Y,Roll,Pitch,RightArm,LeftArm,RightLeg,LeftLeg,IdleX,IdleRoll;
+    public float RightLegYaw,LeftLegYaw;
+    // Shared ModelBiped riding pose: boats, carts and future saddle riders.
+    public BetaMotionPose Seated()
+    {
+        var pose=this;
+        pose.RightArm=pose.LeftArm=-.62831855f;
+        pose.RightLeg=pose.LeftLeg=-1.2566371f;
+        pose.RightLegYaw=.31415927f;pose.LeftLegYaw=-.31415927f;
+        return pose;
+    }
 }

@@ -2,6 +2,7 @@
 using System;
 namespace UnityEngine {
  [Serializable] public struct Vector3 {
+  public static Vector3 forward=>new Vector3(0,0,1);
   public float x,y,z;public Vector3(float x,float y,float z){this.x=x;this.y=y;this.z=z;}
   public static Vector3 zero=>new Vector3();public static Vector3 one=>new Vector3(1,1,1);public static Vector3 up=>new Vector3(0,1,0);public static Vector3 down=>new Vector3(0,-1,0);
   public float sqrMagnitude=>x*x+y*y+z*z;public float magnitude=>(float)Math.Sqrt(sqrMagnitude);public Vector3 normalized=>magnitude<.000001f?zero:this/magnitude;

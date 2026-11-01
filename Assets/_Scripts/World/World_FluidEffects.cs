@@ -4,6 +4,12 @@ using UnityEngine;
 public partial class World
 {
     private FluidEffects fluidEffects;
+    public void PlayBoatWake(Vector3 position,float yaw,Vector3 velocity)
+    {
+        if(Instance!=this||Application.isBatchMode||!Application.isPlaying||worldRenderer==null)return;
+        if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
+        fluidEffects.EmitBoatWake(position,yaw,velocity);
+    }
     public void EmitFluidEffect(Vector3Int position,byte kind)
     {
         // Each client observes hardening through ApplyFluidState. Avoid a second

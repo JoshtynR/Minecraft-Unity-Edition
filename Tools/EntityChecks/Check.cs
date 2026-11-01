@@ -22,7 +22,8 @@ namespace UnityEngine
  public static class GUILayout {public static int Toolbar(int n,string[] s)=>n;public static bool Button(string s)=>false;}
  public static class Mathf
  {
-  public const float Deg2Rad=(float)(Math.PI/180);
+  public const float Deg2Rad=(float)(Math.PI/180),Rad2Deg=(float)(180/Math.PI);
+  public static float Atan2(float y,float x)=>(float)Math.Atan2(y,x);
   public static float Clamp(float v,float a,float b)=>Math.Max(a,Math.Min(b,v));public static float Clamp01(float v)=>Clamp(v,0,1);
   public static float Max(float a,float b)=>Math.Max(a,b);public static float Min(float a,float b)=>Math.Min(a,b);
   public static float Pow(float a,float b)=>(float)Math.Pow(a,b);public static float Sin(float f)=>(float)Math.Sin(f);public static float Cos(float f)=>(float)Math.Cos(f);
@@ -59,10 +60,11 @@ public static class Check
   var data=new EntityDataSO();data.AddMissingMobs();Assert(data.mobs.Count==8,"all species present");data.mobs[0].maxHealth=37;data.AddMissingMobs();Assert(data.mobs.Count==8&&data.mobs[0].maxHealth==37,"populate preserves existing settings");
   data.vehicles.boatMaxSpeed=2;data.vehicles.boatTurnSpeed=120;data.chestLidSpeed=4;EntityDataSO.Apply(data);
   Assert(MobDefinitions.Get(MobType.Cow).MaxHealth==37,"runtime asset applies health");Assert(VehicleTuning.Current.boatMaxSpeed==2&&ModernChestVisual.LidSpeed==4,"runtime vehicle and chest values");
-  var boat=new VehicleState{throttle=1,steer=1};for(int i=0;i<1000;i++)VehiclePhysics.BoatVelocity(boat,.4f,.05f);
-  Assert(new Vector3(boat.velocity.x,0,boat.velocity.z).magnitude<=2.001f&&boat.yaw>5000,"configured speed cap and steering affect actual physics");
+  var boat=new VehicleState{occupied=true,throttle=1,inputYaw=90};for(int i=0;i<1000;i++){VehiclePhysics.BoatVelocity(boat,.4f,.05f);VehiclePhysics.BoatDrag(boat);}
+  VehiclePhysics.BoatHeading(boat,new Vector3(.4f,0,0));
+  Assert(Math.Abs(boat.velocity.x)<=2.001f&&Math.Abs(boat.yaw-6)<.001f,"configured per-axis speed cap and travel-following turn limit affect physics");
   data.vehicles.boatMaxSpeed=float.NaN;data.vehicles.cartMaxSpeed=500;data.chestLidSpeed=float.PositiveInfinity;EntityDataSO.Apply(data);
-  Assert(VehicleTuning.Current.boatMaxSpeed==7&&VehicleTuning.Current.cartMaxSpeed==20&&ModernChestVisual.LidSpeed==2,"nonfinite values and bounds safe");Assert(float.IsNaN(data.vehicles.boatMaxSpeed),"asset not mutated by validation");
+  Assert(VehicleTuning.Current.boatMaxSpeed==8&&VehicleTuning.Current.cartMaxSpeed==20&&ModernChestVisual.LidSpeed==2,"nonfinite values and bounds safe");Assert(float.IsNaN(data.vehicles.boatMaxSpeed),"asset not mutated by validation");
   EntityDataSO.Apply(null);Assert(MobDefinitions.Get(MobType.Cow).MaxHealth==10&&VehicleTuning.Current.cartMaxSpeed==8&&ModernChestVisual.LidSpeed==2,"missing asset resets all defaults");
   var first=MobTuning.From(MobDefinitions.Default(MobType.Cow));first.maxHealth=33;var duplicate=MobTuning.From(MobDefinitions.Default(MobType.Cow));duplicate.maxHealth=90;
   MobDefinitions.Configure(new[]{first,duplicate});Assert(MobDefinitions.Get(MobType.Cow).MaxHealth==33,"first duplicate wins");

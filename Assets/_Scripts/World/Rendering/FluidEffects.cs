@@ -201,6 +201,24 @@ public sealed class FluidEffects : MonoBehaviour
         }
     }
     public void EmitFuseSmoke(Vector3 position)=>effects[0].Add(NewSmoke(position,Vector3.zero));
+    public void EmitBoatWake(Vector3 feet,float yaw,Vector3 velocity)
+    {
+        float speed=new Vector3(velocity.x,0,velocity.z).magnitude*.05f;
+        if(speed<=.15f)return;
+        float angle=yaw*(float)(System.Math.PI/180);
+        var forward=new Vector3((float)System.Math.Sin(angle),0,(float)System.Math.Cos(angle));
+        var right=new Vector3(forward.z,0,-forward.x);
+        // Same threshold/count and side/stern pattern as EntityBoat, converted
+        // from its X-oriented model to our forward-Z hull and feet coordinates.
+        int count=System.Math.Min(40,(int)System.Math.Ceiling(1+speed*60));
+        for(int i=0;i<count;i++)
+        {
+            float offset=RandomSigned(1),side=cosmetic.Next(2)*2-1;
+            var point=feet+Vector3.up*.175f+(cosmetic.Next(2)==0?
+                forward*(offset*.8f)-right*(side*.7f):forward*-1-right*(offset*.7f));
+            effects[1].Add(NewSplash(point,velocity*.05f));
+        }
+    }
     private float RandomSigned(float radius)=>((float)cosmetic.NextDouble()*2-1)*radius;
     private float RandomRange(float minimum,float maximum)=>minimum+(float)cosmetic.NextDouble()*(maximum-minimum);
     private float Gaussian(){float a=Mathf.Max(.000001f,(float)cosmetic.NextDouble());return Mathf.Sqrt(-2*Mathf.Log(a))*Mathf.Cos((float)cosmetic.NextDouble()*Mathf.PI*2);}

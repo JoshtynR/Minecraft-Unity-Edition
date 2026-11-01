@@ -91,14 +91,24 @@ public partial class World
         foreach(var other in vehicles)if((other.position-position).sqrMagnitude<1)return false;
         vehicles.Add(new VehicleState{id=nextVehicleId++,kind=kind,position=position,yaw=yaw});vehicleBroadcast=0;return true;
     }
-    public bool UseVehicle(Player player,int id,bool attack)
+    public bool UseVehicle(Player player,int id,bool attack,int attackDamage=1)
     {
         if(!DropAuthority||isSaving)return false;
         var v=Vehicle(id);if(v==null)return false;
         if(attack)
         {
-            if(v.occupied)return false;
+            if(v.occupied&&v.kind!=VehicleKind.Boat)return false;
+            if(v.kind==VehicleKind.Boat)
+            {
+                v.rockDirection=-v.rockDirection;v.hitTicks=10;
+                v.damage=Math.Min(1000,v.damage+Math.Max(1,Math.Min(20,attackDamage))*10);
+                vehicleBroadcast=0;
+                if(v.damage<=40)return true;
+            }
+            // Intentional exception to Beta's planks/sticks loot: recover
+            // exactly one usable boat, and never destroy it on a wall impact.
             if(!SpawnItemDrop(new InventoryStack(v.kind==VehicleKind.Boat?ItemType.Boat:ItemType.Minecart,1),v.position+Vector3.up*.3f))return false;
+            if(v.driver!=null)LeaveVehicle(v.driver,true);
             vehicles.Remove(v);vehicleBroadcast=0;return true;
         }
         if(v.occupied||RiddenVehicle(player)!=null||!VehicleBodyClear(v.position+Vector3.up*.45f,.3f,1.8f))return false;
@@ -111,8 +121,12 @@ public partial class World
         {
             var p=v.position+new Vector3(side==0?1.5f:side==1?-1.5f:0,y,side==2?1.5f:side==3?-1.5f:0);
             if(!VehicleBodyClear(p,.3f,1.8f))continue;
-            p.y+=BlockCollision.Clip(this,p,.3f,1.8f,-2,1);
-            if(!VehicleBodyClear(p,.3f,1.8f)||(!force&&!BlockCollision.Supported(this,p,.3f,1.8f)))continue;
+            var waterCell=Vector3Int.FloorToInt(p-Vector3.up*.1f);
+            var surface=GetBlock(waterCell);
+            if(surface.type==BlockType.Water)p.y=Mathf.Max(p.y,BetaFluidPhysics.EyeSurface(waterCell.y,surface.waterLevel));
+            else p.y+=BlockCollision.Clip(this,p,.3f,1.8f,-2,1);
+            var water=GetBlock(Vector3Int.FloorToInt(p-Vector3.up*.1f));
+            if(!VehicleBodyClear(p,.3f,1.8f)||(!force&&!BlockCollision.Supported(this,p,.3f,1.8f)&&water.type!=BlockType.Water))continue;
             v.driver=null;v.occupied=false;v.riderId=0;v.throttle=v.steer=0;
             player.transform.position=p;player.VehicleDismounted(p);vehicleBroadcast=0;return true;
         }
@@ -134,18 +148,64 @@ public partial class World
     private float BoatSubmersion(VehicleState v)
     {
         int wet=0;
-        for(int x=0;x<2;x++)for(int z=0;z<2;z++)for(int y=0;y<5;y++)
+        for(int layer=0;layer<5;layer++)
         {
-            var p=v.position+new Vector3(x==0?-.45f:.45f,(y+.5f)*.12f,z==0?-.45f:.45f);
-            var cell=Vector3Int.FloorToInt(p);var b=GetBlock(cell);
-            if(b!=null&&b.type==BlockType.Water&&p.y<BetaFluidPhysics.EyeSurface(cell.y,b.waterLevel))wet++;
+            // EntityBoat's five horizontal AABB slices, shifted down 1/8.
+            // World.isAABBInMaterial uses metadata/8, not eye immersion /9.
+            float minY=v.position.y+layer*.12f-.125f,maxY=minY+.12f;
+            bool water=false;
+            for(int x=Mathf.FloorToInt(v.position.x-.75f);x<=Mathf.FloorToInt(v.position.x+.75f)&&!water;x++)
+            for(int z=Mathf.FloorToInt(v.position.z-.75f);z<=Mathf.FloorToInt(v.position.z+.75f)&&!water;z++)
+            for(int y=Mathf.Max(0,Mathf.FloorToInt(minY));y<=Mathf.Min(worldHeight-1,Mathf.FloorToInt(maxY));y++)
+            {
+                var b=GetBlock(new Vector3Int(x,y,z));
+                if(b.type==BlockType.Water&&y+1-(b.waterLevel<8?b.waterLevel/8f:0)>=minY){water=true;break;}
+            }
+            if(water)wet++;
         }
-        return wet/20f;
+        return wet/5f;
+    }
+    private void TickBoat(VehicleState v)
+    {
+        if(v.hitTicks>0)v.hitTicks--;
+        if(v.damage>0)v.damage--;
+        VehiclePhysics.BoatVelocity(v,BoatSubmersion(v),VehiclePhysics.Step);
+        var requested=v.velocity*VehiclePhysics.Step;
+        if(!VehicleAreaReady(v.position+requested,VehiclePhysics.Radius(v.kind)+.1f))return;
+        var moved=BlockCollision.Resolve(this,v.position,.75f,.6f,requested,false);
+        v.position+=moved;
+        v.onGround=requested.y<0&&moved.y>requested.y+.0001f;
+        if(Mathf.Abs(moved.x-requested.x)>.0001f)v.velocity.x=0;
+        if(Mathf.Abs(moved.y-requested.y)>.0001f)v.velocity.y=0;
+        if(Mathf.Abs(moved.z-requested.z)>.0001f)v.velocity.z=0;
+        // Unlike Beta, horizontal collision never deletes the boat or its rider.
+        VehiclePhysics.BoatDrag(v);
+        VehiclePhysics.BoatHeading(v,moved);
+        foreach(var other in vehicles)
+        {
+            if(ReferenceEquals(v,other)||other.kind!=VehicleKind.Boat||
+                Math.Abs(other.position.y-v.position.y)>=.6f)continue;
+            var delta=other.position-v.position;
+            if(Math.Abs(delta.x)>=1.7f||Math.Abs(delta.z)>=1.7f)continue;
+            if(!VehicleAreaReady(other.position))continue;
+            float extent=Mathf.Max(Mathf.Abs(delta.x),Mathf.Abs(delta.z));
+            if(extent<.01f)continue;
+            float root=(float)Math.Sqrt(extent);
+            var impulse=new Vector3(delta.x,0,delta.z)*(.05f*Mathf.Min(1,1/root)/root/VehiclePhysics.Step);
+            v.velocity-=impulse;other.velocity+=impulse;
+        }
+        // Beta boats clear thin snow at the four hull corners.
+        for(int i=0;i<4;i++)
+        {
+            var cell=Vector3Int.FloorToInt(v.position+new Vector3((i%2-.5f)*.8f,.3f,(i/2-.5f)*.8f));
+            if(GetBlock(cell).type==BlockType.SnowLayer)SetFarmBlock(cell,BlockType.Air);
+        }
     }
     private void TickVehicle(VehicleState v)
     {
         if(!VehicleAreaReady(v.position))return;
         if(v.inputExpires<Time.unscaledTime)v.throttle=v.steer=0;
+        if(v.kind==VehicleKind.Boat){TickBoat(v);return;}
         const float dt=VehiclePhysics.Step/5;
         for(int sub=0;sub<5;sub++)
         {
@@ -173,8 +233,7 @@ public partial class World
             }
             else
             {
-                if(v.kind==VehicleKind.Boat)VehiclePhysics.BoatVelocity(v,BoatSubmersion(v),dt);
-                else{v.velocity.y-=16f*dt;v.velocity.x*=.995f;v.velocity.z*=.995f;}
+                v.velocity.y-=16f*dt;v.velocity.x*=.995f;v.velocity.z*=.995f;
                 requested=v.velocity*dt;
             }
             if(!VehicleAreaReady(v.position+requested,VehiclePhysics.Radius(v.kind)+.1f))return;
@@ -206,7 +265,7 @@ public partial class World
             if(!vehicleVisuals.TryGetValue(v.id,out var visual)||visual==null)
             {
                 var root=new GameObject(v.kind.ToString());root.transform.SetParent(worldRenderer.transform,false);
-                visual=root.AddComponent<VehicleVisual>();visual.Initialize(v);vehicleVisuals[v.id]=visual;
+                visual=root.AddComponent<VehicleVisual>();visual.Initialize(v,this);vehicleVisuals[v.id]=visual;
             }
             visual.gameObject.SetActive(VehicleAreaReady(v.position));visual.SetTarget(v);
         }
