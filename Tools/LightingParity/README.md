@@ -83,3 +83,23 @@ GPU execution; they cannot establish that an unspecified visual artifact is gone
 The transport/renderer timing adaptation and lack of immutable mesh-read snapshots
 also remain limitations of the current engine, rather than claims of full Beta
 lighting-engine parity.
+
+## Foliage AO
+
+Leaf cube faces already received world AO, but leaf neighbors previously returned
+an occlusion value of 1, so they did not contribute to canopy corner shading.
+Oak, spruce and birch now contribute soft occlusion (0.6 versus 0.2 for solid
+opaque cubes). Isolated exposed leaves keep unoccluded corners; overlapping
+foliage shades leaf and terrain corners through the existing smooth-light toggle
+and AO intensity control. Foliage remains in the cutout submesh.
+
+Soft leaf neighbors still allow the diagonal sky/block sample. Only two hard
+opaque neighbors select the existing blocked-diagonal fallback. This is a visual
+foliage shading enhancement to the current hybrid renderer; leaf opacity, light
+transport, transparency, tint, decay metadata and greedy-merge eligibility are
+unchanged. Reload the world to rebuild existing tree meshes after updating.
+
+The face suite checks all three leaf species in all six orientations, mixed
+canopies, isolated leaves, diagonal lighting, stronger solid-block occlusion,
+glass exclusion, AO-off face-light inputs, and production cutout routing while
+greedy meshing is enabled. In-engine canopy appearance still needs a visual check.

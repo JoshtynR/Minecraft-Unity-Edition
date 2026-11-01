@@ -293,11 +293,16 @@ public static class BlockHelper
         }
     }
 
+    private const float SolidOcclusion=.2f,LeafOcclusion=.6f;
+    private static bool LeafOccluder(BlockType type)=>type==BlockType.Leaves||type==BlockType.SpruceLeaves||type==BlockType.BirchLeaves;
+
     private static Vector3 SampleLightCorner(ChunkData chunk,Vector3Int front,Vector3Int axisA,Vector3Int axisB,int signA,int signB,int emission,Vector3 flat)
     {
         var a=SampleLightLevels(chunk,front+axisA*signA,emission);
         var b=SampleLightLevels(chunk,front+axisB*signB,emission);
-        var diagonal=a.z<1&&b.z<1?a:SampleLightLevels(chunk,front+axisA*signA+axisB*signB,emission);
+        // Only two hard blockers hide the diagonal sample. Porous foliage
+        // contributes soft AO while still allowing diagonal light sampling.
+        var diagonal=a.z<=SolidOcclusion&&b.z<=SolidOcclusion?a:SampleLightLevels(chunk,front+axisA*signA+axisB*signB,emission);
         // Vanilla substitutes the face brightness when a packed neighbor light is zero.
         if(a.x==0&&a.y==0){a.x=flat.x;a.y=flat.y;}
         if(b.x==0&&b.y==0){b.x=flat.x;b.y=flat.y;}
@@ -318,7 +323,9 @@ public static class BlockHelper
         if(shape==BlockShapes.Slab||StairGeometry.IsStair(block.type)||block.type==BlockType.Farmland||block.type==BlockType.MoistFarmland)
             foreach(var dir in SlabLightNeighbors)
             {var neighbor=chunk.GetBlock(pos+dir);if(neighbor!=null){sky=Math.Max(sky,neighbor.GetSkyLight());light=Math.Max(light,neighbor.GetBlockLight());}}
-        float ao=block.BlockData.opacity==15&&shape==BlockShapes.FullBlock?.2f:1;
+        // Foliage uses cutout cube faces and opacity 1 for sky transport.
+        // Give its occupied corners gentle AO independently of that opacity.
+        float ao=LeafOccluder(block.type)?LeafOcclusion:block.BlockData.opacity==15&&shape==BlockShapes.FullBlock?SolidOcclusion:1;
         return new Vector3(sky,light,ao);
     }
 

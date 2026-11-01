@@ -144,6 +144,7 @@ public static partial class LightingCheck
   CheckStairMeshes();
   CheckSpecialMeshes();
   CheckFaceLighting();
+  CheckLeafAO();
   CheckGreedyMeshing();
   CheckTransportAudit(args[1]);
   Console.WriteLine(checks+" lightmap mesh/transport/fluid/biome checks passed (Unity storage mocked).");
