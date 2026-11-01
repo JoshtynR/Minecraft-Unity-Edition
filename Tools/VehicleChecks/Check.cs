@@ -8,13 +8,15 @@ namespace UnityEngine
  public class GameObject {public string name;public Transform transform=new Transform();public GameObject(string name=""){}public void SetActive(bool b){}public T AddComponent<T>()where T:new()=>new T();public T GetComponent<T>()where T:new()=>new T();public static GameObject CreatePrimitive(PrimitiveType t)=>new GameObject();}
  public enum PrimitiveType {Cube}
  public class Collider {public bool enabled;}
- public class MeshRenderer {public Material sharedMaterial;}
+ public class MeshRenderer {public Material sharedMaterial;public Vector4 light;public int propertyWrites;public void SetPropertyBlock(MaterialPropertyBlock p){light=p.light;propertyWrites++;}}
+ public class MaterialPropertyBlock {public Vector4 light;public void SetVector(string name,Vector4 value){light=value;}}
+ public struct Vector4 {public float x,y,z,w;public Vector4(float x,float y,float z,float w){this.x=x;this.y=y;this.z=z;this.w=w;}}
  public class MeshFilter {public Mesh sharedMesh;}
  public class Mesh {public string name;public void SetVertices(List<Vector3> v){}public void SetUVs(int channel,List<Vector2> v){}public void SetTriangles(List<int> t,int sub){}public void RecalculateNormals(){}public void RecalculateBounds(){}}
  public struct Vector2 {public float x,y;public Vector2(float x,float y){this.x=x;this.y=y;}}
  public class Texture2D {public static Texture2D whiteTexture=new Texture2D();}
- public class Shader {public static Shader Find(string s)=>new Shader();}
- public class Material {public Material(Material m){}public Material(Shader s){}public Texture2D mainTexture;public Color color;public bool HasProperty(string s)=>true;public void SetColor(string s,Color c){}public void SetFloat(string s,float f){}}
+ public class Shader {public static string last;public static Shader Find(string s){last=s;return new Shader();}}
+ public class Material {public Material(Material m){}public Material(Shader s){}public Texture2D mainTexture;public Color color;public bool HasProperty(string s)=>true;public void SetColor(string s,Color c){}public float unlit=-1;public void SetFloat(string s,float f){if(s=="_Unlit")unlit=f;}}
  public struct Color {public Color(float r,float g,float b){}}
  public struct Quaternion {public static Quaternion Euler(float x,float y,float z)=>new Quaternion();public static Quaternion Slerp(Quaternion a,Quaternion b,float t)=>a;}
  public static class Resources {public static bool tntMaterial;public static T Load<T>(string s)where T:class=>tntMaterial&&s=="Materials/DroppedBlockMaterial"?new Material((Shader)null) as T:null;}
@@ -66,7 +68,7 @@ public partial class Player
  public bool SeatForCheck()=>UpdateVehicleSeat();
 }
 public class BlockData {public bool generateCollider=true;}
-public class Block {public BlockType type;public byte blockShape,waterLevel;public Vector3Int globalWorldPosition;public BlockData BlockData=new BlockData();}
+public class Block {public int sky,light;public int GetSkyLight()=>sky;public int GetBlockLight()=>light;public BlockType type;public byte blockShape,waterLevel;public Vector3Int globalWorldPosition;public BlockData BlockData=new BlockData();}
 public struct BlockShape {public int xMin,yMin,zMin,xMax,yMax,zMax;}
 public static class BlockShapesExtensions {public static bool IsPlant(BlockType t)=>false;}
 public static class SpecialBlockGeometry
@@ -270,6 +272,28 @@ public static class VehicleCheck
   w=Ready();w.SpawnVehicle(VehicleKind.Boat,new Vector3(.5f,1.5f,3.5f),0);
   Check(w.TargetVehicle(new Vector3(.5f,1.8f,0),new Vector3(0,0,1),5)==1,"vehicle target reachable");w.Put(0,1,2,BlockType.Stone);
   Check(w.TargetVehicle(new Vector3(.5f,1.8f,0),new Vector3(0,0,1),5)==0,"solid wall blocks riding/attack ray");
+  // Actual vehicle visual: initial, moving and stationary illumination updates.
+  foreach(var kind in new[]{VehicleKind.Boat,VehicleKind.Minecart})
+  {
+   w=Ready();w.Put(0,2,0,BlockType.Air);var sample=w.GetBlock(new Vector3Int(0,2,0));sample.sky=15;
+   var visual=new VehicleVisual();visual.Initialize(new VehicleState{kind=kind,position=new Vector3(.5f,2,.5f)},w);
+   var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+   var renderer=(MeshRenderer)typeof(VehicleVisual).GetField("hullRenderer",flags).GetValue(visual);
+   var mat=(Material)typeof(VehicleVisual).GetField("material",flags).GetValue(visual);
+   var late=typeof(VehicleVisual).GetMethod("LateUpdate",flags);
+   Check(mat.unlit==0&&Shader.last=="Voxel/Mob","vehicle uses lit entity shader including fallback");
+   Check(renderer.light.x==15&&renderer.light.y==0&&renderer.light.z==1,"vehicle initialized with world daylight sample");
+   int writes=renderer.propertyWrites;late.Invoke(visual,null);Check(renderer.propertyWrites==writes,"unchanged lighting does not upload properties every frame");
+   sample.sky=0;sample.light=12;Time.unscaledTime+=.21f;late.Invoke(visual,null);
+   Check(renderer.light.x==0&&renderer.light.y==12,"parked vehicle refreshes after torch/skylight changes");
+   sample.light=0;Time.unscaledTime+=.21f;late.Invoke(visual,null);
+   Check(renderer.light.x==0&&renderer.light.y==0,"dark cave vehicle has no forced full brightness");
+   w.Put(1,2,0,BlockType.Air);w.GetBlock(new Vector3Int(1,2,0)).light=7;
+   visual.transform.position=new Vector3(1.5f,2,.5f);visual.SetTarget(new VehicleState{kind=kind,position=visual.transform.position});late.Invoke(visual,null);
+   Check(renderer.light.y==7,"crossing a light cell samples immediately without waiting for timer");
+   writes=renderer.propertyWrites;w.blocks[new Vector3Int(1,2,0)].type=BlockType.Nothing;Time.unscaledTime+=.21f;late.Invoke(visual,null);
+   Check(renderer.propertyWrites==writes&&renderer.light.y==7,"temporarily unavailable chunk light preserves last valid sample");
+  }
   Console.WriteLine(checks+" vehicle rail/buoyancy/collision/chunk/rider/inventory checks passed (Unity/network mocked).");
  }
 }

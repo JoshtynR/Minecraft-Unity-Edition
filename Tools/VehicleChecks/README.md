@@ -132,3 +132,22 @@ riding-pose checks also pass. Unity rendering, Mirror weaving and real multiplay
 transport still require an editor/build smoke test. This retains the five-substep
 voxel simulation and camera-relative rider starting nudge; it is not full 1:1
 Beta minecart tick order. Chest/furnace carts remain unimplemented.
+
+## Vehicle lighting
+
+Boats and minecarts use the existing `Voxel/Mob` lightmap shader with `_Unlit`
+disabled, including the fallback material path. A reusable material property
+block supplies each hull's sky/block light sample at its rendered center height
+(position + 0.3 blocks). Sampling updates immediately on crossing a cell and at
+least every 0.2 seconds while stationary, so torch placement/removal also updates
+parked vehicles. Unchanged samples do not upload another property block; missing
+chunk data retains the last valid sample. Day/night and dimension brightness
+continue to come from the shared world lightmap, and mesh normals provide the
+existing directional entity shading. This is one light sample per hull, matching
+the other entity visuals, rather than per-vertex terrain AO or Unity scene lights.
+
+The vehicle suite exercises both kinds through their actual Initialize/LateUpdate
+methods: initial daylight, stationary torch/darkness updates, moving between light
+cells, unchanged-property caching and unavailable-data behavior. Shader/GPU visual
+verification still needs Play Mode: compare daylight, night, a torch-lit tunnel,
+a dark cave and Nether travel.
