@@ -202,6 +202,7 @@ public partial class World : IWaterWorld
             {
                 var p = block.globalWorldPosition;
                 QueueSnowSupportOnChunkActivation(block);
+                QueueLeafDecayOnChunkActivation(block);
                 if(block.type==BlockType.Fire)fluidTicks.Schedule(WaterPos(p),2,40);
                 if (block.type == BlockType.Water || block.type == BlockType.Lava)
                 {

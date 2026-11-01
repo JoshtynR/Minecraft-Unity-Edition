@@ -35,8 +35,8 @@ public static class SpecialBlockGeometry
         if(WheatCropRules.IsCrop(t))return (BlockShapes)(First+(int)WheatCropRules.Crop*16+(WheatCropRules.IsLegacy(t)?WheatCropRules.LegacyAge(t):state&7));
         if(WheatCropRules.IsSoil(t))return (BlockShapes)(First+(int)t*16+(state&7));
         // Leaves remain ordinary cube meshes; the encoded state only persists
-        // Beta metadata bit 4 (player-placed leaves do not decay).
-        if(t==BlockType.Leaves||t==BlockType.SpruceLeaves||t==BlockType.BirchLeaves)return (BlockShapes)(First+(int)t*16+(state&4));
+        // Pending decay bit 8 plus our persistent/player-placed bit 4.
+        if(t==BlockType.Leaves||t==BlockType.SpruceLeaves||t==BlockType.BirchLeaves)return (BlockShapes)(First+(int)t*16+(state&12));
         if(StairGeometry.IsStair(t)) return StairGeometry.Shape(state);
         return Handles(t) ? (BlockShapes)(First+(int)t*16+(state&15)) : BlockShapesExtensions.ForBlock(t);
     }

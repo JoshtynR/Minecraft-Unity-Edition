@@ -121,6 +121,7 @@ public partial class World
     {
         QueueSurvivalAround(pos);
         if (BlockSurvivalRules.IsLog(previousType) && !BlockSurvivalRules.IsLog(blockType)) QueueLeavesAroundRemovedLog(pos);
+        if (BlockSurvivalRules.IsLeaves(previousType) && !BlockSurvivalRules.IsLeaves(blockType)) QueueLeavesAroundRemovedLeaf(pos);
         QueuePortalValidation(pos);
         if(removingChest)RemoveChest(pos);
         if(removingFurnace)RemoveFurnace(pos);

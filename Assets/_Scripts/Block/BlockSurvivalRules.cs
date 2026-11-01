@@ -8,6 +8,17 @@ using UnityEngine;
 public static class BlockSurvivalRules
 {
     public enum LeafConnectionState { Disconnected, Connected, Unknown }
+    public static bool DropsApple(BlockType type, float percent, float roll, bool harvestedIntact)
+    {
+        return type == BlockType.Leaves && !harvestedIntact && roll < Mathf.Clamp(percent, 0f, 100f) / 100f;
+    }
+
+    public static float DecayDelay(float roll)
+    {
+        double ticks = 1 + Math.Floor(Math.Log(1 - Math.Min(Math.Max(roll, 0), .9999999f)) /
+            (80 * Math.Log(1 - 1.0 / 32768)));
+        return (float)(ticks * .05);
+    }
     private static readonly Vector3Int[] Horizontal = { Vector3Int.left, Vector3Int.right, Vector3Int.forward, Vector3Int.back };
     public static bool IsLeaves(BlockType type) => type == BlockType.Leaves ||
         type == BlockType.SpruceLeaves || type == BlockType.BirchLeaves;
@@ -18,13 +29,13 @@ public static class BlockSurvivalRules
     public static LeafConnectionState LeafConnection(Vector3Int origin, Func<Vector3Int, BlockType> get, int maximumDistance = 4)
     {
         var open = new Queue<Vector3Int>();
-        var visited = new HashSet<Vector3Int>();
+        var visited = new Dictionary<Vector3Int, int>();
         bool unknown = false;
-        open.Enqueue(origin); visited.Add(origin);
+        open.Enqueue(origin); visited.Add(origin, 0);
         while (open.Count > 0)
         {
             var position = open.Dequeue();
-            int distance = Mathf.Abs(position.x - origin.x) + Mathf.Abs(position.y - origin.y) + Mathf.Abs(position.z - origin.z);
+            int distance = visited[position];
             if (distance >= maximumDistance) continue;
             foreach (var direction in BlockHelper.directions)
             {
@@ -32,7 +43,8 @@ public static class BlockSurvivalRules
                 var type = get(neighbor);
                 if (type == BlockType.Nothing) { unknown = true; continue; }
                 if (IsLog(type)) return LeafConnectionState.Connected;
-                if (IsLeaves(type) && visited.Add(neighbor)) open.Enqueue(neighbor);
+                if (IsLeaves(type) && !visited.ContainsKey(neighbor))
+                { visited.Add(neighbor, distance + 1); open.Enqueue(neighbor); }
             }
         }
         return unknown ? LeafConnectionState.Unknown : LeafConnectionState.Disconnected;

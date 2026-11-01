@@ -135,6 +135,10 @@ public static class PlacementCheck
   Check(BlockSurvivalRules.CanSurvive(BlockType.Trapdoor,2,trapBase,p=>rules.GetBlock(p).type),"trapdoor survives while its selected wall is solid");
   rules.SetBlock(trapBase+Vector3Int.right,BlockType.Air);Check(!BlockSurvivalRules.CanSurvive(BlockType.Trapdoor,2,trapBase,p=>rules.GetBlock(p).type),"trapdoor breaks when its selected wall is removed");
   Check(SpecialBlockGeometry.State(BlockType.Leaves,SpecialBlockGeometry.Shape(BlockType.Leaves,4))==4,"player-placed leaf no-decay metadata round-trips");
+  Check(SpecialBlockGeometry.State(BlockType.Leaves,SpecialBlockGeometry.Shape(BlockType.Leaves,8))==8,"pending decay metadata survives serialization shape encoding");
+  Check(SpecialBlockGeometry.State(BlockType.Leaves,SpecialBlockGeometry.Shape(BlockType.Leaves,12))==12,"persistent and pending flags remain independent");
+  var winding=new System.Collections.Generic.HashSet<Vector3Int>{at,at+new Vector3Int(1,0,0),at+new Vector3Int(1,0,1),at+new Vector3Int(1,0,2),at+new Vector3Int(0,0,2)};
+  Check(BlockSurvivalRules.LeafConnection(at,p=>p.Equals(at+new Vector3Int(-1,0,2))?BlockType.Log:winding.Contains(p)?BlockType.Leaves:BlockType.Air)==BlockSurvivalRules.LeafConnectionState.Disconnected,"winding paths count actual steps rather than distance from origin");
   rules.blocks.Clear();for(int x=0;x<4;x++)rules.SetBlock(at+new Vector3Int(x,0,0),BlockType.Leaves);rules.SetBlock(at+new Vector3Int(4,0,0),BlockType.Log);
   Check(BlockSurvivalRules.LeafConnection(at,p=>rules.GetBlock(p).type)==BlockSurvivalRules.LeafConnectionState.Connected,"leaves find a log through four connected leaf steps");
   rules.blocks.Remove(at+new Vector3Int(4,0,0));
@@ -142,7 +146,13 @@ public static class PlacementCheck
   Check(BlockSurvivalRules.LeafConnection(at,p=>p.x==7?BlockType.Nothing:rules.GetBlock(p).type)==BlockSurvivalRules.LeafConnectionState.Unknown,"unloaded leaf boundary defers decay");
   var crafter=new Player{aimed=new Vector3Int(3,2,4)};crafter.world.SetBlock(crafter.aimed,BlockType.CraftingTable);
   Check(crafter.UseForCheck()&&crafter.inventory.tablePosition.Equals(crafter.aimed),"right-click dispatches crafting tables to the new inventory interface");
-  Console.WriteLine("47 production placement and block-survival checks passed (Unity/network mocked).");
+  Check(BlockSurvivalRules.DropsApple(BlockType.Leaves,2,.019f,false),"oak leaves get an independent two percent apple roll");
+  Check(!BlockSurvivalRules.DropsApple(BlockType.Leaves,2,.021f,false),"apple roll rejects above configured chance");
+  Check(!BlockSurvivalRules.DropsApple(BlockType.SpruceLeaves,100,0,false)&&!BlockSurvivalRules.DropsApple(BlockType.BirchLeaves,100,0,false),"spruce and birch do not drop apples");
+  Check(!BlockSurvivalRules.DropsApple(BlockType.Leaves,100,0,true),"intact sheared leaves do not also drop apples");
+  Check(!BlockSurvivalRules.DropsApple(BlockType.Leaves,0,0,false),"zero percent disables apples");
+  Check(BlockSurvivalRules.DecayDelay(0)==.05f&&BlockSurvivalRules.DecayDelay(.5f)>14&&BlockSurvivalRules.DecayDelay(.5f)<14.3f,"decay uses Beta marginal random-tick timing rather than immediate timers");
+  Console.WriteLine("56 production placement and block-survival checks passed (Unity/network mocked).");
  }
 }
 

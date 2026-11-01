@@ -174,6 +174,7 @@ public partial class Player
             if (ToolMining.Harvestable(serverMineType,serverMineItem.type))
             { LoadHungerState(); hungerSimulation.AddExhaustion(0.025f); StoreHungerState(); }
             if(!drop.Empty)world.SpawnItemDrop(drop,(Vector3)serverMinePosition+Vector3.one*.5f);
+            world.DropLeafApple(serverMineType, serverMinePosition, serverMineItem.type, serverMineItem.damage);
             int wear=ItemDurability.MiningWear(serverMineItem.type,serverMineType);
             if (networkStarted)
             {

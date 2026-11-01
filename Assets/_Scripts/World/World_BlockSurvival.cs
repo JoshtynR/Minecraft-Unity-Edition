@@ -6,6 +6,23 @@ using UnityEngine;
 public partial class World
 {
     private const int LeafLogDistance = 4;
+    [Tooltip("Independent apple chance for naturally decaying or hand-broken oak leaves. Shears preserve the leaves instead.")]
+    [Range(0f, 100f)] public float leafAppleDropPercent = 2f;
+
+    public void DropLeafApple(BlockType type, Vector3Int position, ItemType tool = ItemType.Nothing, int damage = 0)
+    {
+        if (!DropAuthority || type != BlockType.Leaves) return;
+        if (BlockSurvivalRules.DropsApple(type, leafAppleDropPercent, UnityEngine.Random.value,
+            tool == ItemType.Shears && damage < ItemDurability.Maximum(tool)))
+            SpawnItemDrop(new InventoryStack(ItemType.Apple, 1), (Vector3)position + Vector3.one * .5f);
+    }
+
+    // Beta samples 80 positions per 32768-block column each 20 Hz tick.
+    // Geometric waiting time matches that marginal rate without scanning columns.
+    private static float LeafDecayDelay()
+    {
+        return BlockSurvivalRules.DecayDelay(UnityEngine.Random.value);
+    }
     [NonSerialized] private HashSet<Block> runtimeQueuedBlockUpdates;
     [NonSerialized] private Dictionary<Vector3Int, float> runtimeLeafDecay;
     [NonSerialized] private List<Vector3Int> runtimeLeafDecayBuffer;
@@ -34,14 +51,43 @@ public partial class World
 
     internal void QueueLeavesAroundRemovedLog(Vector3Int position)
     {
+        QueueLeafDecayAround(position, LeafLogDistance);
+    }
+
+    internal void QueueLeavesAroundRemovedLeaf(Vector3Int position)
+    {
+        QueueLeafDecayAround(position, 1);
+    }
+
+    private void QueueLeafDecayAround(Vector3Int position, int radius)
+    {
         if (!IsWorldCreated || !DropAuthority) return;
-        for (int x = -LeafLogDistance; x <= LeafLogDistance; x++)
-        for (int y = -LeafLogDistance; y <= LeafLogDistance; y++)
-        for (int z = -LeafLogDistance; z <= LeafLogDistance; z++)
+        for (int x = -radius; x <= radius; x++)
+        for (int y = -radius; y <= radius; y++)
+        for (int z = -radius; z <= radius; z++)
         {
             var leafPosition = position + new Vector3Int(x, y, z);
-            if (BlockSurvivalRules.IsLeaves(GetBlock(leafPosition).type)) QueueSurvivalAt(leafPosition);
+            var leaf = GetBlock(leafPosition);
+            if (!BlockSurvivalRules.IsLeaves(leaf.type)) continue;
+            byte state = SpecialBlockGeometry.State(leaf.type, leaf.blockShape);
+            if ((state & 4) != 0) continue;
+            SetLeafDecayState(leaf, (byte)(state | 8));
+            if (!leafDecay.ContainsKey(leafPosition)) leafDecay[leafPosition] = Time.time + LeafDecayDelay();
         }
+    }
+
+    private void SetLeafDecayState(Block leaf, byte state)
+    {
+        leaf.blockShape = SpecialBlockGeometry.Shape(leaf.type, state);
+        leaf.section.dataRef.modifiedAfterSave = true;
+    }
+
+    internal void QueueLeafDecayOnChunkActivation(Block leaf)
+    {
+        if (!DropAuthority || !BlockSurvivalRules.IsLeaves(leaf.type)) return;
+        if ((SpecialBlockGeometry.State(leaf.type, leaf.blockShape) & 12) != 8) return;
+        var position = leaf.globalWorldPosition;
+        if (!leafDecay.ContainsKey(position)) leafDecay[position] = Time.time + LeafDecayDelay();
     }
 
     private void QueueSurvivalAt(Vector3Int position)
@@ -78,8 +124,7 @@ public partial class World
                 return;
             if (BlockSurvivalRules.IsLeaves(block.type))
             {
-                if ((state & 4) == 0 && !leafDecay.ContainsKey(position))
-                    leafDecay[position] = Time.time + UnityEngine.Random.Range(.5f, 1.5f);
+                // Only log/leaf removal starts decay; generic neighbor updates do not.
             }
             else if (!BlockSurvivalRules.CanSurvive(block.type, state, position, p => GetBlock(p).type))
             {
@@ -93,7 +138,8 @@ public partial class World
 
     internal void UpdateLeafDecay()
     {
-        if (!DropAuthority || leafDecay.Count == 0 || disabled || !IsWorldCreated || GenerationBusy || isSaving) return;
+        if (!DropAuthority || leafDecay.Count == 0 || disabled || !IsWorldCreated ||
+            System.Threading.Volatile.Read(ref betaPopulationJobs) != 0 || isSaving) return;
         leafDecayBuffer.Clear();
         foreach (var entry in leafDecay)
         {
@@ -105,9 +151,18 @@ public partial class World
         {
             leafDecay.Remove(position);
             var block = GetBlock(position);
+            if (block.type == BlockType.Nothing)
+            { leafDecay[position] = Time.time + 1f; continue; }
             if (block == null || !BlockSurvivalRules.IsLeaves(block.type) ||
                 (SpecialBlockGeometry.State(block.type, block.blockShape) & 4) != 0) continue;
-            var connection = BlockSurvivalRules.LeafConnection(position, p => GetBlock(p).type, LeafLogDistance);
+            // Beta waits for the surrounding five-block chunk halo before testing.
+            bool loaded = true;
+            for (int x = -5; x <= 5; x += 10)
+            for (int z = -5; z <= 5; z += 10)
+                if (GetBlock(position + new Vector3Int(x, 0, z)).type == BlockType.Nothing) loaded = false;
+            if (!loaded) { leafDecay[position] = Time.time + 1f; continue; }
+            var connection = BlockSurvivalRules.LeafConnection(position,
+                p => p.y < 0 || p.y >= worldHeight ? BlockType.Air : GetBlock(p).type, LeafLogDistance);
             if (connection == BlockSurvivalRules.LeafConnectionState.Unknown)
             {
                 leafDecay[position] = Time.time + 1f;
@@ -115,6 +170,7 @@ public partial class World
             }
             if (connection == BlockSurvivalRules.LeafConnectionState.Disconnected)
                 BreakUnsupportedBlock(position, block.type, SpecialBlockGeometry.State(block.type, block.blockShape));
+            else SetLeafDecayState(block, (byte)(SpecialBlockGeometry.State(block.type, block.blockShape) & ~8));
         }
     }
 
@@ -132,6 +188,7 @@ public partial class World
         if (NetworkServer.active && WorldServer.instance != null)
             WorldServer.instance.BroadcastBlock(this, position, BlockType.Air, 0);
         if (!drop.Empty) SpawnItemDrop(drop, (Vector3)position + Vector3.one * .5f);
+        DropLeafApple(expected, position);
     }
 
     private InventoryStack UnsupportedBlockDrop(BlockType type)

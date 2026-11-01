@@ -116,6 +116,8 @@ public partial class World
  public bool GenerationBusy;
     private void QueueSurvivalAround(Vector3Int p) {}
     private void QueueLeavesAroundRemovedLog(Vector3Int p) {}
+    private void QueueLeavesAroundRemovedLeaf(Vector3Int p) {}
+    private void QueueLeafDecayOnChunkActivation(Block b) {}
     private void QueueSnowSupportOnChunkActivation(Block block) {}
     public bool rejectOccupiedPlacement;
     public bool CanPlaceSurvivalBlock(Vector3Int p,BlockType t,byte state)=>!rejectOccupiedPlacement||GetBlock(p).type==BlockType.Air;
