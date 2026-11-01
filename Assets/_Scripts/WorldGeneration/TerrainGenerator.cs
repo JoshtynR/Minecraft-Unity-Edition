@@ -27,6 +27,9 @@ public class TerrainGenerator : MonoBehaviour
         System.Action<string, double[]> observe = null;
         if (dumpBetaParity && betaChunkX == 0 && betaChunkZ == 0)
             observe = (stage, values) => BetaParityDump.DumpNoiseChunk00(stage, values, betaSeed);
+        // Planning can reuse the terrain worker scratch buffer. Finish it before
+        // obtaining the actual target chunk's raw array.
+        var villagePieces=data.worldRef.generateVillages?generation.villages.ForChunk(betaChunkX,betaChunkZ):null;
         BlockType[,,] rawTerrain = generation.terrain.GenerateRawTerrainForChunk(betaWorldX, betaWorldZ, observe);
         if (dumpBetaParity) BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ);
 
@@ -38,6 +41,8 @@ public class TerrainGenerator : MonoBehaviour
         if (dumpBetaParity) BetaParityDump.DumpRawChunk00(rawTerrain, betaSeed, betaChunkX, betaChunkZ, "caves");
 
         data.InitializeGeneratedBlocks(rawTerrain,true,Beta173Terrain.TerrainHeight);
+        if(villagePieces!=null)foreach(var piece in villagePieces)
+            piece.Emit(betaChunkX,betaChunkZ,data.ApplyVillageBlock);
 
         return data;
     }
@@ -101,6 +106,7 @@ public class TerrainGenerator : MonoBehaviour
         public readonly Beta173NetherTerrain nether;
         public readonly Beta173Caves caves;
         public readonly Beta173Population population;
+        public readonly Beta18Villages villages;
 
         public Generators(long seed)
         {
@@ -109,6 +115,7 @@ public class TerrainGenerator : MonoBehaviour
             nether = new Beta173NetherTerrain(seed);
             caves = new Beta173Caves(seed);
             population = new Beta173Population(seed);
+            villages = new Beta18Villages(seed,new BetaVillageTerrain(terrain,caves));
         }
     }
 

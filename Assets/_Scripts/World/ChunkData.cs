@@ -64,6 +64,7 @@ public partial class ChunkData
         chunkData.isGenerated = true;
         // Preserve legacy saved terrain; newly saved deferred edge chunks resume.
         chunkData.betaPopulationDone = saveData.betaPopulationVersion == 0 || saveData.betaPopulationDone;
+        chunkData.RestoreVillageProtection(saveData.betaVillageProtection);
         chunkData.betaPopulationRecords = new List<BetaPopulationRecord>(saveData.betaPopulationRecords ?? new BetaPopulationRecord[0]);
         
         return chunkData;

@@ -18,6 +18,7 @@ public sealed partial class Beta173Population
         {
             var pos=UnityPosition(x,y,z);
             var block=owner.worldRef.GetBlock(pos);
+            if(block.chunkData.VillageProtected(pos.x,pos.y,pos.z))return;
             var records=block.chunkData.betaPopulationRecords;
             // Replace complete records rather than mutating objects that a
             // background save may already be serializing.

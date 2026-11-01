@@ -16,8 +16,8 @@ namespace UnityEngine {
  public static class Application { public static string dataPath="/tmp"; }
  public static class Debug { public static void Log(string s){} }
 }
-public class Block {public ChunkData chunkData; public BlockType type; public Block(BlockType t){type=t;} }
-public class World {public WorldDimension dimension;
+public class Block {private byte state;public UnityEngine.Vector3Int local;public byte waterLevel {get=>chunkData==null?state:chunkData.states[local.x,local.y,local.z];set{if(chunkData==null)state=value;else chunkData.states[local.x,local.y,local.z]=value;}}public ChunkData chunkData; public BlockType type; public Block(BlockType t){type=t;} }
+public class World {public WorldDimension dimension;public bool generateVillages;
  public long betaWorldSeed;public int worldHeight=240;public int meshNotifications;
  public Dictionary<UnityEngine.Vector3Int,ChunkData> chunks=new Dictionary<UnityEngine.Vector3Int,ChunkData>();
  public void NotifyTreeChunkChanged(UnityEngine.Vector3Int p){meshNotifications++;}
@@ -25,15 +25,16 @@ public class World {public WorldDimension dimension;
   if(p.y<0||p.y>=worldHeight)return new Block(BlockType.Air);
   var origin=new UnityEngine.Vector3Int((int)Math.Floor(p.x/16.0)*16,0,(int)Math.Floor(p.z/16.0)*16);ChunkData c;
   if(!chunks.TryGetValue(origin,out c))return new Block(BlockType.Nothing);
-  return new Block(c.blocks[p.x-origin.x,p.y,p.z-origin.z]){chunkData=c};
+  return new Block(c.blocks[p.x-origin.x,p.y,p.z-origin.z]){chunkData=c,local=new UnityEngine.Vector3Int(p.x-origin.x,p.y,p.z-origin.z)};
  }
 }
-public class ChunkData {
+public partial class ChunkData {
  public bool betaPopulationDone,modifiedAfterSave;public List<BetaPopulationRecord> betaPopulationRecords=new List<BetaPopulationRecord>();public int chunkSize=16,chunkHeight=16;public World worldRef;public UnityEngine.Vector3Int worldPos;
+ public byte[,,] states=new byte[16,240,16];
  public BlockType[,,] blocks=new BlockType[16,240,16];
  public void SetBlock(UnityEngine.Vector3Int p,BlockType b){blocks[p.x,p.y,p.z]=b;}
  public void InitializeGeneratedBlocks(BlockType[,,] source,bool reflectX,int sourceHeight){for(int x=0;x<16;x++)for(int z=0;z<16;z++)for(int y=0;y<240;y++)blocks[x,y,z]=y<sourceHeight?source[reflectX?15-x:x,y,z]:BlockType.Air;}
- public Block GetBlock(UnityEngine.Vector3Int p){return new Block(blocks[p.x,p.y,p.z]);}
+ public Block GetBlock(UnityEngine.Vector3Int p){return new Block(blocks[p.x,p.y,p.z]){chunkData=this,local=p};}
 }
 public static class WorldDataHelper { public static void SetBlock(World w,UnityEngine.Vector3Int p,BlockType b){var block=w.GetBlock(p);if(block.chunkData!=null){var c=block.chunkData;c.blocks[p.x-c.worldPos.x,p.y,p.z-c.worldPos.z]=b;}} }
 public class IntegrationCheck {

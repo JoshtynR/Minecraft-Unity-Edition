@@ -10,6 +10,7 @@ public class ChunkSaveData
     public bool betaTreePopulationDone;
     public int betaPopulationVersion;
     public bool betaPopulationDone;
+    public byte[] betaVillageProtection;
     public BetaPopulationRecord[] betaPopulationRecords;
     
     public ChunkSectionSaveData[] sections;
@@ -35,6 +36,7 @@ public class ChunkSaveData
         
         chunkSaveData.betaPopulationVersion = 1;
         chunkSaveData.betaPopulationDone = chunk.betaPopulationDone;
+        chunkSaveData.betaVillageProtection = chunk.CaptureVillageProtection();
         lock (chunk.betaPopulationRecords)
             chunkSaveData.betaPopulationRecords = chunk.betaPopulationRecords.ToArray();
         chunkSaveData.betaTreePopulationVersion = 1;

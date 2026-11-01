@@ -26,6 +26,8 @@ def main():
         # Compile the complete production adapter against mocked Unity storage.
         integration = Path(tmp) / 'integration.exe'
         extra = [ROOT / 'Tools/BetaParity/IntegrationCheck.cs',
+                 ROOT / 'Assets/_Scripts/World/ChunkData_Villages.cs',
+                 *[ROOT / ('Assets/_Scripts/WorldGeneration/Beta/'+n+'.cs') for n in ['Beta18Villages','BetaVillageTerrain']],
                  ROOT / 'Assets/_Scripts/WorldGeneration/TerrainGenerator.cs',
                  *[ROOT / ('Assets/_Scripts/WorldGeneration/Beta/'+n+'.cs') for n in ['Beta173NetherTerrain','Beta173NetherCaves','Beta173NetherPopulation']],
                  ROOT / 'Assets/_Scripts/WorldGeneration/Beta/Beta173Population.cs',

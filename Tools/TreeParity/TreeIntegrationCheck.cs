@@ -29,7 +29,7 @@ public class World
         return new Block(p.y==63?BlockType.Grass:p.y<63?BlockType.Stone:BlockType.Air){chunkData=recordOwner};
     }
 }
-public class ChunkData { public World worldRef; public UnityEngine.Vector3Int worldPos; public bool betaPopulationDone,modifiedAfterSave;public List<BetaPopulationRecord> betaPopulationRecords=new List<BetaPopulationRecord>(); public ChunkSection[] sections=new ChunkSection[0]; }
+public class ChunkData { public byte[] CaptureVillageProtection()=>null;public bool VillageProtected(int x,int y,int z)=>false; public World worldRef; public UnityEngine.Vector3Int worldPos; public bool betaPopulationDone,modifiedAfterSave;public List<BetaPopulationRecord> betaPopulationRecords=new List<BetaPopulationRecord>(); public ChunkSection[] sections=new ChunkSection[0]; }
 public class ChunkSection {}
 public class ChunkSectionSaveData { public ChunkSectionSaveData(ChunkSection s) {} }
 public static class WorldDataHelper

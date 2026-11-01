@@ -63,7 +63,9 @@ public sealed partial class Beta173Population
         public void Set(int x, int y, int z, BlockType block)
         {
             if (y < 0 || y >= 128) return;
-            if (Get(x, y, z) == block) return;
+            var target=owner.worldRef.GetBlock(new Vector3Int(unchecked(-x-1),y,z));
+            if(target!=null&&target.type!=BlockType.Nothing&&target.chunkData!=null&&target.chunkData.VillageProtected(unchecked(-x-1),y,z))return;
+            if (target.type == block) return;
             skyColumns.Remove(new Vector3Int(x,0,z));
             Beta173Population.Set(owner, x, y, z, block);
             int ux = -x - 1;

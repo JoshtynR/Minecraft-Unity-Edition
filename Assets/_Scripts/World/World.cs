@@ -34,6 +34,8 @@ public partial class World : MonoBehaviour
     public bool logGenerationTimings;
     [Tooltip("Merge matching, uniformly lit full-cube faces within each render section. Disable before a rebuild for comparison.")]
     public bool greedyMeshing = true;
+    [Tooltip("Generate Beta 1.8-style villages in new Overworld chunks. Disable for strict Beta 1.7.3 generation.")]
+    public bool generateVillages = true;
     public WorldRenderer worldRenderer;
     
     public TerrainGenerator terrainGenerator;
