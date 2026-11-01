@@ -25,7 +25,8 @@ for name in ['WorldCreationMenuManager','WorldListMenuManager']:
     assert 'MinecraftNetworkManager.StartGameHost();' in source,name
 print('World creation/loading, spawn and player identity wiring verified.')
 creation=(root/'Assets/_Scripts/Menus/MenuManagers/WorldCreationMenuManager.cs').read_text()
-assert 'MinecraftNetworkManager.StartGameHost(false);' in creation[creation.index('public static async void CreateLobby'):]
+assert 'await LobbyManager.HostAsync(worldName, seedOffset);' in creation[creation.index('public static async void CreateLobby'):]
+assert 'MinecraftNetworkManager.StartGameHost(false);' in (root/'Assets/_Scripts/Menus/LobbyManager.cs').read_text()
 print('Steam lobby hosting explicitly enables external listening; single-player uses the in-process host connection.')
 
 world=(root/'Assets/_Scripts/World/World.cs').read_text()

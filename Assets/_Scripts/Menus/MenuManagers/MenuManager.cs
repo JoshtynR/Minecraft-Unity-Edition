@@ -1,6 +1,4 @@
-using Mirror;
-using Mirror.FizzySteam;
-using Newtonsoft.Json;
+using System.Collections.Concurrent;
 using Steamworks;
 using Steamworks.Data;
 using UnityEngine;
@@ -8,6 +6,7 @@ using UnityEngine;
 public class MenuManager : MonoBehaviour
 {
     public static MenuManager Instance;
+    private readonly ConcurrentQueue<Lobby> requestedLobbies = new ConcurrentQueue<Lobby>();
     
     private void Start()
     {
@@ -19,58 +18,35 @@ public class MenuManager : MonoBehaviour
     {
         Instance = this;
         SteamFriends.OnGameLobbyJoinRequested += OnGameLobbyJoinRequested;
-        SteamMatchmaking.OnLobbyEntered += OnLobbyEntered;
     }
 
     private void OnDisable()
     {
         SteamFriends.OnGameLobbyJoinRequested -= OnGameLobbyJoinRequested;
-        SteamMatchmaking.OnLobbyEntered -= OnLobbyEntered;
         if (Instance == this) Instance = null;
     }
 
     public void OnGameLobbyJoinRequested(Lobby lobby, SteamId steamId)
     {
-        if (!PlayerIdentity.SteamAvailable) return;
-        lobby.Join();
+        // Facepunch uses async callbacks. Touch Unity objects only from Update.
+        requestedLobbies.Enqueue(lobby);
     }
-    
-    public void OnLobbyEntered(Lobby lobby)
-    {
-        if (!PlayerIdentity.SteamAvailable) return;
-        LobbyManager.currentLobby = lobby;
-        if (NetworkServer.active)
-        {
-            return;
-        }
-        MinecraftNetworkManager.PrepareClientSession();
 
-        WorldSettingsManager.Instance.seedOffset = JsonConvert.DeserializeObject<Vector3Int>(lobby.GetData("seed"));
-
-        if(NetworkManager.singleton.transport is FizzyFacepunch)
-        {
-            NetworkManager.singleton.networkAddress = lobby.Owner.Id.ToString();
-        }
-        else
-        {
-            NetworkManager.singleton.networkAddress = "localhost";
-        }
-        
-        NetworkManager.singleton.StartClient();
-    }
-    
     public void CancelLobby()
     {
-        LobbyManager.currentLobby?.Leave();
-        NetworkManager.singleton.StopHost();
-        NetworkManager.singleton.StopClient();
+        LobbyManager.Cancel();
     }
+
+    private static async void JoinRequestedLobby(Lobby lobby) { await LobbyManager.JoinAsync(lobby); }
 
     private void Update()
     {
+        Lobby lobby;
+        while (requestedLobbies.TryDequeue(out lobby)) JoinRequestedLobby(lobby);
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            Menu.CloseCurrentMenu();
+            if (LobbyManager.Hosting || LobbyManager.Joining) LobbyManager.Cancel();
+            if (Menu.currentMenu != null && Menu.lastMenu != null) Menu.CloseCurrentMenu();
         }
     }
 }

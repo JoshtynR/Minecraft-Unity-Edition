@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.IO;
 using kcp2k;
@@ -82,11 +82,24 @@ public class MinecraftNetworkManager : NetworkManager
         manager.ConfigureSessionTransport();
     }
 
+    public override void LateUpdate()
+    {
+        base.LateUpdate();
+        LobbyManager.Tick();
+    }
+
+    public override void OnStopServer()
+    {
+        LobbyManager.Leave();
+        base.OnStopServer();
+    }
+
     private void ConfigureSessionTransport()
     {
         if (transport is Mirror.FizzySteam.FizzyFacepunch) steamTransport = transport;
         if (PlayerIdentity.UsingSteam)
         {
+            if (steamTransport == null) steamTransport = GetComponent<Mirror.FizzySteam.FizzyFacepunch>();
             if (steamTransport != null) transport = steamTransport;
         }
         else if (transport is Mirror.FizzySteam.FizzyFacepunch)
@@ -106,6 +119,7 @@ public class MinecraftNetworkManager : NetworkManager
         if(worldRequestRoutine!=null)StopCoroutine(worldRequestRoutine);
         worldRequestRoutine=null;
         worldRequested=false;
+        LobbyManager.Leave();
         base.OnStopClient();
         PlayerIdentity.EndSession();
     }
@@ -113,6 +127,7 @@ public class MinecraftNetworkManager : NetworkManager
 
     public override void OnClientConnect()
     {
+        LobbyManager.Connected();
         WorldLoadingScreen.Begin();
         base.OnClientConnect();
         QueueWorldRequest();
@@ -202,10 +217,7 @@ public class MinecraftNetworkManager : NetworkManager
     public override void OnClientDisconnect()
     {
         WorldLoadingScreen.Cancel();
-        if (LobbyManager.currentLobby.HasValue)
-        {
-            LobbyManager.currentLobby.Value.Leave();
-        }
+        LobbyManager.Disconnected();
         base.OnClientDisconnect();
     }
 

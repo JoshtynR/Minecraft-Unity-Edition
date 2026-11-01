@@ -19,7 +19,8 @@ with tempfile.TemporaryDirectory() as tmp:
 # The runtime fallback must point to the existing prefab, preserving its identity.
 prefab = root / 'Assets/Prefabs/WorldButtonPrefab.prefab'
 guid = next(line.split(': ')[1] for line in Path(str(prefab) + '.meta').read_text().splitlines() if line.startswith('guid:'))
-assets = (root / 'Assets/Resources/PlayerHudAssets.asset').read_text()
+# Unity may wrap inline references across lines when serializing the asset.
+assets = ' '.join((root / 'Assets/Resources/PlayerHudAssets.asset').read_text().split())
 assert 'worldListEntryPrefab: {fileID: 7926451109967716828, guid: ' + guid + ', type: 3}' in assets
 assert '--- !u!1 &7926451109967716828' in prefab.read_text()
 print('World-entry prefab resource link verified.')

@@ -81,6 +81,8 @@ namespace Mirror
     public class NetworkManager:MonoBehaviour
     {
         public virtual void Awake(){}
+        public virtual void LateUpdate(){}
+        public virtual void OnStopServer(){}
         public static NetworkManager singleton;
         public Transport transport;public string networkAddress="localhost",offlineScene="MainMenu";public int starts,bindAttempts;public bool portOccupied;public Action duringStart;
         public void StartHost(){starts++;duringStart?.Invoke();if(!NetworkServer.dontListen){bindAttempts++;if(portOccupied)throw new System.Net.Sockets.SocketException((int)System.Net.Sockets.SocketError.AddressAlreadyInUse);}NetworkServer.active=NetworkClient.active=true;}
@@ -101,7 +103,7 @@ namespace kcp2k {public class KcpTransport:Transport {}}
 public class Menu{public static Menu currentMenu,lastMenu;public static int returns;public static void CloseCurrentMenu(){returns++;}}
 public static class WorldLoadingScreen {public static int cancels;public static void Begin(){}public static void Cancel(){cancels++;}public static void ReportProgress(string s,float value){}}
 public class World {public static World Overworld;public bool IsInitialized;}
-public static class LobbyManager {public static Lobby? currentLobby;public struct Lobby {public void Leave(){}}}
+public static class LobbyManager { public static void Tick(){} public static void Leave(){} public static void Connected(){} public static void Disconnected(){} }
 public class PlayerInventory {}
 public class Player {public PlayerInventory inventory;public bool DimensionTransferInProgress;public object SavePlayer()=>null;}
 public class WorldServer

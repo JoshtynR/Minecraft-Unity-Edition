@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Mirror;
@@ -46,22 +46,7 @@ public class WorldCreationMenuManager : MonoBehaviour
 
     public static async void CreateLobby(string worldName, Vector3Int seedOffset)
     {
-        if (!PlayerIdentity.SteamAvailable)
-        {
-            Debug.LogWarning("Steam multiplayer requires Steam. Single-player is available offline.");
-            WorldLoadingScreen.Cancel();
-            return;
-        }
-        var lobbyNull = await SteamMatchmaking.CreateLobbyAsync();
-        if (lobbyNull.HasValue)
-        {
-            var lobby = lobbyNull.Value;
-            lobby.SetPublic();
-            lobby.SetData("name", $"{LobbyCreationMenu.lobbyName}\n<color=#808080>{PlayerIdentity.DisplayName} playing on {worldName}</color>");
-            lobby.SetData("seed", JsonConvert.SerializeObject(seedOffset));
-            lobby.SetData("minecraft", "TRUE");
-            MinecraftNetworkManager.StartGameHost(false);
-        }
+        await LobbyManager.HostAsync(worldName, seedOffset);
     }
 
     private void CheckIfNameIsUsed()

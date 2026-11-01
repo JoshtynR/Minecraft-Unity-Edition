@@ -22,7 +22,7 @@ public class EscapeMenuManager : MonoBehaviour
         try
         {
         if(NetworkServer.active||!NetworkClient.active)await World.SaveAllDimensionsAsync();
-        if(LobbyManager.currentLobby.HasValue)  LobbyManager.currentLobby.Value.Leave();
+        LobbyManager.Leave();
         Cursor.lockState=CursorLockMode.None;Cursor.visible=true;
         if(NetworkManager.singleton!=null&&NetworkServer.active)NetworkManager.singleton.StopHost();
         else if(NetworkManager.singleton!=null&&NetworkClient.active)NetworkManager.singleton.StopClient();

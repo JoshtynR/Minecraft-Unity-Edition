@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -11,13 +11,7 @@ public class LobbyButton : MonoBehaviour, IPointerDownHandler, IPointerClickHand
     
     public Action onClick;
 
-    private void Start()
-    {
-        onClick += () =>
-        {
-            GameObject.Find("Canvas/JoiningMenu").GetComponent<Menu>().Open();
-        };
-    }
+    public ulong steamLobbyId;
 
     private void OnEnable()
     {
@@ -27,6 +21,9 @@ public class LobbyButton : MonoBehaviour, IPointerDownHandler, IPointerClickHand
     private void OnDisable()
     {
         lobbyButtons.Remove(this);
+        if (currentLobbyButton == this) currentLobbyButton = null;
+        if (MultiplayerMenuManager.Instance != null && MultiplayerMenuManager.Instance.selectedLobby == this)
+            MultiplayerMenuManager.Instance.selectedLobby = null;
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -53,12 +50,14 @@ public class LobbyButton : MonoBehaviour, IPointerDownHandler, IPointerClickHand
         if (value)
         {
             transform.GetChild(2).gameObject.SetActive(true);
-            MultiplayerMenuManager.Instance.selectedLobby = this;
+            currentLobbyButton = this;
+            if (MultiplayerMenuManager.Instance != null) MultiplayerMenuManager.Instance.selectedLobby = this;
         } 
         else
         {
             transform.GetChild(2).gameObject.SetActive(false);
-            MultiplayerMenuManager.Instance.selectedLobby = null;
+            if (MultiplayerMenuManager.Instance != null && MultiplayerMenuManager.Instance.selectedLobby == this)
+                MultiplayerMenuManager.Instance.selectedLobby = null;
         }
     }
 }

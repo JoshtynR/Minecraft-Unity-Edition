@@ -11349,7 +11349,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 1923040922}
+      objectReference: {fileID: 1827945858}
     - target: {fileID: 6815051776104130311, guid: 71697877626f58f499da3bf210cfbb0a,
         type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
@@ -11378,7 +11378,7 @@ PrefabInstance:
     - target: {fileID: 6815051776104130311, guid: 71697877626f58f499da3bf210cfbb0a,
         type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: StopClient
+      value: CancelLobby
       objectReference: {fileID: 0}
     - target: {fileID: 6815051776104130311, guid: 71697877626f58f499da3bf210cfbb0a,
         type: 3}
@@ -11393,7 +11393,7 @@ PrefabInstance:
     - target: {fileID: 6815051776104130311, guid: 71697877626f58f499da3bf210cfbb0a,
         type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: Mirror.NetworkManager, Mirror
+      value: MenuManager, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 6815051776104130311, guid: 71697877626f58f499da3bf210cfbb0a,
         type: 3}
