@@ -60,7 +60,7 @@ public class MeshData {public ChunkData sourceChunk;public void ReleaseAfterUplo
 public class ChunkData {public MeshData GetMeshData()=>new MeshData{sourceChunk=this};public UnityEngine.Vector3Int worldPos;public bool modifiedByPlayer,modifiedAfterSave,HasPendingLighting,betaPopulationDone;public World worldRef;public Dictionary<UnityEngine.Vector3Int,Block> blocks=new Dictionary<UnityEngine.Vector3Int,Block>();public static ChunkData Deserialize(ChunkSaveData s,World w)=>new ChunkData{worldRef=w,worldPos=s.position};public void UpdateLight(){HasPendingLighting=false;}}
 public class ChunkSaveData {public static int serializations;public UnityEngine.Vector3Int position;public static ChunkSaveData Serialize(ChunkData d){serializations++;return new ChunkSaveData{position=d.worldPos};}}
 public class ChunkRenderer:UnityEngine.MonoBehaviour {public ChunkData ChunkData;public void Initialize(ChunkData d){ChunkData=d;}public void UpdateChunk(object mesh){}}
-public class WorldSaveData {public object fluidTicks,droppedItems,fallingBlocks,mobs,vehicles;public object SavedMobs=>mobs;}
+public class WorldSaveData {public object fluidTicks,droppedItems,fallingBlocks,mobs,vehicles,primedTnt;public object SavedMobs=>mobs;}
 public struct DropStateMessage {public WorldDimension dimension;public object item;}
 public struct FallingBlockStateMessage {public WorldDimension dimension;public object block;}
 public struct FallingBlockSyncRequest {}
@@ -102,7 +102,9 @@ public partial class World:UnityEngine.MonoBehaviour {
  public Task<Dictionary<UnityEngine.Vector3Int,ChunkData>> LoadChunksAsync(IEnumerable<UnityEngine.Vector3Int> positions,string name)=>Task.FromResult(new Dictionary<UnityEngine.Vector3Int,ChunkData>());
  public void RefreshLightmap(){}
  private void Clear(){worldData.chunkDataDict.Clear();worldData.chunkDict.Clear();}
- public void RestoreFluidTicks(object x){}public void RestoreDroppedItems(object x){}public void RestoreFallingBlocks(object x){}public void RestoreMobs(object x){}public void RestoreVehicles(object x){}
+ public void RestoreFluidTicks(object x){}public void RestoreDroppedItems(object x){}public void RestoreFallingBlocks(object x){}public void RestoreMobs(object x){}public void RestoreVehicles(object x){}public void RestoreTnt(object x){}
+ public bool PrimeTnt(UnityEngine.Vector3Int p,bool chain=false)=>false;
+ public void EmitExplosionEffects(UnityEngine.Vector3 p,float strength){}
  public void SendMobSnapshot(Mirror.NetworkConnectionToClient c){}
  public object[] CaptureDroppedItems()=>new object[0];
  public object[] CaptureFallingBlocks()=>new object[0];

@@ -84,6 +84,7 @@ public partial class World : MonoBehaviour
         InitializeFallingBlocks();
         InitializeMobs();
         InitializeVehicles();
+        InitializeTnt();
         NetworkClient.RegisterHandler<FurnaceReply>(message =>
         {
             if(GameManager.Instance!=null&&GameManager.Instance.localPlayer!=null)
@@ -347,6 +348,7 @@ public partial class World : MonoBehaviour
         ResetFallingBlocks(discardSavedState);
         ResetMobs(discardSavedState);
         ResetVehicles(discardSavedState);
+        ResetTnt(discardSavedState);
         furnaceClock=0;
         ResetTreeMeshChanges();
         ResetChunkUpdates();

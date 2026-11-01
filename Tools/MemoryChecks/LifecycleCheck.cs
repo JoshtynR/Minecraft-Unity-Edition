@@ -60,6 +60,7 @@ public partial class World
  private void UpdateFurnaces(){}
  private void UpdateMobs(){}
  private void UpdateVehicles(){}
+ private void UpdateTnt(){}
  private void UpdateFallingBlocks(){}
  private void UpdateLeafDecay(){}
  private void UpdateDroppedItems(){}

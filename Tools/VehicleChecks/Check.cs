@@ -49,7 +49,7 @@ namespace Mirror
 }
 public enum WorldDimension {Overworld,Nether}
 public class PlayerHudAssets {public Texture2D boatSkin,minecartSkin;}
-public struct InventoryStack {public ItemType type;public int count;public bool Empty=>count<=0;public InventoryStack(ItemType t,int n){type=t;count=n;}}
+public struct InventoryStack {public ItemType type;public int count,damage;public bool Empty=>count<=0;public InventoryStack(ItemType t,int n){type=t;count=n;damage=0;}}
 public class Inventory {public InventoryStack[] slots=new InventoryStack[36];public bool DropRequestPending,isOpen;public int selectedSlotIndex;public InventoryStack HeldItem()=>slots[selectedSlotIndex];public InventoryStack[] DropInventorySnapshot()=>(InventoryStack[])slots.Clone();public void ApplyDropInventory(InventoryStack[] s){slots=(InventoryStack[])s.Clone();}}
 public static class ChestTransactions {public static bool Valid(InventoryStack[] s,InventoryStack c)=>s!=null&&s.Length==36;}
 public class FallState {public void Reset(){}}
@@ -69,6 +69,7 @@ public struct BlockShape {public int xMin,yMin,zMin,xMax,yMax,zMax;}
 public static class BlockShapesExtensions {public static bool IsPlant(BlockType t)=>false;}
 public static class SpecialBlockGeometry
 {
+ public static bool NormalCube(BlockType t)=>t==BlockType.Stone||t==BlockType.TNT;
  public static bool IsRail(BlockType t)=>t==BlockType.Rail||t==BlockType.PoweredRail||t==BlockType.DetectorRail;
  public static bool NoCollision(BlockType t)=>IsRail(t)||t==BlockType.RedstoneWire;
  public static byte State(BlockType t,byte s)=>s;

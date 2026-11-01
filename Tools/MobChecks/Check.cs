@@ -90,6 +90,8 @@ class Check {
   Assert(creeper.fuseTicks==29&&world.Step(creeper)==false&&world.mobs.Get(creeper.id)==null,"thirtieth fuse tick explodes and removes creeper once");
   Assert(player.health<20,"creeper explosion damages exposed player");
   world=new World();player=Target(world,2);creeper=Mob(world,MobType.Creeper);world.Step(creeper);world.blocked=true;world.Step(creeper);Assert(creeper.fuseTicks==0,"creeper defuses after losing sight");
+  creeper.ignited=true;for(int i=0;i<29;i++)Assert(world.Step(creeper),"manually ignited creeper continues countdown without sight");
+  Assert(!world.Step(creeper)&&world.mobs.Get(creeper.id)==null,"manual ignition cannot defuse and detonates once");
   world=new World();player=Target(world,6);skeleton=Mob(world,MobType.Skeleton);world.Step(skeleton);
   Assert(world.ArrowCount==1&&skeleton.attackTicks==30,"skeleton fires a physical arrow with thirty-tick cooldown");
   for(int i=0;i<30;i++)world.Arrows();Assert(player.health==16,"projectile sweep damages player on intersection");
@@ -97,6 +99,10 @@ class Check {
   world=new World{blocked=true};Target(world,6);world.Step(Mob(world,MobType.Skeleton));Assert(world.ArrowCount==0,"skeleton does not shoot through cover");
   var invulnerable=new Player();invulnerable.health=20;Assert(invulnerable.ApplyMobDamage(2,Vector3.up)&&!invulnerable.ApplyMobDamage(2,Vector3.up)&&invulnerable.health==18,"player hurt window protects from simultaneous mob damage");
 #if FULL_MOB_SYSTEM
+  world=new World();creeper=Mob(world,MobType.Creeper);var ignitionBag=new InventoryStack[36];ignitionBag[0]=new InventoryStack(ItemType.FlintAndSteel,1);
+  Assert(world.InteractMob(creeper.id,ignitionBag,0)&&creeper.ignited&&ignitionBag[0].damage==1,"flint and steel ignites creeper and wears once");
+  Assert(!world.InteractMob(creeper.id,ignitionBag,0)&&ignitionBag[0].damage==1,"repeat ignition cannot double wear");
+  var ignitionSave=world.mobs.Capture();world.mobs.Restore(new MobSaveData{entities=ignitionSave});Assert(world.mobs.Get(creeper.id).ignited,"creeper ignition persists through save snapshot");
   var streamingWorld=new World();var streamingPlayer=Target(streamingWorld,0);GameManager.Instance=new GameManager{localPlayer=streamingPlayer};
   var streamingMob=Mob(streamingWorld,MobType.Cow);streamingMob.hurtCooldown=8;streamingWorld.GenerationBusy=true;
   streamingWorld.FrameForCheck(.05f);

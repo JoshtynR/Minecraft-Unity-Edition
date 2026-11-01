@@ -58,7 +58,7 @@ namespace UnityEngine.Rendering {public enum ShadowCastingMode{Off}}
 namespace UnityEngine.Serialization {public class FormerlySerializedAsAttribute:Attribute {public FormerlySerializedAsAttribute(string name){}}}
 public enum WorldDimension {Overworld,Nether}
 public enum SurvivalDifficulty {Easy,Normal,Hard}
-public enum BlockType {Nothing,Air,Grass,Dirt,Stone,Bedrock,Water,Lava,Fire,SnowLayer}
+public enum BlockType {Nothing,Air,Grass,Dirt,Stone,Bedrock,Water,Lava,Fire,SnowLayer,TNT}
 public class BlockData {public bool generateCollider=true;}
 public class Block {public BlockType type;public int sky,light,blockShape;public BlockData BlockData=new BlockData();public int GetSkyLight()=>sky;public int GetBlockLight()=>light;}
 public static class SpecialBlockGeometry {public static bool NormalCube(BlockType t)=>t==BlockType.Grass||t==BlockType.Dirt||t==BlockType.Stone||t==BlockType.Bedrock;public static bool NoCollision(BlockType t)=>t==BlockType.Air;public static int CollisionCount(BlockType t)=>1;public static Bounds CollisionPart(BlockType t,int s,int p)=>new Bounds(Vector3.one*.5f,Vector3.one);}
@@ -81,6 +81,8 @@ public partial class Player:MonoBehaviour {
 #endif
 }
 public partial class World:MonoBehaviour {
+ public bool PrimeTnt(Vector3Int p,bool chain=false)=>false;
+ public void EmitExplosionEffects(Vector3 p,float strength){}
  public WorldDimension dimension;public SurvivalDifficulty survivalDifficulty=SurvivalDifficulty.Normal;
 #if !FULL_MOB_SYSTEM
  private List<Player> mobPlayers=new List<Player>();private List<MobState> activeMobs=new List<MobState>();private List<Vector3Int> mobSpawnCandidates=new List<Vector3Int>();private MobEntitySystem mobEntities=new MobEntitySystem();public MobEntitySystem MobEntities=>mobEntities;public MobStore mobs=>mobEntities.Store;private JavaRandom mobRandom=new JavaRandom(173);private int mobTick;

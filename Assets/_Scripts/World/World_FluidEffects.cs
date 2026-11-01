@@ -23,6 +23,18 @@ public partial class World
         if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
         fluidEffects.EmitMobDeath(position,radius,height);
     }
+    public void PlayExplosionParticles(Vector3 position,float strength)
+    {
+        if(Instance!=this||Application.isBatchMode||!Application.isPlaying)return;
+        if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
+        fluidEffects.EmitExplosion(position,strength);
+    }
+    public void PlayTntSmoke(Vector3 position)
+    {
+        if(Instance!=this||Application.isBatchMode||!Application.isPlaying)return;
+        if(fluidEffects==null)fluidEffects=worldRenderer.gameObject.AddComponent<FluidEffects>();
+        fluidEffects.EmitFuseSmoke(position);
+    }
     public void PlayBlockBreakParticles(Vector3Int position,BlockType type)
     {
         if(Instance!=this||Application.isBatchMode||!Application.isPlaying)return;

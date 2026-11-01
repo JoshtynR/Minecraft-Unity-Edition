@@ -14,7 +14,7 @@ public partial class Player
         var mob=TargetedMob();if(mob==null)return false;
         if(networkStarted&&!isServer&&!NetworkClient.ready)return true;
         // A mob blocks mining/placement behind it, even when the held item has no interaction.
-        if(milk && inventory.HeldItem().type!=ItemType.Bucket && inventory.HeldItem().type!=MobRules.BreedingFood(mob) && inventory.HeldItem().type!=ItemType.Shears && MobRules.DyeColor(inventory.HeldItem().type)<0)return true;
+        if(milk && !(mob.species==MobType.Creeper&&inventory.HeldItem().type==ItemType.FlintAndSteel) && inventory.HeldItem().type!=ItemType.Bucket && inventory.HeldItem().type!=MobRules.BreedingFood(mob) && inventory.HeldItem().type!=ItemType.Shears && MobRules.DyeColor(inventory.HeldItem().type)<0)return true;
         if(inventory.DropRequestPending || Time.unscaledTime<nextLocalMobAction)return true;
         nextLocalMobAction=Time.unscaledTime+.25f;CancelMining();
         int request=++dropRequestId;inventory.DropRequestPending=true;awaitingNetworkDrop=networkStarted&&!isServer;

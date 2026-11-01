@@ -12,6 +12,7 @@ public sealed class MobState
     public MobType species;
     public int ageTicks, loveTicks, breedCooldown, eggTicks=6000, fleeceColor;
     public int attackTicks, fuseTicks, angerTicks;
+    public bool ignited;
     public int targetMemoryTicks,courtshipTicks,eatTicks;
     public int lastDamage;
     public float headYaw,headPitch;

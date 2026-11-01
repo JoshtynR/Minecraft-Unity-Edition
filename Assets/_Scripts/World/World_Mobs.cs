@@ -247,6 +247,12 @@ public partial class World
         EnsureMobsRestored();
         var mob=mobs.Get(id);if(mob==null)return false;
         bool accepted=false;
+        if(mob.species==MobType.Creeper&&bag[slot].type==ItemType.FlintAndSteel)
+        {
+            if(mob.ignited||mob.health<=0)return false;
+            mob.ignited=true;ItemDurability.Wear(ref bag[slot],1);
+            GameAudio.Broadcast("fire/ignite",mob.position,.7f,1,this);BroadcastMob(mob);return true;
+        }
         if(bag[slot].type==MobRules.BreedingFood(mob)&&MobRules.Feed(mob))
         {bag[slot].count--;bag[slot].Normalize();accepted=true;}
         else if(mob.species==MobType.Cow&&mob.ageTicks==0&&bag[slot].type==ItemType.Bucket)accepted=MobRules.Milk(bag,slot);

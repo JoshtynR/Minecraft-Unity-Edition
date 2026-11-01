@@ -6,6 +6,9 @@
             float _TextureOn, _LightingOn, _AOOn, _AOIntensity, _FaceShadeOn;
             float _ShadeUp, _ShadeSideNS, _ShadeSideEW, _ShadeDown, _Debug;
             float4 _FluidFog;
+            #ifdef VOXEL_FUSE_FLASH
+                float _FuseFlash;
+            #endif
             #ifdef VOXEL_WATER
                 float _WaterOpacity;
             #endif
@@ -88,6 +91,9 @@
                 if (_Debug > 0.5 && _Debug < 1.5) col.rgb = (i.skyBlock.x / 15).xxx;
                 if (_Debug > 1.5 && _Debug < 2.5) col.rgb = (i.skyBlock.y / 15).xxx;
                 if (_Debug > 2.5) col.rgb = dot(light,float3(.2126,.7152,.0722)).xxx;
+                #ifdef VOXEL_FUSE_FLASH
+                    col.rgb=lerp(col.rgb,float3(1,1,1),saturate(_FuseFlash));
+                #endif
                 col.rgb = ApplyWorldFog(col.rgb,i.fogDistance,_FluidFog);
                 #ifndef UNITY_COLORSPACE_GAMMA
                     col.rgb = GammaToLinearSpace(col.rgb);

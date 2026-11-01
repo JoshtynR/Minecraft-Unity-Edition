@@ -12,6 +12,7 @@ Shader "Voxel/DroppedBlock"
         _ShadeSideEW ("East West", Float) = .6
         _ShadeDown ("Down", Float) = .5
         _Debug ("Debug", Float) = 0
+        _FuseFlash ("Primed TNT flash", Range(0,1)) = 0
     }
     SubShader
     {
@@ -25,6 +26,7 @@ Shader "Voxel/DroppedBlock"
             #pragma target 3.5
             #pragma require 2darray
             #define VOXEL_ENTITY_LIGHT
+            #define VOXEL_FUSE_FLASH
             #include "VoxelLighting.cginc"
             ENDCG
         }

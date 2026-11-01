@@ -18,6 +18,7 @@ public class WorldSaveData
     public FallingBlockState[] fallingBlocks;
     public MobSaveData mobs;
     public VehicleState[] vehicles;
+    public PrimedTntState[] primedTnt;
     // Read-only compatibility with releases that stored every species as cows.
     public MobSaveData cows;
     public MobSaveData SavedMobs => mobs ?? cows;

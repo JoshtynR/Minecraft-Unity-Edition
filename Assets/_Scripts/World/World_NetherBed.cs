@@ -32,6 +32,7 @@ public partial class World
         foreach(var p in destroyed)
         {
             var type=GetBlock(p).type;if(type==BlockType.Nothing||type==BlockType.Bedrock)continue;
+            if(type==BlockType.TNT){PrimeTnt(p,true);continue;}
             SetFarmBlock(p,BlockType.Air);
         }
         if(GameManager.Instance!=null)
@@ -51,6 +52,7 @@ public partial class World
                 player.ApplyArmouredDamage((int)((impact*impact+impact)/2*8*10+1));
             }
         GameAudio.Broadcast("random/explode",center,1,1,this);
+        EmitExplosionEffects(center,5);
     }
     private static float BedBlastResistance(BlockType type)
     {

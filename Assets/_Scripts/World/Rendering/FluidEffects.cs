@@ -175,6 +175,19 @@ public sealed class FluidEffects : MonoBehaviour
             effects[5].Add(NewExplosion(position+new Vector3(RandomSigned(radius),RandomRange(0,height),RandomSigned(radius)),velocity));
         }
     }
+    public void EmitExplosion(Vector3 center,float strength)
+    {
+        effects[5].Add(NewExplosion(center,Vector3.zero));
+        int count=System.Math.Max(16,System.Math.Min(128,Mathf.FloorToInt(strength*16)));
+        for(int i=0;i<count;i++)
+        {
+            var offset=new Vector3(RandomSigned(strength*.5f),RandomSigned(strength*.5f),RandomSigned(strength*.5f));
+            var velocity=offset.normalized*RandomRange(.05f,.3f);
+            effects[5].Add(NewExplosion(center+offset*.5f,velocity));
+            effects[0].Add(NewSmoke(center+offset,velocity*.4f));
+        }
+    }
+    public void EmitFuseSmoke(Vector3 position)=>effects[0].Add(NewSmoke(position,Vector3.zero));
     private float RandomSigned(float radius)=>((float)cosmetic.NextDouble()*2-1)*radius;
     private float RandomRange(float minimum,float maximum)=>minimum+(float)cosmetic.NextDouble()*(maximum-minimum);
     private float Gaussian(){float a=Mathf.Max(.000001f,(float)cosmetic.NextDouble());return Mathf.Sqrt(-2*Mathf.Log(a))*Mathf.Cos((float)cosmetic.NextDouble()*Mathf.PI*2);}

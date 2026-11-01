@@ -103,7 +103,7 @@ public partial class World
     }
     internal bool TickCreeperFuse(MobState mob,Player target)
     {
-        bool ignite=target!=null&&MobTargetVisible(mob,target)&&(target.transform.position-mob.position).sqrMagnitude<(mob.fuseTicks>0?7*7:3*3);
+        bool ignite=mob.ignited||target!=null&&MobTargetVisible(mob,target)&&(target.transform.position-mob.position).sqrMagnitude<(mob.fuseTicks>0?7*7:3*3);
         if(ignite&&mob.fuseTicks==0)GameAudio.Broadcast("random/fuse",mob.position,1,.5f,this);
         mob.fuseTicks=Mathf.Clamp(mob.fuseTicks+(ignite?1:-1),0,30);
         if(ignite)mob.walking=false;
@@ -150,11 +150,13 @@ public partial class World
             // broadcasting Air after a rejected write would desync clients.
             if(!CanReplaceChest(p,BlockType.Air))continue;
             var type=GetBlock(p).type;if(type==BlockType.Air||type==BlockType.Nothing)continue;
+            if(type==BlockType.TNT){PrimeTnt(p,true);continue;}
             SetFarmBlock(p,BlockType.Air);
             if(mobRandom.NextFloat()<1/strength)
             {var loot=MiningItemDrop(type,ItemType.DiamondPickaxe);if(!loot.Empty)SpawnItemDrop(loot,(Vector3)p+Vector3.one*.5f);}
         }
         GameAudio.Broadcast("random/explode",center,1,1,this);
+        EmitExplosionEffects(center,strength);
     }
     private void TickMobArrows()
     {

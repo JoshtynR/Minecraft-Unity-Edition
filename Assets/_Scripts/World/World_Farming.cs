@@ -109,6 +109,11 @@ public partial class World
         if(System.Math.Abs(offset.x)+System.Math.Abs(offset.y)+System.Math.Abs(offset.z)!=1)return false;
         if(held.type==ItemType.FlintAndSteel)
         {
+            if(block.type==BlockType.TNT)
+            {
+                if(!PrimeTnt(target))return false;
+                ItemDurability.Wear(ref held,1);GameAudio.Broadcast("fire/ignite",(Vector3)target,.7f,1,this);return true;
+            }
             if(!TryIgnitePortal(adjacent))
             {
                 if(GetBlock(adjacent).type!=BlockType.Air||!SpecialBlockGeometry.NormalCube(GetBlock(adjacent+Vector3Int.down).type))return false;
