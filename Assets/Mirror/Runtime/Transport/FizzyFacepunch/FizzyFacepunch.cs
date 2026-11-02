@@ -11,8 +11,8 @@ namespace Mirror.FizzySteam
   {
     private const string STEAM_SCHEME = "steam";
 
-    private static IClient client;
-    private static IServer server;
+    private IClient client;
+    private IServer server;
 
     [SerializeField]
     public P2PSend[] Channels = new P2PSend[2] { P2PSend.Reliable, P2PSend.UnreliableNoDelay };
@@ -58,11 +58,11 @@ namespace Mirror.FizzySteam
       {
         try
         {
-          SteamClient.Init(uint.Parse(SteamAppID), true);
+          if (!SteamClient.IsValid) SteamClient.Init(uint.Parse(SteamAppID), true);
         }
         catch (Exception e)
         {
-          Debug.LogWarning("Steam failed to initialize");
+          Debug.LogWarning("Steam failed to initialize: " + e.Message);
         }
       }
 
@@ -151,7 +151,7 @@ namespace Mirror.FizzySteam
     {
       byte[] data = new byte[segment.Count];
       Array.Copy(segment.Array, segment.Offset, data, 0, segment.Count);
-      client.Send(data, channelId);
+      client?.Send(data, channelId);
     }
 
     public override void ClientDisconnect()
@@ -241,22 +241,30 @@ namespace Mirror.FizzySteam
     {
       if (server != null)
       {
-        server.Shutdown();
+        var oldServer = server;
         server = null;
+        oldServer.Shutdown();
         Debug.Log("Transport shut down - was server.");
       }
 
       if (client != null)
       {
-        client.Disconnect();
+        var oldClient = client;
         client = null;
+        oldClient.Disconnect();
         Debug.Log("Transport shut down - was client.");
       }
     }
 
     public override int GetMaxPacketSize(int channelId)
     {
-      if (channelId >= Channels.Length)
+      if (UseNextGenSteamNetworking)
+      {
+        if (channelId == Mirror.Channels.Reliable) return NextCommon.ReliablePayloadLimit;
+        if (channelId == Mirror.Channels.Unreliable) return NextCommon.UnreliablePayloadLimit;
+        throw new ArgumentOutOfRangeException(nameof(channelId));
+      }
+      if (channelId < 0 || channelId >= Channels.Length)
       {
         Debug.LogError("Channel Id exceeded configured channels! Please configure more channels.");
         return 1200;
@@ -274,6 +282,11 @@ namespace Mirror.FizzySteam
           throw new NotSupportedException();
       }
     }
+
+    // Keep ordinary Mirror batches near MTU size. Large individual reliable
+    // messages still use Steam's fragmentation, within GetMaxPacketSize.
+    public override int GetBatchThreshold(int channelId) => UseNextGenSteamNetworking
+      ? NextCommon.UnreliablePayloadLimit : base.GetBatchThreshold(channelId);
 
     public override bool Available()
     {

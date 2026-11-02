@@ -1,6 +1,9 @@
 using Steamworks;
 using Steamworks.Data;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Mirror.FizzySteam
@@ -11,180 +14,146 @@ namespace Mirror.FizzySteam
     private event Action<int, byte[], int> OnReceivedData;
     private event Action<int> OnDisconnected;
     private event Action<int, Exception> OnReceivedError;
-
-    private BidirectionalDictionary<Connection, int> connToMirrorID;
-    private BidirectionalDictionary<SteamId, int> steamIDToMirrorID;
-    private int maxConnections;
-    private int nextConnectionID;
-
+    private readonly BidirectionalDictionary<Connection, int> connToMirrorID = new BidirectionalDictionary<Connection, int>();
+    private readonly BidirectionalDictionary<SteamId, int> steamIDToMirrorID = new BidirectionalDictionary<SteamId, int>();
+    private readonly ConcurrentQueue<Action> statusChanges = new ConcurrentQueue<Action>();
+    private readonly HashSet<Connection> pendingConnections = new HashSet<Connection>();
+    private readonly int maxConnections;
+    private int nextConnectionID = 1;
+    private bool stopped;
     private FizzySocketManager listenSocket;
 
-    private NextServer(int maxConnections)
-    {
-      this.maxConnections = maxConnections;
-      connToMirrorID = new BidirectionalDictionary<Connection, int>();
-      steamIDToMirrorID = new BidirectionalDictionary<SteamId, int>();
-      nextConnectionID = 1;
-      SteamNetworkingSockets.OnConnectionStatusChanged += OnConnectionStatusChanged;
-    }
+    private NextServer(int maxConnections) { this.maxConnections = maxConnections; }
 
     public static NextServer CreateServer(FizzyFacepunch transport, int maxConnections)
     {
-      NextServer s = new NextServer(maxConnections);
-
-      s.OnConnected += (id) => transport.OnServerConnected.Invoke(id);
-      s.OnDisconnected += (id) => transport.OnServerDisconnected.Invoke(id);
-      s.OnReceivedData += (id, data, ch) => transport.OnServerDataReceived.Invoke(id, new ArraySegment<byte>(data), ch);
-      s.OnReceivedError += (id, exception) => transport.OnServerError.Invoke(id, exception);
-
-      if (!SteamClient.IsValid)
-      {
-        Debug.LogError("SteamWorks not initialized.");
-      }
-
-      s.Host();
-
-      return s;
-    }
-
-    private void Host()
-    {
-      listenSocket = SteamNetworkingSockets.CreateRelaySocket<FizzySocketManager>();
-      listenSocket.ForwardMessage = OnMessageReceived;
+      var server = new NextServer(maxConnections);
+      server.OnConnected += id => transport.OnServerConnected.Invoke(id);
+      server.OnDisconnected += id => transport.OnServerDisconnected.Invoke(id);
+      server.OnReceivedData += (id, data, ch) => transport.OnServerDataReceived.Invoke(id, new ArraySegment<byte>(data), ch);
+      server.OnReceivedError += (id, error) => transport.OnServerError.Invoke(id, error);
+      if (!SteamClient.IsValid) throw new InvalidOperationException("SteamWorks not initialized.");
+      server.listenSocket = SteamNetworkingSockets.CreateRelaySocket<FizzySocketManager>();
+      server.listenSocket.ForwardMessage = server.OnMessageReceived;
+      server.listenSocket.ForwardState = (conn, info) => server.statusChanges.Enqueue(() => server.OnConnectionStatusChanged(conn, info));
+      return server;
     }
 
     private void OnConnectionStatusChanged(Connection conn, ConnectionInfo info)
     {
-      ulong clientSteamID = info.Identity.SteamId;
+      if (stopped) return;
+      SteamId steamId = info.Identity.SteamId;
       if (info.State == ConnectionState.Connecting)
       {
-        if (connToMirrorID.Count >= maxConnections)
+        if (connToMirrorID.Contains(conn) || pendingConnections.Contains(conn)) return;
+        if (connToMirrorID.Count + pendingConnections.Count >= maxConnections || steamIDToMirrorID.Contains(steamId))
+        { conn.Close(false, 0, "Server full or account already connected"); return; }
+        pendingConnections.Add(conn);
+        var result = conn.Accept();
+        if (result != Result.OK)
         {
-          Debug.Log($"Incoming connection {clientSteamID} would exceed max connection count. Rejecting.");
-          conn.Close(false, 0, "Max Connection Count");
-          return;
-        }
-
-        Result res;
-        
-        if((res = conn.Accept()) == Result.OK)
-        {
-          Debug.Log($"Accepting connection {clientSteamID}");         
-        }
-        else
-        {          
-          Debug.Log($"Connection {clientSteamID} could not be accepted: {res.ToString()}");
+          pendingConnections.Remove(conn);
+          conn.Close(false, 0, "Connection could not be accepted");
         }
       }
       else if (info.State == ConnectionState.Connected)
       {
-        int connectionId = nextConnectionID++;
-        connToMirrorID.Add(conn, connectionId);
-        steamIDToMirrorID.Add(clientSteamID, connectionId);
-        OnConnected.Invoke(connectionId);
-        Debug.Log($"Client with SteamID {clientSteamID} connected. Assigning connection id {connectionId}");
+        pendingConnections.Remove(conn);
+        if (connToMirrorID.Contains(conn)) return;
+        if (connToMirrorID.Count >= maxConnections || steamIDToMirrorID.Contains(steamId))
+        { conn.Close(false, 0, "Server full or account already connected"); return; }
+        int id = nextConnectionID++;
+        connToMirrorID.Add(conn, id);
+        steamIDToMirrorID.Add(steamId, id);
+        OnConnected?.Invoke(id);
       }
-      else if(info.State == ConnectionState.ClosedByPeer)
+      else if (info.State == ConnectionState.ClosedByPeer || info.State == ConnectionState.ProblemDetectedLocally || info.State == ConnectionState.None)
       {
-        if (connToMirrorID.TryGetValue(conn, out int connId))
-        {
-          InternalDisconnect(connId, conn);
-        }
-      }
-      else
-      {
-        Debug.Log($"Connection {clientSteamID} state changed: {info.State.ToString()}");
+        pendingConnections.Remove(conn);
+        if (connToMirrorID.TryGetValue(conn, out int id)) InternalDisconnect(id, conn);
       }
     }
 
-    private void InternalDisconnect(int connId, Connection socket)
+    private void InternalDisconnect(int id, Connection conn, Exception error = null)
     {
-      OnDisconnected.Invoke(connId);
-      socket.Close(false, 0, "Graceful disconnect");
-      connToMirrorID.Remove(connId);
-      steamIDToMirrorID.Remove(connId);
-      Debug.Log($"Client with SteamID {connId} disconnected.");
+      if (!connToMirrorID.Contains(id)) return;
+      // Remove first. Mirror's callback may disconnect/send/stop the server again.
+      connToMirrorID.Remove(id);
+      steamIDToMirrorID.Remove(id);
+      ForgetSocket(conn);
+      conn.Close(false, 0, "Disconnected");
+      try { if (error != null) OnReceivedError?.Invoke(id, error); }
+      finally { OnDisconnected?.Invoke(id); }
     }
 
-    public void Disconnect(int connectionId)
+    public void Disconnect(int id)
     {
-      if (connToMirrorID.TryGetValue(connectionId, out Connection conn))
-      {
-        Debug.Log($"Connection id {connectionId} disconnected.");
-        conn.Close(false, 0, "Disconnected by server");
-        steamIDToMirrorID.Remove(connectionId);
-        connToMirrorID.Remove(connectionId);
-        OnDisconnected(connectionId);
-      }
-      else
-      {
-        Debug.LogWarning("Trying to disconnect unknown connection id: " + connectionId);
-      }
+      if (connToMirrorID.TryGetValue(id, out Connection conn)) InternalDisconnect(id, conn);
     }
 
     public void FlushData()
     {
-      foreach (Connection conn in connToMirrorID.FirstTypes)
+      // Error callbacks can remove peers, including other peers or the whole host.
+      foreach (var conn in connToMirrorID.FirstTypes.ToArray())
       {
-        conn.Flush();
+        if (!connToMirrorID.TryGetValue(conn, out int id)) continue;
+        var result = FlushSocket(conn);
+        if (result != Result.OK && result != Result.Ignored) FailSend(id, conn, result);
       }
     }
 
     public void ReceiveData()
     {
-      listenSocket.Receive(MAX_MESSAGES);
+      while (!stopped && statusChanges.TryDequeue(out var callback)) callback();
+      if (!stopped) listenSocket?.Receive(MAX_MESSAGES);
     }
 
-    private void OnMessageReceived(Connection conn, IntPtr dataPtr, int size)
+    private void OnMessageReceived(Connection conn, IntPtr pointer, int size)
     {
-      (byte[] data, int ch) = ProcessMessage(dataPtr, size);
-      OnReceivedData(connToMirrorID[conn], data, ch);
+      if (stopped || !connToMirrorID.TryGetValue(conn, out int id)) return;
+      var packet = ProcessMessage(pointer, size);
+      if (packet.Item1 == null) { InternalDisconnect(id, conn); return; }
+      OnReceivedData?.Invoke(id, packet.Item1, packet.Item2);
     }
 
-    public void Send(int connectionId, byte[] data, int channelId)
+    public void Send(int id, byte[] data, int channelId)
     {
-      if (connToMirrorID.TryGetValue(connectionId, out Connection conn))
-      {
-        Result res = SendSocket(conn, data, channelId);
-
-        if (res == Result.NoConnection || res == Result.InvalidParam)
-        {
-          Debug.Log($"Connection to {connectionId} was lost.");
-          InternalDisconnect(connectionId, conn);
-        }
-        else if (res != Result.OK)
-        {
-          Debug.LogError($"Could not send: {res.ToString()}");
-        }
-      }
-      else
-      {
-        Debug.LogError("Trying to send on unknown connection: " + connectionId);
-        OnReceivedError.Invoke(connectionId, new Exception("ERROR Unknown Connection"));
-      }
+      // Mirror can finish flushing an already-built batch after a disconnect.
+      if (!connToMirrorID.TryGetValue(id, out Connection conn)) return;
+      var result = SendSocket(conn, data, channelId);
+      if (result == Result.OK || result == Result.Ignored ||
+          (channelId == Channels.Unreliable && result == Result.LimitExceeded)) return;
+      FailSend(id, conn, result);
     }
 
-    public string ServerGetClientAddress(int connectionId)
+    private void FailSend(int id, Connection conn, Result result)
     {
-      if (steamIDToMirrorID.TryGetValue(connectionId, out SteamId steamId))
-      {
-        return steamId.ToString();
-      }
-      else
-      {
-        Debug.LogError("Trying to get info on unknown connection: " + connectionId);
-        OnReceivedError.Invoke(connectionId, new Exception("ERROR Unknown Connection"));
-        return string.Empty;
-      }
+      Debug.LogWarning($"Steam send failed: {result}, connection={id}. Closing connection.");
+      InternalDisconnect(id, conn, new Exception("Steam send failed: " + result));
+    }
+
+    public string ServerGetClientAddress(int id)
+    {
+      return steamIDToMirrorID.TryGetValue(id, out SteamId steamId) ? steamId.ToString() : string.Empty;
     }
 
     public void Shutdown()
     {
-      if(listenSocket != null)
+      if (stopped) return;
+      stopped = true;
+      if (listenSocket != null)
       {
-        SteamNetworkingSockets.OnConnectionStatusChanged -= OnConnectionStatusChanged;
-        listenSocket.Close();
+        listenSocket.ForwardState = null;
+        listenSocket.ForwardMessage = null;
       }
+      foreach (var conn in connToMirrorID.FirstTypes.ToArray())
+        if (connToMirrorID.TryGetValue(conn, out int id)) InternalDisconnect(id, conn);
+      foreach (var conn in pendingConnections) conn.Close(false, 0, "Server stopped");
+      pendingConnections.Clear();
+      ForgetAllSockets();
+      while (statusChanges.TryDequeue(out _)) { }
+      listenSocket?.Close();
+      listenSocket = null;
     }
   }
 }

@@ -1,10 +1,9 @@
 using Steamworks;
 using Steamworks.Data;
 using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using UnityEngine;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using Debug = UnityEngine.Debug;
 
 namespace Mirror.FizzySteam
 {
@@ -12,180 +11,109 @@ namespace Mirror.FizzySteam
   {
     public bool Connected { get; private set; }
     public bool Error { get; private set; }
-
-    private TimeSpan ConnectionTimeout;
-
     private event Action<byte[], int> OnReceivedData;
     private event Action OnConnected;
     private event Action OnDisconnected;
+    private readonly ConcurrentQueue<ConnectionInfo> statusChanges = new ConcurrentQueue<ConnectionInfo>();
+    private readonly Stopwatch timer = Stopwatch.StartNew();
+    private readonly double timeout;
+    private FizzyConnectionManager manager;
+    private bool stopped;
+    private string startupError;
 
-    private CancellationTokenSource cancelToken;
-    private TaskCompletionSource<Task> connectedComplete;
-    private SteamId hostSteamID = 0;
-    private FizzyConnectionManager HostConnectionManager;
-    private Connection HostConnection => HostConnectionManager.Connection;
-    private List<Action> BufferedData;
-
-    private NextClient(FizzyFacepunch transport)
-    {
-      ConnectionTimeout = TimeSpan.FromSeconds(Math.Max(1, transport.Timeout));
-      BufferedData = new List<Action>();
-    }
+    private NextClient(FizzyFacepunch transport) { timeout = Math.Max(1, transport.Timeout); }
 
     public static NextClient CreateClient(FizzyFacepunch transport, string host)
     {
-      NextClient c = new NextClient(transport);
-
-      c.OnConnected += () => transport.OnClientConnected.Invoke();
-      c.OnDisconnected += () => transport.OnClientDisconnected.Invoke();
-      c.OnReceivedData += (data, ch) => transport.OnClientDataReceived.Invoke(new ArraySegment<byte>(data), ch);
-
-      if (SteamClient.IsValid)
-      {
-        c.Connect(host);
-      }
-      else
-      {
-        Debug.LogError("SteamWorks not initialized");
-        c.OnConnectionFailed();
-      }
-
-      return c;
-    }
-
-    private async void Connect(string host)
-    {
-      cancelToken = new CancellationTokenSource();
-      SteamNetworkingSockets.OnConnectionStatusChanged += OnConnectionStatusChanged;
-
+      var client = new NextClient(transport);
+      client.OnConnected += () => transport.OnClientConnected.Invoke();
+      client.OnDisconnected += () => transport.OnClientDisconnected.Invoke();
+      client.OnReceivedData += (data, ch) => transport.OnClientDataReceived.Invoke(new ArraySegment<byte>(data), ch);
+      // Delay failure notification until ReceiveData: the transport must assign
+      // its client field before a Mirror callback can synchronously shut it down.
       try
       {
-        hostSteamID = UInt64.Parse(host);
-        connectedComplete = new TaskCompletionSource<Task>();
-        OnConnected += SetConnectedComplete;
-        HostConnectionManager = SteamNetworkingSockets.ConnectRelay<FizzyConnectionManager>(hostSteamID);
-        HostConnectionManager.ForwardMessage = OnMessageReceived;
-        Task connectedCompleteTask = connectedComplete.Task;
-        Task timeOutTask = Task.Delay(ConnectionTimeout, cancelToken.Token);
-
-        if (await Task.WhenAny(connectedCompleteTask, timeOutTask) != connectedCompleteTask)
-        {
-          if (cancelToken.IsCancellationRequested)
-          {
-            Debug.LogError($"The connection attempt was cancelled.");
-          }
-          else if (timeOutTask.IsCompleted)
-          {
-            Debug.LogError($"Connection to {host} timed out.");
-          }
-
-          OnConnected -= SetConnectedComplete;
-          OnConnectionFailed();
-        }
-
-        OnConnected -= SetConnectedComplete;
+        if (!SteamClient.IsValid) throw new InvalidOperationException("SteamWorks not initialized.");
+        ulong steamId;
+        if (!ulong.TryParse(host, out steamId) || steamId == 0) throw new FormatException("Expected a host Steam ID.");
+        client.manager = SteamNetworkingSockets.ConnectRelay<FizzyConnectionManager>(steamId);
+        client.manager.ForwardMessage = client.OnMessageReceived;
+        client.manager.ForwardState = info => client.statusChanges.Enqueue(info);
       }
-      catch (FormatException)
-      {
-        Debug.LogError($"Connection string was not in the right format. Did you enter a SteamId?");
-        Error = true;
-        OnConnectionFailed();
-      }
-      catch (Exception ex)
-      {
-        Debug.LogError(ex.Message);
-        Error = true;
-        OnConnectionFailed();
-      }
-      finally
-      {
-        if (Error)
-        {
-          Debug.LogError("Connection failed.");
-          OnConnectionFailed();
-        }
-      }
+      catch (Exception error) { client.startupError = error.Message; }
+      return client;
     }
 
-    private void OnMessageReceived(IntPtr dataPtr, int size)
+    private void OnMessageReceived(IntPtr pointer, int size)
     {
-      (byte[] data, int ch) = ProcessMessage(dataPtr, size);
-      if (Connected)
-      {
-        OnReceivedData(data, ch);
-      }
-      else
-      {
-        BufferedData.Add(() => OnReceivedData(data, ch));
-      }
-    }
-
-    private void OnConnectionStatusChanged(Connection conn, ConnectionInfo info)
-    {
-      ulong clientSteamID = info.Identity.SteamId;
-      if (info.State == ConnectionState.Connected)
-      {
-        Connected = true;
-        OnConnected.Invoke();
-        Debug.Log("Connection established.");
-
-        if(BufferedData.Count > 0)
-        {
-          Debug.Log($"{BufferedData.Count} received before connection was established. Processing now.");
-          {
-            foreach(Action a in BufferedData)
-            {
-              a();
-            }
-          }
-        }
-      }
-      else if (info.State == ConnectionState.ClosedByPeer)
-      {
-        Connected = false;
-        OnDisconnected.Invoke();
-        Debug.Log("Disconnected.");
-        conn.Close(false, 0, "Disconnected");
-      }
-      else
-      {
-        Debug.Log($"Connection state changed: {info.State.ToString()}");
-      }
-    }
-
-    public void Disconnect()
-    {
-      cancelToken?.Cancel();
-      SteamNetworkingSockets.OnConnectionStatusChanged -= OnConnectionStatusChanged;
-
-      if (HostConnectionManager != null)
-      {
-        Debug.Log("Sending Disconnect message");
-        HostConnection.Close(false, 0, "Graceful disconnect");
-        HostConnectionManager = null;
-      }
+      if (!Connected || stopped) return;
+      var packet = ProcessMessage(pointer, size);
+      if (packet.Item1 == null) { Fail("Invalid Steam packet received."); return; }
+      OnReceivedData?.Invoke(packet.Item1, packet.Item2);
     }
 
     public void ReceiveData()
     {
-      HostConnectionManager.Receive(MAX_MESSAGES);
-    }    
+      if (stopped) return;
+      if (startupError != null) { Fail(startupError); return; }
+      // Steam's async callbacks never call Mirror/Unity or edit our connection
+      // state. Drain only this connection manager's events on the Unity thread.
+      while (!stopped && statusChanges.TryDequeue(out var info))
+      {
+        if (info.State == ConnectionState.Connected && !Connected)
+        {
+          Connected = true;
+          OnConnected?.Invoke();
+        }
+        else if (info.State == ConnectionState.ClosedByPeer || info.State == ConnectionState.ProblemDetectedLocally || info.State == ConnectionState.None)
+        { Fail("Steam connection closed: " + info.State + " (" + info.EndReason + ")."); }
+      }
+      if (stopped) return;
+      if (!Connected && timer.Elapsed.TotalSeconds >= timeout) { Fail("Steam connection timed out."); return; }
+      if (Connected) manager?.Receive(MAX_MESSAGES);
+    }
 
     public void Send(byte[] data, int channelId)
     {
-      Result res = SendSocket(HostConnection, data, channelId);
-
-      if (res != Result.OK)
-      {
-        Debug.LogError($"Could not send: {res.ToString()}");
-      }
+      if (!Connected || stopped || manager == null) return;
+      var result = SendSocket(manager.Connection, data, channelId);
+      if (result == Result.OK || result == Result.Ignored ||
+          (channelId == Mirror.Channels.Unreliable && result == Result.LimitExceeded)) return;
+      Fail("Steam send failed: " + result);
     }
 
-    private void SetConnectedComplete() => connectedComplete.SetResult(connectedComplete.Task);
-    private void OnConnectionFailed() => OnDisconnected.Invoke();
     public void FlushData()
     {
-      HostConnection.Flush();
+      if (!Connected || stopped || manager == null) return;
+      var result = FlushSocket(manager.Connection);
+      if (result != Result.OK && result != Result.Ignored) Fail("Steam flush failed: " + result);
+    }
+
+    private void Fail(string message)
+    {
+      if (stopped) return;
+      Error = true;
+      Debug.LogWarning(message);
+      Disconnect();
+      OnDisconnected?.Invoke();
+    }
+
+    public void Disconnect()
+    {
+      if (stopped) return;
+      stopped = true;
+      Connected = false;
+      timer.Stop();
+      var oldManager = manager;
+      manager = null;
+      if (oldManager != null)
+      {
+        oldManager.ForwardState = null;
+        oldManager.ForwardMessage = null;
+        oldManager.Close();
+      }
+      ForgetAllSockets();
+      while (statusChanges.TryDequeue(out _)) { }
     }
   }
 }
